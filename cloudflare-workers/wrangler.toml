@@ -1,0 +1,7 @@
+name = "racoonn-worker"
+main = "src/index.ts"
+compatibility_date = "2024-05-29"
+
+# [vars]
+# APPWRITE_ENDPOINT = "https://sgp.cloud.appwrite.io/v1"
+# APPWRITE_PROJECT_ID = "6a3bce6900381359c3ce"

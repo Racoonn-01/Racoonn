@@ -4,7 +4,11 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ArrowRight, ArrowLeft, Plus, Users, Maximize, Edit2, Trash2, UploadCloud } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { databases, storage, appwriteConfig } from "@/lib/appwrite/client";
+import { ID, Query, Permission, Role } from "appwrite";
+import { useAuthStore } from "@/store/authStore";
+import { Loader2 } from "lucide-react";
 
 interface Room {
   id: number;
@@ -13,10 +17,147 @@ interface Room {
   occupancy: string;
   size: string;
   photos: string[];
+  photoFiles?: File[];
 }
 
 export function Step5Rooms({ onNext, onBack }: { onNext: () => void, onBack: () => void }) {
   const [rooms, setRooms] = useState<Room[]>([{ id: 1, name: "Deluxe King Room", price: "2500", occupancy: "2", size: "350", photos: [] }]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
+  const { user, profile, checkAuth } = useAuthStore();
+
+  useEffect(() => {
+    const fetchRooms = async () => {
+      if (!profile?.currentPropertyId) return;
+      try {
+        const existingRooms = await databases.listDocuments(
+          appwriteConfig.databaseId,
+          appwriteConfig.roomCollectionId,
+          [Query.equal("propertyId", profile.currentPropertyId)]
+        );
+        if (existingRooms.documents.length > 0) {
+          setRooms(existingRooms.documents.map((doc, idx) => ({
+            id: idx + 1,
+            name: doc.name,
+            price: doc.price.toString(),
+            occupancy: doc.occupancy.toString(),
+            size: doc.size.toString(),
+            photos: doc.photos || []
+          })));
+        }
+      } catch (e) {
+        console.error("Failed to load rooms", e);
+      }
+    };
+    fetchRooms();
+  }, [profile]);
+
+  const updateRoom = (id: number, field: keyof Room, value: string) => {
+    setRooms(rooms.map(room => room.id === id ? { ...room, [field]: value } : room));
+  };
+
+  const handleBack = () => {
+    onBack();
+  };
+
+  const handleNext = async () => {
+    setIsLoading(true);
+    setError("");
+    
+    try {
+      let currentUser = user;
+      if (!currentUser) {
+        await checkAuth();
+        currentUser = useAuthStore.getState().user;
+        if (!currentUser) throw new Error("You must be logged in.");
+      }
+
+      let currentProfile = profile;
+      if (!currentProfile?.currentPropertyId) {
+        await checkAuth();
+        currentProfile = useAuthStore.getState().profile;
+      }
+      
+      const propertyId = currentProfile?.currentPropertyId;
+      if (!propertyId) {
+        throw new Error("Property ID not found. Please go back to Step 4 and save your property again.");
+      }
+
+      // Fetch existing rooms for this property and delete them first
+      const existingRooms = await databases.listDocuments(
+        appwriteConfig.databaseId,
+        appwriteConfig.roomCollectionId,
+        [Query.equal("propertyId", propertyId)]
+      );
+      
+      for (const existing of existingRooms.documents) {
+        await databases.deleteDocument(appwriteConfig.databaseId, appwriteConfig.roomCollectionId, existing.$id);
+      }
+
+      // Save each room to the database
+      for (const room of rooms) {
+        const uploadedPhotoUrls: string[] = [];
+
+        if (room.photoFiles && room.photoFiles.length > 0) {
+          for (const file of room.photoFiles) {
+            try {
+              const uploadedFile = await storage.createFile(
+                appwriteConfig.roomImagesBucketId,
+                ID.unique(),
+                file
+              );
+              const fileUrl = storage.getFileView(
+                appwriteConfig.roomImagesBucketId,
+                uploadedFile.$id
+              ).toString();
+              uploadedPhotoUrls.push(fileUrl);
+            } catch (uploadError) {
+              console.error("Failed to upload photo:", uploadError);
+            }
+          }
+        }
+
+        await databases.createDocument(
+          appwriteConfig.databaseId,
+          appwriteConfig.roomCollectionId,
+          ID.unique(),
+          {
+            vendorId: currentUser.$id,
+            propertyId: propertyId,
+            name: room.name,
+            price: parseInt(room.price) || 0,
+            occupancy: parseInt(room.occupancy) || 1,
+            size: parseInt(room.size) || 0,
+            photos: uploadedPhotoUrls
+          },
+          [
+            Permission.read(Role.user(currentUser.$id)),
+            Permission.write(Role.user(currentUser.$id)),
+            Permission.update(Role.user(currentUser.$id)),
+            Permission.delete(Role.user(currentUser.$id))
+          ]
+        );
+      }
+
+      // Update onboarding step
+      if (profile) {
+        await databases.updateDocument(
+          appwriteConfig.databaseId,
+          appwriteConfig.vendorCollectionId,
+          profile.$id,
+          { onboardingStep: 5 }
+        );
+        await checkAuth();
+      }
+      
+      onNext();
+    } catch (err: any) {
+      setError(err.message || "Failed to save rooms.");
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const slideUp: any = {
     hidden: { opacity: 0, y: 20 },
@@ -29,8 +170,13 @@ export function Step5Rooms({ onNext, onBack }: { onNext: () => void, onBack: () 
 
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>, roomId: number) => {
     if (e.target.files && e.target.files.length > 0) {
-      const newPhotos = Array.from(e.target.files).map(file => URL.createObjectURL(file));
-      setRooms(rooms.map(room => room.id === roomId ? { ...room, photos: [...(room.photos || []), ...newPhotos] } : room));
+      const filesArray = Array.from(e.target.files);
+      const newPhotos = filesArray.map(file => URL.createObjectURL(file));
+      setRooms(rooms.map(room => room.id === roomId ? { 
+        ...room, 
+        photos: [...(room.photos || []), ...newPhotos],
+        photoFiles: [...(room.photoFiles || []), ...filesArray]
+      } : room));
     }
   };
 
@@ -53,6 +199,11 @@ export function Step5Rooms({ onNext, onBack }: { onNext: () => void, onBack: () 
       </motion.div>
 
       <motion.div variants={slideUp} className="space-y-6">
+        {error && (
+          <div className="p-4 rounded-xl bg-red-50 text-red-500 font-medium text-sm text-center border border-red-100">
+            {error}
+          </div>
+        )}
         {rooms.map((room) => (
           <div key={room.id} className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow relative group">
             
@@ -64,7 +215,7 @@ export function Step5Rooms({ onNext, onBack }: { onNext: () => void, onBack: () 
             <div className="space-y-4">
               <div className="space-y-1.5">
                 <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Room Name</label>
-                <Input defaultValue={room.name} className="h-10 border-transparent bg-slate-50 focus:bg-white text-lg font-bold text-slate-800 focus:ring-2 focus:ring-[#E86A70]/20 focus:border-[#E86A70] rounded-xl" />
+                <Input value={room.name} onChange={(e) => updateRoom(room.id, "name", e.target.value)} className="h-10 border-transparent bg-slate-50 focus:bg-white text-lg font-bold text-slate-800 focus:ring-2 focus:ring-[#E86A70]/20 focus:border-[#E86A70] rounded-xl" />
               </div>
 
               <div className="grid grid-cols-3 gap-4 pt-2 border-t border-slate-100">
@@ -72,16 +223,16 @@ export function Step5Rooms({ onNext, onBack }: { onNext: () => void, onBack: () 
                   <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Base Price / Night</label>
                   <div className="relative">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold">₹</span>
-                    <Input defaultValue={room.price} className="h-10 pl-7 border-slate-200 bg-white font-bold rounded-xl" />
+                    <Input value={room.price} onChange={(e) => updateRoom(room.id, "price", e.target.value)} className="h-10 pl-7 border-slate-200 bg-white font-bold rounded-xl" />
                   </div>
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1"><Users className="w-3 h-3" /> Max Guests</label>
-                  <Input defaultValue={room.occupancy} type="number" className="h-10 border-slate-200 bg-white font-bold rounded-xl" />
+                  <Input value={room.occupancy} onChange={(e) => updateRoom(room.id, "occupancy", e.target.value)} type="number" className="h-10 border-slate-200 bg-white font-bold rounded-xl" />
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1"><Maximize className="w-3 h-3" /> Size (sqft)</label>
-                  <Input defaultValue={room.size} type="number" className="h-10 border-slate-200 bg-white font-bold rounded-xl" />
+                  <Input value={room.size} onChange={(e) => updateRoom(room.id, "size", e.target.value)} type="number" className="h-10 border-slate-200 bg-white font-bold rounded-xl" />
                 </div>
               </div>
               <div className="pt-4 border-t border-slate-100">
@@ -116,11 +267,11 @@ export function Step5Rooms({ onNext, onBack }: { onNext: () => void, onBack: () 
       </motion.div>
 
       <motion.div variants={slideUp} className="mt-10 flex items-center justify-between">
-        <Button onClick={onBack} variant="ghost" className="text-slate-500 font-bold hover:bg-slate-100 rounded-full px-6">
+        <Button onClick={handleBack} variant="ghost" className="text-slate-500 font-bold hover:bg-slate-100 rounded-full px-6" disabled={isLoading}>
           <ArrowLeft className="mr-2 w-4 h-4" /> Back
         </Button>
-        <Button onClick={onNext} className="bg-[#1F2E4A] hover:bg-[#151E2D] text-white rounded-full px-8 h-12 font-bold shadow-lg shadow-[#1F2E4A]/20 transition-all">
-          Upload Photos <ArrowRight className="ml-2 w-4 h-4" />
+        <Button onClick={handleNext} disabled={isLoading} className="bg-[#1F2E4A] hover:bg-[#151E2D] text-white rounded-full px-8 h-12 font-bold shadow-lg shadow-[#1F2E4A]/20 transition-all">
+          {isLoading ? <><Loader2 className="mr-2 w-4 h-4 animate-spin" /> Saving...</> : <>Upload Photos <ArrowRight className="ml-2 w-4 h-4" /></>}
         </Button>
       </motion.div>
     </motion.div>

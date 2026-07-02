@@ -169,6 +169,7 @@ export function Step3Business({ onNext, onBack }: { onNext: () => void, onBack: 
         
         await checkAuth(); // Refresh profile in store
       }
+      
       onNext();
     } catch (err: any) {
       setError(err.message || "Failed to save business details. Please try again.");

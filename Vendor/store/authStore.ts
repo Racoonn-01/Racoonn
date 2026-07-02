@@ -28,8 +28,13 @@ export interface VendorProfile extends Models.Document {
   idProofFront?: string;
   idProofBack?: string;
   businessProof?: string;
+  currentPropertyId?: string;
+  bankName?: string;
+  accountHolder?: string;
+  accountNumber?: string;
+  ifsc?: string;
+  upiId?: string;
 }
-
 interface AuthState {
   user: Models.User<Models.Preferences> | null;
   profile: VendorProfile | null;

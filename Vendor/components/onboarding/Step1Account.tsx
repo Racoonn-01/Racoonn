@@ -43,24 +43,28 @@ export function Step1Account({ onNext }: { onNext: () => void }) {
 
   // Load saved data on mount
   useEffect(() => {
-    // Check if we need to load from local storage as fallback
-    const savedData = localStorage.getItem("vendor_step1_data");
-    if (savedData && !profile?.firstName) {
-      try {
-        const parsed = JSON.parse(savedData);
-        if (parsed.firstName) setFirstName(parsed.firstName);
-        if (parsed.lastName) setLastName(parsed.lastName);
-        if (parsed.email && !email) setEmail(parsed.email);
-        if (parsed.phone) setPhone(parsed.phone);
-        if (parsed.altPhone) setAltPhone(parsed.altPhone);
-        if (parsed.phoneCountry) setPhoneCountry(parsed.phoneCountry);
-        if (parsed.altPhoneCountry) setAltPhoneCountry(parsed.altPhoneCountry);
-        if (parsed.termsAccepted) setTermsAccepted(parsed.termsAccepted);
-      } catch (e) {
-        console.error("Failed to parse saved step 1 data", e);
+    if (profile) {
+      if (profile.firstName) setFirstName(profile.firstName);
+      if (profile.lastName) setLastName(profile.lastName);
+      if (profile.email) setEmail(profile.email);
+      if (profile.phone) {
+        const parts = profile.phone.split(" ");
+        if (parts.length > 1) {
+          setPhone(parts[1]);
+        } else {
+          setPhone(profile.phone);
+        }
+      }
+      if (profile.altPhone) {
+        const parts = profile.altPhone.split(" ");
+        if (parts.length > 1) {
+          setAltPhone(parts[1]);
+        } else {
+          setAltPhone(profile.altPhone);
+        }
       }
     }
-  }, [profile, email]);
+  }, [profile]);
 
   const slideUpVariants: any = {
     hidden: { opacity: 0, y: 20 },
@@ -95,11 +99,9 @@ export function Step1Account({ onNext }: { onNext: () => void }) {
         );
       }
       
-      // Save locally as backup for UI speed
-      localStorage.setItem("vendor_step1_data", JSON.stringify({
-        firstName, lastName, email, phone, altPhone, phoneCountry, altPhoneCountry, termsAccepted
-      }));
-      localStorage.setItem("vendor_phone", `${selectedPhone.code} ${phone}`);
+      // Wait for the auth store to pull new data
+      const { fetchProfile } = useAuthStore.getState();
+      await fetchProfile(user.$id);
       
       onNext();
     } catch (error) {

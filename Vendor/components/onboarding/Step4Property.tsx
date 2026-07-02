@@ -3,31 +3,97 @@
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowRight, ArrowLeft, MapPin } from "lucide-react";
-import { useState } from "react";
-import { cn } from "@/lib/utils";
+import { ArrowRight, ArrowLeft, MapPin, Building, Building2, Warehouse, Coffee, Ship, Home, Car, Castle, Mountain, Box, Circle, Globe, Tractor, Users, Palmtree, Tent, Wind } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useState, useEffect } from "react";
+
 import { useAuthStore } from "@/store/authStore";
 import { databases, appwriteConfig } from "@/lib/appwrite/client";
-import { ID } from "appwrite";
+import { ID, Permission, Role } from "appwrite";
 import { Loader2 } from "lucide-react";
 
 const PROPERTY_TYPES = [
-  "Hotel", 
-  "Resort", 
-  "Villa", 
-  "Apartment", 
-  "Homestay", 
-  "Guest House",
-  "Hostel",
-  "Boutique Hotel",
-  "Lodge",
-  "Cottage",
-  "Cabin",
-  "Bed and Breakfast",
-  "Farmhouse",
-  "Tent / Camp",
-  "Houseboat"
+  { name: "Apartment", icon: Building },
+  { name: "Barn", icon: Warehouse },
+  { name: "Bed & breakfast", icon: Coffee },
+  { name: "Boat", icon: Ship },
+  { name: "Boutique Hotel", icon: Building2 },
+  { name: "Cabin", icon: Home },
+  { name: "Campervan/motorhome", icon: Car },
+  { name: "Casa particular", icon: Home },
+  { name: "Castle", icon: Castle },
+  { name: "Cave", icon: Mountain },
+  { name: "Container", icon: Box },
+  { name: "Cottage", icon: Home },
+  { name: "Cycladic home", icon: Home },
+  { name: "Dammuso", icon: Home },
+  { name: "Dome", icon: Circle },
+  { name: "Earth home", icon: Globe },
+  { name: "Farm", icon: Tractor },
+  { name: "Flat/apartment", icon: Building },
+  { name: "Guest house", icon: Home },
+  { name: "Homestay", icon: Home },
+  { name: "Hostel", icon: Users },
+  { name: "Hotel", icon: Building2 },
+  { name: "House", icon: Home },
+  { name: "Houseboat", icon: Ship },
+  { name: "Lodge", icon: Home },
+  { name: "Minsu", icon: Home },
+  { name: "Resort", icon: Palmtree },
+  { name: "Riad", icon: Home },
+  { name: "Ryokan", icon: Home },
+  { name: "Shepherd’s hut", icon: Home },
+  { name: "Tent", icon: Tent },
+  { name: "Tiny home", icon: Home },
+  { name: "Tower", icon: Building2 },
+  { name: "Tree house", icon: Home },
+  { name: "Trullo", icon: Home },
+  { name: "Villa", icon: Home },
+  { name: "Windmill", icon: Wind },
+  { name: "Yurt", icon: Tent }
 ];
+
+const STATE_CITY_MAP: Record<string, string[]> = {
+  "Andaman and Nicobar Islands": ["Port Blair"],
+  "Andhra Pradesh": ["Visakhapatnam", "Vijayawada", "Guntur", "Nellore", "Tirupati"],
+  "Arunachal Pradesh": ["Itanagar", "Tawang", "Ziro", "Pasighat"],
+  "Assam": ["Guwahati", "Silchar", "Dibrugarh", "Jorhat", "Tezpur"],
+  "Bihar": ["Patna", "Gaya", "Bhagalpur", "Muzaffarpur"],
+  "Chandigarh": ["Chandigarh"],
+  "Chhattisgarh": ["Raipur", "Bhilai", "Bilaspur", "Korba"],
+  "Dadra and Nagar Haveli": ["Silvassa"],
+  "Daman and Diu": ["Daman", "Diu"],
+  "Delhi": ["New Delhi", "North Delhi", "South Delhi", "East Delhi", "West Delhi"],
+  "Goa": ["Panaji", "Margao", "Vasco da Gama", "Mapusa", "Calangute"],
+  "Gujarat": ["Ahmedabad", "Surat", "Vadodara", "Rajkot", "Bhavnagar"],
+  "Haryana": ["Gurugram", "Faridabad", "Panipat", "Ambala", "Karnal"],
+  "Himachal Pradesh": ["Shimla", "Manali", "Dharamshala", "Kullu", "Dalhousie"],
+  "Jammu and Kashmir": ["Srinagar", "Jammu", "Anantnag", "Gulmarg", "Pahalgam"],
+  "Jharkhand": ["Ranchi", "Jamshedpur", "Dhanbad", "Bokaro"],
+  "Karnataka": ["Bengaluru", "Mysuru", "Mangaluru", "Hubballi", "Belagavi"],
+  "Kerala": ["Thiruvananthapuram", "Kochi", "Kozhikode", "Thrissur", "Munnar", "Alleppey"],
+  "Ladakh": ["Leh", "Kargil"],
+  "Lakshadweep": ["Kavaratti"],
+  "Madhya Pradesh": ["Bhopal", "Indore", "Gwalior", "Jabalpur", "Ujjain"],
+  "Maharashtra": ["Mumbai", "Pune", "Nagpur", "Nashik", "Aurangabad", "Lonavala"],
+  "Manipur": ["Imphal"],
+  "Meghalaya": ["Shillong", "Cherrapunji"],
+  "Mizoram": ["Aizawl"],
+  "Nagaland": ["Kohima", "Dimapur"],
+  "Odisha": ["Bhubaneswar", "Cuttack", "Rourkela", "Puri"],
+  "Puducherry": ["Pondicherry", "Auroville"],
+  "Punjab": ["Ludhiana", "Amritsar", "Jalandhar", "Patiala", "Mohali"],
+  "Rajasthan": ["Jaipur", "Jodhpur", "Udaipur", "Kota", "Pushkar", "Jaisalmer"],
+  "Sikkim": ["Gangtok", "Pelling", "Lachung"],
+  "Tamil Nadu": ["Chennai", "Coimbatore", "Madurai", "Ooty", "Kodaikanal"],
+  "Telangana": ["Hyderabad", "Warangal", "Nizamabad", "Karimnagar"],
+  "Tripura": ["Agartala"],
+  "Uttar Pradesh": ["Lucknow", "Kanpur", "Varanasi", "Agra", "Noida", "Mathura"],
+  "Uttarakhand": ["Dehradun", "Nainital", "Haridwar", "Rishikesh", "Mussoorie", "Almora", "Haldwani"],
+  "West Bengal": ["Kolkata", "Darjeeling", "Siliguri", "Howrah", "Durgapur"]
+};
+
+const INDIAN_STATES = Object.keys(STATE_CITY_MAP);
 
 export function Step4Property({ onNext, onBack }: { onNext: () => void, onBack: () => void }) {
   const { user, profile, checkAuth } = useAuthStore();
@@ -39,6 +105,71 @@ export function Step4Property({ onNext, onBack }: { onNext: () => void, onBack: 
   
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [registeredAddress, setRegisteredAddress] = useState(profile?.address || "");
+
+  useEffect(() => {
+    const loadPropertyData = async () => {
+      // 1. If we have a currentPropertyId in profile, load from DB
+      if (profile?.currentPropertyId) {
+        try {
+          const property = await databases.getDocument(
+            appwriteConfig.databaseId,
+            appwriteConfig.propertyCollectionId,
+            profile.currentPropertyId
+          );
+          if (property.propertyName) setPropertyName(property.propertyName);
+          if (property.propertyType) setSelectedType(property.propertyType);
+          if (property.city) setCity(property.city);
+          if (property.state) setPropertyState(property.state);
+          if (property.description) setDescription(property.description);
+        } catch(e) {
+          console.error("Failed to load property", e);
+        }
+      } else {
+        // 2. Otherwise auto-detect from registered address
+        const addr = profile?.address;
+  
+        if (addr) {
+          setRegisteredAddress(addr);
+          const lowerAddr = addr.toLowerCase();
+          let detectedState = "";
+          
+          for (const state of INDIAN_STATES) {
+            if (lowerAddr.includes(state.toLowerCase())) {
+              detectedState = state;
+              setPropertyState(state);
+              break;
+            }
+          }
+  
+          if (detectedState && STATE_CITY_MAP[detectedState]) {
+            const cities = STATE_CITY_MAP[detectedState];
+            let detectedCity = false;
+            for (const c of cities) {
+              if (lowerAddr.includes(c.toLowerCase())) {
+                setCity(c);
+                detectedCity = true;
+                break;
+              }
+            }
+            if (!detectedCity && cities.length > 0) {
+              setCity(cities[0]);
+            }
+          }
+        }
+      }
+    };
+    loadPropertyData();
+  }, [profile]);
+
+  const saveToLocal = () => {
+    // No-op, removed local storage
+  };
+
+  const handleBackClick = () => {
+    saveToLocal();
+    onBack();
+  };
 
   const slideUp: any = {
     hidden: { opacity: 0, y: 20 },
@@ -53,36 +184,75 @@ export function Step4Property({ onNext, onBack }: { onNext: () => void, onBack: 
       return;
     }
 
-    if (!user || !profile) {
-      setError("You must be logged in to save a property.");
-      return;
+    let currentUser = user;
+    let currentProfile = profile;
+
+    if (!currentUser || !currentProfile) {
+      await checkAuth();
+      const storeState = useAuthStore.getState();
+      currentUser = storeState.user;
+      currentProfile = storeState.profile;
+      
+      if (!currentUser || !currentProfile) {
+        setError("You must be logged in to save a property.");
+        return;
+      }
     }
 
     setIsLoading(true);
     try {
-      // 1. Create Property document
-      await databases.createDocument(
-        appwriteConfig.databaseId,
-        appwriteConfig.propertyCollectionId,
-        ID.unique(),
-        {
-          vendorId: user.$id,
-          propertyName,
-          propertyType: selectedType,
-          city,
-          state: propertyState,
-          description,
-          status: "Pending"
-        }
-      );
+      saveToLocal();
+      
+      const existingPropertyId = currentProfile.currentPropertyId;
+      
+      const propertyData = {
+        vendorId: currentUser.$id,
+        propertyName,
+        title: propertyName,
+        propertyType: selectedType,
+        city,
+        state: propertyState,
+        location: `${registeredAddress ? registeredAddress + ", " : ""}${city}, ${propertyState}`,
+        description,
+        price: 0,
+        status: "Pending"
+      };
 
-      // 2. Update Vendor Onboarding Step
+      let finalPropertyId = existingPropertyId;
+
+      if (existingPropertyId) {
+        // Update existing property document
+        await databases.updateDocument(
+          appwriteConfig.databaseId,
+          appwriteConfig.propertyCollectionId,
+          existingPropertyId,
+          propertyData
+        );
+      } else {
+        // Create new property document
+        const newProperty = await databases.createDocument(
+          appwriteConfig.databaseId,
+          appwriteConfig.propertyCollectionId,
+          ID.unique(),
+          propertyData,
+          [
+            Permission.read(Role.user(currentUser.$id)),
+            Permission.write(Role.user(currentUser.$id)),
+            Permission.update(Role.user(currentUser.$id)),
+            Permission.delete(Role.user(currentUser.$id))
+          ]
+        );
+        finalPropertyId = newProperty.$id;
+      }
+
+      // 2. Update Vendor Onboarding Step and currentPropertyId
       await databases.updateDocument(
         appwriteConfig.databaseId,
         appwriteConfig.vendorCollectionId,
-        profile.$id,
+        currentProfile.$id,
         {
-          onboardingStep: 4
+          onboardingStep: 4,
+          currentPropertyId: finalPropertyId
         }
       );
 
@@ -131,23 +301,39 @@ export function Step4Property({ onNext, onBack }: { onNext: () => void, onBack: 
 
         <div className="space-y-2">
           <label className="text-xs font-bold text-slate-700 uppercase tracking-wide">Property Type</label>
-          <select
-            value={selectedType}
-            onChange={(e) => setSelectedType(e.target.value)}
-            className="w-full h-12 rounded-xl border border-slate-200 bg-white px-4 focus:ring-2 focus:ring-[#E86A70]/20 focus:border-[#E86A70] transition-all font-medium text-slate-700 outline-none appearance-none cursor-pointer"
-            style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 1rem center', backgroundSize: '1.2em' }}
-          >
-            {PROPERTY_TYPES.map(type => (
-              <option key={type} value={type} className="font-medium text-slate-700">
-                {type}
-              </option>
-            ))}
-          </select>
+          <Select value={selectedType} onValueChange={(val) => { if (val) setSelectedType(val); }}>
+            <SelectTrigger className="w-full h-12! rounded-xl border-slate-200 bg-white px-4 focus:ring-2 focus:ring-[#E86A70]/20 focus:border-[#E86A70] transition-all font-medium text-slate-700">
+              <SelectValue placeholder="Select a property type" />
+            </SelectTrigger>
+            <SelectContent alignItemWithTrigger={false} className="max-h-100 w-[80vw] sm:w-150 p-2">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {PROPERTY_TYPES.map(type => (
+                  <SelectItem 
+                    key={type.name} 
+                    value={type.name} 
+                    className="flex flex-col items-start justify-center p-4 rounded-xl border border-slate-200 transition-all text-left cursor-pointer data-[state=checked]:border-slate-800 data-[state=checked]:bg-slate-50 data-[state=checked]:ring-1 data-[state=checked]:ring-slate-800 focus:bg-slate-50 focus:text-slate-900 h-24"
+                  >
+                    <div className="flex flex-col items-start gap-2 w-full">
+                      <type.icon className="w-6 h-6 stroke-[1.5px]" />
+                      <span className="font-bold text-sm whitespace-normal text-left leading-tight">{type.name}</span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </div>
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Live Google Map */}
         <div className="space-y-2">
-          <label className="text-xs font-bold text-slate-700 uppercase tracking-wide">Pin Location on Map</label>
+          <div className="flex justify-between items-end">
+            <label className="text-xs font-bold text-slate-700 uppercase tracking-wide">Pin Location on Map</label>
+            {registeredAddress && (
+              <span className="text-[10px] font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full truncate max-w-50" title={registeredAddress}>
+                📍 {registeredAddress}
+              </span>
+            )}
+          </div>
           <div className="w-full h-64 bg-slate-100 rounded-2xl border border-slate-200 overflow-hidden relative group">
             <iframe 
               width="100%" 
@@ -156,7 +342,7 @@ export function Step4Property({ onNext, onBack }: { onNext: () => void, onBack: 
               scrolling="no" 
               marginHeight={0} 
               marginWidth={0} 
-              src={`https://maps.google.com/maps?q=${encodeURIComponent(`${city}, ${propertyState}` || "India")}&t=&z=13&ie=UTF8&iwloc=&output=embed`}
+              src={`https://maps.google.com/maps?q=${encodeURIComponent(`${registeredAddress ? registeredAddress + ", " : ""}${city}, ${propertyState}` || "India")}&t=&z=13&ie=UTF8&iwloc=&output=embed`}
               className="w-full h-full"
             ></iframe>
             <div className="absolute top-4 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
@@ -169,22 +355,34 @@ export function Step4Property({ onNext, onBack }: { onNext: () => void, onBack: 
 
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
+            <label className="text-xs font-bold text-slate-700 uppercase tracking-wide">State</label>
+            <Select value={propertyState} onValueChange={(val) => { if (val) { setPropertyState(val); setCity(STATE_CITY_MAP[val]?.[0] || ""); } }}>
+              <SelectTrigger className="w-full h-12! rounded-xl border-slate-200 bg-white px-4 focus:ring-2 focus:ring-[#E86A70]/20 focus:border-[#E86A70] transition-all font-medium text-slate-700">
+                <SelectValue placeholder="Select a state" />
+              </SelectTrigger>
+              <SelectContent>
+                {INDIAN_STATES.map(state => (
+                  <SelectItem key={state} value={state} className="font-medium text-slate-700">
+                    {state}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
             <label className="text-xs font-bold text-slate-700 uppercase tracking-wide">City</label>
             <Input 
               value={city}
               onChange={(e) => setCity(e.target.value)}
+              list="city-suggestions"
               className="h-12 rounded-xl border-slate-200 bg-white focus:ring-2 focus:ring-[#E86A70]/20 focus:border-[#E86A70] transition-all font-medium" 
               placeholder="e.g. Mumbai" 
             />
-          </div>
-          <div className="space-y-2">
-            <label className="text-xs font-bold text-slate-700 uppercase tracking-wide">State</label>
-            <Input 
-              value={propertyState}
-              onChange={(e) => setPropertyState(e.target.value)}
-              className="h-12 rounded-xl border-slate-200 bg-white focus:ring-2 focus:ring-[#E86A70]/20 focus:border-[#E86A70] transition-all font-medium" 
-              placeholder="e.g. Maharashtra" 
-            />
+            <datalist id="city-suggestions">
+              {(STATE_CITY_MAP[propertyState] || []).map(c => (
+                <option key={c} value={c} />
+              ))}
+            </datalist>
           </div>
         </div>
 
@@ -201,7 +399,7 @@ export function Step4Property({ onNext, onBack }: { onNext: () => void, onBack: 
       </motion.div>
 
       <motion.div variants={slideUp} className="mt-10 flex items-center justify-between">
-        <Button onClick={onBack} variant="ghost" disabled={isLoading} className="text-slate-500 font-bold hover:bg-slate-100 rounded-full px-6">
+        <Button onClick={handleBackClick} variant="ghost" className="text-slate-500 font-bold hover:bg-slate-100 rounded-full px-6">
           <ArrowLeft className="mr-2 w-4 h-4" /> Back
         </Button>
         <Button onClick={handleNextSubmit} disabled={isLoading} className="bg-[#1F2E4A] hover:bg-[#151E2D] text-white rounded-full px-8 h-12 font-bold shadow-lg shadow-[#1F2E4A]/20 transition-all">

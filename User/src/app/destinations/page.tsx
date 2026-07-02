@@ -16,32 +16,12 @@ const allDestinations = [
 export default function DestinationsPage() {
   return (
     <div className="min-h-screen bg-white pb-20">
-      {/* Hero Section */}
-      <section className="relative h-[40vh] min-h-[300px] w-full flex items-center justify-center pt-20">
-        <Image
-          src="https://images.unsplash.com/photo-1499793983690-e29da59ef1c2?q=80&w=1920&auto=format&fit=crop"
-          alt="Uttarakhand Destinations"
-          fill
-          className="object-cover"
-          priority
-        />
-        <div className="absolute inset-0 bg-black/40" />
-        <div className="relative z-10 text-center px-4">
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-white font-heading mb-4 drop-shadow-md">
-            Explore <span className="text-brand-coral">Destinations</span>
-          </h1>
-          <p className="text-white/90 text-lg md:text-xl max-w-2xl mx-auto font-medium drop-shadow">
-            Discover the beauty of Devbhoomi through our curated list of serene and spiritual locations.
-          </p>
-        </div>
-      </section>
-
       {/* Destinations Grid */}
-      <section className="container mx-auto px-4 py-16">
+      <section className="container mx-auto px-4 py-8">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8">
           {allDestinations.map((dest) => (
             <Link href={`/search?destination=${dest.name}`} key={dest.id} className="block group">
-              <div className="relative w-full h-[400px] rounded-[24px] overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300">
+              <div className="relative w-full h-100 rounded-[24px] overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300">
                 <Image
                   src={dest.image}
                   alt={dest.name}
@@ -49,7 +29,7 @@ export default function DestinationsPage() {
                   className="object-cover group-hover:scale-110 transition-transform duration-700"
                   sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
                 />
-                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/20 to-black/90" />
+                <div className="absolute inset-0 bg-linear-to-b from-transparent via-black/20 to-black/90" />
 
                 {/* Location Tag */}
                 <div className="absolute top-4 left-4 bg-white px-4 py-1.5 rounded-full flex items-center gap-1.5 shadow-md">

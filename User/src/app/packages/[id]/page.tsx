@@ -722,7 +722,7 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
                 {['All', 'View', 'Hospitality', 'Location', 'Cleanliness', 'Amenities', 'Indoor spaces', 'Comfort', 'Getting around', 'Family', 'Condition', 'Food'].map((filter, idx) => (
                   <button 
                     key={filter}
-                    className={`px-4 py-2 rounded-full text-[14px] font-semibold whitespace-nowrap transition-colors ${idx === 0 ? 'bg-[#1F2E4A] text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+                    className={`px-4 py-2 rounded-full text-[14px] font-semibold whitespace-nowrap transition-colors ${idx === 0 ? 'bg-brand-navy text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
                   >
                     {filter}
                   </button>
@@ -733,7 +733,7 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
             {/* Content */}
             <div className="p-6 sm:p-10 overflow-y-auto grow">
               <div className="max-w-4xl mx-auto">
-                <div className="flex items-center justify-center gap-3 mb-10 text-[#1F2E4A]">
+                <div className="flex items-center justify-center gap-3 mb-10 text-brand-navy">
                   <Star size={32} className="fill-current" />
                   <h2 className="text-3xl font-black tracking-tight font-heading">4.96 · 241 reviews</h2>
                 </div>

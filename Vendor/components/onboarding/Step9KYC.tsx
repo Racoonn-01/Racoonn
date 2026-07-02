@@ -3,8 +3,10 @@
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, ArrowLeft, Upload, CheckCircle2, AlertCircle } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
+import { useAuthStore } from "@/store/authStore";
+import { databases, appwriteConfig } from "@/lib/appwrite/client";
 
 const DocUploader = ({ title, desc, docKey, isUploaded, toggleDoc }: { title: string, desc: string, docKey: any, isUploaded: boolean, toggleDoc: (k: any) => void }) => (
   <div className={cn(
@@ -44,7 +46,50 @@ const DocUploader = ({ title, desc, docKey, isUploaded, toggleDoc }: { title: st
 );
 
 export function Step9KYC({ onNext, onBack }: { onNext: () => void, onBack: () => void }) {
+  const { profile } = useAuthStore();
   const [docs, setDocs] = useState({ pan: false, aadhaar: false, lease: false });
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    if (profile) {
+      setDocs({
+        pan: !!profile.panNumber || !!profile.idProofFront, // Just an indicator for now
+        aadhaar: !!profile.aadharNumber || !!profile.idProofBack,
+        lease: !!profile.businessProof
+      });
+    }
+  }, [profile]);
+
+  const handleNextClick = async () => {
+    if (!profile) {
+      onNext();
+      return;
+    }
+    
+    setIsLoading(true);
+    try {
+      await databases.updateDocument(
+        appwriteConfig.databaseId,
+        appwriteConfig.vendorCollectionId,
+        profile.$id,
+        {
+          idProofFront: docs.pan ? "uploaded_temp_pan" : "",
+          idProofBack: docs.aadhaar ? "uploaded_temp_aadhaar" : "",
+          businessProof: docs.lease ? "uploaded_temp_lease" : ""
+        }
+      );
+      onNext();
+    } catch(e) {
+      console.error(e);
+      onNext();
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleBackClick = () => {
+    onBack();
+  };
 
   const slideUp: any = {
     hidden: { opacity: 0, y: 20 },
@@ -52,7 +97,8 @@ export function Step9KYC({ onNext, onBack }: { onNext: () => void, onBack: () =>
   };
 
   const toggleDoc = (key: keyof typeof docs) => {
-    setDocs({ ...docs, [key]: true });
+    const newDocs = { ...docs, [key]: true };
+    setDocs(newDocs);
   }
 
   return (
@@ -104,11 +150,11 @@ export function Step9KYC({ onNext, onBack }: { onNext: () => void, onBack: () =>
       </motion.div>
 
       <motion.div variants={slideUp} className="mt-10 flex items-center justify-between">
-        <Button onClick={onBack} variant="ghost" className="text-slate-500 font-bold hover:bg-slate-100 rounded-full px-6">
+        <Button onClick={handleBackClick} variant="ghost" className="text-slate-500 font-bold hover:bg-slate-100 rounded-full px-6">
           <ArrowLeft className="mr-2 w-4 h-4" /> Back
         </Button>
-        <Button onClick={onNext} className="bg-[#1F2E4A] hover:bg-[#151E2D] text-white rounded-full px-8 h-12 font-bold shadow-lg shadow-[#1F2E4A]/20 transition-all">
-          Review Application <ArrowRight className="ml-2 w-4 h-4" />
+        <Button onClick={handleNextClick} className="bg-[#E86A70] hover:bg-[#D55A60] text-white rounded-full px-8 h-12 font-bold shadow-lg shadow-[#E86A70]/20 transition-all">
+          Review & Submit <ArrowRight className="ml-2 w-4 h-4" />
         </Button>
       </motion.div>
     </motion.div>

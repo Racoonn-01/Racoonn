@@ -4,6 +4,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Building2, CalendarCheck, IndianRupee, Percent, Star, Clock, ArrowUpRight, ArrowDownRight, MoreHorizontal, CalendarIcon } from "lucide-react";
 import { motion } from "framer-motion";
+import { useEffect, useState } from "react";
+import { databases, appwriteConfig } from "@/lib/appwrite/client";
+import { Query } from "appwrite";
+import { useAuthStore } from "@/store/authStore";
 import {
   AreaChart,
   Area,
@@ -15,66 +19,66 @@ import {
 } from "recharts";
 
 const revenueData = [
-  { name: "Mon", total: 1200 },
-  { name: "Tue", total: 2100 },
-  { name: "Wed", total: 1800 },
-  { name: "Thu", total: 2400 },
-  { name: "Fri", total: 3200 },
-  { name: "Sat", total: 4100 },
-  { name: "Sun", total: 3800 },
+  { name: "Mon", total: 0 },
+  { name: "Tue", total: 0 },
+  { name: "Wed", total: 0 },
+  { name: "Thu", total: 0 },
+  { name: "Fri", total: 0 },
+  { name: "Sat", total: 0 },
+  { name: "Sun", total: 0 },
 ];
 
 const stats = [
   {
     title: "Total Properties",
-    value: "12",
+    value: "0",
     icon: Building2,
-    trend: "2 added this month",
+    trend: "0 added this month",
     trendPositive: true,
     colorClass: "text-indigo-600",
     bgClass: "bg-indigo-50",
   },
   {
     title: "Total Bookings",
-    value: "1,248",
+    value: "0",
     icon: CalendarCheck,
-    trend: "12.5% vs last month",
+    trend: "0% vs last month",
     trendPositive: true,
     colorClass: "text-emerald-600",
     bgClass: "bg-emerald-50",
   },
   {
     title: "Monthly Revenue",
-    value: "₹45,231",
+    value: "₹0",
     icon: IndianRupee,
-    trend: "8.2% vs last month",
+    trend: "0% vs last month",
     trendPositive: true,
     colorClass: "text-amber-600",
     bgClass: "bg-amber-50",
   },
   {
     title: "Occupancy Rate",
-    value: "84%",
+    value: "0%",
     icon: Percent,
-    trend: "2% vs last month",
-    trendPositive: false,
+    trend: "0% vs last month",
+    trendPositive: true,
     colorClass: "text-violet-600",
     bgClass: "bg-violet-50",
   },
   {
     title: "Average Rating",
-    value: "4.8",
+    value: "0.0",
     icon: Star,
-    trend: "0.1 vs last month",
+    trend: "0.0 vs last month",
     trendPositive: true,
     colorClass: "text-orange-600",
     bgClass: "bg-orange-50",
   },
   {
     title: "Pending Check-ins",
-    value: "18",
+    value: "0",
     icon: Clock,
-    trend: "Scheduled for today",
+    trend: "No pending check-ins",
     trendPositive: true,
     colorClass: "text-sky-600",
     bgClass: "bg-sky-50",
@@ -119,6 +123,34 @@ const avatarColors = [
 ];
 
 export default function DashboardOverview() {
+  const { user } = useAuthStore();
+  const [propertyCount, setPropertyCount] = useState<number>(0);
+
+  useEffect(() => {
+    const fetchPropertyCount = async () => {
+      if (!user) return;
+      try {
+        const propsRes = await databases.listDocuments(
+          appwriteConfig.databaseId,
+          appwriteConfig.propertyCollectionId,
+          [Query.equal("vendorId", user.$id)]
+        );
+        setPropertyCount(propsRes.total || propsRes.documents.length);
+      } catch (error) {
+        console.error("Error fetching properties count:", error);
+      }
+    };
+    fetchPropertyCount();
+  }, [user]);
+
+  // Update stats array dynamically based on fetched data
+  const dynamicStats = stats.map(stat => {
+    if (stat.title === "Total Properties") {
+      return { ...stat, value: propertyCount.toString() };
+    }
+    return stat;
+  });
+
   return (
     <div className="space-y-6">
       <div className="flex justify-end">
@@ -147,7 +179,7 @@ export default function DashboardOverview() {
         animate="show"
         className="grid gap-6 md:grid-cols-2 lg:grid-cols-3"
       >
-        {stats.map((stat) => (
+        {dynamicStats.map((stat) => (
           <motion.div key={stat.title} variants={item}>
             <Card className="border-0 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 bg-white ring-1 ring-slate-100 rounded-xl overflow-hidden group cursor-pointer">
               <CardContent className="p-6">
@@ -247,38 +279,10 @@ export default function DashboardOverview() {
             </div>
           </CardHeader>
           <CardContent className="pt-6">
-            <div className="space-y-6">
-              {[
-                { name: "Michael Scott", room: "Ocean View Suite", nights: 3, amount: "$850.00", status: "Confirmed" },
-                { name: "Sarah Jenkins", room: "Standard Room", nights: 1, amount: "$150.00", status: "Pending" },
-                { name: "Robert California", room: "Presidential Villa", nights: 5, amount: "$4,500.00", status: "Confirmed" },
-                { name: "Pam Beesly", room: "Deluxe Double", nights: 2, amount: "$400.00", status: "Completed" },
-                { name: "Jim Halpert", room: "Deluxe Double", nights: 2, amount: "$400.00", status: "Completed" },
-              ].map((booking, i) => (
-                <div key={i} className="flex items-center justify-between group hover:bg-slate-50/80 p-3 -mx-3 rounded-2xl transition-all cursor-pointer">
-                  <div className="flex items-center gap-4">
-                    <div className={`h-12 w-12 rounded-2xl flex items-center justify-center font-bold text-sm shrink-0 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3 ${avatarColors[i % avatarColors.length]}`}>
-                      {booking.name.split(' ').map(n => n[0]).join('')}
-                    </div>
-                    <div className="space-y-1">
-                      <p className="text-sm font-semibold text-secondary leading-none">{booking.name}</p>
-                      <p className="text-xs text-slate-500">
-                        {booking.room} • {booking.nights} Night{booking.nights > 1 ? 's' : ''}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="text-right space-y-1">
-                    <div className="text-sm font-bold text-secondary">{booking.amount}</div>
-                    <div className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full inline-block ${
-                      booking.status === 'Confirmed' ? 'bg-emerald-100 text-emerald-700' :
-                      booking.status === 'Pending' ? 'bg-amber-100 text-amber-700' :
-                      'bg-slate-100 text-slate-600'
-                    }`}>
-                      {booking.status}
-                    </div>
-                  </div>
-                </div>
-              ))}
+            <div className="flex flex-col items-center justify-center h-48 text-center">
+              <CalendarIcon className="w-10 h-10 text-slate-200 mb-3" />
+              <p className="text-sm font-medium text-slate-600">No recent bookings</p>
+              <p className="text-xs text-slate-400 mt-1">Bookings will appear here once guests book your properties.</p>
             </div>
           </CardContent>
         </Card>

@@ -8,27 +8,17 @@ import { IndianRupee, Download, ArrowUpRight, Wallet, TrendingUp, Calendar as Ca
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
 const revenueData = [
-  { name: "Jan", amount: 15000 },
-  { name: "Feb", amount: 18000 },
-  { name: "Mar", amount: 16500 },
-  { name: "Apr", amount: 22000 },
-  { name: "May", amount: 28000 },
-  { name: "Jun", amount: 35000 },
-  { name: "Jul", amount: 42000 },
+  { name: "Jan", amount: 0 },
+  { name: "Feb", amount: 0 },
+  { name: "Mar", amount: 0 },
+  { name: "Apr", amount: 0 },
+  { name: "May", amount: 0 },
+  { name: "Jun", amount: 0 },
+  { name: "Jul", amount: 0 },
 ];
 
-const payouts = [
-  { id: "PO-9821", date: "Oct 15, 2023", period: "Oct 1 - Oct 14", amount: "₹1,45,200", status: "Processed" },
-  { id: "PO-9820", date: "Oct 01, 2023", period: "Sep 15 - Sep 30", amount: "₹1,28,500", status: "Processed" },
-  { id: "PO-9819", date: "Sep 15, 2023", period: "Sep 1 - Sep 14", amount: "₹1,15,400", status: "Processed" },
-  { id: "PO-9818", date: "Nov 01, 2023", period: "Oct 15 - Oct 31", amount: "₹1,62,800", status: "Upcoming" },
-];
-
-const bookings = [
-  { id: "BKG-7829", guest: "Michael Scott", dates: "Oct 12 - Oct 15", total: "₹24,500", commission: "₹3,675", net: "₹20,825", status: "Completed" },
-  { id: "BKG-7830", guest: "Sarah Jenkins", dates: "Oct 14 - Oct 15", total: "₹8,500", commission: "₹1,275", net: "₹7,225", status: "Pending" },
-  { id: "BKG-7831", guest: "Robert California", dates: "Oct 18 - Oct 23", total: "₹65,000", commission: "₹9,750", net: "₹55,250", status: "Completed" },
-];
+const payouts: any[] = [];
+const bookings: any[] = [];
 
 export default function EarningsPage() {
   return (
@@ -58,7 +48,7 @@ export default function EarningsPage() {
               </span>
             </div>
             <h3 className="text-slate-500 font-medium text-sm">Net Earnings (This Month)</h3>
-            <p className="text-3xl font-heading font-bold text-secondary mt-1">₹3,45,200</p>
+            <p className="text-3xl font-heading font-bold text-secondary mt-1">₹0</p>
           </CardContent>
         </Card>
 
@@ -71,7 +61,7 @@ export default function EarningsPage() {
               </div>
             </div>
             <h3 className="text-slate-500 font-medium text-sm">Upcoming Payout</h3>
-            <p className="text-3xl font-heading font-bold text-secondary mt-1">₹1,62,800</p>
+            <p className="text-3xl font-heading font-bold text-secondary mt-1">₹0</p>
             <p className="text-xs text-slate-400 mt-2 flex items-center gap-1">
               <CalendarIcon className="w-3 h-3" /> Scheduled for Nov 01
             </p>
@@ -87,7 +77,7 @@ export default function EarningsPage() {
               </div>
             </div>
             <h3 className="text-slate-500 font-medium text-sm">Pending Clearance</h3>
-            <p className="text-3xl font-heading font-bold text-secondary mt-1">₹45,500</p>
+            <p className="text-3xl font-heading font-bold text-secondary mt-1">₹0</p>
             <p className="text-xs text-slate-400 mt-2 flex items-center gap-1">
               <Clock className="w-3 h-3" /> From recently checked-out guests
             </p>
@@ -152,25 +142,39 @@ export default function EarningsPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 text-sm">
-                    {payouts.map((payout) => (
-                      <tr key={payout.id} className="hover:bg-slate-50/80 transition-colors">
-                        <td className="p-4 pl-6 font-mono font-medium text-slate-600">{payout.id}</td>
-                        <td className="p-4 text-slate-600 font-medium">{payout.date}</td>
-                        <td className="p-4 text-slate-500">{payout.period}</td>
-                        <td className="p-4 font-bold text-secondary">{payout.amount}</td>
-                        <td className="p-4">
-                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold tracking-wide ${payout.status === 'Processed' ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'}`}>
-                            {payout.status === 'Processed' && <CheckCircle2 className="w-3 h-3" />}
-                            {payout.status}
-                          </span>
-                        </td>
-                        <td className="p-4 pr-6 text-right">
-                          <Button variant="ghost" size="sm" className="text-primary hover:text-primary hover:bg-primary/10">
-                            <Download className="w-4 h-4 mr-1.5" /> PDF
-                          </Button>
+                    {payouts.length > 0 ? (
+                      payouts.map((payout) => (
+                        <tr key={payout.id} className="hover:bg-slate-50/80 transition-colors">
+                          <td className="p-4 pl-6 font-mono font-medium text-slate-600">{payout.id}</td>
+                          <td className="p-4 text-slate-600 font-medium">{payout.date}</td>
+                          <td className="p-4 text-slate-500">{payout.period}</td>
+                          <td className="p-4 font-bold text-secondary">{payout.amount}</td>
+                          <td className="p-4">
+                            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold tracking-wide ${payout.status === 'Processed' ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'}`}>
+                              {payout.status === 'Processed' && <CheckCircle2 className="w-3 h-3" />}
+                              {payout.status}
+                            </span>
+                          </td>
+                          <td className="p-4 pr-6 text-right">
+                            <Button variant="ghost" size="sm" className="text-primary hover:text-primary hover:bg-primary/10">
+                              <Download className="w-4 h-4 mr-1.5" /> PDF
+                            </Button>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={6} className="p-16 text-center">
+                          <div className="flex flex-col items-center justify-center">
+                            <div className="h-16 w-16 bg-slate-100 rounded-full flex items-center justify-center mb-4">
+                              <Wallet className="h-8 w-8 text-slate-300" />
+                            </div>
+                            <h3 className="text-lg font-heading font-semibold text-secondary">No payouts yet</h3>
+                            <p className="text-slate-500 mt-1">Your payout history will appear here once your earnings are processed.</p>
+                          </div>
                         </td>
                       </tr>
-                    ))}
+                    )}
                   </tbody>
                 </table>
               </div>
@@ -192,16 +196,30 @@ export default function EarningsPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 text-sm">
-                    {bookings.map((booking) => (
-                      <tr key={booking.id} className="hover:bg-slate-50/80 transition-colors">
-                        <td className="p-4 pl-6 font-mono font-medium text-slate-600">{booking.id}</td>
-                        <td className="p-4 font-semibold text-secondary">{booking.guest}</td>
-                        <td className="p-4 text-slate-500">{booking.dates}</td>
-                        <td className="p-4 text-slate-600">{booking.total}</td>
-                        <td className="p-4 text-red-500">-{booking.commission}</td>
-                        <td className="p-4 font-bold text-emerald-600">{booking.net}</td>
+                    {bookings.length > 0 ? (
+                      bookings.map((booking) => (
+                        <tr key={booking.id} className="hover:bg-slate-50/80 transition-colors">
+                          <td className="p-4 pl-6 font-mono font-medium text-slate-600">{booking.id}</td>
+                          <td className="p-4 font-semibold text-secondary">{booking.guest}</td>
+                          <td className="p-4 text-slate-500">{booking.dates}</td>
+                          <td className="p-4 text-slate-600">{booking.total}</td>
+                          <td className="p-4 text-slate-500">{booking.commission}</td>
+                          <td className="p-4 font-bold text-secondary">{booking.net}</td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={6} className="p-16 text-center">
+                          <div className="flex flex-col items-center justify-center">
+                            <div className="h-16 w-16 bg-slate-100 rounded-full flex items-center justify-center mb-4">
+                              <FileText className="h-8 w-8 text-slate-300" />
+                            </div>
+                            <h3 className="text-lg font-heading font-semibold text-secondary">No earnings yet</h3>
+                            <p className="text-slate-500 mt-1">Earnings from bookings will appear here after guests check out.</p>
+                          </div>
+                        </td>
                       </tr>
-                    ))}
+                    )}
                   </tbody>
                 </table>
               </div>

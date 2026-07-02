@@ -7,14 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Search, Download, Filter, MessageSquare, FileText, Ban, MapPin, CreditCard, ArrowLeft } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
-const bookings = [
-  { id: "BKG-7829", guest: "Michael Scott", property: "Luxury Oceanfront Resort", dates: "Oct 12 - Oct 15", amount: "₹850.00", status: "Confirmed", email: "michael.s@dundermifflin.com", phone: "+1 (555) 019-8372", nationality: "United States", guests: "2 Adults", specialRequests: "Highest floor possible, please.", paymentMethod: "Visa ending in 4242" },
-  { id: "BKG-7830", guest: "Sarah Jenkins", property: "Downtown Boutique Hotel", dates: "Oct 14 - Oct 15", amount: "₹150.00", status: "Pending", email: "sarah.j@example.com", phone: "+44 7700 900077", nationality: "United Kingdom", guests: "1 Adult", specialRequests: "Late check-in around 10 PM.", paymentMethod: "Mastercard ending in 8810" },
-  { id: "BKG-7831", guest: "Robert California", property: "Mountain View Villa", dates: "Oct 18 - Oct 23", amount: "₹4,500.00", status: "Confirmed", email: "r.california@sabre.com", phone: "+1 (555) 993-2111", nationality: "United States", guests: "4 Adults, 2 Children", specialRequests: "Require extra pillows and a crib.", paymentMethod: "Amex ending in 1002" },
-  { id: "BKG-7832", guest: "Pam Beesly", property: "Luxury Oceanfront Resort", dates: "Oct 05 - Oct 07", amount: "₹400.00", status: "Completed", email: "pam.beesly@dundermifflin.com", phone: "+1 (555) 443-8822", nationality: "United States", guests: "2 Adults", specialRequests: "Anniversary trip.", paymentMethod: "Visa ending in 9091" },
-  { id: "BKG-7833", guest: "Jim Halpert", property: "Luxury Oceanfront Resort", dates: "Oct 05 - Oct 07", amount: "₹400.00", status: "Completed", email: "jim.halpert@dundermifflin.com", phone: "+1 (555) 443-8822", nationality: "United States", guests: "2 Adults", specialRequests: "", paymentMethod: "Visa ending in 9091" },
-  { id: "BKG-7834", guest: "Dwight Schrute", property: "Mountain View Villa", dates: "Nov 01 - Nov 05", amount: "₹2,200.00", status: "Cancelled", email: "dwight.schrute@schrutefarms.com", phone: "+1 (555) 999-1111", nationality: "United States", guests: "1 Adult", specialRequests: "Need space for a large beet collection.", paymentMethod: "PayPal" },
-];
+const bookings: any[] = [];
 
 export default function BookingsPage() {
   const [selectedBooking, setSelectedBooking] = useState<any>(null);
@@ -73,42 +66,56 @@ export default function BookingsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-sm">
-              {bookings.map((booking, i) => (
-                <motion.tr 
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: i * 0.05 }}
-                  key={booking.id} 
-                  onClick={() => setSelectedBooking(booking)}
-                  className="hover:bg-slate-50/80 transition-colors group cursor-pointer"
-                >
-                  <td className="p-4 font-mono font-medium text-slate-600">{booking.id}</td>
-                  <td className="p-4 font-semibold text-secondary flex items-center gap-3">
-                    <div className="h-8 w-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs">
-                      {booking.guest.split(' ').map(n => n[0]).join('')}
+              {bookings.length > 0 ? (
+                bookings.map((booking, i) => (
+                  <motion.tr 
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: i * 0.05 }}
+                    key={booking.id} 
+                    onClick={() => setSelectedBooking(booking)}
+                    className="hover:bg-slate-50/80 transition-colors group cursor-pointer"
+                  >
+                    <td className="p-4 font-mono font-medium text-slate-600">{booking.id}</td>
+                    <td className="p-4 font-semibold text-secondary flex items-center gap-3">
+                      <div className="h-8 w-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs">
+                        {booking.guest.split(' ').map((n: string) => n[0]).join('')}
+                      </div>
+                      {booking.guest}
+                    </td>
+                    <td className="p-4 text-slate-600">{booking.property}</td>
+                    <td className="p-4 text-slate-500 whitespace-nowrap">{booking.dates}</td>
+                    <td className="p-4 font-semibold text-secondary text-right">{booking.amount}</td>
+                    <td className="p-4 text-center">
+                      <span className={`inline-block px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                        booking.status === 'Confirmed' ? 'bg-emerald-100 text-emerald-700' :
+                        booking.status === 'Pending' ? 'bg-amber-100 text-amber-700' :
+                        booking.status === 'Cancelled' ? 'bg-red-100 text-red-700' :
+                        'bg-slate-100 text-slate-700'
+                      }`}>
+                        {booking.status}
+                      </span>
+                    </td>
+                    <td className="p-4 text-center">
+                      <Button variant="ghost" size="sm" className="text-primary font-medium opacity-0 group-hover:opacity-100 transition-opacity">
+                        Manage
+                      </Button>
+                    </td>
+                  </motion.tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={7} className="p-16 text-center">
+                    <div className="flex flex-col items-center justify-center">
+                      <div className="h-16 w-16 bg-slate-100 rounded-full flex items-center justify-center mb-4">
+                        <FileText className="h-8 w-8 text-slate-300" />
+                      </div>
+                      <h3 className="text-lg font-heading font-semibold text-secondary">No bookings found</h3>
+                      <p className="text-slate-500 mt-1">You don't have any bookings yet.</p>
                     </div>
-                    {booking.guest}
                   </td>
-                  <td className="p-4 text-slate-600">{booking.property}</td>
-                  <td className="p-4 text-slate-500 whitespace-nowrap">{booking.dates}</td>
-                  <td className="p-4 font-semibold text-secondary text-right">{booking.amount}</td>
-                  <td className="p-4 text-center">
-                    <span className={`inline-block px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                      booking.status === 'Confirmed' ? 'bg-emerald-100 text-emerald-700' :
-                      booking.status === 'Pending' ? 'bg-amber-100 text-amber-700' :
-                      booking.status === 'Cancelled' ? 'bg-red-100 text-red-700' :
-                      'bg-slate-100 text-slate-700'
-                    }`}>
-                      {booking.status}
-                    </span>
-                  </td>
-                  <td className="p-4 text-center">
-                    <Button variant="ghost" size="sm" className="text-primary font-medium opacity-0 group-hover:opacity-100 transition-opacity">
-                      Manage
-                    </Button>
-                  </td>
-                </motion.tr>
-              ))}
+                </tr>
+              )}
             </tbody>
           </table>
         </CardContent>

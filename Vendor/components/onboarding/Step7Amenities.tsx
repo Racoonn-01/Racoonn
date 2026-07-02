@@ -3,8 +3,10 @@
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, ArrowLeft, Wifi, Dumbbell, Car, Coffee, Wind, Tv, Snowflake, UtensilsCrossed, PawPrint, Wine, Clock, Sparkles, Plane, Shirt, Sun, Zap, Users, Accessibility } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
+import { useAuthStore } from "@/store/authStore";
+import { databases, appwriteConfig } from "@/lib/appwrite/client";
 
 const AMENITIES = [
   { id: "wifi", name: "Free WiFi", icon: Wifi },
@@ -28,7 +30,62 @@ const AMENITIES = [
 ];
 
 export function Step7Amenities({ onNext, onBack }: { onNext: () => void, onBack: () => void }) {
+  const { profile } = useAuthStore();
   const [selected, setSelected] = useState<string[]>(["wifi", "parking"]);
+  const [checkIn, setCheckIn] = useState("2:00 PM");
+  const [checkOut, setCheckOut] = useState("11:00 AM");
+  const [cancellationPolicy, setCancellationPolicy] = useState("Flexible (Full refund 1 day prior)");
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchProperty = async () => {
+      if (profile?.currentPropertyId) {
+        try {
+          const prop = await databases.getDocument(
+            appwriteConfig.databaseId,
+            appwriteConfig.propertyCollectionId,
+            profile.currentPropertyId
+          );
+          if (prop.amenities && prop.amenities.length > 0) setSelected(prop.amenities);
+          if (prop.checkInTime) setCheckIn(prop.checkInTime);
+          if (prop.checkOutTime) setCheckOut(prop.checkOutTime);
+          if (prop.cancellationPolicy) setCancellationPolicy(prop.cancellationPolicy);
+        } catch(e) {}
+      }
+    };
+    fetchProperty();
+  }, [profile]);
+
+  const handleNextClick = async () => {
+    if (!profile?.currentPropertyId) {
+      onNext();
+      return;
+    }
+    setIsLoading(true);
+    try {
+      await databases.updateDocument(
+        appwriteConfig.databaseId,
+        appwriteConfig.propertyCollectionId,
+        profile.currentPropertyId,
+        {
+          amenities: selected,
+          checkInTime: checkIn,
+          checkOutTime: checkOut,
+          cancellationPolicy: cancellationPolicy
+        }
+      );
+      onNext();
+    } catch (e) {
+      console.error(e);
+      onNext();
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleBackClick = () => {
+    onBack();
+  };
 
   const toggle = (id: string) => {
     if (selected.includes(id)) setSelected(selected.filter(s => s !== id));
@@ -87,7 +144,11 @@ export function Step7Amenities({ onNext, onBack }: { onNext: () => void, onBack:
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <label className="text-xs font-bold text-slate-500">Check-in Time</label>
-              <select className="w-full h-12 rounded-xl border border-slate-200 bg-white px-4 font-bold text-slate-700 outline-none focus:border-[#E86A70]" defaultValue="2:00 PM">
+              <select 
+                value={checkIn}
+                onChange={(e) => setCheckIn(e.target.value)}
+                className="w-full h-12 rounded-xl border border-slate-200 bg-white px-4 font-bold text-slate-700 outline-none focus:border-[#E86A70]"
+              >
                 <option>12:00 PM</option>
                 <option>1:00 PM</option>
                 <option>2:00 PM</option>
@@ -96,7 +157,11 @@ export function Step7Amenities({ onNext, onBack }: { onNext: () => void, onBack:
             </div>
             <div className="space-y-2">
               <label className="text-xs font-bold text-slate-500">Check-out Time</label>
-              <select className="w-full h-12 rounded-xl border border-slate-200 bg-white px-4 font-bold text-slate-700 outline-none focus:border-[#E86A70]" defaultValue="11:00 AM">
+              <select 
+                value={checkOut}
+                onChange={(e) => setCheckOut(e.target.value)}
+                className="w-full h-12 rounded-xl border border-slate-200 bg-white px-4 font-bold text-slate-700 outline-none focus:border-[#E86A70]"
+              >
                 <option>10:00 AM</option>
                 <option>11:00 AM</option>
                 <option>12:00 PM</option>
@@ -106,7 +171,11 @@ export function Step7Amenities({ onNext, onBack }: { onNext: () => void, onBack:
 
           <div className="space-y-2 mt-4">
             <label className="text-xs font-bold text-slate-500">Cancellation Policy</label>
-            <select className="w-full h-12 rounded-xl border border-slate-200 bg-white px-4 font-bold text-slate-700 outline-none focus:border-[#E86A70]">
+            <select 
+              value={cancellationPolicy}
+              onChange={(e) => setCancellationPolicy(e.target.value)}
+              className="w-full h-12 rounded-xl border border-slate-200 bg-white px-4 font-bold text-slate-700 outline-none focus:border-[#E86A70]"
+            >
               <option>Flexible (Full refund 1 day prior)</option>
               <option>Moderate (Full refund 5 days prior)</option>
               <option>Strict (50% refund up to 1 week prior)</option>
@@ -118,10 +187,10 @@ export function Step7Amenities({ onNext, onBack }: { onNext: () => void, onBack:
       </motion.div>
 
       <motion.div variants={slideUp} className="mt-10 flex items-center justify-between">
-        <Button onClick={onBack} variant="ghost" className="text-slate-500 font-bold hover:bg-slate-100 rounded-full px-6">
+        <Button onClick={handleBackClick} variant="ghost" className="text-slate-500 font-bold hover:bg-slate-100 rounded-full px-6">
           <ArrowLeft className="mr-2 w-4 h-4" /> Back
         </Button>
-        <Button onClick={onNext} className="bg-[#1F2E4A] hover:bg-[#151E2D] text-white rounded-full px-8 h-12 font-bold shadow-lg shadow-[#1F2E4A]/20 transition-all">
+        <Button onClick={handleNextClick} className="bg-[#1F2E4A] hover:bg-[#151E2D] text-white rounded-full px-8 h-12 font-bold shadow-lg shadow-[#1F2E4A]/20 transition-all">
           Bank Details <ArrowRight className="ml-2 w-4 h-4" />
         </Button>
       </motion.div>

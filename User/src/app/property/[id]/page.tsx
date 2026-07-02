@@ -1,4 +1,4 @@
-import Link from 'next/link';
+
 import Image from 'next/image';
 import {
   MapPin,
@@ -7,8 +7,6 @@ import {
   Heart,
   Wifi,
   Coffee,
-  Wind,
-  Tv,
   Car,
   Waves,
   ChevronDown,
@@ -24,6 +22,8 @@ import RoomImageSlider from '@/components/property/RoomImageSlider';
 import PropertyPhotoGallery from '@/components/property/PropertyPhotoGallery';
 import PropertyReviews from '@/components/property/PropertyReviews';
 import PropertyAmenities from '@/components/property/PropertyAmenities';
+import ReserveButton from '@/components/property/ReserveButton';
+import GuestSelector from '@/components/property/GuestSelector';
 
 export default async function PropertyDetails({ params }: { params: { id: string } }) {
   const id = params?.id || '1';
@@ -51,7 +51,7 @@ export default async function PropertyDetails({ params }: { params: { id: string
     <div className="min-h-screen bg-white text-[#222222]">
 
       {/* Container */}
-      <div className="max-w-[1120px] mx-auto px-6 pt-8 pb-24">
+      <div className="max-w-280 mx-auto px-6 pt-8 pb-24">
 
         {/* Top Header Section */}
         <div className="mb-6">
@@ -131,16 +131,7 @@ export default async function PropertyDetails({ params }: { params: { id: string
                     <input type="date" className="text-[15px] text-brand-navy font-medium bg-transparent outline-none w-full cursor-pointer" defaultValue="2024-05-26" />
                   </div>
                 </div>
-                <div className="flex-1 p-3 hover:bg-gray-50 transition-colors flex items-center justify-between relative cursor-pointer">
-                  <div className="flex items-center gap-3">
-                    <Users className="text-gray-400 shrink-0 ml-2" size={20} />
-                    <div>
-                      <div className="text-[15px] text-brand-navy font-medium">1 room</div>
-                      <div className="text-[13px] text-gray-500">2 adults</div>
-                    </div>
-                  </div>
-                  <ChevronDown className="text-gray-400 mr-2" size={18} />
-                </div>
+                <GuestSelector />
               </div>
               <button className="w-full xl:w-16 h-14 xl:h-auto rounded-2xl bg-brand-navy/5 text-brand-navy flex items-center justify-center hover:bg-brand-navy hover:text-white transition-all font-semibold xl:font-normal">
                 <RefreshCw size={22} className="mr-2 xl:mr-0 hidden xl:block" />
@@ -198,11 +189,7 @@ export default async function PropertyDetails({ params }: { params: { id: string
                     </div>
                   </div>
                   <p className="text-[13px] text-gray-500 mb-6">per night<br />Includes taxes</p>
-                  <Link href={`/checkout?roomName=${encodeURIComponent("Luxury Suite with Lake View")}&price=32000`} className="w-full block">
-                    <button className="w-full py-3 bg-brand-navy text-white rounded-xl font-bold hover:bg-opacity-90 transition-all">
-                      Reserve
-                    </button>
-                  </Link>
+                  <ReserveButton roomName="Luxury Suite with Lake View" price={32000} />
                 </div>
               </div>
 
@@ -242,11 +229,7 @@ export default async function PropertyDetails({ params }: { params: { id: string
                     </div>
                   </div>
                   <p className="text-[13px] text-gray-500 mb-6">per night<br />Includes taxes</p>
-                  <Link href={`/checkout?roomName=${encodeURIComponent("Premium Garden Villa")}&price=42000`} className="w-full block">
-                    <button className="w-full py-3 bg-brand-navy text-white rounded-xl font-bold hover:bg-opacity-90 transition-all">
-                      Reserve
-                    </button>
-                  </Link>
+                  <ReserveButton roomName="Premium Garden Villa" price={42000} />
                 </div>
               </div>
             </div>
@@ -271,9 +254,9 @@ export default async function PropertyDetails({ params }: { params: { id: string
               </div>
             </div>
 
-            <div className="max-w-[800px]">
+            <div className="max-w-200">
               <p className="text-[16px] text-gray-700 leading-[1.7] font-light mb-4">
-                Experience unparalleled luxury at our flagship property. Nestled in the heart of the city's most prestigious district, this resort offers panoramic views, bespoke furnishings, and world-class amenities.
+                Experience unparalleled luxury at our flagship property. Nestled in the heart of the city&apos;s most prestigious district, this resort offers panoramic views, bespoke furnishings, and world-class amenities.
               </p>
               <p className="text-[16px] text-gray-700 leading-[1.7] font-light">
                 Every detail has been curated to provide a sophisticated and serene sanctuary. Enjoy 24/7 butler service, private dining experiences, and exclusive access to the spa and infinity pool.
@@ -288,7 +271,7 @@ export default async function PropertyDetails({ params }: { params: { id: string
           <div id="location" className="scroll-mt-24 border-t border-gray-200 pt-12">
             <h2 className="text-[24px] font-semibold text-brand-navy mb-6">Location</h2>
             <p className="text-[16px] text-gray-700 mb-6">{location}</p>
-            <div className="w-full h-[400px] bg-gray-200 rounded-2xl overflow-hidden relative shadow-sm border border-gray-200">
+            <div className="w-full h-100 bg-gray-200 rounded-2xl overflow-hidden relative shadow-sm border border-gray-200">
               <iframe
                 width="100%"
                 height="100%"

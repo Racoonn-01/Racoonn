@@ -42,12 +42,15 @@ export default function OnboardingPage() {
     }
   }, [step, user, profile]);
 
+  const [hasSyncedInitialStep, setHasSyncedInitialStep] = useState(false);
+
   // Update local state if profile loads asynchronously after mount
   useEffect(() => {
-    if (profile?.onboardingStep && profile.onboardingStep > step) {
+    if (profile?.onboardingStep && !hasSyncedInitialStep) {
       setStep(profile.onboardingStep);
+      setHasSyncedInitialStep(true);
     }
-  }, [profile?.onboardingStep, step]);
+  }, [profile?.onboardingStep, hasSyncedInitialStep]);
 
   const nextStep = () => setStep((s) => Math.min(s + 1, 12));
   const prevStep = () => setStep((s) => Math.max(s - 1, 0));

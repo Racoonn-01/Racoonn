@@ -1,10 +1,11 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import PropertyCard, { Property } from '@/components/search/PropertyCard';
 import MapMockup from '@/components/search/MapMockup';
-import { SlidersHorizontal, Map as MapIcon, ChevronDown, List } from 'lucide-react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { SlidersHorizontal, ChevronDown } from 'lucide-react';
+import FilterModal, { FilterState } from '@/components/search/FilterModal';
 
 const mockProperties: Property[] = [
   {
@@ -75,10 +76,13 @@ const filters = [
   'Price', 'Type of place', 'Washing machine', 'WiFi', 'Allows pets', 'Instant Book', 'Air conditioning', 'Free parking', 'TV', 'Kitchen'
 ];
 
-export default function SearchPage() {
+function SearchContent() {
+  const searchParams = useSearchParams();
+  const location = searchParams.get('location') || 'Delhi NCR';
   const [selectedFilters, setSelectedFilters] = useState<string[]>([]);
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
-  const [showFilters, setShowFilters] = useState(false);
+  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+  const [advancedFilters, setAdvancedFilters] = useState<FilterState | null>(null);
 
   const toggleFilter = (filter: string) => {
     if (selectedFilters.includes(filter)) {
@@ -89,19 +93,87 @@ export default function SearchPage() {
   };
 
   const filteredProperties = mockProperties.filter(property => {
-    if (selectedFilters.length === 0) return true;
-    
     const searchString = `${property.title} ${property.subtitle} ${property.details}`.toLowerCase();
-    
-    // Simple text match logic for the demo
-    return selectedFilters.every(filter => {
-      const f = filter.toLowerCase();
-      if (f === 'wifi') return searchString.includes('wi-fi') || searchString.includes('wifi');
-      if (f === 'free parking') return searchString.includes('parking');
-      if (f === 'kitchen') return searchString.includes('kitchen');
-      // If it's a dropdown filter or one we don't have mock data for, don't hide the property
-      return true; 
-    });
+
+    // 1. Check quick filters
+    if (selectedFilters.length > 0) {
+      const quickMatch = selectedFilters.every(filter => {
+        const f = filter.toLowerCase();
+        if (f === 'wifi') return searchString.includes('wi-fi') || searchString.includes('wifi');
+        if (f === 'free parking') return searchString.includes('parking');
+        if (f === 'kitchen') return searchString.includes('kitchen');
+        return true; 
+      });
+      if (!quickMatch) return false;
+    }
+
+    // 2. Check advanced filters from modal
+    if (advancedFilters) {
+      // Price
+      if (property.price < advancedFilters.minPrice || property.price > advancedFilters.maxPrice) {
+        return false;
+      }
+
+      // Rooms and beds (parse from `property.details`)
+      const extractNumber = (keyword: string) => {
+        const regex = new RegExp(`(\\d+)\\s+${keyword}`);
+        const match = property.details.match(regex);
+        return match ? parseInt(match[1], 10) : 0;
+      };
+
+      if (advancedFilters.bedrooms !== 'Any') {
+        const bedrooms = extractNumber('bedroom');
+        if (bedrooms < advancedFilters.bedrooms) return false;
+      }
+
+      if (advancedFilters.beds !== 'Any') {
+        const beds = extractNumber('bed');
+        if (beds < advancedFilters.beds) return false;
+      }
+
+      if (advancedFilters.bathrooms !== 'Any') {
+        const bathrooms = extractNumber('bathroom');
+        if (bathrooms < advancedFilters.bathrooms) return false;
+      }
+
+      // Property Types (check title/subtitle)
+      if (advancedFilters.selectedPropertyTypes.length > 0) {
+        const hasType = advancedFilters.selectedPropertyTypes.some(type => 
+          property.title.toLowerCase().includes(type.toLowerCase()) || 
+          property.subtitle.toLowerCase().includes(type.toLowerCase())
+        );
+        if (!hasType) return false;
+      }
+
+      // Amenities (best effort text match)
+      if (advancedFilters.selectedAmenities.length > 0) {
+        const hasAmenities = advancedFilters.selectedAmenities.every(amenity => {
+          const a = amenity.toLowerCase();
+          if (a === 'wifi') return searchString.includes('wi-fi') || searchString.includes('wifi');
+          if (a === 'kitchen') return searchString.includes('kitchen');
+          // For other amenities not in mock data strings, we'll gracefully ignore or we could strict match and return false.
+          // Since our mock data is small, strict matching would return 0 results. 
+          // But a true filter should be strict. Let's do a loose match if they aren't common keywords.
+          if (['wifi', 'kitchen', 'parking'].some(k => a.includes(k))) {
+             return searchString.includes(a);
+          }
+          return true;
+        });
+        if (!hasAmenities) return false;
+      }
+
+      // Booking Options
+      if (advancedFilters.selectedBookingOptions.length > 0) {
+        const hasBookingOptions = advancedFilters.selectedBookingOptions.every(option => {
+           if (option === 'Instant Book' && !property.isSuperhost) return false; // mockup logic
+           if (option === 'Allows pets' && !searchString.includes('pet')) return true; // allow since no data
+           return true;
+        });
+        if (!hasBookingOptions) return false;
+      }
+    }
+
+    return true;
   });
 
   return (
@@ -110,41 +182,28 @@ export default function SearchPage() {
       <div className="relative shrink-0">
         <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center gap-3 overflow-x-auto hide-scrollbar">
           <button 
-            className={`flex items-center gap-2 border rounded-full px-4 py-2 transition-colors shrink-0 font-medium text-sm ${showFilters ? 'border-gray-900 bg-gray-100 text-gray-900' : 'border-gray-300 hover:border-gray-900 text-gray-700'}`}
-            onClick={() => {
-              setShowFilters(!showFilters);
-              if (showFilters) {
-                setActiveDropdown(null);
-              }
-            }}
+            className="flex items-center gap-2 border border-gray-300 hover:border-gray-900 rounded-full px-4 py-2 transition-colors shrink-0 font-medium text-[14px] text-gray-700"
+            onClick={() => setIsFilterModalOpen(true)}
           >
             <SlidersHorizontal size={16} /> Filters
           </button>
           
-          <AnimatePresence>
-            {showFilters && (
-              <motion.div 
-                initial={{ width: 0, opacity: 0, paddingLeft: 0 }}
-                animate={{ width: "auto", opacity: 1, paddingLeft: 8 }}
-                exit={{ width: 0, opacity: 0, paddingLeft: 0 }}
-                transition={{ duration: 0.3, ease: "easeInOut" }}
-                className="flex items-center gap-3 overflow-hidden origin-left shrink-0"
-              >
-                <div className="h-8 w-px bg-gray-200 shrink-0 mr-1" />
-                {filters.map((filter, idx) => {
+          <div className="h-8 w-px bg-gray-200 shrink-0 mx-1" />
+          
+          {filters.map((filter, idx) => {
             const isDropdown = idx < 2; // Price, Type of place
-            const isSelected = selectedFilters.includes(filter) || activeDropdown === filter;
+            const isSelected = selectedFilters.includes(filter);
 
             if (isDropdown) {
               return (
                 <button 
                   key={idx}
-                  onClick={() => setActiveDropdown(activeDropdown === filter ? null : filter)}
+                  onClick={() => setIsFilterModalOpen(true)}
                   className={`flex items-center gap-2 border rounded-full px-4 py-2 transition-colors shrink-0 font-medium text-[14px] ${
                     isSelected ? 'border-gray-900 bg-gray-100 text-gray-900' : 'border-gray-300 hover:border-gray-900 text-gray-700'
                   }`}
                 >
-                  {filter} <ChevronDown size={14} className={activeDropdown === filter ? "rotate-180 transition-transform" : "transition-transform"} />
+                  {filter} <ChevronDown size={14} />
                 </button>
               );
             }
@@ -161,82 +220,7 @@ export default function SearchPage() {
               </button>
             );
           })}
-              </motion.div>
-            )}
-          </AnimatePresence>
         </div>
-
-        {/* Dropdown Panels */}
-        {activeDropdown && (
-          <div className="fixed top-24 left-4 right-4 z-40 bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden md:left-35 md:right-auto md:w-96 lg:left-auto lg:right-6 lg:w-100 xl:w-125 animate-in fade-in slide-in-from-top-2">
-            <div className="flex flex-col gap-4 p-5">
-              {activeDropdown === 'Price' ? (
-                <>
-                  <div className="font-semibold text-gray-900 mb-1">Price range</div>
-                  <p className="text-sm text-gray-500 mb-2">Nightly prices before fees and taxes</p>
-                  <div className="flex items-center gap-4">
-                    <div className="flex-1">
-                      <label className="text-xs font-medium text-gray-500 uppercase">Minimum</label>
-                      <div className="border border-gray-300 rounded-lg px-3 py-2 mt-1 flex items-center focus-within:border-gray-900 focus-within:ring-1 focus-within:ring-gray-900 transition-all">
-                        <span className="text-gray-500 mr-2">₹</span>
-                        <input type="number" placeholder="1000" className="w-full outline-none text-sm text-gray-900" />
-                      </div>
-                    </div>
-                    <div className="h-px w-4 bg-gray-300 mt-6" />
-                    <div className="flex-1">
-                      <label className="text-xs font-medium text-gray-500 uppercase">Maximum</label>
-                      <div className="border border-gray-300 rounded-lg px-3 py-2 mt-1 flex items-center focus-within:border-gray-900 focus-within:ring-1 focus-within:ring-gray-900 transition-all">
-                        <span className="text-gray-500 mr-2">₹</span>
-                        <input type="number" placeholder="50000+" className="w-full outline-none text-sm text-gray-900" />
-                      </div>
-                    </div>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div className="font-semibold text-gray-900 mb-1">Type of place</div>
-                  <p className="text-sm text-gray-500 mb-2">Search rooms, entire homes, or any type of place</p>
-                  <div className="space-y-4">
-                    <label className="flex items-start gap-3 cursor-pointer group">
-                      <div className="pt-0.5">
-                        <input type="checkbox" className="w-5 h-5 rounded border-gray-300 text-gray-900 focus:ring-gray-900" />
-                      </div>
-                      <div>
-                        <div className="font-medium text-gray-900 group-hover:underline">Entire place</div>
-                        <div className="text-sm text-gray-500">A place all to yourself</div>
-                      </div>
-                    </label>
-                    <label className="flex items-start gap-3 cursor-pointer group">
-                      <div className="pt-0.5">
-                        <input type="checkbox" className="w-5 h-5 rounded border-gray-300 text-gray-900 focus:ring-gray-900" />
-                      </div>
-                      <div>
-                        <div className="font-medium text-gray-900 group-hover:underline">Private room</div>
-                        <div className="text-sm text-gray-500">Your own room in a home or hotel, plus some shared common spaces</div>
-                      </div>
-                    </label>
-                    <label className="flex items-start gap-3 cursor-pointer group">
-                      <div className="pt-0.5">
-                        <input type="checkbox" className="w-5 h-5 rounded border-gray-300 text-gray-900 focus:ring-gray-900" />
-                      </div>
-                      <div>
-                        <div className="font-medium text-gray-900 group-hover:underline">Shared room</div>
-                        <div className="text-sm text-gray-500">A sleeping space and common areas that may be shared with others</div>
-                      </div>
-                    </label>
-                  </div>
-                </>
-              )}
-              <div className="flex justify-between items-center mt-2 pt-4 border-t border-gray-100">
-                <button className="text-sm font-medium underline text-gray-900 hover:text-gray-600 transition-colors" onClick={() => setActiveDropdown(null)}>Clear</button>
-                <button className="bg-gray-900 text-white px-5 py-2 rounded-lg text-sm font-bold hover:bg-gray-800 transition-colors" onClick={() => {
-                  toggleFilter(activeDropdown);
-                  setActiveDropdown(null);
-                }}>Apply</button>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Main Split Layout */}
@@ -256,7 +240,7 @@ export default function SearchPage() {
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end mb-6 gap-4">
               <div>
                 <h1 className="text-[24px] lg:text-[28px] font-bold text-gray-900">Over 1,000 homes</h1>
-                <p className="text-[14px] lg:text-[15px] text-gray-600 mt-1">Stays in Delhi NCR</p>
+                <p className="text-[14px] lg:text-[15px] text-gray-600 mt-1">Stays in {location}</p>
               </div>
 
             </div>
@@ -282,6 +266,23 @@ export default function SearchPage() {
         </div>
 
       </div>
+
+      {/* Filter Modal */}
+      <FilterModal 
+        isOpen={isFilterModalOpen} 
+        onClose={() => setIsFilterModalOpen(false)} 
+        initialFilters={advancedFilters || undefined}
+        onApply={(filters) => setAdvancedFilters(filters)}
+        matchCount={filteredProperties.length}
+      />
     </div>
+  );
+}
+
+export default function SearchPage() {
+  return (
+    <Suspense fallback={<div>Loading search results...</div>}>
+      <SearchContent />
+    </Suspense>
   );
 }

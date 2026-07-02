@@ -11,16 +11,22 @@ export async function POST(req: Request) {
       );
     }
 
-    // Simulate network delay
-    await new Promise((resolve) => setTimeout(resolve, 800));
+    // Proxy to Express Backend server
+    const response = await fetch('http://localhost:5005/api/otp/send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ method, identifier })
+    });
 
-    // In a real app, this would use Twilio/SendGrid to send the code.
-    // For now, we mock success and log to server console.
-    console.log(`[Mock API] Sent OTP '123456' to ${method}: ${identifier}`);
+    const data = await response.json();
+
+    if (!response.ok) {
+      return NextResponse.json(data, { status: response.status });
+    }
 
     return NextResponse.json({ success: true, message: `OTP sent successfully to ${identifier}` });
   } catch (error) {
-    console.error('Error sending OTP:', error);
+    console.error('Error proxying OTP send:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

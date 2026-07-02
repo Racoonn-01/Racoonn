@@ -1,9 +1,9 @@
-import React from "react";
+import React, { Suspense } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Headphones } from "lucide-react";
 import { CheckoutProgress } from "@/components/checkout/CheckoutProgress";
-import { BookingSummary } from "@/components/checkout/BookingSummary";
+
 import { CheckoutFlow } from "@/components/checkout/CheckoutFlow";
 import { CheckoutSidebar } from "@/components/checkout/CheckoutSidebar";
 import { MobileCheckoutBar } from "@/components/checkout/MobileCheckoutBar";
@@ -28,9 +28,9 @@ export default function CheckoutPage({ searchParams }: { searchParams: { [key: s
   const totalAmount = roomPrice + taxes + addons - discount;
 
   return (
-    <div className="min-h-screen bg-[#F4F0EA] pb-24 md:pb-12 text-[#333333] font-inter">
+    <div className="min-h-screen bg-brand-sand pb-24 md:pb-12 text-brand-charcoal font-inter">
       {/* Checkout Progress */}
-      <div className="bg-white/80 backdrop-blur-md border-b border-[#DCE8F5] sticky top-0 z-40 shadow-sm transition-all duration-300">
+      <div className="bg-white/80 backdrop-blur-md border-b border-brand-sky sticky top-0 z-40 shadow-sm transition-all duration-300">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 md:py-4 flex flex-col md:flex-row items-center justify-between gap-4 md:gap-8">
           <div className="flex w-full md:w-auto items-center justify-between shrink-0">
             <Link href="/" className="hover:opacity-80 transition-opacity">
@@ -39,7 +39,7 @@ export default function CheckoutPage({ searchParams }: { searchParams: { [key: s
             
             {/* Mobile Customer Care Button */}
             <div className="lg:hidden flex items-center">
-              <button className="flex items-center gap-1.5 text-xs font-medium text-[#1F2E4A] hover:text-[#E86A70] bg-[#F4F0EA] px-3 py-1.5 rounded-full">
+              <button className="flex items-center gap-1.5 text-xs font-medium text-brand-navy hover:text-brand-coral bg-brand-sand px-3 py-1.5 rounded-full">
                 <Headphones className="w-3.5 h-3.5" />
                 <span>Support</span>
               </button>
@@ -51,8 +51,8 @@ export default function CheckoutPage({ searchParams }: { searchParams: { [key: s
           </div>
 
           {/* Desktop Customer Care Button */}
-          <div className="shrink-0 hidden lg:flex justify-end min-w-[150px]">
-            <button className="flex items-center gap-2 text-sm font-medium text-[#1F2E4A] hover:text-[#E86A70] transition-colors bg-[#F4F0EA] hover:bg-[#E86A70]/10 px-4 py-2 rounded-full">
+          <div className="shrink-0 hidden lg:flex justify-end min-w-37.5">
+            <button className="flex items-center gap-2 text-sm font-medium text-brand-navy hover:text-brand-coral transition-colors bg-brand-sand hover:bg-brand-coral/10 px-4 py-2 rounded-full">
               <Headphones className="w-4 h-4" />
               <span className="whitespace-nowrap">Customer Care</span>
             </button>
@@ -63,7 +63,9 @@ export default function CheckoutPage({ searchParams }: { searchParams: { [key: s
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Left Section (70%) */}
-          <CheckoutFlow />
+          <Suspense fallback={<div className="flex-1 animate-pulse bg-gray-100 rounded-xl h-96"></div>}>
+            <CheckoutFlow />
+          </Suspense>
 
           {/* Right Sticky Booking Summary (30%) */}
           <CheckoutSidebar

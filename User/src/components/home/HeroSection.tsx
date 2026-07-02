@@ -3,11 +3,12 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { format } from 'date-fns';
 import chatbotLogo from '@/assets/Racoonn-Logo-03.png';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Home,
   Palmtree,
@@ -18,7 +19,9 @@ import {
   ChevronDown,
   ArrowRight,
   Plus,
-  Minus
+  Minus,
+  Mic,
+  MicOff
 } from 'lucide-react';
 
 const tabs = [
@@ -34,6 +37,7 @@ const heroImages = [
 ];
 
 export default function HeroSection() {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState('stays');
   const [checkIn, setCheckIn] = useState<Date>();
   const [checkOut, setCheckOut] = useState<Date>();
@@ -42,6 +46,80 @@ export default function HeroSection() {
   const [rooms, setRooms] = useState(0);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isChatMode, setIsChatMode] = useState(false);
+  const [destination, setDestination] = useState('');
+  const [suggestions, setSuggestions] = useState<{name: string, district: string, state: string}[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
+  const [isCheckInOpen, setIsCheckInOpen] = useState(false);
+  const [isCheckOutOpen, setIsCheckOutOpen] = useState(false);
+  const [chatQuery, setChatQuery] = useState('');
+  const [isRecording, setIsRecording] = useState(false);
+
+  const handleAiSearch = (queryStr: string = chatQuery) => {
+    if (!queryStr.trim()) return;
+    router.push(`/search?ai=${encodeURIComponent(queryStr.trim())}`);
+  };
+
+  const handleMicClick = () => {
+    if (isRecording) {
+      setIsRecording(false);
+      // We can't strictly stop it safely here without saving the recognition instance,
+      // but it will stop on its own when the user stops speaking.
+      // A more robust implementation would save the recognition instance to a ref.
+      return;
+    }
+
+    const win = window as unknown as Record<string, unknown>;
+    const SpeechRecognition = (win.SpeechRecognition || win.webkitSpeechRecognition) as {
+      new (): {
+        continuous: boolean;
+        interimResults: boolean;
+        lang: string;
+        onstart: () => void;
+        onresult: (event: { results: { [index: number]: { [index: number]: { transcript: string }, isFinal: boolean } } }) => void;
+        onerror: (event: { error: string }) => void;
+        onend: () => void;
+        start: () => void;
+      };
+    } | undefined;
+
+    if (!SpeechRecognition) {
+      alert("Your browser does not support Speech Recognition. Please use Chrome or Edge.");
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.continuous = false;
+    recognition.interimResults = true;
+    recognition.lang = 'en-US';
+
+    recognition.onstart = () => {
+      setIsRecording(true);
+    };
+
+    recognition.onresult = (event) => {
+      const result = event.results[0];
+      const transcript = result[0].transcript;
+      setChatQuery(transcript);
+      
+      if (result.isFinal) {
+        setTimeout(() => {
+          handleAiSearch(transcript);
+        }, 800);
+      }
+    };
+
+    recognition.onerror = (event) => {
+      console.error("Speech recognition error", event.error);
+      setIsRecording(false);
+    };
+
+    recognition.onend = () => {
+      setIsRecording(false);
+    };
+
+    recognition.start();
+  };
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -50,37 +128,70 @@ export default function HeroSection() {
     return () => clearInterval(timer);
   }, []);
 
+  useEffect(() => {
+    if (destination.length > 2) {
+      const delayDebounceFn = setTimeout(() => {
+        setLoadingSuggestions(true);
+        fetch(`https://api.postalpincode.in/postoffice/${destination}`)
+          .then(res => res.json())
+          .then(data => {
+            if (data && data[0] && data[0].Status === 'Success') {
+              const uniqueLocations = data[0].PostOffice.slice(0, 5).map((po: { Name: string; District: string; State: string }) => ({
+                name: po.Name,
+                district: po.District,
+                state: po.State
+              }));
+              setSuggestions(uniqueLocations);
+            } else {
+              setSuggestions([]);
+            }
+          })
+          .catch(err => {
+            console.error(err);
+            setSuggestions([]);
+          })
+          .finally(() => {
+            setLoadingSuggestions(false);
+          });
+      }, 500);
+
+      return () => clearTimeout(delayDebounceFn);
+    }
+  }, [destination]);
+
   return (
-    <section className="relative w-full -mt-24 pt-32 overflow-hidden rounded-b-[50px]">
+    <section className="relative w-full -mt-24 pt-32 rounded-b-[50px] z-10">
 
       {/* Background Image Slideshow */}
-      {heroImages.map((src, index) => (
-        <Image
-          key={src}
-          src={src}
-          alt={`Beautiful tropical destination ${index + 1}`}
-          fill
-          priority={index === 0}
-          className={`object-cover z-0 transition-opacity duration-1000 ease-in-out transform-gpu will-change-opacity ${
-            index === currentImageIndex ? 'opacity-100' : 'opacity-0'
-          }`}
-        />
-      ))}
+      <div className="absolute inset-0 overflow-hidden rounded-b-[50px] z-0 pointer-events-none">
+        {heroImages.map((src, index) => (
+          <Image
+            key={src}
+            src={src}
+            alt={`Beautiful tropical destination ${index + 1}`}
+            fill
+            priority={index === 0}
+            className={`object-cover transition-opacity duration-1000 ease-in-out transform-gpu will-change-opacity ${
+              index === currentImageIndex ? 'opacity-100' : 'opacity-0'
+            }`}
+          />
+        ))}
+      </div>
 
 
       {/* Content */}
       <div className="container mx-auto px-4 relative z-10 pt-20 pb-8">
 
         {/* Search Card */}
-        <div className="max-w-4xl mx-auto transform-gpu">
-          <div className="bg-white rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.15)] overflow-hidden">
+        <div className="max-w-4xl mx-auto transform-gpu relative z-20">
+          <div className="bg-white rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.15)] relative">
 
             {/* Tabs & Chatbot Container */}
             <div className="flex items-center justify-between px-6 pt-5 pb-0 overflow-x-auto hide-scrollbar">
               
               {/* Left Side: Tabs */}
-              <div className="flex items-center gap-1">
-                {tabs.map((tab) => {
+              <div className="flex items-center gap-1 transition-all duration-300">
+                {!isChatMode && tabs.map((tab) => {
                   const Icon = tab.icon;
                   const isActive = activeTab === tab.id;
                   return (
@@ -120,40 +231,82 @@ export default function HeroSection() {
             <div className="h-px bg-gray-100" />
 
             {/* Search Fields / Chat Mode */}
-            <div className="p-6 space-y-4 min-h-55">
+            <div className="p-6 space-y-4 min-h-55 relative">
+              <AnimatePresence mode="wait">
               {isChatMode ? (
-                <div className="flex flex-col gap-4 animate-in fade-in duration-300">
-                  <div className="flex items-start gap-4 border border-brand-coral/30 rounded-2xl p-5 bg-brand-coral/5 transition-colors focus-within:border-brand-coral/60 focus-within:bg-white shadow-inner">
+                <motion.div 
+                  key="chat"
+                  initial={{ opacity: 0, y: 15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -15 }}
+                  transition={{ duration: 0.3, ease: 'easeOut' }}
+                  className="flex flex-col gap-4"
+                >
+                  <div className="flex items-start gap-4 border border-brand-coral/30 rounded-2xl p-5 bg-brand-coral/5 transition-colors focus-within:border-brand-coral/60 focus-within:bg-white shadow-inner relative">
                     <div className="w-8 h-8 relative rounded-full overflow-hidden shrink-0 bg-white shadow-sm mt-0.5 border border-gray-100">
                       <Image src={chatbotLogo} alt="AI Assistant" fill className="object-contain p-1" />
                     </div>
                     <textarea 
                       placeholder="e.g. Find me a beachfront villa in Bali for 2 adults next weekend with a private pool..."
-                      className="w-full min-h-25 outline-none text-brand-navy text-[16px] placeholder:text-brand-charcoal/40 bg-transparent resize-none leading-relaxed"
+                      className="w-full min-h-62.5 md:min-h-34 outline-none text-brand-navy text-[16px] placeholder:text-brand-charcoal/40 bg-transparent resize-none leading-relaxed pb-8"
                       autoFocus
+                      value={chatQuery}
+                      onChange={(e) => setChatQuery(e.target.value)}
                     />
+                    <button 
+                      onClick={handleMicClick}
+                      className={`absolute right-4 bottom-4 p-2 rounded-full transition-colors ${
+                        isRecording 
+                          ? 'bg-red-100 text-red-500 hover:bg-red-200 animate-pulse' 
+                          : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                      }`}
+                      title={isRecording ? "Stop recording" : "Use voice input"}
+                    >
+                      {isRecording ? <MicOff size={20} /> : <Mic size={20} />}
+                    </button>
                   </div>
                   <div className="flex justify-end">
-                    <button className="bg-linear-to-r from-brand-coral to-[#e84f57] hover:shadow-[0_8px_20px_rgba(232,106,112,0.3)] text-white pl-7 pr-5 py-3.5 rounded-full font-bold flex items-center justify-center gap-3 transition-all hover:-translate-y-0.5 text-[15px] sm:w-55">
+                    <button 
+                      onClick={() => handleAiSearch()}
+                      className="bg-linear-to-r from-brand-coral to-[#e84f57] hover:shadow-[0_8px_20px_rgba(232,106,112,0.3)] text-white pl-7 pr-5 py-3.5 rounded-full font-bold flex items-center justify-center gap-3 transition-all hover:-translate-y-0.5 text-[15px] sm:w-55"
+                    >
                       Ask Racoonn AI
                       <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
                         <ArrowRight size={16} />
                       </div>
                     </button>
                   </div>
-                </div>
+                </motion.div>
               ) : (
-                <div className="space-y-4 animate-in fade-in duration-300">
+                <motion.div 
+                  key="classic"
+                  initial={{ opacity: 0, y: 15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -15 }}
+                  transition={{ duration: 0.3, ease: 'easeOut' }}
+                  className="space-y-4"
+                >
 
               {/* Destination Row */}
               <div className="flex items-center gap-4 border border-gray-200 rounded-2xl px-5 py-4 hover:border-brand-coral/40 transition-colors cursor-text group">
                 <MapPin size={22} className="text-brand-charcoal/40 group-hover:text-brand-coral transition-colors shrink-0" />
-                <div className="w-full">
+                <div className="w-full relative">
                   <h4 className="font-semibold text-brand-navy text-[15px]">
                     {activeTab === 'activities' ? 'What do you want to do?' : 'Where are you going?'}
                   </h4>
                   <input 
                     type="text" 
+                    value={destination}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setDestination(val);
+                      setShowSuggestions(true);
+                      if (val.length <= 2) {
+                        setSuggestions([]);
+                      }
+                    }}
+                    onFocus={() => setShowSuggestions(true)}
+                    onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
                     placeholder={
                       activeTab === 'stays' ? "Search destination or property" :
                       activeTab === 'packages' ? "Search destination or package name" :
@@ -161,13 +314,38 @@ export default function HeroSection() {
                     }
                     className="w-full outline-none text-brand-charcoal/70 text-sm font-medium placeholder:text-brand-charcoal/40 bg-transparent mt-0.5 p-0"
                   />
+                  {showSuggestions && destination.length > 2 && (
+                    <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden z-50">
+                      {loadingSuggestions ? (
+                        <div className="p-4 text-sm text-gray-500">Loading...</div>
+                      ) : suggestions.length > 0 ? (
+                        <ul className="max-h-60 overflow-y-auto">
+                          {suggestions.map((s, i) => (
+                            <li 
+                              key={i} 
+                              className="px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-50 last:border-0"
+                              onClick={() => {
+                                setDestination(s.district);
+                                setShowSuggestions(false);
+                              }}
+                            >
+                              <div className="font-medium text-sm text-brand-navy">{s.name}</div>
+                              <div className="text-xs text-gray-500">{s.district}, {s.state}</div>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <div className="p-4 text-sm text-gray-500">No destinations found</div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
 
               {/* Date + Guests Row */}
               <div className="flex flex-col sm:flex-row gap-4">
                 {/* Check-in / Start Date */}
-                <Popover>
+                <Popover open={isCheckInOpen} onOpenChange={setIsCheckInOpen}>
                   <PopoverTrigger className="flex items-center gap-4 border border-gray-200 rounded-2xl px-5 py-4 hover:border-brand-coral/40 transition-colors cursor-pointer group flex-1 text-left focus:outline-none focus:ring-2 focus:ring-brand-coral/30">
                     <CalendarDays size={22} className="text-brand-charcoal/40 group-hover:text-brand-coral transition-colors shrink-0" />
                     <div>
@@ -183,7 +361,17 @@ export default function HeroSection() {
                     <Calendar
                       mode="single"
                       selected={checkIn}
-                      onSelect={setCheckIn}
+                      onSelect={(date) => {
+                        setCheckIn(date);
+                        setIsCheckInOpen(false);
+                        if (!checkOut || (date && date >= checkOut)) {
+                          setCheckOut(undefined);
+                        }
+                        if (activeTab !== 'activities') {
+                          setTimeout(() => setIsCheckOutOpen(true), 150);
+                        }
+                      }}
+                      disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
                     />
                   </PopoverContent>
                 </Popover>
@@ -193,7 +381,7 @@ export default function HeroSection() {
 
                 {/* Check-out / End Date */}
                 {activeTab !== 'activities' && (
-                  <Popover>
+                  <Popover open={isCheckOutOpen} onOpenChange={setIsCheckOutOpen}>
                     <PopoverTrigger className="flex items-center gap-4 border border-gray-200 rounded-2xl px-5 py-4 hover:border-brand-coral/40 transition-colors cursor-pointer group flex-1 text-left focus:outline-none focus:ring-2 focus:ring-brand-coral/30">
                       <CalendarDays size={22} className="text-brand-charcoal/40 group-hover:text-brand-coral transition-colors shrink-0" />
                       <div>
@@ -209,7 +397,16 @@ export default function HeroSection() {
                       <Calendar
                         mode="single"
                         selected={checkOut}
-                        onSelect={setCheckOut}
+                        onSelect={(date) => {
+                          setCheckOut(date);
+                          setIsCheckOutOpen(false);
+                        }}
+                        disabled={(date) => {
+                          if (checkIn) {
+                            return date <= checkIn;
+                          }
+                          return date < new Date(new Date().setHours(0, 0, 0, 0));
+                        }}
                       />
                     </PopoverContent>
                   </Popover>
@@ -324,21 +521,18 @@ export default function HeroSection() {
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-4 pt-2">
 
                 <Link 
-                  href={activeTab === 'packages' ? "/packages" : "/search"} 
+                  href={activeTab === 'packages' ? "/packages" : `/search?location=${encodeURIComponent(destination)}&checkIn=${checkIn?.toISOString() || ''}&checkOut=${checkOut?.toISOString() || ''}&adults=${adults}&children=${children}&rooms=${rooms}`} 
                   className="bg-brand-coral hover:bg-brand-coral/90 text-white pl-7 pr-5 py-3.5 rounded-full font-bold flex items-center justify-center gap-3 transition-all hover:-translate-y-0.5 text-[15px] w-full sm:w-auto min-w-50"
                 >
-                  {activeTab === 'packages' ? 'View all packages' : 'Search'}
-                  {activeTab === 'packages' ? (
-                    <ArrowRight size={18} />
-                  ) : (
-                    <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
-                      <ArrowRight size={16} />
-                    </div>
-                  )}
+                  Search
+                  <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
+                    <ArrowRight size={16} />
+                  </div>
                 </Link>
               </div>
-              </div>
+              </motion.div>
               )}
+              </AnimatePresence>
             </div>
           </div>
         </div>

@@ -47,7 +47,21 @@ export const useAuthStore = create<AuthState>((set) => ({
     try {
       const user = await authService.getCurrentUser();
       if (user) {
-        const profile = await authService.getUserProfile(user.$id) as unknown as UserProfile;
+        let profile = await authService.getUserProfile(user.$id) as unknown as UserProfile;
+        
+        // Auto-create profile document for new OAuth users if it doesn't exist
+        if (!profile) {
+          try {
+            await authService.saveUserProfile(user.$id, {
+              name: user.name,
+              email: user.email,
+            });
+            profile = await authService.getUserProfile(user.$id) as unknown as UserProfile;
+          } catch (createError) {
+            console.error('Failed to auto-create profile for new user', createError);
+          }
+        }
+
         set({ user, profile, isAuthenticated: true });
       } else {
         set({ user: null, profile: null, isAuthenticated: false });

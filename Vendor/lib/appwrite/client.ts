@@ -10,10 +10,10 @@ export const appwriteConfig = {
     roomCollectionId: process.env.NEXT_PUBLIC_APPWRITE_ROOM_COLLECTION_ID || "",
     bookingCollectionId: process.env.NEXT_PUBLIC_APPWRITE_BOOKING_COLLECTION_ID || "",
     // Buckets
-    propertyImagesBucketId: process.env.NEXT_PUBLIC_APPWRITE_PROPERTY_IMAGES_BUCKET_ID || "",
-    roomImagesBucketId: process.env.NEXT_PUBLIC_APPWRITE_ROOM_IMAGES_BUCKET_ID || "",
     vendorDocumentsBucketId: process.env.NEXT_PUBLIC_APPWRITE_VENDOR_DOCUMENTS_BUCKET_ID || "",
-    profileImagesBucketId: process.env.NEXT_PUBLIC_APPWRITE_PROFILE_IMAGES_BUCKET_ID || "",
+    propertyImagesBucketId: process.env.NEXT_PUBLIC_APPWRITE_PROPERTY_IMAGES_BUCKET_ID || process.env.NEXT_PUBLIC_APPWRITE_VENDOR_DOCUMENTS_BUCKET_ID || "",
+    roomImagesBucketId: process.env.NEXT_PUBLIC_APPWRITE_ROOM_IMAGES_BUCKET_ID || process.env.NEXT_PUBLIC_APPWRITE_VENDOR_DOCUMENTS_BUCKET_ID || "",
+    profileImagesBucketId: process.env.NEXT_PUBLIC_APPWRITE_PROFILE_IMAGES_BUCKET_ID || process.env.NEXT_PUBLIC_APPWRITE_VENDOR_DOCUMENTS_BUCKET_ID || "",
 };
 
 export const client = new Client()

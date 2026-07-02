@@ -29,13 +29,16 @@ export function Step2Verification({ onNext, onBack }: { onNext: () => void, onBa
 
   const { user } = useAuthStore();
   const [phone, setPhone] = useState("+91 98765 43210");
+  const [email, setEmail] = useState(user?.email || "jane@example.com");
 
   useEffect(() => {
-    const savedPhone = localStorage.getItem("vendor_phone");
-    if (savedPhone) {
-      setPhone(savedPhone);
+    if (profile) {
+      if (profile.phone) setPhone(profile.phone);
+      if (profile.email) setEmail(profile.email);
+    } else if (user?.email) {
+      setEmail(user.email);
     }
-  }, []);
+  }, [profile, user]);
 
   // Countdown timer
   useEffect(() => {
@@ -52,7 +55,7 @@ export function Step2Verification({ onNext, onBack }: { onNext: () => void, onBa
     setIsLoading(true);
     
     try {
-      const identifier = method === "email" ? (user?.email || "jane@example.com") : phone;
+      const identifier = method === "email" ? email : phone;
       const res = await fetch("/api/otp/send", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -94,7 +97,7 @@ export function Step2Verification({ onNext, onBack }: { onNext: () => void, onBa
     setIsLoading(true);
 
     try {
-      const identifier = method === "email" ? (user?.email || "jane@example.com") : phone;
+      const identifier = method === "email" ? email : phone;
       const res = await fetch("/api/otp/verify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -211,7 +214,7 @@ export function Step2Verification({ onNext, onBack }: { onNext: () => void, onBa
               </div>
               <div>
                 <h3 className="font-bold text-slate-800 text-lg">Email Address</h3>
-                <p className="text-sm font-medium text-slate-500">{user?.email || "jane@example.com"}</p>
+                <p className="text-sm font-medium text-slate-500">{email}</p>
               </div>
             </div>
             {verifiedMethod === "email" && <span className="text-xs font-bold text-emerald-600 bg-emerald-100 px-3 py-1.5 rounded-full uppercase tracking-wider">Verified</span>}

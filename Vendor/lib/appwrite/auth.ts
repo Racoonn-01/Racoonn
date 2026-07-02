@@ -1,4 +1,4 @@
-import { ID, OAuthProvider } from 'appwrite';
+import { ID, OAuthProvider, Permission, Role } from 'appwrite';
 import { account, databases, appwriteConfig } from './client';
 
 export const authService = {
@@ -26,7 +26,13 @@ export const authService = {
           status: 'Pending',
           role: 'Vendor',
           businessName: name || email.split('@')[0],
-        }
+        },
+        [
+          Permission.read(Role.user(userAccount.$id)),
+          Permission.write(Role.user(userAccount.$id)),
+          Permission.update(Role.user(userAccount.$id)),
+          Permission.delete(Role.user(userAccount.$id))
+        ]
       );
       return { userAccount, profile };
     } catch (e) {

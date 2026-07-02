@@ -148,6 +148,7 @@
   }
   html {
     @apply font-sans;
+    overflow-y: scroll;
   }
   
   /* Typography overrides */

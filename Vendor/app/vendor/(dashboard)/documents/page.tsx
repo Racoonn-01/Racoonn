@@ -11,30 +11,30 @@ export default function DocumentsPage() {
     {
       title: "Business License / GST",
       description: "Company registration and tax identification documents.",
-      status: "Verified",
-      fileName: "GST_Certificate.pdf",
-      updatedAt: "Oct 10, 2023"
+      status: "Missing",
+      fileName: null,
+      updatedAt: null
     },
     {
       title: "Owner KYC Documents",
       description: "Aadhar/PAN card of the registered business owner.",
-      status: "Verified",
-      fileName: "Owner_PAN_Aadhar.pdf",
-      updatedAt: "Oct 10, 2023"
+      status: "Missing",
+      fileName: null,
+      updatedAt: null
     },
     {
       title: "Bank Documents",
       description: "Cancelled cheque or bank statement for payout verification.",
-      status: "Verified",
-      fileName: "Cancelled_Cheque_HDFC.pdf",
-      updatedAt: "Oct 11, 2023"
+      status: "Missing",
+      fileName: null,
+      updatedAt: null
     },
     {
       title: "Property Verification",
       description: "Utility bills or lease agreement proving property address.",
-      status: "Pending",
-      fileName: "Lease_Agreement_2023.pdf",
-      updatedAt: "Just now"
+      status: "Missing",
+      fileName: null,
+      updatedAt: null
     },
     {
       title: "Food Safety License (FSSAI)",

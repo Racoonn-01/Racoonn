@@ -40,15 +40,69 @@ const INDIAN_BANKS = [
   { name: "Yes Bank", domain: "yesbank.in" },
   { name: "Other Bank", domain: "other" }
 ];
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
+import { useAuthStore } from "@/store/authStore";
+import { databases, appwriteConfig } from "@/lib/appwrite/client";
 
 export function Step8Banking({ onNext, onBack }: { onNext: () => void, onBack: () => void }) {
+  const { profile } = useAuthStore();
   const [verified, setVerified] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [payoutMethod, setPayoutMethod] = useState<"bank" | "upi">("bank");
   const [bankName, setBankName] = useState("HDFC Bank");
   const [bankSearch, setBankSearch] = useState("");
+  const [accountHolder, setAccountHolder] = useState("");
+  const [accountNumber, setAccountNumber] = useState("");
+  const [ifsc, setIfsc] = useState("");
+  const [upiId, setUpiId] = useState("");
   
+  useEffect(() => {
+    if (profile) {
+      if (profile.bankName) setBankName(profile.bankName);
+      if (profile.accountHolder) setAccountHolder(profile.accountHolder);
+      if (profile.accountNumber) setAccountNumber(profile.accountNumber);
+      if (profile.ifsc) setIfsc(profile.ifsc);
+      if (profile.upiId) setUpiId(profile.upiId);
+      if (profile.upiId && !profile.accountNumber) {
+        setPayoutMethod("upi");
+      }
+    }
+  }, [profile]);
+
+  const handleNextClick = async () => {
+    if (!profile) {
+      onNext();
+      return;
+    }
+    
+    setIsLoading(true);
+    try {
+      await databases.updateDocument(
+        appwriteConfig.databaseId,
+        appwriteConfig.vendorCollectionId,
+        profile.$id,
+        {
+          bankName: bankName || "",
+          accountHolder: accountHolder || "",
+          accountNumber: accountNumber || "",
+          ifsc: ifsc || "",
+          upiId: upiId || ""
+        }
+      );
+      onNext();
+    } catch (e) {
+      console.error(e);
+      onNext();
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleBackClick = () => {
+    onBack();
+  };
+
   const filteredBanks = INDIAN_BANKS.filter(b => b.name.toLowerCase().includes(bankSearch.toLowerCase()));
 
   const slideUp: any = {
@@ -114,21 +168,36 @@ export function Step8Banking({ onNext, onBack }: { onNext: () => void, onBack: (
           <div className="space-y-5 animate-in fade-in slide-in-from-bottom-2 duration-300">
             <div className="space-y-2">
               <label className="text-xs font-bold text-slate-700 uppercase tracking-wide">Account Holder Name</label>
-              <Input className="h-12 rounded-xl border-slate-200 bg-white focus:ring-2 focus:ring-[#E86A70]/20 focus:border-[#E86A70] transition-all font-bold" placeholder="Racoonn Hospitality Pvt Ltd" />
+              <Input 
+                value={accountHolder}
+                onChange={(e) => setAccountHolder(e.target.value)}
+                className="h-12 rounded-xl border-slate-200 bg-white focus:ring-2 focus:ring-[#E86A70]/20 focus:border-[#E86A70] transition-all font-bold" 
+                placeholder="Racoonn Hospitality Pvt Ltd" 
+              />
             </div>
 
             <div className="space-y-2">
               <label className="text-xs font-bold text-slate-700 uppercase tracking-wide">Bank Account Number</label>
               <div className="relative">
                 <Building className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                <Input className="h-12 pl-10 rounded-xl border-slate-200 bg-white focus:ring-2 focus:ring-[#E86A70]/20 focus:border-[#E86A70] transition-all font-bold tracking-widest" placeholder="•••• •••• •••• 1234" />
+                <Input 
+                  value={accountNumber}
+                  onChange={(e) => setAccountNumber(e.target.value)}
+                  className="h-12 pl-10 rounded-xl border-slate-200 bg-white focus:ring-2 focus:ring-[#E86A70]/20 focus:border-[#E86A70] transition-all font-bold tracking-widest" 
+                  placeholder="•••• •••• •••• 1234" 
+                />
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label className="text-xs font-bold text-slate-700 uppercase tracking-wide">IFSC Code</label>
-                <Input className="h-12 rounded-xl border-slate-200 bg-white focus:ring-2 focus:ring-[#E86A70]/20 focus:border-[#E86A70] transition-all font-bold uppercase" placeholder="HDFC0001234" />
+                <Input 
+                  value={ifsc}
+                  onChange={(e) => setIfsc(e.target.value)}
+                  className="h-12 rounded-xl border-slate-200 bg-white focus:ring-2 focus:ring-[#E86A70]/20 focus:border-[#E86A70] transition-all font-bold uppercase" 
+                  placeholder="HDFC0001234" 
+                />
               </div>
               <div className="space-y-2">
                 <label className="text-xs font-bold text-slate-700 uppercase tracking-wide">Bank Name</label>
@@ -207,7 +276,12 @@ export function Step8Banking({ onNext, onBack }: { onNext: () => void, onBack: (
           <div className="space-y-5 animate-in fade-in slide-in-from-bottom-2 duration-300">
             <div className="space-y-2">
               <label className="text-xs font-bold text-slate-700 uppercase tracking-wide">UPI ID / VPA</label>
-              <Input className="h-12 rounded-xl border-slate-200 bg-white focus:ring-2 focus:ring-[#E86A70]/20 focus:border-[#E86A70] transition-all font-bold" placeholder="e.g. racoonn@okaxis" />
+              <Input 
+                value={upiId}
+                onChange={(e) => setUpiId(e.target.value)}
+                className="h-12 rounded-xl border-slate-200 bg-white focus:ring-2 focus:ring-[#E86A70]/20 focus:border-[#E86A70] transition-all font-bold" 
+                placeholder="yourbusiness@okaxis" 
+              />
               <p className="text-xs text-slate-500 font-medium pt-1">Enter your business UPI ID. Payouts are transferred instantly.</p>
             </div>
           </div>
@@ -216,11 +290,11 @@ export function Step8Banking({ onNext, onBack }: { onNext: () => void, onBack: (
       </motion.div>
 
       <motion.div variants={slideUp} className="mt-10 flex items-center justify-between">
-        <Button onClick={onBack} variant="ghost" className="text-slate-500 font-bold hover:bg-slate-100 rounded-full px-6">
+        <Button onClick={handleBackClick} variant="ghost" className="text-slate-500 font-bold hover:bg-slate-100 rounded-full px-6">
           <ArrowLeft className="mr-2 w-4 h-4" /> Back
         </Button>
-        <Button onClick={onNext} className="bg-[#1F2E4A] hover:bg-[#151E2D] text-white rounded-full px-8 h-12 font-bold shadow-lg shadow-[#1F2E4A]/20 transition-all">
-          KYC Verification <ArrowRight className="ml-2 w-4 h-4" />
+        <Button onClick={handleNextClick} className="bg-[#1F2E4A] hover:bg-[#151E2D] text-white rounded-full px-8 h-12 font-bold shadow-lg shadow-[#1F2E4A]/20 transition-all">
+          KYC & Review <ArrowRight className="ml-2 w-4 h-4" />
         </Button>
       </motion.div>
     </motion.div>

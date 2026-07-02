@@ -11,20 +11,22 @@ export async function POST(req: Request) {
       );
     }
 
-    // Simulate network delay
-    await new Promise((resolve) => setTimeout(resolve, 800));
+    // Proxy to Express Backend server
+    const response = await fetch('http://localhost:5005/api/otp/verify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ identifier, code })
+    });
 
-    // Mock verification: accept only "123456"
-    if (code === '123456') {
-      return NextResponse.json({ success: true, message: 'Verified successfully' });
-    } else {
-      return NextResponse.json(
-        { error: 'Invalid or expired verification code. Please try again.' },
-        { status: 400 }
-      );
+    const data = await response.json();
+
+    if (!response.ok) {
+      return NextResponse.json(data, { status: response.status });
     }
+
+    return NextResponse.json({ success: true, message: 'Verified successfully' });
   } catch (error) {
-    console.error('Error verifying OTP:', error);
+    console.error('Error proxying OTP verify:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

@@ -27,7 +27,7 @@ export function Step2Verification({ onNext, onBack }: { onNext: () => void, onBa
   const emailRefs = useRef<(HTMLInputElement | null)[]>([]);
   const mobileRefs = useRef<(HTMLInputElement | null)[]>([]);
 
-  const { user } = useAuthStore();
+  const { user, profile } = useAuthStore();
   const [phone, setPhone] = useState("+91 98765 43210");
   const [email, setEmail] = useState(user?.email || "jane@example.com");
 

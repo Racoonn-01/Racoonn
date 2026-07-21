@@ -14,17 +14,30 @@ export const metadata = {
   description: "Complete your hotel booking securely on Racoonn.",
 };
 
-export default function CheckoutPage({ searchParams }: { searchParams: { [key: string]: string | string[] | undefined } }) {
-  const roomName = typeof searchParams.roomName === 'string' ? searchParams.roomName : undefined;
-  const price = typeof searchParams.price === 'string' ? Number(searchParams.price) : 8000;
+export default async function CheckoutPage({ searchParams }: { searchParams: Promise<{ [key: string]: string | string[] | undefined }> }) {
+  const resolvedParams = await searchParams;
+  console.log("CHECKOUT PAGE PARAMS:", resolvedParams);
+  const roomName = typeof resolvedParams.roomName === 'string' ? resolvedParams.roomName : undefined;
+  const price = typeof resolvedParams.price === 'string' ? Number(resolvedParams.price) : 8000;
+  
+  // Parse dynamic filters from URL
+  const checkInDate = typeof resolvedParams.checkIn === 'string' ? new Date(resolvedParams.checkIn) : new Date();
+  const checkOutDate = typeof resolvedParams.checkOut === 'string' ? new Date(resolvedParams.checkOut) : new Date(Date.now() + 86400000);
+  
+  const msPerDay = 1000 * 60 * 60 * 24;
+  let nights = Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / msPerDay);
+  if (nights < 1 || isNaN(nights)) nights = 1;
+
+  let rooms = typeof resolvedParams.rooms === 'string' ? parseInt(resolvedParams.rooms, 10) : 1;
+  if (isNaN(rooms) || rooms < 1) rooms = 1;
+
+  const roomPrice = price * nights * rooms;
   
   // Hardcoded constants for the UI flow (could be dynamic in real app)
-  const nights = 3;
-  const taxes = Math.floor(price * nights * 0.1); // 10% tax
-  const addons = 1500;
-  const discount = 2000;
+  const taxes = Math.floor(roomPrice * 0.1); // 10% tax
+  const addons = 0; // Default to 0, client components recalculate this
+  const discount = 0; // Default to 0, coupons are dynamic
   
-  const roomPrice = price * nights;
   const totalAmount = roomPrice + taxes + addons - discount;
 
   return (
@@ -68,20 +81,23 @@ export default function CheckoutPage({ searchParams }: { searchParams: { [key: s
           </Suspense>
 
           {/* Right Sticky Booking Summary (30%) */}
-          <CheckoutSidebar
-            roomName={roomName}
-            price={price}
-            nights={nights}
-            taxes={taxes}
-            addons={addons}
-            discount={discount}
-          />
+          <Suspense fallback={<div className="w-full lg:w-100 shrink-0 animate-pulse bg-gray-100 rounded-xl h-96"></div>}>
+            <CheckoutSidebar
+              roomName={roomName}
+              price={price}
+              nights={nights}
+              rooms={rooms}
+              discount={discount}
+            />
+          </Suspense>
         </div>
       </div>
 
       {/* Mobile Sticky Bottom Bar */}
       <div className="lg:hidden block">
-        <MobileCheckoutBar total={totalAmount} />
+        <Suspense fallback={null}>
+          <MobileCheckoutBar total={totalAmount} />
+        </Suspense>
       </div>
     </div>
   );

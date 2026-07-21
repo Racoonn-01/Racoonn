@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Clock, MapPin, FileText, Star, Loader2 } from 'lucide-react';
 import Image from 'next/image';
@@ -11,47 +11,79 @@ import BookingDetailsModal from './BookingDetailsModal';
 
 const DATABASE_ID = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID!;
 
+export interface UIBooking {
+  id: string;
+  rawId: string;
+  hotel: string;
+  location: string;
+  checkIn: string;
+  checkOut: string;
+  rawCheckIn: string;
+  guests: string;
+  amount: string;
+  status: string;
+  image: string;
+}
+
 export default function BookingsSection() {
   const [activeTab, setActiveTab] = useState<'Upcoming' | 'Completed' | 'Cancelled'>('Upcoming');
-  const [bookings, setBookings] = useState<Record<string, any>[]>([]);
+  const [bookings, setBookings] = useState<UIBooking[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [bookingToCancel, setBookingToCancel] = useState<any | null>(null);
-  const [bookingToView, setBookingToView] = useState<{ booking: any, mode: 'details' | 'invoice' } | null>(null);
+  const [bookingToCancel, setBookingToCancel] = useState<UIBooking | null>(null);
+  const [bookingToView, setBookingToView] = useState<{ booking: UIBooking, mode: 'details' | 'invoice' } | null>(null);
   const user = useAuthStore(state => state.user);
 
-  const fetchBookings = async () => {
+  const fetchBookings = useCallback(async (isRefresh = false) => {
     if (!user) return;
-    setIsLoading(true);
+    
     try {
-      const response = await databases.listDocuments(DATABASE_ID, 'bookings', [
-        Query.equal('userId', user.$id),
-        Query.orderDesc('$createdAt')
+      if (isRefresh) setIsLoading(true);
+      
+      const [bookingsResponse, paymentsResponse] = await Promise.all([
+        databases.listDocuments(DATABASE_ID, 'bookings', [
+          Query.equal('userId', user.$id),
+          Query.orderDesc('$createdAt')
+        ]),
+        databases.listDocuments(DATABASE_ID, 'booking_payments')
       ]);
       
       // Map appwrite documents to our UI structure
-      const formatted = response.documents.map((doc: Record<string, any>) => ({
-        id: doc.$id,
-        hotel: doc.hotelName,
-        location: doc.hotelLocation,
-        checkIn: new Date(doc.checkIn).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }),
-        checkOut: new Date(doc.checkOut).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }),
-        rawCheckIn: doc.checkIn, // Passed for cancellation policy calc
-        guests: `${doc.adults} Adults${doc.children ? `, ${doc.children} Child` : ''}`,
-        amount: `₹${(doc.nights * 32000).toLocaleString()}`, // Hardcoded fallback or use payment data
-        status: doc.status === 'Confirmed' ? 'Upcoming' : doc.status,
-        image: doc.hotelImage,
-      }));
+      const formatted: UIBooking[] = bookingsResponse.documents.map((appwriteDoc) => {
+        const doc = appwriteDoc as unknown as Record<string, unknown>;
+        const payment = paymentsResponse.documents.find(p => p.bookingId === doc.$id);
+        
+        let currentStatus = String(doc.status);
+        if (currentStatus === 'Confirmed' && new Date(String(doc.checkOut)).getTime() < new Date().getTime()) {
+          currentStatus = 'Completed';
+          databases.updateDocument(DATABASE_ID, 'bookings', String(doc.$id), { status: 'Completed' }).catch(console.error);
+        }
+
+        return {
+          id: String(doc.$id).substring(0, 8).toUpperCase(),
+          rawId: String(doc.$id),
+          hotel: String(doc.hotelName),
+          location: String(doc.hotelLocation),
+          checkIn: new Date(String(doc.checkIn)).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }),
+          checkOut: new Date(String(doc.checkOut)).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }),
+          rawCheckIn: String(doc.checkIn),
+          guests: `${doc.adults} Adults${doc.children ? `, ${doc.children} Child` : ''}`,
+          amount: payment ? `₹${Number((payment as Record<string, unknown>).totalAmount).toLocaleString()}` : `₹${(Number(doc.nights) * 32000).toLocaleString()}`,
+          status: currentStatus === 'Confirmed' ? 'Upcoming' : currentStatus,
+          image: String(doc.hotelImage),
+        };
+      });
       setBookings(formatted);
     } catch (error) {
       console.error("Error fetching bookings:", error);
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [user]);
 
   useEffect(() => {
-    fetchBookings();
-  }, [user]);
+    // Initial fetch doesn't need to trigger loading state since it's true by default
+    fetchBookings(false).catch(console.error);
+  }, [fetchBookings]);
 
   const filteredBookings = bookings.filter(b => b.status === activeTab);
 
@@ -105,7 +137,7 @@ export default function BookingsSection() {
             ) : (
               filteredBookings.map((booking) => (
                 <motion.div
-                  key={booking.id}
+                  key={booking.rawId}
                   layout
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -131,7 +163,7 @@ export default function BookingsSection() {
                       </div>
                       <div className="text-right">
                         <p className="text-sm text-gray-400 font-medium">Booking ID</p>
-                        <p className="font-mono text-sm font-bold text-brand-navy">#{booking.id.slice(-6).toUpperCase()}</p>
+                        <p className="font-mono text-sm font-bold text-brand-navy">#{booking.id}</p>
                       </div>
                     </div>
 
@@ -190,14 +222,15 @@ export default function BookingsSection() {
           </AnimatePresence>
         )}
       </div>
-      <CancelBookingModal 
-        isOpen={!!bookingToCancel} 
-        onClose={() => setBookingToCancel(null)} 
-        booking={bookingToCancel}
-        onSuccess={() => {
-          fetchBookings(); // refresh the list
-        }}
-      />
+        <CancelBookingModal 
+          isOpen={!!bookingToCancel}
+          onClose={() => setBookingToCancel(null)}
+          booking={bookingToCancel}
+          onSuccess={() => {
+            setBookingToCancel(null);
+            fetchBookings(true).catch(console.error); // refresh the list with loading state
+          }}
+        />
       <BookingDetailsModal
         isOpen={!!bookingToView}
         onClose={() => setBookingToView(null)}

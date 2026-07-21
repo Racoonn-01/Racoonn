@@ -16,7 +16,6 @@ import {
   MessageSquare, 
   LifeBuoy, 
   Megaphone, 
-  FileText, 
   BarChart3, 
   Bell, 
   AlertTriangle, 

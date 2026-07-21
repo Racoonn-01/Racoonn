@@ -1,5 +1,5 @@
 const { Client, Databases, Permission, Role } = require('node-appwrite');
-require('dotenv').config({ path: '../Vendor/.env.local' });
+require('dotenv').config({ path: '../../Vendor/.env.local' });
 require('dotenv').config();
 
 const client = new Client()
@@ -78,12 +78,26 @@ async function setupRoomsDatabase() {
         await createIntAttr('price', true, 0, 99999999, 0);
         await createIntAttr('occupancy', false, 1, 50, 2);
         await createIntAttr('size', false, 0, 99999, 0);
+        
+        await createAttr('type', 100, false);
+        await createAttr('beds', 255, false);
+        await createIntAttr('discountPrice', false, 0, 99999999, 0);
+        await createAttr('mealPlan', 100, false);
+        await createAttr('cancellation', 100, false);
+        await createAttr('description', 5000, false);
 
         try {
             await databases.createStringAttribute(dbId, collectionId, 'photos', 100, false, undefined, true); // array
             console.log(`Created photos array`);
         } catch (e) {
             if (e.code !== 409) console.log(`Skipped photos: ${e.message}`);
+        }
+
+        try {
+            await databases.createStringAttribute(dbId, collectionId, 'amenities', 100, false, undefined, true); // array
+            console.log(`Created amenities array`);
+        } catch (e) {
+            if (e.code !== 409) console.log(`Skipped amenities: ${e.message}`);
         }
 
         // Create Index

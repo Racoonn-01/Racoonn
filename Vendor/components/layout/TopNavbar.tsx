@@ -11,8 +11,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import Link from "next/link";
+import { useAuthStore } from "@/store/authStore";
+import { Badge } from "@/components/ui/badge";
+import { appwriteConfig, storage } from "@/lib/appwrite/client";
 
 export function TopNavbar() {
+  const { profile } = useAuthStore();
+  
   return (
     <header className="sticky top-0 z-20 flex h-18 w-full items-center justify-between border-b border-slate-200 bg-white/90 backdrop-blur-md px-6 shadow-sm">
       <div className="flex items-center gap-4">
@@ -32,6 +37,20 @@ export function TopNavbar() {
         </div>
         
         <div className="flex items-center gap-1 sm:gap-2 mr-2">
+          {profile?.status && (
+            <div className="hidden md:flex items-center mr-2" title="Only Admin can change your Status">
+              <Badge 
+                variant={
+                  profile.status.toLowerCase() === 'approved' ? 'default' 
+                  : profile.status.toLowerCase() === 'blocked' ? 'destructive' 
+                  : 'secondary'
+                }
+                className="capitalize cursor-help"
+              >
+                {profile.status}
+              </Badge>
+            </div>
+          )}
           <DropdownMenu>
             <DropdownMenuTrigger className="relative p-2 rounded-full hover:bg-slate-100 text-slate-500 transition-colors outline-none cursor-pointer">
               <Bell className="h-5 w-5" />
@@ -72,11 +91,11 @@ export function TopNavbar() {
           <DropdownMenuTrigger>
             <div className="flex items-center gap-3 ml-1 cursor-pointer group hover:bg-slate-50 p-1.5 rounded-full pr-3 transition-colors outline-none">
               <Avatar className="h-9 w-9 ring-2 ring-transparent group-hover:ring-primary/20 transition-all">
-                <AvatarImage src="https://github.com/shadcn.png" alt="@vendor" />
+                <AvatarImage src={profile?.profileImage ? storage.getFilePreview(appwriteConfig.profileImagesBucketId, profile.profileImage).toString() : "https://github.com/shadcn.png"} alt="@vendor" />
                 <AvatarFallback className="bg-primary/10 text-primary font-semibold">VD</AvatarFallback>
               </Avatar>
               <div className="hidden lg:block text-left">
-                <p className="text-sm font-semibold text-secondary leading-none">Luxury Resort</p>
+                <p className="text-sm font-semibold text-secondary leading-none">{profile?.businessName || profile?.firstName || "Vendor"}</p>
                 <p className="text-xs text-slate-500 mt-1">Vendor Account</p>
               </div>
               <ChevronDown className="w-4 h-4 text-slate-400 hidden lg:block group-hover:text-slate-600" />

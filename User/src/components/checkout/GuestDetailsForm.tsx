@@ -15,19 +15,19 @@ export function GuestDetailsForm() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
           <div className="space-y-2">
             <label className="text-sm font-medium text-gray-700">First Name</label>
-            <input value={guestDetails.firstName} onChange={e => updateGuestDetails({ firstName: e.target.value })} type="text" placeholder="John" className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-brand-coral focus:border-brand-coral outline-none transition-all" />
+            <input suppressHydrationWarning value={guestDetails.firstName} onChange={e => updateGuestDetails({ firstName: e.target.value })} type="text" placeholder="John" className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-brand-coral focus:border-brand-coral outline-none transition-all" />
           </div>
           <div className="space-y-2">
             <label className="text-sm font-medium text-gray-700">Last Name</label>
-            <input value={guestDetails.lastName} onChange={e => updateGuestDetails({ lastName: e.target.value })} type="text" placeholder="Doe" className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-brand-coral focus:border-brand-coral outline-none transition-all" />
+            <input suppressHydrationWarning value={guestDetails.lastName} onChange={e => updateGuestDetails({ lastName: e.target.value })} type="text" placeholder="Doe" className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-brand-coral focus:border-brand-coral outline-none transition-all" />
           </div>
           <div className="space-y-2">
             <label className="text-sm font-medium text-gray-700 flex items-center gap-1"><Mail className="w-4 h-4 text-gray-400" /> Email Address</label>
-            <input value={guestDetails.email} onChange={e => updateGuestDetails({ email: e.target.value })} type="email" placeholder="john.doe@example.com" className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-brand-coral focus:border-brand-coral outline-none transition-all" />
+            <input suppressHydrationWarning value={guestDetails.email} onChange={e => updateGuestDetails({ email: e.target.value })} type="email" placeholder="john.doe@example.com" className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-brand-coral focus:border-brand-coral outline-none transition-all" />
           </div>
           <div className="space-y-2">
             <label className="text-sm font-medium text-gray-700 flex items-center gap-1"><Phone className="w-4 h-4 text-gray-400" /> Phone Number</label>
-            <input value={guestDetails.phone} onChange={e => updateGuestDetails({ phone: e.target.value })} type="tel" placeholder="+1 (555) 000-0000" className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-brand-coral focus:border-brand-coral outline-none transition-all" />
+            <input suppressHydrationWarning value={guestDetails.phone} onChange={e => updateGuestDetails({ phone: e.target.value })} type="tel" placeholder="+1 (555) 000-0000" className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-brand-coral focus:border-brand-coral outline-none transition-all" />
           </div>
           <div className="space-y-2 md:col-span-2">
             <label className="text-sm font-medium text-gray-700 flex items-center gap-1"><MapPin className="w-4 h-4 text-gray-400" /> Country/Region</label>

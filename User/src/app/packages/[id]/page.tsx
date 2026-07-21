@@ -10,7 +10,6 @@ import {
   Share, 
   Heart, 
   ChevronLeft,
-  Map as MapIcon,
   Tent,
   Utensils,
   CalendarDays,
@@ -19,12 +18,8 @@ import {
   StarHalf,
   CheckCircle2,
   PhoneCall,
-  Plane,
-  Car,
-  Coffee,
   ChevronDown,
   ChevronUp,
-  Building,
   Pencil,
   X
 } from 'lucide-react';

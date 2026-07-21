@@ -33,7 +33,7 @@ export default function CancelBookingModal({ isOpen, onClose, booking, onSuccess
       await databases.updateDocument(
         DATABASE_ID,
         'bookings',
-        booking.id,
+        booking.rawId,
         {
           status: 'Cancelled',
         }

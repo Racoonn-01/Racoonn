@@ -32,8 +32,15 @@ import {
   UtensilsCrossed,
   Dumbbell,
   BaggageClaim,
-  Sparkles
+  Sparkles,
+  Wine,
+  Dog,
+  Plane
 } from 'lucide-react';
+
+export interface PropertyAmenitiesProps {
+  amenities?: string[];
+}
 
 const FEATURED_AMENITIES = [
   { icon: Wifi, text: 'Fast wifi – 340 Mbps' },
@@ -95,30 +102,72 @@ const AMENITY_GROUPS = [
   }
 ];
 
-export default function PropertyAmenities() {
+const AMENITIES_MAP: Record<string, { icon: any, text: string, category: string }> = {
+  "wifi": { icon: Wifi, text: 'Fast wifi', category: 'Internet and office' },
+  "pool": { icon: Waves, text: 'Private pool', category: 'Outdoor' },
+  "ac": { icon: Wind, text: 'Air conditioning', category: 'Heating and cooling' },
+  "parking": { icon: Car, text: 'Free parking', category: 'Parking and facilities' },
+  "coffee": { icon: Coffee, text: 'Espresso machine', category: 'Kitchen and dining' },
+  "tv": { icon: Tv, text: 'TV', category: 'Entertainment' },
+  "gym": { icon: Dumbbell, text: 'Fitness Center', category: 'Parking and facilities' },
+  "restaurant": { icon: Utensils, text: 'Restaurant', category: 'Services' },
+  "bar": { icon: Wine, text: 'Lounge & Bar', category: 'Services' },
+  "pets": { icon: Dog, text: 'Pet Friendly', category: 'Services' },
+  "shuttle": { icon: Plane, text: 'Airport Shuttle', category: 'Services' },
+};
+
+export default function PropertyAmenities({ amenities }: PropertyAmenitiesProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // Use dynamic amenities if provided, otherwise fallback to mock data
+  const hasDynamicAmenities = amenities && amenities.length > 0;
+  
+  const displayAmenities = hasDynamicAmenities 
+    ? amenities.map(id => AMENITIES_MAP[id] || { icon: Sparkles, text: id, category: 'Other' })
+    : FEATURED_AMENITIES;
+
+  const previewAmenities = displayAmenities.slice(0, 6);
+  const showAllButton = displayAmenities.length > 6;
+
+  // Group dynamic amenities for the modal
+  const modalGroups = hasDynamicAmenities ? (() => {
+    const groups: Record<string, { icon: any, text: string }[]> = {};
+    displayAmenities.forEach(am => {
+      const cat = am.category || 'Other';
+      if (!groups[cat]) groups[cat] = [];
+      groups[cat].push({ icon: am.icon, text: am.text });
+    });
+    return Object.keys(groups).map(category => ({
+      category,
+      items: groups[category]
+    }));
+  })() : AMENITY_GROUPS;
+
+  if (displayAmenities.length === 0) return null;
 
   return (
     <>
       <div id="amenities" className="scroll-mt-24 border-t border-gray-200 pt-12 pb-12">
         <h2 className="text-[24px] font-semibold text-brand-navy mb-8">What this place offers</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-y-6 gap-x-4">
-          {FEATURED_AMENITIES.map((item, i) => {
+          {previewAmenities.map((item, i) => {
             const Icon = item.icon;
             return (
               <div key={i} className="flex items-center gap-4 text-[15px] text-gray-700">
                 <Icon size={22} className="text-gray-700" strokeWidth={1.5} />
-                <span className="font-medium">{item.text}</span>
+                <span className="font-medium capitalize">{item.text}</span>
               </div>
             );
           })}
         </div>
-        <button 
-          onClick={() => setIsModalOpen(true)}
-          className="mt-8 px-6 py-3 border border-gray-300 rounded-xl font-semibold text-[15px] hover:bg-gray-50 transition-colors"
-        >
-          Show all 48 amenities
-        </button>
+        {showAllButton && (
+          <button 
+            onClick={() => setIsModalOpen(true)}
+            className="mt-8 px-6 py-3 border border-gray-300 rounded-xl font-semibold text-[15px] hover:bg-gray-50 transition-colors"
+          >
+            Show all {displayAmenities.length} amenities
+          </button>
+        )}
       </div>
 
       {/* Full Screen Modal */}
@@ -148,8 +197,8 @@ export default function PropertyAmenities() {
               </h2>
               
               <div className="flex flex-col gap-10">
-                {AMENITY_GROUPS.map((group, idx) => (
-                  <div key={idx} className={idx !== AMENITY_GROUPS.length - 1 ? 'border-b border-gray-200 pb-10' : ''}>
+                {modalGroups.map((group, idx) => (
+                  <div key={idx} className={idx !== modalGroups.length - 1 ? 'border-b border-gray-200 pb-10' : ''}>
                     <h3 className="text-[20px] font-semibold text-[#222] mb-6">
                       {group.category}
                     </h3>

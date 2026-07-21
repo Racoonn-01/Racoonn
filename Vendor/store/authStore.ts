@@ -22,6 +22,7 @@ export interface VendorProfile extends Models.Document {
   isEmailVerified?: boolean;
   isPhoneVerified?: boolean;
   onboardingStep?: number;
+  profileImage?: string;
   bizType?: string;
   idType?: string;
   aadharNumber?: string;

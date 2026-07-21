@@ -8,7 +8,6 @@ import {
   Home, 
   Map, 
   Package, 
-  Settings,
   ChevronLeft
 } from "lucide-react"
 
@@ -20,7 +19,6 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarSeparator,
 } from "@/components/ui/sidebar"
 import Image from "next/image"
 

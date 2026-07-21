@@ -19,6 +19,7 @@ export interface Property {
   isSuperhost?: boolean;
   isGuestFavorite?: boolean;
   freeCancellation?: boolean;
+  status?: string;
 }
 
 export default function PropertyCard({ property }: { property: Property }) {
@@ -76,7 +77,7 @@ export default function PropertyCard({ property }: { property: Property }) {
           <h3 className="font-semibold text-[15px] text-gray-900 truncate pr-4">{property.title}</h3>
           <div className="flex items-center gap-1 text-[14px] font-medium shrink-0">
             <Star size={13} className="fill-gray-900 text-gray-900" />
-            {property.rating} <span className="text-gray-500 font-normal">({property.reviews})</span>
+            {Number(property.rating) > 0 ? property.rating : 'New'} <span className="text-gray-500 font-normal">({property.reviews})</span>
           </div>
         </div>
         <p className="text-[14px] text-gray-500 truncate mt-0.5">{property.subtitle}</p>

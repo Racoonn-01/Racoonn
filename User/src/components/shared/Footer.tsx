@@ -31,7 +31,7 @@ export default function Footer() {
   return (
     <footer className="bg-brand-navy text-white pt-24 pb-12 relative overflow-hidden">
       {/* Decorative background shapes */}
-      <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-brand-coral/50 to-transparent opacity-50"></div>
+      <div className="absolute top-0 inset-x-0 h-px bg-linear-to-r from-transparent via-primary/20 to-transparent"></div>
       <div className="absolute top-[-10%] right-[-5%] w-96 h-96 bg-brand-coral/10 rounded-full blur-[100px] pointer-events-none"></div>
       <div className="absolute bottom-[-10%] left-[-5%] w-96 h-96 bg-blue-500/10 rounded-full blur-[100px] pointer-events-none"></div>
 
@@ -54,7 +54,7 @@ export default function Footer() {
             </p>
             
             <div className="bg-white/5 rounded-2xl p-6 border border-white/10 backdrop-blur-sm relative overflow-hidden group">
-              <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+              <div className="absolute inset-0 bg-linear-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
               <h4 className="text-white font-medium mb-2 relative z-10">Subscribe to our Newsletter</h4>
               <p className="text-brand-sky/60 text-sm mb-4 relative z-10">Get the latest updates and exclusive offers directly in your inbox.</p>
               <form className="flex gap-2 relative z-10">
@@ -62,8 +62,9 @@ export default function Footer() {
                   type="email" 
                   placeholder="Enter your email" 
                   className="bg-white/10 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/40 focus:outline-none focus:border-brand-coral focus:bg-white/20 transition-all w-full text-sm"
+                  suppressHydrationWarning
                 />
-                <button className="bg-brand-coral hover:bg-[#d95d63] text-white p-3 rounded-xl transition-colors flex-shrink-0 flex items-center justify-center">
+                <button className="bg-brand-coral hover:bg-[#d95d63] text-white p-3 rounded-xl transition-colors flex-none flex items-center justify-center">
                   <Send size={20} />
                 </button>
               </form>
@@ -104,7 +105,7 @@ export default function Footer() {
             </h4>
             <ul className="space-y-6 mt-2">
               <li className="flex items-start gap-4 group">
-                <div className="w-11 h-11 rounded-full bg-white/5 border border-white/10 flex items-center justify-center shrink-0 group-hover:bg-brand-coral/20 group-hover:border-brand-coral/30 transition-all">
+                <div className="w-11 h-11 rounded-full bg-white/5 border border-white/10 flex items-center justify-center flex-none group-hover:bg-brand-coral/20 group-hover:border-brand-coral/30 transition-all">
                   <MapPin className="text-brand-coral" size={20} />
                 </div>
                 <div>
@@ -113,7 +114,7 @@ export default function Footer() {
                 </div>
               </li>
               <li className="flex items-start gap-4 group">
-                <div className="w-11 h-11 rounded-full bg-white/5 border border-white/10 flex items-center justify-center shrink-0 group-hover:bg-brand-coral/20 group-hover:border-brand-coral/30 transition-all">
+                <div className="w-11 h-11 rounded-full bg-white/5 border border-white/10 flex items-center justify-center flex-none group-hover:bg-brand-coral/20 group-hover:border-brand-coral/30 transition-all">
                   <Phone className="text-brand-coral" size={20} />
                 </div>
                 <div>
@@ -122,8 +123,8 @@ export default function Footer() {
                 </div>
               </li>
               <li className="flex items-start gap-4 group">
-                <div className="w-11 h-11 rounded-full bg-white/5 border border-white/10 flex items-center justify-center shrink-0 group-hover:bg-brand-coral/20 group-hover:border-brand-coral/30 transition-all">
-                  <Mail className="text-brand-coral" size={20} />
+                <div className="w-11 h-11 rounded-full bg-white/5 border border-white/10 flex items-center justify-center flex-none group-hover:bg-brand-coral/20 group-hover:border-brand-coral/30 transition-all">
+                  <Mail className="h-5 w-5 text-primary flex-none" />
                 </div>
                 <div>
                   <h5 className="text-white/90 text-sm font-medium mb-1">Email</h5>

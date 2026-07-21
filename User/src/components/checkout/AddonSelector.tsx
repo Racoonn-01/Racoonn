@@ -1,35 +1,53 @@
 "use client";
-import { Plus, Check, Plane, Coffee, Sparkles, Shield, Sun, Moon } from "lucide-react";
-import { useState } from "react";
+import { Plus, Check, Sparkles, Car, Plane, Coffee, Shield, Clock, Wine, Utensils } from "lucide-react";
 import { motion } from "framer-motion";
+import { useCheckoutStore } from "@/store/checkoutStore";
 
-const ADDONS = [
-  { id: "airport", title: "Airport Transfer", price: 1200, icon: Plane, description: "Hassle-free pickup and drop-off" },
-  { id: "breakfast", title: "Breakfast Package", price: 800, icon: Coffee, description: "Daily buffet breakfast per person" },
-  { id: "spa", title: "Spa Access", price: 1500, icon: Sparkles, description: "Unlimited access to wellness center" },
-  { id: "insurance", title: "Travel Insurance", price: 450, icon: Shield, description: "Comprehensive trip coverage" },
-  { id: "early", title: "Early Check-In", price: 500, icon: Sun, description: "Check in as early as 10:00 AM" },
-  { id: "late", title: "Late Check-Out", price: 500, icon: Moon, description: "Check out as late as 4:00 PM" },
+export const DEFAULT_ADDONS = [
+  { id: "airport", title: "Airport Transfer", price: 1200, description: "Hassle-free pickup and drop-off" },
+  { id: "breakfast", title: "Breakfast Package", price: 800, description: "Daily buffet breakfast per person" },
+  { id: "spa", title: "Spa Access", price: 1500, description: "Unlimited access to wellness center" },
+  { id: "insurance", title: "Travel Insurance", price: 450, description: "Comprehensive trip coverage" }
 ];
 
-export function AddonSelector() {
-  const [selected, setSelected] = useState<string[]>([]);
+interface AddonType {
+  id: string;
+  title: string;
+  price: number;
+  description: string;
+}
 
-  const toggle = (id: string) => {
-    setSelected(prev => 
-      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
-    );
-  };
+interface AddonSelectorProps {
+  addons: AddonType[];
+}
+
+function getIconForTitle(title: string) {
+  const t = title.toLowerCase();
+  if (t.includes('cab') || t.includes('car') || t.includes('taxi') || t.includes('ride') || t.includes('transport')) return Car;
+  if (t.includes('airport') || t.includes('flight') || t.includes('plane') || t.includes('transfer')) return Plane;
+  if (t.includes('food') || t.includes('breakfast') || t.includes('lunch') || t.includes('dinner') || t.includes('meal')) return Coffee;
+  if (t.includes('spa') || t.includes('massage') || t.includes('wellness') || t.includes('relax')) return Sparkles;
+  if (t.includes('insur') || t.includes('protect') || t.includes('shield')) return Shield;
+  if (t.includes('early') || t.includes('late') || t.includes('time') || t.includes('check') || t.includes('hour')) return Clock;
+  if (t.includes('wine') || t.includes('drink') || t.includes('champagne') || t.includes('bottle')) return Wine;
+  return Sparkles; // Default fallback icon
+}
+
+export function AddonSelector({ addons }: AddonSelectorProps) {
+  const selected = useCheckoutStore(state => state.selectedAddons);
+  const toggle = useCheckoutStore(state => state.toggleAddon);
+
+  const displayAddons = addons && addons.length > 0 ? addons : DEFAULT_ADDONS;
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-[#DCE8F5] p-6 md:p-8">
-      <h2 className="text-xl md:text-2xl font-poppins font-bold text-[#1F2E4A] mb-2">Enhance Your Stay</h2>
+    <div className="bg-white rounded-xl shadow-sm border border-brand-sky p-6 md:p-8">
+      <h2 className="text-xl md:text-2xl font-poppins font-bold text-brand-navy mb-2">Enhance Your Stay</h2>
       <p className="text-sm text-gray-500 mb-6">Select premium add-ons for a better experience</p>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {ADDONS.map((addon) => {
+        {displayAddons.map((addon) => {
           const isSelected = selected.includes(addon.id);
-          const Icon = addon.icon;
+          const Icon = getIconForTitle(addon.title);
           
           return (
             <motion.div
@@ -39,25 +57,25 @@ export function AddonSelector() {
               onClick={() => toggle(addon.id)}
               className={`relative cursor-pointer rounded-xl border-2 p-4 transition-colors flex flex-col h-full ${
                 isSelected 
-                  ? "border-[#E86A70] bg-[#F8D6D8]/30" 
-                  : "border-[#DCE8F5] hover:border-[#E86A70]/50"
+                  ? "border-brand-coral bg-brand-soft-coral/30" 
+                  : "border-brand-sky hover:border-brand-coral/50"
               }`}
             >
               <div className="flex justify-between items-start mb-3">
-                <div className={`p-2 rounded-lg ${isSelected ? "bg-[#E86A70] text-white" : "bg-[#F4F0EA] text-[#1F2E4A]"}`}>
+                <div className={`p-2 rounded-lg ${isSelected ? "bg-brand-coral text-white" : "bg-brand-sand text-brand-navy"}`}>
                   <Icon className="w-5 h-5" />
                 </div>
                 <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${
-                  isSelected ? "border-[#E86A70] bg-[#E86A70]" : "border-gray-300"
+                  isSelected ? "border-brand-coral bg-brand-coral" : "border-gray-300"
                 }`}>
                   {isSelected ? <Check className="w-3.5 h-3.5 text-white" /> : <Plus className="w-3.5 h-3.5 text-gray-400" />}
                 </div>
               </div>
               
               <div className="mt-auto">
-                <h3 className="font-bold text-[#1F2E4A] text-sm mb-1">{addon.title}</h3>
+                <h3 className="font-bold text-brand-navy text-sm mb-1">{addon.title}</h3>
                 <p className="text-xs text-gray-500 mb-3">{addon.description}</p>
-                <div className="font-medium text-[#E86A70]">₹{addon.price}</div>
+                <div className="font-medium text-brand-coral">₹{addon.price}</div>
               </div>
             </motion.div>
           );

@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { UploadCloud, X, Loader2, ChevronLeft } from "lucide-react";
@@ -150,9 +150,16 @@ export function RoomForm({ roomId }: RoomFormProps) {
         vendorId: user.$id,
         propertyId: formData.propertyId,
         name: formData.name,
+        type: formData.type,
+        beds: formData.beds,
         occupancy: parseInt(formData.occupancy) || 2,
         size: parseInt(formData.size) || 0,
         price: parseFloat(formData.price) || 0,
+        discountPrice: parseFloat(formData.discountPrice) || 0,
+        mealPlan: formData.mealPlan,
+        cancellation: formData.cancellation,
+        description: formData.description,
+        amenities: selectedAmenities,
         photos: finalPhotos,
       };
 

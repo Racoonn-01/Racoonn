@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { UserProfile, useAuthStore } from '@/store/authStore';
 import { authService } from '@/lib/appwrite/auth';
 import { CheckCircle2, Loader2, ChevronDown } from 'lucide-react';
+import { SearchableSelect } from '@/components/ui/searchable-select';
+import { Country, State, City } from 'country-state-city';
 
 // Reusable wrapper for the MakeMyTrip style floating label inputs
 const FieldWrapper = ({ label, children }: { label: string, children: React.ReactNode }) => (
@@ -16,9 +18,17 @@ const FieldWrapper = ({ label, children }: { label: string, children: React.Reac
 export default function PersonalInformationForm({ profile }: { profile: UserProfile | null }) {
   const { checkAuth } = useAuthStore();
   
-  // Extract initial names
   const initialFirstName = profile?.name?.split(' ')[0] || '';
   const initialLastName = profile?.name?.split(' ').slice(1).join(' ') || '';
+
+  const legacyStateMap: Record<string, string> = {
+    "NY": "New York",
+    "CA": "California",
+    "TX": "Texas",
+    "MH": "Maharashtra",
+    "NSW": "New South Wales"
+  };
+  const getMappedState = (stateCode?: string) => stateCode ? (legacyStateMap[stateCode] || stateCode) : '';
 
   const [formData, setFormData] = useState({
     firstName: initialFirstName,
@@ -29,8 +39,8 @@ export default function PersonalInformationForm({ profile }: { profile: UserProf
     maritalStatus: profile?.maritalStatus || '',
     anniversaryMonth: profile?.anniversary?.split('-')[0] || '',
     anniversaryDay: profile?.anniversary?.split('-')[1] || '',
-    city: profile?.city || '',
-    state: profile?.state || '',
+    city: profile?.nationality ? (profile?.city || '') : '',
+    state: profile?.nationality ? getMappedState(profile?.state) : '',
     phone: profile?.phone || '',
     email: profile?.email || '',
     // Document Fields
@@ -52,8 +62,8 @@ export default function PersonalInformationForm({ profile }: { profile: UserProf
           maritalStatus: profile.maritalStatus || '',
           anniversaryMonth: profile.anniversary?.split('-')[0] || '',
           anniversaryDay: profile.anniversary?.split('-')[1] || '',
-          city: profile.city || '',
-          state: profile.state || '',
+          city: profile.nationality ? (profile.city || '') : '',
+          state: profile.nationality ? getMappedState(profile.state) : '',
           phone: profile.phone || '',
           email: profile.email || '',
           passportNo: profile.passportNo || '',
@@ -189,21 +199,23 @@ export default function PersonalInformationForm({ profile }: { profile: UserProf
               
               <div className="md:col-span-2">
                 <FieldWrapper label="Nationality">
-                  <select 
-                    name="nationality"
-                    value={formData.nationality}
-                    onChange={handleChange}
-                    className="w-full h-16 px-4 pt-6 pb-2 bg-transparent outline-none text-brand-navy font-medium appearance-none cursor-pointer"
-                  >
-                    <option value="">Select</option>
-                    <option value="United States">United States</option>
-                    <option value="United Kingdom">United Kingdom</option>
-                    <option value="Canada">Canada</option>
-                    <option value="Australia">Australia</option>
-                    <option value="India">India</option>
-                    <option value="Other">Other</option>
-                  </select>
-                  <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={16} />
+                  <div className="w-full h-16 px-4 pt-6 pb-2">
+                    <SearchableSelect
+                      options={Country.getAllCountries().map(c => c.name)}
+                      value={formData.nationality}
+                      onChange={(val) => {
+                        setFormData(prev => ({ 
+                          ...prev, 
+                          nationality: val,
+                          state: '', // Reset state when nationality changes
+                          city: ''   // Reset city when nationality changes
+                        }));
+                        setSaveStatus('idle');
+                      }}
+                      placeholder="Select Nationality"
+                      className="w-full h-full font-medium"
+                    />
+                  </div>
                 </FieldWrapper>
               </div>
             </div>
@@ -258,38 +270,48 @@ export default function PersonalInformationForm({ profile }: { profile: UserProf
             {/* Row 4: City & State */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FieldWrapper label="City of Residence">
-                <select 
-                  name="city"
-                  value={formData.city}
-                  onChange={handleChange}
-                  className="w-full h-16 px-4 pt-6 pb-2 bg-transparent outline-none text-brand-navy font-medium appearance-none cursor-pointer"
-                >
-                  <option value="">Select City</option>
-                  <option value="New York">New York</option>
-                  <option value="Los Angeles">Los Angeles</option>
-                  <option value="London">London</option>
-                  <option value="Mumbai">Mumbai</option>
-                  <option value="Sydney">Sydney</option>
-                </select>
-                <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={16} />
+                <div className="w-full h-16 px-4 pt-6 pb-2">
+                  <SearchableSelect
+                    options={
+                      formData.nationality 
+                        ? Array.from(new Set(
+                            City.getCitiesOfCountry(
+                              Country.getAllCountries().find(c => c.name === formData.nationality)?.isoCode || ""
+                            )?.map(c => c.name) || []
+                          ))
+                        : [] // Empty if no country selected to prevent crashing the browser with 150k cities
+                    }
+                    value={formData.city}
+                    onChange={(val) => {
+                      setFormData(prev => ({ ...prev, city: val }));
+                      setSaveStatus('idle');
+                    }}
+                    placeholder="Select City"
+                    className="w-full h-full font-medium"
+                  />
+                </div>
               </FieldWrapper>
 
               <div>
                 <FieldWrapper label="State">
-                  <select 
-                    name="state"
-                    value={formData.state}
-                    onChange={handleChange}
-                    className="w-full h-16 px-4 pt-6 pb-2 bg-transparent outline-none text-brand-navy font-medium appearance-none cursor-pointer"
-                  >
-                    <option value="">Select State</option>
-                    <option value="NY">New York</option>
-                    <option value="CA">California</option>
-                    <option value="TX">Texas</option>
-                    <option value="MH">Maharashtra</option>
-                    <option value="NSW">New South Wales</option>
-                  </select>
-                  <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={16} />
+                  <div className="w-full h-16 px-4 pt-6 pb-2">
+                    <SearchableSelect
+                      options={
+                        formData.nationality 
+                          ? State.getStatesOfCountry(
+                              Country.getAllCountries().find(c => c.name === formData.nationality)?.isoCode || ""
+                            )?.map(s => s.name) || []
+                          : []
+                      }
+                      value={formData.state}
+                      onChange={(val) => {
+                        setFormData(prev => ({ ...prev, state: val }));
+                        setSaveStatus('idle');
+                      }}
+                      placeholder="Select State"
+                      className="w-full h-full font-medium"
+                    />
+                  </div>
                 </FieldWrapper>
                 <p className="text-[11px] text-gray-500 mt-1 ml-1">Required for GST purpose on your tax invoice</p>
               </div>

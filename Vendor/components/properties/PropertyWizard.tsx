@@ -13,7 +13,7 @@ import {
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { databases, storage, appwriteConfig } from "@/lib/appwrite/client";
-import { ID, Query } from "appwrite";
+import { ID, Query, Permission, Role } from "appwrite";
 import { useAuthStore } from "@/store/authStore";
 import { toast } from "sonner";
 
@@ -64,12 +64,13 @@ export function PropertyWizard({ propertyId }: PropertyWizardProps) {
     zip: "",
     amenities: [] as string[],
     photos: [] as string[],
-    rooms: [] as any[]
+    rooms: [] as any[],
+    addons: [] as { id: string, title: string, price: number, description: string }[]
   });
 
   useEffect(() => {
     const fetchProperty = async () => {
-      if (!propertyId) return;
+      if (!propertyId || propertyId === 'undefined' || propertyId === 'null') return;
       try {
         const prop = await databases.getDocument(
           appwriteConfig.databaseId,
@@ -109,7 +110,8 @@ export function PropertyWizard({ propertyId }: PropertyWizardProps) {
             discountPrice: "",
             mealPlan: "Room only",
             cancellation: "Free cancellation"
-          }))
+          })),
+          addons: prop.addons ? prop.addons.map((a: string) => JSON.parse(a)) : []
         });
       } catch (err: any) {
         toast.error("Failed to load property: " + err.message);
@@ -142,14 +144,16 @@ export function PropertyWizard({ propertyId }: PropertyWizardProps) {
           appwriteConfig.databaseId,
           appwriteConfig.propertyCollectionId,
           internalPropId,
-          data
+          data,
+          [Permission.read(Role.any()), Permission.update(Role.user(user.$id)), Permission.delete(Role.user(user.$id))]
         );
       } else {
         const res = await databases.createDocument(
           appwriteConfig.databaseId,
           appwriteConfig.propertyCollectionId,
           ID.unique(),
-          data
+          data,
+          [Permission.read(Role.any()), Permission.update(Role.user(user.$id)), Permission.delete(Role.user(user.$id))]
         );
         setInternalPropId(res.$id);
       }
@@ -243,6 +247,27 @@ export function PropertyWizard({ propertyId }: PropertyWizardProps) {
     }));
   };
 
+  const addAddon = () => {
+    setFormData(prev => ({
+      ...prev,
+      addons: [...prev.addons, { id: Date.now().toString(), title: "", price: 0, description: "" }]
+    }));
+  };
+
+  const removeAddon = (id: string) => {
+    setFormData(prev => ({
+      ...prev,
+      addons: prev.addons.filter(a => a.id !== id)
+    }));
+  };
+
+  const updateAddon = (id: string, field: string, value: string | number) => {
+    setFormData(prev => ({
+      ...prev,
+      addons: prev.addons.map(a => a.id === id ? { ...a, [field]: value } : a)
+    }));
+  };
+
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!internalPropId) return;
     if (e.target.files && e.target.files.length > 0) {
@@ -317,7 +342,7 @@ export function PropertyWizard({ propertyId }: PropertyWizardProps) {
           propertyId: internalPropId,
           vendorId: user?.$id,
           name: room.name,
-          price: parseFloat(room.price) || 0,
+          price: parseInt(room.price) || 0,
           occupancy: parseInt(room.occupancy) || 2,
           size: parseInt(room.size) || 0,
           photos: finalPhotos
@@ -330,9 +355,16 @@ export function PropertyWizard({ propertyId }: PropertyWizardProps) {
       }
       
       // Update property status
-      await databases.updateDocument(appwriteConfig.databaseId, appwriteConfig.propertyCollectionId, internalPropId, {
-        status: "Active"
-      });
+      await databases.updateDocument(
+        appwriteConfig.databaseId, 
+        appwriteConfig.propertyCollectionId, 
+        internalPropId, 
+        {
+          status: "Active",
+          addons: formData.addons.map(a => JSON.stringify(a))
+        },
+        [Permission.read(Role.any()), Permission.update(Role.user(user?.$id || '')), Permission.delete(Role.user(user?.$id || ''))]
+      );
       
       toast.success("Property published successfully!");
       router.push("/vendor/properties");
@@ -438,6 +470,26 @@ export function PropertyWizard({ propertyId }: PropertyWizardProps) {
                       <div className="space-y-2">
                         <label className="text-[12px] font-semibold text-slate-700 uppercase tracking-wide">State/Region</label>
                         <Input value={formData.state} onChange={(e) => setFormData({...formData, state: e.target.value})} placeholder="Rajasthan" className="h-14 rounded-xl bg-slate-50/50 border-slate-200 focus-visible:ring-primary/20 text-[15px]" />
+                      </div>
+                      <div className="space-y-2 sm:col-span-2">
+                        <label className="text-[12px] font-semibold text-slate-700 uppercase tracking-wide">Map Preview</label>
+                        <div className="w-full h-75 bg-slate-100 rounded-xl overflow-hidden relative shadow-inner border border-slate-200">
+                          {([formData.address, formData.city, formData.state].filter(Boolean).join(", ")).length > 0 ? (
+                            <iframe
+                              width="100%"
+                              height="100%"
+                              style={{ border: 0 }}
+                              loading="lazy"
+                              allowFullScreen
+                              referrerPolicy="no-referrer-when-downgrade"
+                              src={`https://maps.google.com/maps?q=${encodeURIComponent([formData.address, formData.city, formData.state].filter(Boolean).join(", "))}&t=&z=13&ie=UTF8&iwloc=&output=embed`}
+                            />
+                          ) : (
+                            <div className="flex items-center justify-center h-full text-slate-400 font-medium">
+                              Type a location above to see map preview
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -575,12 +627,56 @@ export function PropertyWizard({ propertyId }: PropertyWizardProps) {
                         </div>
                       </div>
                     ))}
-                    {formData.rooms.length === 0 && (
+                     {formData.rooms.length === 0 && (
                        <div className="text-center p-8 text-slate-500 font-medium border-2 border-dashed border-slate-200 rounded-3xl">
                          No rooms added yet. Click 'Add Room' to start.
                        </div>
                     )}
                   </div>
+
+                  {/* Addons Section */}
+                  <div className="pt-8 border-t border-slate-200 mt-8">
+                    <div className="flex items-center justify-between mb-6">
+                      <div>
+                        <h3 className="text-xl font-heading font-bold text-secondary">Property Addons</h3>
+                        <p className="text-sm text-slate-500">Offer extra services like airport transfers or spa access.</p>
+                      </div>
+                      <Button onClick={addAddon} variant="outline" className="rounded-full border-brand-coral text-brand-coral hover:bg-brand-coral/10">
+                        <Plus className="w-4 h-4 mr-2" /> Add Addon
+                      </Button>
+                    </div>
+
+                    <div className="space-y-4">
+                      {formData.addons.map((addon) => (
+                        <div key={addon.id} className="p-4 rounded-2xl border border-slate-100 bg-white shadow-sm relative group flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+                          <button onClick={() => removeAddon(addon.id)} className="absolute -top-2 -right-2 w-6 h-6 bg-white border border-slate-200 shadow-sm rounded-full flex items-center justify-center text-rose-500 hover:bg-rose-50 transition-colors opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100 z-10">
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                          
+                          <div className="flex-1 space-y-1.5 w-full">
+                            <label className="text-[10px] font-semibold text-slate-700 uppercase tracking-wide">Title</label>
+                            <Input value={addon.title} onChange={(e) => updateAddon(addon.id, "title", e.target.value)} placeholder="Airport Transfer" className="h-10 rounded-lg bg-slate-50 border-slate-200 text-sm" />
+                          </div>
+                          
+                          <div className="flex-1 space-y-1.5 w-full">
+                            <label className="text-[10px] font-semibold text-slate-700 uppercase tracking-wide">Description</label>
+                            <Input value={addon.description} onChange={(e) => updateAddon(addon.id, "description", e.target.value)} placeholder="Pick up from airport" className="h-10 rounded-lg bg-slate-50 border-slate-200 text-sm" />
+                          </div>
+
+                          <div className="w-full sm:w-32 space-y-1.5">
+                            <label className="text-[10px] font-semibold text-slate-700 uppercase tracking-wide">Price (₹)</label>
+                            <Input type="number" value={addon.price} onChange={(e) => updateAddon(addon.id, "price", parseInt(e.target.value) || 0)} placeholder="1200" className="h-10 rounded-lg bg-slate-50 border-slate-200 text-sm" />
+                          </div>
+                        </div>
+                      ))}
+                      {formData.addons.length === 0 && (
+                        <div className="text-center p-6 text-slate-400 font-medium border border-dashed border-slate-200 rounded-2xl bg-slate-50/50 text-sm">
+                          No addons configured.
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
                 </div>
               )}
             </motion.div>

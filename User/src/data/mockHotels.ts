@@ -6,6 +6,7 @@ export interface Hotel {
   reviews: number;
   price: number;
   image: string;
+  status?: string;
 }
 
 export const mockHotels: Hotel[] = [
@@ -40,10 +41,11 @@ export const mockHotels: Hotel[] = [
     id: 'h4',
     name: 'Marina Bay Sands',
     location: 'Singapore',
-    rating: 4.7,
-    reviews: 5200,
-    price: 450,
-    image: 'https://images.unsplash.com/photo-1571003123894-1f0594d2b5d9?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+    rating: 4.8,
+    reviews: 890,
+    price: 420,
+    image: 'https://images.unsplash.com/photo-1542314831-c6a4d14d837e?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+    status: 'pending',
   },
   {
     id: 'h5',

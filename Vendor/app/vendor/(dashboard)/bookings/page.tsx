@@ -1,16 +1,65 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import { Search, Download, Filter, MessageSquare, FileText, Ban, MapPin, CreditCard, ArrowLeft } from "lucide-react";
+import { Search, Download, Filter, MessageSquare, FileText, Ban, MapPin, CreditCard, ArrowLeft, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-
-const bookings: any[] = [];
+import { databases, appwriteConfig } from "@/lib/appwrite/client";
+import { Query } from "appwrite";
 
 export default function BookingsPage() {
   const [selectedBooking, setSelectedBooking] = useState<any>(null);
+  const [bookings, setBookings] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchBookings() {
+      try {
+        setIsLoading(true);
+        // Fetch all 3 collections
+        const [bookingsRes, guestsRes, paymentsRes] = await Promise.all([
+          databases.listDocuments(appwriteConfig.databaseId, 'bookings', [Query.orderDesc('$createdAt')]),
+          databases.listDocuments(appwriteConfig.databaseId, 'booking_guests'),
+          databases.listDocuments(appwriteConfig.databaseId, 'booking_payments')
+        ]);
+
+        const mappedBookings = bookingsRes.documents.map(booking => {
+          const guest = guestsRes.documents.find(g => g.bookingId === booking.$id);
+          const payment = paymentsRes.documents.find(p => p.bookingId === booking.$id);
+
+          let currentStatus = booking.status;
+          if (currentStatus === 'Confirmed' && new Date(booking.checkOut).getTime() < new Date().getTime()) {
+            currentStatus = 'Completed';
+            databases.updateDocument(appwriteConfig.databaseId, 'bookings', booking.$id, { status: 'Completed' }).catch(console.error);
+          }
+
+          return {
+            id: booking.$id.substring(0, 8).toUpperCase(),
+            guest: guest ? `${guest.firstName} ${guest.lastName}` : 'Unknown Guest',
+            property: booking.hotelName || 'Racoonn Property',
+            dates: `${new Date(booking.checkIn).toLocaleDateString()} - ${new Date(booking.checkOut).toLocaleDateString()}`,
+            amount: payment ? `₹${payment.totalAmount}` : '₹0',
+            status: currentStatus,
+            email: guest?.email || 'N/A',
+            phone: guest?.phone || 'N/A',
+            guests: booking.adults || 1,
+            nationality: guest?.country || 'N/A',
+            specialRequests: guest?.specialRequests || '',
+            paymentMethod: booking.paymentStatus || 'Card',
+          };
+        });
+
+        setBookings(mappedBookings);
+      } catch (error) {
+        console.error("Failed to fetch bookings:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    fetchBookings();
+  }, []);
 
   return (
     <div className="space-y-6 relative">
@@ -66,7 +115,17 @@ export default function BookingsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-sm">
-              {bookings.length > 0 ? (
+              {isLoading ? (
+                <tr>
+                  <td colSpan={7} className="p-16 text-center">
+                    <div className="flex flex-col items-center justify-center">
+                      <Loader2 className="h-8 w-8 text-primary animate-spin mb-4" />
+                      <h3 className="text-lg font-heading font-semibold text-secondary">Loading bookings...</h3>
+                      <p className="text-slate-500 mt-1">Please wait while we fetch your data.</p>
+                    </div>
+                  </td>
+                </tr>
+              ) : bookings.length > 0 ? (
                 bookings.map((booking, i) => (
                   <motion.tr 
                     initial={{ opacity: 0 }}
@@ -192,12 +251,74 @@ export default function BookingsPage() {
                         <p className="font-bold text-secondary text-sm">{selectedBooking.nationality}</p>
                       </div>
                     </div>
-                    {selectedBooking.specialRequests && (
-                      <div className="pt-4 border-t border-slate-200/60">
-                        <p className="text-xs text-slate-500 font-medium mb-2">Special Requests</p>
-                        <p className="text-sm font-semibold text-amber-900 bg-amber-50 p-3 rounded-xl ring-1 ring-amber-200/50">{selectedBooking.specialRequests}</p>
-                      </div>
-                    )}
+                    {selectedBooking.specialRequests && (() => {
+                      const parts = selectedBooking.specialRequests.split('--- Additional Travelers ---');
+                      const specialReqs = parts[0]?.trim();
+                      const travelers = parts[1]?.trim();
+                      
+                      return (
+                        <div className="pt-4 border-t border-slate-200/60 space-y-4">
+                          {specialReqs && (
+                            <div>
+                              <p className="text-xs text-slate-500 font-medium mb-2">Special Requests</p>
+                              <p className="text-sm font-semibold text-amber-900 bg-amber-50 p-3 rounded-xl ring-1 ring-amber-200/50 whitespace-pre-wrap">{specialReqs}</p>
+                            </div>
+                          )}
+                          
+                          {travelers && (
+                            <div>
+                              <p className="text-xs text-slate-500 font-medium mb-2">Additional Travelers</p>
+                              <div className="grid grid-cols-1 gap-2">
+                                {travelers.split(/(?=Guest \d+:)/).filter(Boolean).map((t: string, i: number) => {
+                                  const match = t.match(/^(Guest \d+):\s*(.*)/);
+                                  if (match) {
+                                    const guestLabel = match[1];
+                                    const guestStr = match[2].trim();
+                                    
+                                    // Try to parse "Name (Gender, DOB: Date)"
+                                    const parsed = guestStr.match(/(.+?)\\s*\\((.+?),\\s*DOB:\\s*(.+?)\\)/);
+                                    
+                                    if (parsed) {
+                                      return (
+                                        <div key={i} className="bg-white p-4 rounded-xl ring-1 ring-slate-200 shadow-sm flex flex-col gap-3">
+                                          <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">{guestLabel}</span>
+                                          <div className="grid grid-cols-3 gap-2">
+                                            <div>
+                                              <p className="text-[10px] text-slate-400 uppercase font-bold mb-1">Name</p>
+                                              <p className="text-sm font-semibold text-brand-navy">{parsed[1]}</p>
+                                            </div>
+                                            <div>
+                                              <p className="text-[10px] text-slate-400 uppercase font-bold mb-1">Gender</p>
+                                              <p className="text-sm font-semibold text-brand-navy">{parsed[2]}</p>
+                                            </div>
+                                            <div>
+                                              <p className="text-[10px] text-slate-400 uppercase font-bold mb-1">DOB</p>
+                                              <p className="text-sm font-semibold text-brand-navy">{parsed[3]}</p>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      );
+                                    }
+                                    
+                                    return (
+                                      <div key={i} className="bg-white p-4 rounded-xl ring-1 ring-slate-200 shadow-sm flex flex-col gap-1">
+                                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">{guestLabel}</span>
+                                        <span className="text-sm font-semibold text-brand-navy">{guestStr}</span>
+                                      </div>
+                                    );
+                                  }
+                                  return (
+                                    <div key={i} className="bg-white p-3 rounded-xl ring-1 ring-slate-200 shadow-sm">
+                                      <span className="text-sm font-semibold text-brand-navy">{t.trim()}</span>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
                   </div>
                 </div>
               </div>

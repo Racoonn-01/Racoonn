@@ -57,14 +57,17 @@ export default function ProfilePage() {
 
         <div className="flex flex-col lg:flex-row gap-8 lg:gap-12 relative">
           
-          {/* Left Sidebar Navigation */}
-          <aside className="lg:w-1/4 w-full sticky top-32 self-start hidden lg:block">
-            <nav className="space-y-1 bg-white p-4 rounded-3xl shadow-sm border border-gray-100">
+          {/* Sidebar / Top Navigation */}
+          <aside className="lg:w-1/4 w-full lg:sticky lg:top-32 lg:self-start mb-6 lg:mb-0">
+            <nav 
+              className="flex lg:flex-col overflow-x-auto lg:overflow-visible gap-2 lg:gap-0 lg:space-y-1 bg-white p-2 lg:p-4 rounded-full lg:rounded-3xl shadow-sm border border-gray-100 snap-x"
+              style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+            >
               {['personal', 'bookings', 'saved', 'payments'].map((section) => (
                 <button
                   key={section}
                   onClick={() => setActiveSection(section)}
-                  className={`w-full text-left px-5 py-3.5 rounded-2xl font-semibold transition-all capitalize ${
+                  className={`shrink-0 w-auto lg:w-full text-center lg:text-left px-6 py-2.5 lg:py-3.5 rounded-full lg:rounded-2xl font-semibold transition-all capitalize snap-center ${
                     activeSection === section 
                       ? 'bg-brand-coral/10 text-brand-coral' 
                       : 'text-gray-600 hover:bg-gray-50 hover:text-brand-navy'

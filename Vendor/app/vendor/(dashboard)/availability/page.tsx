@@ -122,7 +122,7 @@ export default function AvailabilityPage() {
           <div className="mt-2">
             <TabsContent value="calendar" className="space-y-6 outline-none">
               <Card className="border-0 shadow-xl shadow-slate-200/40 ring-1 ring-slate-100 rounded-3xl overflow-hidden bg-white">
-                <CardHeader className="bg-gradient-to-b from-slate-50 to-white border-b border-slate-100 pb-5 pt-7 px-8">
+                <CardHeader className="bg-linear-to-b from-slate-50 to-white border-b border-slate-100 pb-5 pt-7 px-8">
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                     <div className="flex items-center gap-4 w-full md:w-auto">
                       <Select value={selectedRoomId} onValueChange={(val) => val && setSelectedRoomId(val)}>
@@ -198,7 +198,7 @@ export default function AvailabilityPage() {
 
             <TabsContent value="bulk" className="space-y-6 outline-none">
               <Card className="border-0 shadow-xl shadow-slate-200/40 ring-1 ring-slate-100 rounded-3xl overflow-hidden bg-white">
-                <CardHeader className="bg-gradient-to-b from-slate-50 to-white border-b border-slate-100 pb-5 pt-7 px-8">
+                <CardHeader className="bg-linear-to-b from-slate-50 to-white border-b border-slate-100 pb-5 pt-7 px-8">
                   <CardTitle className="font-heading text-2xl font-black text-secondary">Bulk Update Rates & Availability</CardTitle>
                   <CardDescription className="text-slate-500 font-medium mt-1">Quickly update multiple dates for a specific room type. (Database collection required to save overrides).</CardDescription>
                 </CardHeader>
@@ -274,7 +274,7 @@ export default function AvailabilityPage() {
 
             <TabsContent value="offers" className="space-y-6 outline-none">
               <Card className="border-0 shadow-xl shadow-slate-200/40 ring-1 ring-slate-100 rounded-3xl overflow-hidden bg-white">
-                <CardHeader className="bg-gradient-to-b from-slate-50 to-white border-b border-slate-100 pb-6 pt-7 px-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <CardHeader className="bg-linear-to-b from-slate-50 to-white border-b border-slate-100 pb-6 pt-7 px-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
                   <div>
                     <CardTitle className="font-heading text-2xl font-black text-secondary">Active Special Offers</CardTitle>
                     <CardDescription className="text-slate-500 font-medium mt-1">Create promotions to boost occupancy during low seasons.</CardDescription>

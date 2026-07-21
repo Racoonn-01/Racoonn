@@ -129,7 +129,7 @@ export default function AuthPage() {
                       <div className="space-y-2">
                         <Label htmlFor="resetEmail" className="text-sm font-bold text-slate-700 ml-1">Email address</Label>
                         <div className="relative">
-                          <Input id="resetEmail" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="hello@example.com" required className="h-14 pl-4 pr-10 rounded-2xl border-slate-200 bg-slate-50/50 focus:bg-white focus:ring-2 focus:ring-[#E86A70]/20 focus:border-[#E86A70] transition-all shadow-sm" />
+                          <Input suppressHydrationWarning id="resetEmail" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="hello@example.com" required className="h-14 pl-4 pr-10 rounded-2xl border-slate-200 bg-slate-50/50 focus:bg-white focus:ring-2 focus:ring-[#E86A70]/20 focus:border-[#E86A70] transition-all shadow-sm" />
                         </div>
                         <Button disabled={isLoading} type="submit" className="w-full h-14 text-white rounded-2xl text-[1.05rem] font-bold shadow-lg hover:-translate-y-0.5 transition-all mt-6 bg-[#1F2E4A] hover:bg-[#1F2E4A]/90 shadow-[#1F2E4A]/20">
                           {isLoading ? "Please wait..." : "Send Reset Link"}
@@ -147,7 +147,7 @@ export default function AuthPage() {
                     <div className="space-y-2">
                       <Label htmlFor="email" className="text-sm font-bold text-slate-700 ml-1">Email address</Label>
                       <div className="relative">
-                        <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="hello@example.com" required className="h-14 pl-4 pr-10 rounded-2xl border-slate-200 bg-slate-50/50 focus:bg-white focus:ring-2 focus:ring-[#E86A70]/20 focus:border-[#E86A70] transition-all shadow-sm" />
+                        <Input suppressHydrationWarning id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="hello@example.com" required className="h-14 pl-4 pr-10 rounded-2xl border-slate-200 bg-slate-50/50 focus:bg-white focus:ring-2 focus:ring-[#E86A70]/20 focus:border-[#E86A70] transition-all shadow-sm" />
                       </div>
                     </div>
                     
@@ -159,7 +159,7 @@ export default function AuthPage() {
                         )}
                       </div>
                       <div className="relative">
-                        <Input id="password" type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" required className="h-14 pl-4 pr-12 rounded-2xl border-slate-200 bg-slate-50/50 focus:bg-white focus:ring-2 focus:ring-[#E86A70]/20 focus:border-[#E86A70] transition-all shadow-sm" />
+                        <Input suppressHydrationWarning id="password" type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" required className="h-14 pl-4 pr-12 rounded-2xl border-slate-200 bg-slate-50/50 focus:bg-white focus:ring-2 focus:ring-[#E86A70]/20 focus:border-[#E86A70] transition-all shadow-sm" />
                         <button
                           type="button"
                           onClick={() => setShowPassword(!showPassword)}

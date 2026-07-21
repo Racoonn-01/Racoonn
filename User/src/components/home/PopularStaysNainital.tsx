@@ -1,9 +1,11 @@
 "use client";
 
-import { useRef } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Heart, ChevronRight, ChevronLeft, Star } from 'lucide-react';
+import { Heart, ChevronRight, Star } from 'lucide-react';
+import { isActiveProperty } from '@/lib/utils';
+import { getProperties } from '@/lib/appwrite/api';
 
 const nainitalStays = [
   {
@@ -25,6 +27,7 @@ const nainitalStays = [
     rating: '4.7',
     reviews: 215,
     image: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=800&auto=format&fit=crop',
+    status: 'pending',
   },
   {
     id: 'n3',
@@ -60,14 +63,38 @@ const nainitalStays = [
 
 export default function PopularStaysNainital() {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [properties, setProperties] = useState(nainitalStays);
 
-  const scroll = (direction: 'left' | 'right') => {
-    if (scrollContainerRef.current) {
-      const { current } = scrollContainerRef;
-      const scrollAmount = direction === 'left' ? -350 : 350;
-      current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+  useEffect(() => {
+    async function loadProperties() {
+      const data = await getProperties();
+      if (data && data.length > 0) {
+        // Filter by location/city 'Nainital'
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const nainitalProps = data.filter((doc: any) => 
+          (doc.city && doc.city.toLowerCase().includes('nainital')) || 
+          (doc.location && doc.location.toLowerCase().includes('nainital'))
+        );
+        
+        if (nainitalProps.length > 0) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const mappedProperties = nainitalProps.map((doc: any) => ({
+            id: doc.$id,
+            title: doc.propertyName || doc.title || 'Unknown Property',
+            location: doc.location || `${doc.city || ''}, ${doc.state || ''}`,
+            details: doc.description || doc.details || '',
+            rating: doc.rating || 'New',
+            reviews: doc.reviewsCount || 0,
+            price: `₹${doc.price || 0}`,
+            image: (doc.photos && doc.photos[0]) ? doc.photos[0] : 'https://images.unsplash.com/photo-1510798831971-661eb04b3739?q=80&w=800&auto=format&fit=crop',
+            status: doc.status?.toLowerCase(),
+          }));
+          setProperties(mappedProperties);
+        }
+      }
     }
-  };
+    loadProperties();
+  }, []);
 
   return (
     <section className="container mx-auto px-4 py-12 relative group">
@@ -88,10 +115,10 @@ export default function PopularStaysNainital() {
           ref={scrollContainerRef}
           className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 pb-4"
         >
-          {nainitalStays.slice(0, 4).map((stay) => (
-            <Link href={`/property/${stay.id}`} key={stay.id} className="w-full group/card cursor-pointer block">
+          {properties.filter(isActiveProperty).slice(0, 4).map((stay) => (
+            <Link href={`/property/${stay.id}`} key={stay.id} className="w-full group/card cursor-pointer flex flex-col h-full">
               {/* Image */}
-              <div className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden mb-3 bg-gray-200">
+              <div className="relative w-full aspect-4/3 shrink-0 rounded-2xl overflow-hidden mb-3 bg-gray-200">
                 <Image
                   src={stay.image}
                   alt={stay.title}
@@ -109,17 +136,17 @@ export default function PopularStaysNainital() {
               </div>
 
               {/* Info */}
-              <div className="flex flex-col">
+              <div className="flex flex-col flex-1">
                 <div className="flex justify-between items-start">
-                  <h3 className="font-semibold text-[15px] text-gray-900 truncate pr-2">{stay.title}</h3>
-                  <div className="flex items-center gap-1 text-[14px] font-medium shrink-0">
+                  <h3 className="font-semibold text-[15px] text-gray-900 pr-2 line-clamp-2">{stay.title}</h3>
+                  <div className="flex items-center gap-1 text-[14px] font-medium shrink-0 ml-2">
                     <Star size={13} className="fill-gray-900 text-gray-900" />
-                    {stay.rating} <span className="text-gray-500 font-normal">({stay.reviews})</span>
+                    {Number(stay.rating) > 0 ? stay.rating : 'New'} <span className="text-gray-500 font-normal">({stay.reviews})</span>
                   </div>
                 </div>
                 <p className="text-[14px] text-gray-500 truncate mt-0.5">{stay.location}</p>
-                <p className="text-[14px] text-gray-500 truncate">{stay.details}</p>
-                <div className="mt-2 flex items-baseline gap-1">
+                <p className="text-[14px] text-gray-500 line-clamp-2">{stay.details}</p>
+                <div className="mt-auto pt-2 flex items-baseline gap-1">
                   <span className="text-[15px] font-semibold text-gray-900">{stay.price}</span>
                   <span className="text-[14px] text-gray-900">per night</span>
                 </div>

@@ -54,10 +54,16 @@ export default function HeroSection() {
   const [isCheckOutOpen, setIsCheckOutOpen] = useState(false);
   const [chatQuery, setChatQuery] = useState('');
   const [isRecording, setIsRecording] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   const handleAiSearch = (queryStr: string = chatQuery) => {
     if (!queryStr.trim()) return;
-    router.push(`/search?ai=${encodeURIComponent(queryStr.trim())}`);
+    setIsAnalyzing(true);
+    setTimeout(() => {
+      router.push(`/search?ai=${encodeURIComponent(queryStr.trim())}`);
+      // Resetting is optional, but helps if they navigate back
+      setTimeout(() => setIsAnalyzing(false), 1000);
+    }, 2500);
   };
 
   const handleMicClick = () => {
@@ -242,40 +248,77 @@ export default function HeroSection() {
                   transition={{ duration: 0.3, ease: 'easeOut' }}
                   className="flex flex-col gap-4"
                 >
-                  <div className="flex items-start gap-4 border border-brand-coral/30 rounded-2xl p-5 bg-brand-coral/5 transition-colors focus-within:border-brand-coral/60 focus-within:bg-white shadow-inner relative">
-                    <div className="w-8 h-8 relative rounded-full overflow-hidden shrink-0 bg-white shadow-sm mt-0.5 border border-gray-100">
-                      <Image src={chatbotLogo} alt="AI Assistant" fill className="object-contain p-1" />
-                    </div>
-                    <textarea 
-                      placeholder="e.g. Find me a beachfront villa in Bali for 2 adults next weekend with a private pool..."
-                      className="w-full min-h-62.5 md:min-h-34 outline-none text-brand-navy text-[16px] placeholder:text-brand-charcoal/40 bg-transparent resize-none leading-relaxed pb-8"
-                      autoFocus
-                      value={chatQuery}
-                      onChange={(e) => setChatQuery(e.target.value)}
-                    />
-                    <button 
-                      onClick={handleMicClick}
-                      className={`absolute right-4 bottom-4 p-2 rounded-full transition-colors ${
-                        isRecording 
-                          ? 'bg-red-100 text-red-500 hover:bg-red-200 animate-pulse' 
-                          : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
-                      }`}
-                      title={isRecording ? "Stop recording" : "Use voice input"}
+                  {isAnalyzing ? (
+                    <motion.div 
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="flex flex-col items-center justify-center py-8 gap-6 min-h-55"
                     >
-                      {isRecording ? <MicOff size={20} /> : <Mic size={20} />}
-                    </button>
-                  </div>
-                  <div className="flex justify-end">
-                    <button 
-                      onClick={() => handleAiSearch()}
-                      className="bg-linear-to-r from-brand-coral to-[#e84f57] hover:shadow-[0_8px_20px_rgba(232,106,112,0.3)] text-white pl-7 pr-5 py-3.5 rounded-full font-bold flex items-center justify-center gap-3 transition-all hover:-translate-y-0.5 text-[15px] sm:w-55"
-                    >
-                      Ask Racoonn AI
-                      <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
-                        <ArrowRight size={16} />
+                      <div className="relative w-20 h-20">
+                        {/* Outer pulsing ring */}
+                        <motion.div 
+                          animate={{ scale: [1, 1.3, 1], opacity: [0.3, 0, 0.3] }}
+                          transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
+                          className="absolute inset-0 rounded-full bg-brand-coral border-2 border-brand-coral"
+                        />
+                        {/* Inner pulsing ring */}
+                        <motion.div 
+                          animate={{ scale: [1, 1.6, 1], opacity: [0.5, 0, 0.5] }}
+                          transition={{ repeat: Infinity, duration: 2, delay: 0.5, ease: "easeInOut" }}
+                          className="absolute inset-0 rounded-full bg-brand-coral"
+                        />
+                        <div className="absolute inset-0 bg-white rounded-full shadow-lg z-10 flex items-center justify-center overflow-hidden">
+                          <Image src={chatbotLogo} alt="Analyzing" fill className="object-contain p-3 animate-pulse" />
+                        </div>
                       </div>
-                    </button>
-                  </div>
+                      <motion.div 
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: 0.3 }}
+                        className="text-center space-y-1.5"
+                      >
+                        <h3 className="font-bold text-brand-navy text-lg">Racoonn AI is analyzing...</h3>
+                        <p className="text-[14px] text-gray-500 font-medium">Finding the perfect properties for your prompt</p>
+                      </motion.div>
+                    </motion.div>
+                  ) : (
+                    <>
+                      <div className="flex items-start gap-4 border border-brand-coral/30 rounded-2xl p-5 bg-brand-coral/5 transition-colors focus-within:border-brand-coral/60 focus-within:bg-white shadow-inner relative">
+                        <div className="w-8 h-8 relative rounded-full overflow-hidden shrink-0 bg-white shadow-sm mt-0.5 border border-gray-100">
+                          <Image src={chatbotLogo} alt="AI Assistant" fill className="object-contain p-1" />
+                        </div>
+                        <textarea 
+                          placeholder="e.g. Find me a beachfront villa in Bali for 2 adults next weekend with a private pool..."
+                          className="w-full min-h-62.5 md:min-h-34 outline-none text-brand-navy text-[16px] placeholder:text-brand-charcoal/40 bg-transparent resize-none leading-relaxed pb-8"
+                          autoFocus
+                          value={chatQuery}
+                          onChange={(e) => setChatQuery(e.target.value)}
+                        />
+                        <button 
+                          onClick={handleMicClick}
+                          className={`absolute right-4 bottom-4 p-2 rounded-full transition-colors ${
+                            isRecording 
+                              ? 'bg-red-100 text-red-500 hover:bg-red-200 animate-pulse' 
+                              : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                          }`}
+                          title={isRecording ? "Stop recording" : "Use voice input"}
+                        >
+                          {isRecording ? <MicOff size={20} /> : <Mic size={20} />}
+                        </button>
+                      </div>
+                      <div className="flex justify-end">
+                        <button 
+                          onClick={() => handleAiSearch()}
+                          className="bg-linear-to-r from-brand-coral to-[#e84f57] hover:shadow-[0_8px_20px_rgba(232,106,112,0.3)] text-white pl-7 pr-5 py-3.5 rounded-full font-bold flex items-center justify-center gap-3 transition-all hover:-translate-y-0.5 text-[15px] sm:w-55"
+                        >
+                          Ask Racoonn AI
+                          <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
+                            <ArrowRight size={16} />
+                          </div>
+                        </button>
+                      </div>
+                    </>
+                  )}
                 </motion.div>
               ) : (
                 <motion.div 

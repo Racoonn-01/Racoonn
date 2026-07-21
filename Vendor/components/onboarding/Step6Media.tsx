@@ -52,10 +52,15 @@ export function Step6Media({ onNext, onBack }: { onNext: () => void, onBack: () 
         const newUrls: string[] = [];
         
         for (const file of filesArray) {
+          // Force a valid extension to prevent Appwrite 500 errors on extensionless files
+          const safeFile = new File([file], `property_image_${Date.now()}.jpg`, {
+            type: file.type || "image/jpeg"
+          });
+          
           const uploadedFile = await storage.createFile(
             appwriteConfig.propertyImagesBucketId,
             ID.unique(),
-            file
+            safeFile
           );
           const fileUrl = storage.getFileView(
             appwriteConfig.propertyImagesBucketId,

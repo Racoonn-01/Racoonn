@@ -1,111 +1,291 @@
-"use client"
+import { appwriteServer } from "@/lib/appwrite/server";
+import DashboardClient, { KPIData, ChartData, ActivityData } from "./DashboardClient";
+import { Query } from "node-appwrite";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { BadgeDollarSign, Users, Building2, CalendarDays } from "lucide-react"
-import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts"
+const DATABASE_ID = process.env.APPWRITE_DATABASE_ID!;
+const VENDOR_COLLECTION = "6a3e0fd9da7df0d38588"; // Hardcoded for now based on discovery
 
-const kpiData = [
-  { title: "Total Revenue", value: "₹4.2M", icon: BadgeDollarSign, change: "+12.5%", color: "text-blue-500", bg: "bg-blue-500/10" },
-  { title: "Monthly Revenue", value: "₹350K", icon: BadgeDollarSign, change: "+5.2%", color: "text-emerald-500", bg: "bg-emerald-500/10" },
-  { title: "Commission Earnings", value: "₹52K", icon: BadgeDollarSign, change: "+8.1%", color: "text-violet-500", bg: "bg-violet-500/10" },
-  { title: "Total Bookings", value: "12,450", icon: CalendarDays, change: "+15%", color: "text-orange-500", bg: "bg-orange-500/10" },
-  { title: "Active Properties", value: "850", icon: Building2, change: "+3%", color: "text-pink-500", bg: "bg-pink-500/10" },
-]
+// Format currency
+const formatCurrency = (value: number) => {
+  if (value >= 1000000) return `₹${(value / 1000000).toFixed(1)}M`;
+  if (value >= 1000) return `₹${(value / 1000).toFixed(1)}K`;
+  return `₹${value}`;
+};
 
-const chartData = [
-  { name: "Jan", revenue: 4000, bookings: 2400 },
-  { name: "Feb", revenue: 3000, bookings: 1398 },
-  { name: "Mar", revenue: 2000, bookings: 9800 },
-  { name: "Apr", revenue: 2780, bookings: 3908 },
-  { name: "May", revenue: 1890, bookings: 4800 },
-  { name: "Jun", revenue: 2390, bookings: 3800 },
-  { name: "Jul", revenue: 3490, bookings: 4300 },
-]
+// Calculate percentage change
+const getChange = (current: number, previous: number) => {
+  if (previous === 0) return current > 0 ? "+100%" : "0%";
+  const diff = ((current - previous) / previous) * 100;
+  return `${diff >= 0 ? '+' : ''}${diff.toFixed(1)}%`;
+};
 
-export default function DashboardPage() {
-  return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+// Helper for relative time
+const getRelativeTime = (dateString: string) => {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+  
+  if (diffInSeconds < 60) return `${diffInSeconds} secs ago`;
+  const diffInMins = Math.floor(diffInSeconds / 60);
+  if (diffInMins < 60) return `${diffInMins} mins ago`;
+  const diffInHours = Math.floor(diffInMins / 60);
+  if (diffInHours < 24) return `${diffInHours} hours ago`;
+  const diffInDays = Math.floor(diffInHours / 24);
+  return `${diffInDays} days ago`;
+};
 
-      {/* KPI Cards */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-5">
-        {kpiData.map((kpi, i) => (
-          <Card key={i} className="group border-border/50 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1 bg-card rounded-2xl overflow-hidden">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">
-                {kpi.title}
-              </CardTitle>
-              <div className={`p-2 rounded-xl ${kpi.bg}`}>
-                <kpi.icon className={`h-4 w-4 ${kpi.color}`} />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold tracking-tight">{kpi.value}</div>
-              <p className={`text-sm mt-2 font-medium ${kpi.change.startsWith('+') ? 'text-emerald-500' : 'text-red-500'}`}>
-                {kpi.change} <span className="text-muted-foreground font-normal">from last month</span>
-              </p>
-            </CardContent>
-          </Card>
-        ))}
+export default async function DashboardPage({ searchParams }: { searchParams?: { filter?: string } }) {
+  const filter = searchParams?.filter || 'today';
+  let kpiData: KPIData[] | null = null;
+  let chartData: ChartData[] | null = null;
+  let recentActivity: ActivityData[] | null = null;
+
+  try {
+    const db = appwriteServer.databases;
+
+    // Fetch properties
+    const properties = await db.listDocuments(DATABASE_ID, 'properties', [Query.limit(100), Query.orderDesc('$createdAt')]);
+    const activeProperties = properties.documents.filter(p => p.status?.toLowerCase() === 'approved' || p.status?.toLowerCase() === 'active').length;
+
+    // Fetch bookings
+    const bookings = await db.listDocuments(DATABASE_ID, 'bookings', [Query.limit(100), Query.orderDesc('$createdAt')]);
+    
+    // Fetch payments
+    const payments = await db.listDocuments(DATABASE_ID, 'booking_payments', [Query.limit(1000), Query.orderDesc('$createdAt')]);
+    
+    // Fetch vendors
+    const vendors = await db.listDocuments(DATABASE_ID, VENDOR_COLLECTION, [Query.limit(20), Query.orderDesc('$createdAt')]);
+
+    // Current date logic for month comparisons
+
+    const now = new Date();
+    
+    let currentPeriodStart = new Date(0);
+    let previousPeriodStart = new Date(0);
+    let previousPeriodEnd = new Date(0);
+    let isLifetime = false;
+    
+    switch (filter) {
+      case 'today':
+        currentPeriodStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        previousPeriodStart = new Date(currentPeriodStart.getTime() - 24 * 60 * 60 * 1000);
+        previousPeriodEnd = new Date(currentPeriodStart.getTime() - 1);
+        break;
+      case 'weekly':
+        currentPeriodStart = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        previousPeriodStart = new Date(currentPeriodStart.getTime() - 7 * 24 * 60 * 60 * 1000);
+        previousPeriodEnd = new Date(currentPeriodStart.getTime() - 1);
+        break;
+      case 'yearly':
+        currentPeriodStart = new Date(now.getFullYear(), 0, 1);
+        previousPeriodStart = new Date(currentPeriodStart.getFullYear() - 1, 0, 1);
+        previousPeriodEnd = new Date(currentPeriodStart.getTime() - 1);
+        break;
+      case 'lifetime':
+        isLifetime = true;
+        break;
+      case 'monthly':
+      default:
+        currentPeriodStart = new Date(now.getFullYear(), now.getMonth(), 1);
+        previousPeriodStart = new Date(currentPeriodStart.getFullYear(), currentPeriodStart.getMonth() - 1, 1);
+        previousPeriodEnd = new Date(currentPeriodStart.getTime() - 1);
+        break;
+    }
+
+    let totalRevenue = 0;
+    let currentPeriodRevenue = 0;
+    let previousPeriodRevenue = 0;
+    let totalCommission = 0;
+    let previousPeriodCommission = 0;
+
+
+    const chartDataMap: Record<string, number> = {};
+    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+    // Pre-fill chart data based on filter so the chart is never empty
+    if (filter === 'today') {
+      for (let i = 0; i < 24; i++) chartDataMap[i + ":00"] = 0;
+    } else if (filter === 'weekly') {
+      for (let i = 6; i >= 0; i--) {
+        const d = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
+        chartDataMap[d.toLocaleDateString('en-US', { weekday: 'short' })] = 0;
+      }
+    } else if (filter === 'monthly') {
+      for (let i = 30; i >= 0; i--) {
+        const d = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
+        chartDataMap[d.getDate().toString()] = 0;
+      }
+    } else {
+      monthNames.forEach(m => chartDataMap[m] = 0);
+    }
+
+
+    payments.documents.forEach(payment => {
+      const amount = payment.totalAmount || 0;
+      const commission = payment.serviceFees || (amount * 0.15);
+      
+      const date = new Date(payment.$createdAt);
+      
+      if (isLifetime) {
+        totalRevenue += amount;
+        totalCommission += commission;
+        currentPeriodRevenue += amount;
+      } else {
+        if (date >= currentPeriodStart) {
+          currentPeriodRevenue += amount;
+          totalRevenue += amount;
+          totalCommission += commission;
+        } else if (date >= previousPeriodStart && date <= previousPeriodEnd) {
+          previousPeriodRevenue += amount;
+          previousPeriodCommission += commission;
+        }
+      }
+
+      // Chart aggregation
+      let key = "";
+      if (filter === 'today') {
+        key = date.getHours() + ":00";
+      } else if (filter === 'weekly') {
+        key = date.toLocaleDateString('en-US', { weekday: 'short' });
+      } else if (filter === 'monthly') {
+        key = date.getDate().toString();
+      } else {
+        key = monthNames[date.getMonth()];
+      }
+      if (!chartDataMap[key]) chartDataMap[key] = 0;
+      if (isLifetime || date >= currentPeriodStart) {
+          chartDataMap[key] += amount;
+      }
+    });
+
+    let currentPeriodBookings = 0;
+    let previousPeriodBookings = 0;
+    bookings.documents.forEach(b => {
+      const date = new Date(b.$createdAt);
+      if (isLifetime || date >= currentPeriodStart) currentPeriodBookings++;
+      else if (date >= previousPeriodStart && date <= previousPeriodEnd) previousPeriodBookings++;
+    });
+
+    let currentPeriodProps = 0;
+    let previousPeriodProps = 0;
+    properties.documents.forEach(p => {
+      if (p.status?.toLowerCase() !== 'approved' && p.status?.toLowerCase() !== 'active') return;
+      const date = new Date(p.$createdAt);
+      if (isLifetime || date >= currentPeriodStart) currentPeriodProps++;
+      else if (date >= previousPeriodStart && date <= previousPeriodEnd) previousPeriodProps++;
+    });
+
+    kpiData = [
+      { 
+        title: "Total Revenue", 
+        value: formatCurrency(totalRevenue), 
+        iconName: "BadgeDollarSign", 
+        change: getChange(currentPeriodRevenue, previousPeriodRevenue), 
+        color: "text-blue-500", 
+        bg: "bg-blue-500/10" 
+      },
+      { 
+        title: `${filter.charAt(0).toUpperCase() + filter.slice(1)} Revenue`, 
+        value: formatCurrency(currentPeriodRevenue), 
+        iconName: "BadgeDollarSign", 
+        change: getChange(currentPeriodRevenue, previousPeriodRevenue), 
+        color: "text-emerald-500", 
+        bg: "bg-emerald-500/10" 
+      },
+      { 
+        title: "Commission Earnings", 
+        value: formatCurrency(totalCommission), 
+        iconName: "BadgeDollarSign", 
+        change: getChange(totalCommission, previousPeriodCommission), 
+        color: "text-violet-500", 
+        bg: "bg-violet-500/10" 
+      },
+      { 
+        title: "Total Bookings", 
+        value: isLifetime ? bookings.total.toString() : currentPeriodBookings.toString(), 
+        iconName: "CalendarDays", 
+        change: getChange(currentPeriodBookings, previousPeriodBookings), 
+        color: "text-orange-500", 
+        bg: "bg-orange-500/10" 
+      },
+      { 
+        title: "Active Properties", 
+        value: isLifetime ? activeProperties.toString() : currentPeriodProps.toString(), 
+        iconName: "Building2", 
+        change: getChange(currentPeriodProps, previousPeriodProps), 
+        color: "text-pink-500", 
+        bg: "bg-pink-500/10" 
+      },
+    ];
+
+    // Chart Data
+    chartData = Object.keys(chartDataMap).map(key => ({
+      name: key,
+      revenue: chartDataMap[key]
+    }));
+    // To preserve the chronological order we established in pre-fill, we'll re-map based on the original Object.keys order since we didn't use pure numbers for keys except monthly. Wait, for monthly, JS object keys might sort numerically automatically.
+    // Let's just create chartData array directly during prefill? 
+    // Actually, it's easier to just recreate chartData by iterating the keys of chartDataMap in insertion order, but since JS sorts numeric keys (like '1', '2'), we'll just sort them correctly here if needed.
+    
+    if (filter === 'today') {
+      chartData.sort((a, b) => parseInt(a.name.split(':')[0]) - parseInt(b.name.split(':')[0]));
+    } else if (filter === 'monthly') {
+      // Monthly is days of the month, so numeric keys get auto-sorted by JS 1,2,3... 31.
+      // That's fine for a month view.
+    } else if (filter === 'yearly' || filter === 'lifetime') {
+      // Keep monthNames order
+      chartData.sort((a, b) => monthNames.indexOf(a.name) - monthNames.indexOf(b.name));
+    }
+    // weekly is short names, might be tricky to sort, but Object.keys usually preserves insertion order for strings.
+
+
+    // Recent Activity (Merge recent properties, bookings, vendors)
+    const activities: Array<{
+      title: string;
+      desc: string;
+      timeStr: string;
+      time: string;
+      iconName: "BadgeDollarSign" | "Users" | "Building2" | "CalendarDays";
+      color: string;
+      bg: string;
+    }> = [];
+
+    vendors.documents.slice(0, 7).forEach(v => {
+      activities.push({
+        title: "New vendor registered",
+        desc: `${v.businessName || v.firstName || 'A vendor'} joined the platform.`,
+        timeStr: v.$createdAt,
+        time: getRelativeTime(v.$createdAt),
+        iconName: "Users",
+        color: "text-purple-500",
+        bg: "bg-purple-500/10"
+      });
+    });
+
+    // Sort descending by time
+    activities.sort((a, b) => new Date(b.timeStr).getTime() - new Date(a.timeStr).getTime());
+
+    recentActivity = activities.slice(0, 7).map(a => ({
+      title: a.title,
+      desc: a.desc,
+      time: a.time,
+      iconName: a.iconName,
+      color: a.color,
+      bg: a.bg
+    }));
+  } catch (error) {
+    console.error("Error fetching dashboard data:", error);
+    // Data fetching failed
+  }
+
+  if (!kpiData || !chartData || !recentActivity) {
+    return (
+      <div className="p-8 text-center text-red-500">
+        <h2 className="text-xl font-bold mb-4">Error loading dashboard data</h2>
+        <p>Please check your database connection and credentials.</p>
       </div>
+    );
+  }
 
-      {/* Main Content Area */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
-        <Card className="col-span-4 rounded-3xl shadow-sm border-border/50 bg-card overflow-hidden">
-          <CardHeader className="border-b border-border/50 bg-muted/20">
-            <CardTitle>Revenue Analytics</CardTitle>
-          </CardHeader>
-          <CardContent className="pt-6">
-            <div className="min-h-125 h-full w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#E86A70" stopOpacity={0.4}/>
-                      <stop offset="95%" stopColor="#E86A70" stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
-                  <XAxis dataKey="name" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
-                  <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `₹${value}`} />
-                  <Tooltip 
-                    contentStyle={{ backgroundColor: 'rgba(255, 255, 255, 0.9)', border: '1px solid #e2e8f0', borderRadius: '12px', color: '#0f172a', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
-                  />
-                  <Area type="monotone" dataKey="revenue" stroke="#E86A70" strokeWidth={3} fillOpacity={1} fill="url(#colorRevenue)" />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="col-span-3 rounded-3xl shadow-sm border-border/50 bg-card">
-          <CardHeader className="border-b border-border/50 bg-muted/20">
-            <CardTitle>Recent Activity</CardTitle>
-          </CardHeader>
-          <CardContent className="pt-6">
-            <div className="space-y-8">
-              {[
-                { title: "New property approval request", desc: "Grand Plaza Hotel requested approval.", time: "10 mins ago", icon: Building2, color: "text-blue-500", bg: "bg-blue-500/10" },
-                { title: "New vendor registered", desc: "HostelWorld joined the platform.", time: "1 hour ago", icon: Users, color: "text-purple-500", bg: "bg-purple-500/10" },
-                { title: "Large booking confirmed", desc: "Booking #8942 for ₹3,400 completed.", time: "3 hours ago", icon: CalendarDays, color: "text-emerald-500", bg: "bg-emerald-500/10" },
-                { title: "Payout requested", desc: "Seaside Resort requested ₹12,500 payout.", time: "5 hours ago", icon: BadgeDollarSign, color: "text-orange-500", bg: "bg-orange-500/10" },
-                { title: "Property status updated", desc: "Mountain View Lodge is now live.", time: "6 hours ago", icon: Building2, color: "text-emerald-500", bg: "bg-emerald-500/10" },
-                { title: "New user review", desc: "5-star rating for Downtown Loft.", time: "8 hours ago", icon: Users, color: "text-blue-500", bg: "bg-blue-500/10" },
-                { title: "System maintenance scheduled", desc: "Server upgrade on Sunday 2AM.", time: "12 hours ago", icon: CalendarDays, color: "text-slate-500", bg: "bg-slate-500/10" },
-              ].map((activity, i) => (
-                <div key={i} className="flex items-start gap-4">
-                  <div className={`p-2 rounded-xl mt-1 shrink-0 ${activity.bg}`}>
-                    <activity.icon className={`h-4 w-4 ${activity.color}`} />
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-sm font-semibold leading-none">{activity.title}</p>
-                    <p className="text-sm text-muted-foreground">{activity.desc}</p>
-                    <p className="text-xs text-muted-foreground font-medium">{activity.time}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
-  )
+  return <DashboardClient kpiData={kpiData} chartData={chartData} recentActivity={recentActivity} />;
 }

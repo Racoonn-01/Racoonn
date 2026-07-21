@@ -1,6 +1,5 @@
 "use client"
 
-import Image from 'next/image';
 import { useState } from 'react';
 import { packages } from '@/data/packages';
 import TourCard from '@/components/packages/TourCard';
@@ -104,7 +103,7 @@ export default function PackagesPage() {
         {filteredPackages.length === 0 ? (
           <div className="text-center py-20 text-gray-500">
             <h3 className="text-xl font-medium mb-2">No packages found</h3>
-            <p>Try adjusting your filters to find what you're looking for.</p>
+            <p>Try adjusting your filters to find what you&apos;re looking for.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8">

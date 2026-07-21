@@ -50,7 +50,7 @@ export function Step7Amenities({ onNext, onBack }: { onNext: () => void, onBack:
           if (prop.checkInTime) setCheckIn(prop.checkInTime);
           if (prop.checkOutTime) setCheckOut(prop.checkOutTime);
           if (prop.cancellationPolicy) setCancellationPolicy(prop.cancellationPolicy);
-        } catch(e) {}
+        } catch { }
       }
     };
     fetchProperty();
@@ -190,8 +190,8 @@ export function Step7Amenities({ onNext, onBack }: { onNext: () => void, onBack:
         <Button onClick={handleBackClick} variant="ghost" className="text-slate-500 font-bold hover:bg-slate-100 rounded-full px-6">
           <ArrowLeft className="mr-2 w-4 h-4" /> Back
         </Button>
-        <Button onClick={handleNextClick} className="bg-[#1F2E4A] hover:bg-[#151E2D] text-white rounded-full px-8 h-12 font-bold shadow-lg shadow-[#1F2E4A]/20 transition-all">
-          Bank Details <ArrowRight className="ml-2 w-4 h-4" />
+        <Button disabled={isLoading} onClick={handleNextClick} className="bg-[#1F2E4A] hover:bg-[#151E2D] text-white rounded-full px-8 h-12 font-bold shadow-lg shadow-[#1F2E4A]/20 transition-all">
+          {isLoading ? "Saving..." : <>Bank Details <ArrowRight className="ml-2 w-4 h-4" /></>}
         </Button>
       </motion.div>
     </motion.div>

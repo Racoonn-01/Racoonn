@@ -1,11 +1,13 @@
 "use client";
 
-import React, { useState, Suspense } from 'react';
+import React, { useState, Suspense, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import PropertyCard, { Property } from '@/components/search/PropertyCard';
 import MapMockup from '@/components/search/MapMockup';
 import { SlidersHorizontal, ChevronDown } from 'lucide-react';
 import FilterModal, { FilterState } from '@/components/search/FilterModal';
+import { isActiveProperty } from '@/lib/utils';
+import { getProperties } from '@/lib/appwrite/api';
 
 const mockProperties: Property[] = [
   {
@@ -23,6 +25,7 @@ const mockProperties: Property[] = [
     reviews: 463,
     isSuperhost: true,
     freeCancellation: true,
+    status: 'active',
   },
   {
     id: 's2',
@@ -38,6 +41,7 @@ const mockProperties: Property[] = [
     rating: 4.71,
     reviews: 414,
     freeCancellation: true,
+    status: 'active',
   },
   {
     id: 's3',
@@ -54,6 +58,7 @@ const mockProperties: Property[] = [
     reviews: 312,
     isSuperhost: true,
     freeCancellation: true,
+    status: 'active',
   },
   {
     id: 's4',
@@ -69,6 +74,7 @@ const mockProperties: Property[] = [
     rating: 4.9,
     reviews: 218,
     isGuestFavorite: true,
+    status: 'active',
   },
 ];
 
@@ -79,10 +85,32 @@ const filters = [
 function SearchContent() {
   const searchParams = useSearchParams();
   const location = searchParams.get('location') || 'Delhi NCR';
+  const [properties, setProperties] = useState<Property[]>(mockProperties);
   const [selectedFilters, setSelectedFilters] = useState<string[]>([]);
-  const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   const [advancedFilters, setAdvancedFilters] = useState<FilterState | null>(null);
+
+  useEffect(() => {
+    async function loadProperties() {
+      const data = await getProperties();
+      if (data && data.length > 0) {
+        const mappedProperties: Property[] = data.map((doc: any) => ({
+          id: doc.$id,
+          title: doc.propertyName || doc.title || 'Unknown Property',
+          subtitle: doc.description || '',
+          details: `${doc.bedrooms || 0} bedrooms · ${doc.beds || 0} beds · ${doc.bathrooms || 0} bathrooms`,
+          location: doc.location || `${doc.city || ''}, ${doc.state || ''}`,
+          rating: doc.rating || 0,
+          reviews: doc.reviewsCount || 0,
+          price: doc.price || 0,
+          images: (doc.photos && doc.photos.length > 0) ? doc.photos : ['https://images.unsplash.com/photo-1542314831-c6a4d14d837e?q=80&w=800&auto=format&fit=crop'],
+          status: doc.status?.toLowerCase() || 'active',
+        }));
+        setProperties(mappedProperties);
+      }
+    }
+    loadProperties();
+  }, []);
 
   const toggleFilter = (filter: string) => {
     if (selectedFilters.includes(filter)) {
@@ -92,7 +120,25 @@ function SearchContent() {
     }
   };
 
-  const filteredProperties = mockProperties.filter(property => {
+  const filteredProperties = properties.filter(property => {
+    if (!isActiveProperty(property)) return false;
+
+    const urlLocation = searchParams.get('location');
+    if (urlLocation && urlLocation.trim() !== '' && urlLocation.toLowerCase() !== 'anywhere') {
+      const propLocStr = `${property.location} ${property.title} ${property.subtitle}`.toLowerCase();
+      if (!propLocStr.includes(urlLocation.toLowerCase())) {
+        return false;
+      }
+    }
+
+    const aiQuery = searchParams.get('ai');
+    if (aiQuery && aiQuery.trim() !== '') {
+      const aiSearchString = `${property.title} ${property.subtitle} ${property.details} ${property.location}`.toLowerCase();
+      const words = aiQuery.toLowerCase().split(' ').filter(w => w.length > 2);
+      const matchesAi = words.some(w => aiSearchString.includes(w));
+      if (!matchesAi && words.length > 0) return false;
+    }
+
     const searchString = `${property.title} ${property.subtitle} ${property.details}`.toLowerCase();
 
     // 1. Check quick filters

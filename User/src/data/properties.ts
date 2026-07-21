@@ -19,6 +19,7 @@ export const allProperties = [
     rating: '4.7',
     reviews: 215,
     image: 'https://images.unsplash.com/photo-1551882547-ff40c0d5e9af?q=80&w=800&auto=format&fit=crop',
+    status: 'draft',
   },
   {
     id: 'd3',

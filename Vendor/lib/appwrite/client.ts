@@ -9,6 +9,8 @@ export const appwriteConfig = {
     propertyCollectionId: process.env.NEXT_PUBLIC_APPWRITE_PROPERTY_COLLECTION_ID || "",
     roomCollectionId: process.env.NEXT_PUBLIC_APPWRITE_ROOM_COLLECTION_ID || "",
     bookingCollectionId: process.env.NEXT_PUBLIC_APPWRITE_BOOKING_COLLECTION_ID || "",
+    reviewCollectionId: process.env.NEXT_PUBLIC_APPWRITE_REVIEW_COLLECTION_ID || "",
+    ticketsCollectionId: process.env.NEXT_PUBLIC_APPWRITE_TICKETS_COLLECTION_ID || "",
     // Buckets
     vendorDocumentsBucketId: process.env.NEXT_PUBLIC_APPWRITE_VENDOR_DOCUMENTS_BUCKET_ID || "",
     propertyImagesBucketId: process.env.NEXT_PUBLIC_APPWRITE_PROPERTY_IMAGES_BUCKET_ID || process.env.NEXT_PUBLIC_APPWRITE_VENDOR_DOCUMENTS_BUCKET_ID || "",

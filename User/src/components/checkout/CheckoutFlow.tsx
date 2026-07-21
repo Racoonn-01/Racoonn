@@ -4,33 +4,182 @@ import { useSearchParams } from "next/navigation";
 import { useCheckoutStore } from "@/store/checkoutStore";
 import { GuestDetailsForm } from "@/components/checkout/GuestDetailsForm";
 import { TravelersForm } from "@/components/checkout/TravelersForm";
-import { AddonSelector } from "@/components/checkout/AddonSelector";
+import { AddonSelector, DEFAULT_ADDONS } from "@/components/checkout/AddonSelector";
 import { CheckCircle, Loader2 } from "lucide-react";
+import Script from "next/script";
+import { checkAvailability } from "@/lib/appwrite/availability";
+import { getProperty } from "@/lib/appwrite/api";
+import { useEffect, useState } from "react";
 
 export function CheckoutFlow() {
   const currentStep = useCheckoutStore((state) => state.currentStep);
   const submitBooking = useCheckoutStore((state) => state.submitBooking);
   const isSubmitting = useCheckoutStore((state) => state.isSubmitting);
   const bookingError = useCheckoutStore((state) => state.bookingError);
+  const guestDetails = useCheckoutStore((state) => state.guestDetails);
+  const selectedAddons = useCheckoutStore((state) => state.selectedAddons);
+  const appliedCoupon = useCheckoutStore((state) => state.appliedCoupon);
+
+  
+  const isFormValid = 
+    guestDetails.firstName.trim() !== '' && 
+    guestDetails.lastName.trim() !== '' && 
+    guestDetails.email.trim() !== '' && 
+    guestDetails.phone.trim() !== '';
   
   const searchParams = useSearchParams();
   const price = Number(searchParams.get('price')) || 32000;
-  const nights = 3; // hardcoded for now, would be calculated from dates
-  const checkIn = '2024-05-21';
-  const checkOut = '2024-05-24';
+  
+  const msPerDay = 1000 * 60 * 60 * 24;
+  const checkInParam = searchParams.get('checkIn');
+  const checkOutParam = searchParams.get('checkOut');
+  
+  const checkIn = checkInParam || new Date().toISOString().split('T')[0];
+  const checkOut = checkOutParam || new Date(Date.now() + msPerDay).toISOString().split('T')[0];
+  
+  const checkInDate = new Date(checkIn);
+  const checkOutDate = new Date(checkOut);
+  const nights = Math.max(1, Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / msPerDay));
+  
+  const hotelId = searchParams.get('hotelId') || useCheckoutStore.getState().selectedHotelId || 'hotel-123';
+  const hotelName = searchParams.get('hotelName') || useCheckoutStore.getState().hotelName || 'The Oberoi Udaivilas';
+  const hotelLocation = searchParams.get('hotelLocation') || useCheckoutStore.getState().hotelLocation || 'Udaipur, Rajasthan, India';
+  const hotelImage = searchParams.get('hotelImage') || useCheckoutStore.getState().hotelImage || 'https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=1600&auto=format&fit=crop';
+  const adults = Number(searchParams.get('guests')) || 2;
+
+  const fetchPropertyAddons = useCheckoutStore(state => state.fetchPropertyAddons);
+  const propertyAddons = useCheckoutStore(state => state.propertyAddons);
+
+  useEffect(() => {
+    fetchPropertyAddons(hotelId);
+  }, [hotelId, fetchPropertyAddons]);
+
+  const roomTotal = price * nights;
+  const displayAddons = propertyAddons === null ? [] : (propertyAddons.length > 0 ? propertyAddons : DEFAULT_ADDONS);
+
+  const dynamicAddonsTotal = selectedAddons.reduce((sum, addonId) => {
+    const addon = displayAddons.find(a => a.id === addonId);
+    return sum + (addon?.price || 0);
+  }, 0);
+  
+  let dynamicDiscount = 0;
+  if (appliedCoupon) {
+    if (appliedCoupon.type === 'fixed') {
+      dynamicDiscount = appliedCoupon.value;
+    } else if (appliedCoupon.type === 'percentage') {
+      dynamicDiscount = Math.floor(roomTotal * (appliedCoupon.value / 100));
+    }
+  }
+
+  const finalTaxes = Math.floor(roomTotal * 0.1);
+  const finalTotalAmount = roomTotal + finalTaxes + dynamicAddonsTotal - dynamicDiscount;
 
   const handleCompleteBooking = async () => {
-    await submitBooking({
-      hotelName: 'The Oberoi Udaivilas', // Hardcoded for demo, normally from URL/context
-      price,
-      nights,
-      checkIn,
-      checkOut
-    });
+    // 1. Validate Availability First
+    useCheckoutStore.setState({ isSubmitting: true, bookingError: null });
+
+    try {
+      const availability = await checkAvailability(hotelId, checkIn, checkOut, 1);
+      
+      if (!availability.isAvailable) {
+        useCheckoutStore.setState({ 
+          bookingError: availability.message || "Sorry, these dates just sold out!",
+          isSubmitting: false 
+        });
+        return;
+      }
+    } catch (err) {
+      console.error("Availability error:", err);
+      useCheckoutStore.setState({ 
+        bookingError: "Could not verify room availability. Please try again.",
+        isSubmitting: false 
+      });
+      return;
+    }
+
+    // 2. Create Razorpay order on our backend
+    try {
+      const res = await fetch('/api/razorpay/create-order', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ amount: finalTotalAmount }),
+      });
+      
+      const order = await res.json();
+      
+      if (!res.ok) {
+        throw new Error(order.error || 'Failed to create payment order');
+      }
+
+      // 2. Initialize Razorpay
+      const options = {
+        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID, 
+        amount: order.amount,
+        currency: order.currency,
+        name: "Racoonn",
+        description: `Booking at ${hotelName}`,
+        order_id: order.id,
+        handler: async function (_response: unknown) {
+          // 3. Payment succeeded, now save booking to Appwrite
+          try {
+            await submitBooking({
+              hotelId,
+              hotelName,
+              hotelLocation,
+              hotelImage,
+              price,
+              nights,
+              checkIn,
+              checkOut,
+              adults
+            });
+          } catch (error) {
+            console.error("Booking save error:", error);
+            useCheckoutStore.setState({ bookingError: "Payment succeeded but booking save failed. Contact support." });
+          }
+        },
+        prefill: {
+          name: "Racoonn User",
+          email: "user@example.com",
+          contact: "9999999999"
+        },
+        theme: {
+          color: "#E86A70"
+        },
+        modal: {
+          ondismiss: function() {
+            useCheckoutStore.setState({ isSubmitting: false });
+          }
+        }
+      };
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const rzp = new (window as any).Razorpay(options);
+      
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      rzp.on('payment.failed', function (response: any) {
+        console.warn("Payment declined by user or gateway:", response.error);
+        useCheckoutStore.setState({ 
+          bookingError: response.error?.description || "Payment failed",
+          isSubmitting: false 
+        });
+      });
+
+      rzp.open();
+    } catch (error: unknown) {
+      console.error("Razorpay init error:", error);
+      useCheckoutStore.setState({ 
+        bookingError: error instanceof Error ? error.message : "Something went wrong initializing payment",
+        isSubmitting: false 
+      });
+    }
   };
 
   return (
     <div className="flex-1 space-y-8 min-w-0">
+      <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
       {currentStep === 3 && (
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
           {bookingError && (
@@ -38,14 +187,31 @@ export function CheckoutFlow() {
               {bookingError}
             </div>
           )}
-          <GuestDetailsForm />
-          <TravelersForm />
-          <AddonSelector />
-          <div className="hidden md:flex justify-end">
+          <div className="space-y-8">
+            <GuestDetailsForm />
+            <TravelersForm />
+            {propertyAddons === null ? (
+              <div className="bg-white rounded-xl shadow-sm border border-brand-sky p-6 md:p-8 animate-pulse">
+                <div className="h-8 bg-gray-200 rounded w-1/3 mb-4"></div>
+                <div className="h-4 bg-gray-200 rounded w-1/2 mb-8"></div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div className="h-32 bg-gray-200 rounded-xl"></div>
+                  <div className="h-32 bg-gray-200 rounded-xl hidden sm:block"></div>
+                  <div className="h-32 bg-gray-200 rounded-xl hidden lg:block"></div>
+                </div>
+              </div>
+            ) : (
+              <AddonSelector addons={displayAddons} />
+            )}
+          </div>
+          <div className="hidden md:flex flex-col items-end gap-2">
+            {!isFormValid && (
+              <span className="text-sm font-medium text-amber-600">Please fill out all required guest details to continue.</span>
+            )}
             <button 
               onClick={handleCompleteBooking}
-              disabled={isSubmitting}
-              className="bg-brand-coral hover:bg-[#d65f64] disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-white font-bold text-lg py-4 px-8 rounded-xl shadow-lg shadow-brand-coral/30 transition-transform active:scale-[0.98]"
+              disabled={isSubmitting || !isFormValid}
+              className="bg-brand-coral hover:bg-[#d65f64] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-white font-bold text-lg py-4 px-8 rounded-xl shadow-lg shadow-brand-coral/30 transition-transform active:scale-[0.98]"
             >
               {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : "Complete Booking"}
             </button>
@@ -65,7 +231,7 @@ export function CheckoutFlow() {
             </p>
             <div className="p-6 bg-brand-sand rounded-xl inline-block text-left mb-8">
               <p className="text-sm text-gray-500 mb-1">Booking Reference ID</p>
-              <p className="text-xl font-bold text-brand-navy">RCN-8849-2A</p>
+              <p className="text-xl font-bold text-brand-navy">{useCheckoutStore.getState().confirmedBookingId || "RCN-8849-2A"}</p>
             </div>
             <div>
               <button 

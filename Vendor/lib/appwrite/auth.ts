@@ -58,7 +58,7 @@ export const authService = {
         appwriteConfig.vendorCollectionId,
         user.$id
       );
-    } catch (error) {
+    } catch {
       console.warn("No vendor profile found for this user. They must complete onboarding.");
     }
     

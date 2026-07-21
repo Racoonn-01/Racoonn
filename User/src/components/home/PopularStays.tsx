@@ -5,12 +5,36 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Heart, ChevronRight, ChevronLeft } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
-import { mockHotels } from '@/data/mockHotels';
+import { Hotel } from '@/data/mockHotels';
+import { isActiveProperty } from '@/lib/utils';
+import { getProperties } from '@/lib/appwrite/api';
+import { useState, useEffect } from 'react';
 
 export default function PopularStays() {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const { profile, toggleSavedHotel } = useAuthStore();
   const savedHotelIds = profile?.savedHotels || [];
+  const [properties, setProperties] = useState<Hotel[]>([]);
+
+  useEffect(() => {
+    async function loadProperties() {
+      const data = await getProperties();
+      if (data && data.length > 0) {
+        const mappedProperties: Hotel[] = data.map((doc: { $id: string; propertyName?: string; title?: string; location?: string; city?: string; state?: string; rating?: number; reviewsCount?: number; price?: number; photos?: string[]; status?: string }) => ({
+          id: doc.$id,
+          name: doc.propertyName || doc.title || 'Unknown Property',
+          location: doc.location || `${doc.city || ''}, ${doc.state || ''}`,
+          rating: doc.rating || 0,
+          reviews: doc.reviewsCount || 0,
+          price: doc.price || 0,
+          image: (doc.photos && doc.photos[0]) ? doc.photos[0] : 'https://images.unsplash.com/photo-1542314831-c6a4d14d837e?q=80&w=800&auto=format&fit=crop',
+          status: doc.status?.toLowerCase(),
+        }));
+        setProperties(mappedProperties);
+      }
+    }
+    loadProperties();
+  }, []);
 
   const scroll = (direction: 'left' | 'right') => {
     if (scrollContainerRef.current) {
@@ -37,12 +61,12 @@ export default function PopularStays() {
           className="flex overflow-x-auto hide-scrollbar gap-4 md:gap-6 pb-4 snap-x snap-mandatory"
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
-          {mockHotels.map((stay) => {
+          {properties.filter(isActiveProperty).map((stay) => {
             const isSaved = savedHotelIds.includes(stay.id);
             return (
-              <Link href={`/property/${stay.id}`} key={stay.id} className="w-full min-w-full md:w-auto md:min-w-70 shrink-0 bg-white rounded-2xl p-3 shadow-[0_2px_15px_rgb(0,0,0,0.05)] border border-brand-sky/30 group/card cursor-pointer transition-transform hover:-translate-y-1 snap-center md:snap-start block">
+              <Link href={`/property/${stay.id}`} key={stay.id} className="w-full min-w-full md:w-auto md:min-w-72 shrink-0 bg-white rounded-2xl p-3 shadow-[0_2px_15px_rgb(0,0,0,0.05)] border border-brand-sky/30 group/card cursor-pointer transition-transform hover:-translate-y-1 snap-center md:snap-start flex flex-col h-full">
                 {/* Image */}
-                <div className="relative w-full h-45 rounded-xl overflow-hidden mb-4">
+                <div className="relative w-full h-48 shrink-0 rounded-xl overflow-hidden mb-4">
                   <Image
                     src={stay.image}
                     alt={stay.name}
@@ -63,16 +87,16 @@ export default function PopularStays() {
                 </div>
 
                 {/* Info */}
-                <div className="px-1 pb-1">
-                  <h3 className="font-bold text-brand-navy mb-1">{stay.name}</h3>
-                <div className="flex justify-between items-end">
-                  <p className="text-sm text-brand-charcoal/60">{stay.location}</p>
-                  <div className="flex items-center text-sm font-bold text-brand-coral">
-                    <span className="mr-1">★</span> {stay.rating}
+                <div className="px-1 pb-1 flex flex-col flex-1">
+                  <h3 className="font-bold text-brand-navy mb-1 line-clamp-1">{stay.name}</h3>
+                  <div className="flex justify-between items-center mt-auto pt-1 gap-2">
+                    <p className="text-sm text-brand-charcoal/60 truncate" title={stay.location}>{stay.location}</p>
+                    <div className="flex items-center text-sm font-bold text-brand-coral shrink-0 ml-2">
+                      <span className="mr-1">★</span> {stay.rating > 0 ? stay.rating : 'New'}
+                    </div>
                   </div>
                 </div>
-              </div>
-            </Link>
+              </Link>
             );
           })}
         </div>

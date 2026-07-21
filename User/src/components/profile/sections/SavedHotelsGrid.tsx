@@ -1,14 +1,47 @@
-import { Heart, Star, MapPin } from 'lucide-react';
+import { Heart, Star, MapPin, Loader2 } from 'lucide-react';
 import Image from 'next/image';
 import { useAuthStore } from '@/store/authStore';
-import { mockHotels } from '@/data/mockHotels';
+import { Hotel, mockHotels } from '@/data/mockHotels';
+import { isActiveProperty } from '@/lib/utils';
+import { getProperties } from '@/lib/appwrite/api';
+import { useState, useEffect } from 'react';
 
 export default function SavedHotelsGrid() {
   const { profile, toggleSavedHotel, isAuthenticated } = useAuthStore();
+  const [properties, setProperties] = useState<Hotel[]>(mockHotels);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadProperties() {
+      try {
+        const data = await getProperties();
+        if (data && data.length > 0) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const mappedProperties: Hotel[] = data.map((doc: any) => ({
+            id: doc.$id,
+            name: doc.propertyName || doc.title || 'Unknown Property',
+            location: doc.location || `${doc.city || ''}, ${doc.state || ''}`,
+            rating: doc.rating || 0,
+            reviews: doc.reviewsCount || 0,
+            price: doc.price || 0,
+            image: (doc.photos && doc.photos[0]) ? doc.photos[0] : 'https://images.unsplash.com/photo-1542314831-c6a4d14d837e?q=80&w=800&auto=format&fit=crop',
+            status: doc.status?.toLowerCase(),
+          }));
+          setProperties([...mockHotels, ...mappedProperties]);
+        }
+      } catch (error) {
+        console.error("Failed to load saved properties:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    loadProperties();
+  }, []);
   
-  // Filter mockHotels to only those whose ID is in the user's savedHotels array
   const savedHotelIds = profile?.savedHotels || [];
-  const savedHotelsList = mockHotels.filter(hotel => savedHotelIds.includes(hotel.id));
+  const savedHotelsList = properties
+    .filter(isActiveProperty)
+    .filter(hotel => savedHotelIds.includes(hotel.id));
 
   return (
     <div className="space-y-8">
@@ -25,6 +58,11 @@ export default function SavedHotelsGrid() {
       {!isAuthenticated ? (
         <div className="text-center py-12 bg-white rounded-3xl border border-gray-100">
           <p className="text-gray-500">Please sign in to view your saved hotels.</p>
+        </div>
+      ) : isLoading ? (
+        <div className="text-center py-12 bg-white rounded-3xl border border-gray-100 flex flex-col items-center gap-4">
+          <Loader2 className="w-8 h-8 animate-spin text-brand-coral" />
+          <p className="text-gray-500">Loading your saved hotels...</p>
         </div>
       ) : savedHotelsList.length === 0 ? (
         <div className="text-center py-12 bg-white rounded-3xl border border-gray-100">

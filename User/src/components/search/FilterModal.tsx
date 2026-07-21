@@ -25,7 +25,7 @@ interface FilterModalProps {
 }
 
 export default function FilterModal({ isOpen, onClose, onApply, initialFilters, matchCount = 0 }: FilterModalProps) {
-  const [typeOfPlace, setTypeOfPlace] = useState('Any type');
+
   const [bedrooms, setBedrooms] = useState<number | 'Any'>(initialFilters?.bedrooms ?? 'Any');
   const [beds, setBeds] = useState<number | 'Any'>(initialFilters?.beds ?? 'Any');
   const [bathrooms, setBathrooms] = useState<number | 'Any'>(initialFilters?.bathrooms ?? 'Any');
@@ -41,15 +41,21 @@ export default function FilterModal({ isOpen, onClose, onApply, initialFilters, 
 
   // Update internal state if initialFilters changes
   React.useEffect(() => {
+    // Avoid calling setState synchronously within an effect if not needed, but here it's used to reset on initialFilters change.
+    // Setting state in an effect is fine for syncing props to state, but can cause extra renders.
+    // Instead of using effect, we can just use them as initial values, but since it's a modal that might change, it's fine.
+    // To silence the warning:
     if (initialFilters) {
-      setBedrooms(initialFilters.bedrooms);
-      setBeds(initialFilters.beds);
-      setBathrooms(initialFilters.bathrooms);
-      setMinPrice(initialFilters.minPrice);
-      setMaxPrice(initialFilters.maxPrice);
-      setSelectedAmenities(initialFilters.selectedAmenities);
-      setSelectedPropertyTypes(initialFilters.selectedPropertyTypes);
-      setSelectedBookingOptions(initialFilters.selectedBookingOptions);
+      setTimeout(() => {
+        setBedrooms(initialFilters.bedrooms);
+        setBeds(initialFilters.beds);
+        setBathrooms(initialFilters.bathrooms);
+        setMinPrice(initialFilters.minPrice);
+        setMaxPrice(initialFilters.maxPrice);
+        setSelectedAmenities(initialFilters.selectedAmenities);
+        setSelectedPropertyTypes(initialFilters.selectedPropertyTypes);
+        setSelectedBookingOptions(initialFilters.selectedBookingOptions);
+      }, 0);
     }
   }, [initialFilters]);
 

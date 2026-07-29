@@ -1,5 +1,95 @@
 [
   {
+    "id": "inv-admin-1785321801509",
+    "invoiceNumber": "RAC-GST-1785321801509",
+    "type": "billing",
+    "vendorId": "6a44e9d4003015938636",
+    "vendorName": "blackrolex1144",
+    "vendorEmail": "blackrolex1144@gmail.com",
+    "vendorPhone": "",
+    "vendorAddress": "",
+    "vendorGstin": "",
+    "issueDate": "2026-07-29",
+    "dueDate": "2026-08-05",
+    "items": [
+      {
+        "id": "fee-6a69bddb0027d70df5e9",
+        "description": "Platform Fee (18%) for Booking #6a69bddb at Royal Town",
+        "quantity": 1,
+        "unitPrice": 4725,
+        "amount": 4725,
+        "bookingId": "6a69bddb0027d70df5e9"
+      },
+      {
+        "id": "fee-6a69bd49000dfd65fe6d",
+        "description": "Platform Fee (18%) for Booking #6a69bd49 at Royal Town",
+        "quantity": 1,
+        "unitPrice": 4725,
+        "amount": 4725,
+        "bookingId": "6a69bd49000dfd65fe6d"
+      }
+    ],
+    "subtotal": 9450,
+    "taxRate": 24,
+    "taxAmount": 2268,
+    "totalAmount": 11718,
+    "status": "Sent",
+    "createdAt": "2026-07-29T10:43:21.510Z"
+  },
+  {
+    "id": "inv-admin-1785321062737",
+    "invoiceNumber": "RAC-GST-1785321062737",
+    "type": "billing",
+    "vendorId": "6a44e9d4003015938636",
+    "vendorName": "blackrolex1144",
+    "vendorEmail": "blackrolex1144@gmail.com",
+    "vendorPhone": "",
+    "vendorAddress": "",
+    "vendorGstin": "",
+    "issueDate": "2026-07-29",
+    "dueDate": "2026-08-05",
+    "items": [
+      {
+        "id": "fee-6a69bddb0027d70df5e9",
+        "description": "Platform Fee (18%) for Booking #6a69bddb at Royal Town",
+        "quantity": 1,
+        "unitPrice": 4725,
+        "amount": 4725,
+        "bookingId": "6a69bddb0027d70df5e9"
+      },
+      {
+        "id": "fee-6a69bd49000dfd65fe6d",
+        "description": "Platform Fee (18%) for Booking #6a69bd49 at Royal Town",
+        "quantity": 1,
+        "unitPrice": 4725,
+        "amount": 4725,
+        "bookingId": "6a69bd49000dfd65fe6d"
+      },
+      {
+        "id": "fee-6a69b7a70034fe123976",
+        "description": "Platform Fee (18%) for Booking #6a69b7a7 at Royal Town",
+        "quantity": 1,
+        "unitPrice": 9450,
+        "amount": 9450,
+        "bookingId": "6a69b7a70034fe123976"
+      },
+      {
+        "id": "fee-6a67850c003be8747852",
+        "description": "Platform Fee (18%) for Booking #6a67850c at Golden Edit",
+        "quantity": 1,
+        "unitPrice": 19,
+        "amount": 19,
+        "bookingId": "6a67850c003be8747852"
+      }
+    ],
+    "subtotal": 18919,
+    "taxRate": 24,
+    "taxAmount": 4540.5599999999995,
+    "totalAmount": 23459.559999999998,
+    "status": "Sent",
+    "createdAt": "2026-07-29T10:31:02.737Z"
+  },
+  {
     "id": "inv-admin-1785320818660",
     "invoiceNumber": "RAC-GST-1785320818660",
     "type": "billing",

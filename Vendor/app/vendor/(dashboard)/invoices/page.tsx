@@ -771,7 +771,7 @@ export default function VendorInvoicesPage() {
                     <td className="p-4 pl-6 font-bold text-gray-900 font-mono text-xs">
                       <div className="whitespace-nowrap">{inv.invoiceNumber}</div>
                       {inv.adminRemarks && (
-                        <div className="mt-1 max-w-[240px] truncate text-[11px] font-normal text-amber-800 bg-amber-50/80 px-2 py-0.5 rounded border border-amber-200/80" title={inv.adminRemarks}>
+                        <div className="mt-1 max-w-60 truncate text-[11px] font-normal text-amber-800 bg-amber-50/80 px-2 py-0.5 rounded border border-amber-200/80" title={inv.adminRemarks}>
                           Note: {inv.adminRemarks}
                         </div>
                       )}

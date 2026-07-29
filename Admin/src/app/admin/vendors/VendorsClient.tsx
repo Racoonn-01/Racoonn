@@ -653,7 +653,7 @@ export default function VendorsClient({ vendors: initialVendors, kpi }: VendorsC
 
       {/* GST Invoice Modal */}
       <Dialog open={isGstModalOpen} onOpenChange={setIsGstModalOpen}>
-        <DialogContent className="sm:max-w-[700px] rounded-2xl max-h-[85vh] flex flex-col overflow-hidden">
+        <DialogContent className="sm:max-w-175 rounded-2xl max-h-[85vh] flex flex-col overflow-hidden">
           <DialogHeader className="px-6 py-4 border-b border-muted">
             <DialogTitle>Send 24% GST Invoice</DialogTitle>
             <DialogDescription>
@@ -675,7 +675,7 @@ export default function VendorsClient({ vendors: initialVendors, kpi }: VendorsC
                 <Table>
                   <TableHeader className="bg-muted/50">
                     <TableRow>
-                      <TableHead className="w-[50px] text-center">
+                      <TableHead className="w-12.5 text-center">
                         <Checkbox 
                           checked={selectedBookingIds.length === vendorBookings.length && vendorBookings.length > 0}
                           onCheckedChange={toggleAllBookings}

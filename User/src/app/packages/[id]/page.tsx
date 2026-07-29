@@ -13,7 +13,6 @@ import {
   Share, 
   Heart, 
   ChevronLeft,
-  Tent,
   Utensils,
   CalendarDays,
   Hotel,
@@ -27,7 +26,6 @@ import {
   X
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { packages } from '@/data/packages';
 import { getProperties } from '@/lib/appwrite/api';
 import { Models } from 'appwrite';
 import { format, addDays } from 'date-fns';
@@ -44,9 +42,32 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
   const setRoomDetails = useCheckoutStore((state) => state.setRoomDetails);
   const resolvedParams = use(params);
   const rawPkgId = resolvedParams.id || '1';
-  const [pkg, setPkg] = useState<any>(null);
+  const [pkg, setPkg] = useState<Record<string, any> | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [itinerary, setItinerary] = useState<any[]>([]);
+  const [itinerary, setItinerary] = useState<Record<string, any>[]>([]);
+
+  // Available Hotel Options
+  const [hotelOptions, setHotelOptions] = useState<Record<string, any>[]>([]);
+
+  // Available Activity Options
+  const [activityOptions, setActivityOptions] = useState([
+    {
+      id: 0,
+      title: 'Guided Local Sightseeing',
+      description: 'Explore the best landmarks and hidden gems with our expert local guides. Includes photography points and cultural hubs.',
+      image: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=600&auto=format&fit=crop',
+      pricePerPerson: 0,
+      priceLabel: 'Included in Package'
+    },
+    {
+      id: 1,
+      title: 'Adventure Sports Pass',
+      description: 'Get an adrenaline rush with our adventure sports pass. Includes zip-lining, river rafting, and bungee jumping (where applicable).',
+      image: 'https://images.unsplash.com/photo-1593693397690-362cb9666fc2?q=80&w=600&auto=format&fit=crop',
+      pricePerPerson: 2500,
+      priceLabel: '+ ₹2,500 / person'
+    }
+  ]);
 
   useEffect(() => {
     async function loadCMSPackage() {
@@ -54,7 +75,7 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
         const res = await fetch("/api/cms/packages");
         const json = await res.json();
         if (json.success && Array.isArray(json.packages) && json.packages.length > 0) {
-          const cmsFound = json.packages.find((p: any) => String(p.id) === String(rawPkgId));
+          const cmsFound = json.packages.find((p: Record<string, any>) => String(p.id) === String(rawPkgId));
           if (cmsFound) {
             const minPrice = cmsFound.pricing && cmsFound.pricing[0] ? cmsFound.pricing[0].pricePerPerson : 0;
             setPkg({
@@ -116,9 +137,6 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
   const [isStartOpen, setIsStartOpen] = useState(false);
   const [isEndOpen, setIsEndOpen] = useState(false);
 
-  // Available Hotel Options (Initialized with live CMS / Appwrite properties)
-  const [hotelOptions, setHotelOptions] = useState<any[]>([]);
-
   // Fetch real-time hotel properties from Appwrite DB if not specified in CMS package
   useEffect(() => {
     async function loadLiveProperties() {
@@ -154,25 +172,27 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
     loadLiveProperties();
   }, []);
 
-  // Available Activity Options
-  const [activityOptions, setActivityOptions] = useState([
-    {
-      id: 0,
-      title: 'Guided Local Sightseeing',
-      description: 'Explore the best landmarks and hidden gems with our expert local guides. Includes photography points and cultural hubs.',
-      image: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=600&auto=format&fit=crop',
-      pricePerPerson: 0,
-      priceLabel: 'Included in Package'
-    },
-    {
-      id: 1,
-      title: 'Adventure Sports Pass',
-      description: 'Get an adrenaline rush with our adventure sports pass. Includes zip-lining, river rafting, and bungee jumping (where applicable).',
-      image: 'https://images.unsplash.com/photo-1593693397690-362cb9666fc2?q=80&w=600&auto=format&fit=crop',
-      pricePerPerson: 2500,
-      priceLabel: '+ ₹2,500 / person'
-    }
-  ]);
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center pt-24 pb-20">
+        <div className="w-12 h-12 border-4 border-gray-200 border-t-brand-coral rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
+  if (!pkg) {
+    return (
+      <div className="min-h-screen flex items-center justify-center pt-24 pb-20">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Package Not Found</h2>
+          <p className="text-gray-600 mb-6">The package you are looking for does not exist or has been removed.</p>
+          <Link href="/packages" className="px-6 py-3 bg-brand-coral text-white font-bold rounded-xl hover:bg-brand-coral/90 transition-colors">
+            Browse Packages
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   // Parse duration nights (e.g. "6 Days / 5 Nights" -> 5)
   const nightsMatch = pkg.duration.match(/(\d+)\s*Nights?/i);
@@ -276,28 +296,6 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
     router.push(`/checkout?${query.toString()}`);
   };
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center pt-24 pb-20">
-        <div className="w-12 h-12 border-4 border-gray-200 border-t-brand-coral rounded-full animate-spin"></div>
-      </div>
-    );
-  }
-
-  if (!pkg) {
-    return (
-      <div className="min-h-screen flex items-center justify-center pt-24 pb-20">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Package Not Found</h2>
-          <p className="text-gray-600 mb-6">The package you are looking for does not exist or has been removed.</p>
-          <Link href="/packages" className="px-6 py-3 bg-brand-coral text-white font-bold rounded-xl hover:bg-brand-coral/90 transition-colors">
-            Browse Packages
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-white text-[#222222]">
       
@@ -387,7 +385,7 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
             pagination={{ clickable: true }}
             className="w-full h-full [&_.swiper-button-next]:text-white [&_.swiper-button-prev]:text-white [&_.swiper-pagination-bullet]:bg-white [&_.swiper-pagination-bullet-active]:bg-white [&_.swiper-button-next]:opacity-0 [&_.swiper-button-prev]:opacity-0 group-hover/slider:[&_.swiper-button-next]:opacity-100 group-hover/slider:[&_.swiper-button-prev]:opacity-100 [&_.swiper-button-next]:transition-opacity [&_.swiper-button-prev]:transition-opacity"
           >
-            {pkg.images.map((img, i) => (
+            {pkg.images.map((img: string, i: number) => (
               <SwiperSlide key={i} className="relative w-full h-full">
                 <Image 
                   src={img} 
@@ -627,7 +625,7 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
                                 <div className="p-5 pt-0 border-t border-gray-100 bg-white">
                                   <div className="relative pl-8 ml-6 border-l border-brand-coral/30 py-4 flex flex-col gap-6 mt-4">
                                     {(day.points && day.points.length > 0) ? (
-                                      day.points.map((pt: any, pIdx: number) => (
+                                      day.points.map((pt: Record<string, any>, pIdx: number) => (
                                         <div key={pIdx} className="relative">
                                           <div className="absolute -left-9.5 top-1.5 w-3 h-3 rounded-full bg-brand-coral ring-4 ring-white" />
                                           <h5 className="font-bold text-gray-900 text-[15px]">{pt.title}</h5>

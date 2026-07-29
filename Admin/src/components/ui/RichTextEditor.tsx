@@ -10,7 +10,7 @@ import { Loader2 } from "lucide-react";
 // Use react-quill-new since react-quill is unmaintained and causes issues with React 19
 const ReactQuill = dynamic(() => import("react-quill-new"), { 
   ssr: false,
-  loading: () => <div className="h-[300px] flex items-center justify-center bg-slate-50 border border-slate-200 rounded-md"><Loader2 className="w-6 h-6 animate-spin text-slate-400" /></div>
+  loading: () => <div className="h-75 flex items-center justify-center bg-slate-50 border border-slate-200 rounded-md"><Loader2 className="w-6 h-6 animate-spin text-slate-400" /></div>
 });
 
 const BUCKET_ID = "6a3e398000280b2b3d20";
@@ -85,7 +85,7 @@ export default function RichTextEditor({ value, onChange, placeholder }: RichTex
         onChange={onChange}
         modules={modules}
         placeholder={placeholder || "Write something amazing..."}
-        className="bg-white min-h-[300px]"
+        className="bg-white min-h-75"
       />
       
       <style dangerouslySetInnerHTML={{__html: `

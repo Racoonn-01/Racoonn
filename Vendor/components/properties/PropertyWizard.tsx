@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,10 +12,12 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useAuthStore } from "@/store/authStore";
 import { databases, storage, appwriteConfig } from "@/lib/appwrite/client";
 import { ID, Query, Permission, Role } from "appwrite";
-import { useAuthStore } from "@/store/authStore";
 import { toast } from "sonner";
+import mapboxgl from "mapbox-gl";
+import "mapbox-gl/dist/mapbox-gl.css";
 
 const steps = [
   { id: 1, title: "Basic Details" },
@@ -42,6 +44,110 @@ interface PropertyWizardProps {
   propertyId?: string;
 }
 
+function VendorLocationPicker({
+  address,
+  city,
+  state,
+  pinCoords,
+  onPinChange
+}: {
+  address: string;
+  city: string;
+  state: string;
+  pinCoords: [number, number] | null;
+  onPinChange: (coords: [number, number]) => void;
+}) {
+  const mapContainerRef = useRef<HTMLDivElement | null>(null);
+  const mapRef = useRef<mapboxgl.Map | null>(null);
+  const markerRef = useRef<mapboxgl.Marker | null>(null);
+  const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN || '';
+
+  useEffect(() => {
+    if (!mapContainerRef.current) return;
+    mapboxgl.accessToken = MAPBOX_TOKEN;
+
+    const initialCenter: [number, number] = pinCoords || [79.5130, 29.2183]; // Default Haldwani
+
+    const map = new mapboxgl.Map({
+      container: mapContainerRef.current,
+      style: 'mapbox://styles/mapbox/outdoors-v12',
+      center: initialCenter,
+      zoom: 13
+    });
+
+    map.addControl(new mapboxgl.NavigationControl(), 'bottom-right');
+    mapRef.current = map;
+
+    // Draggable marker
+    const marker = new mapboxgl.Marker({ draggable: true, color: '#E86A70' })
+      .setLngLat(initialCenter)
+      .addTo(map);
+
+    marker.on('dragend', () => {
+      const lngLat = marker.getLngLat();
+      onPinChange([lngLat.lng, lngLat.lat]);
+    });
+
+    map.on('click', (e) => {
+      marker.setLngLat(e.lngLat);
+      onPinChange([e.lngLat.lng, e.lngLat.lat]);
+    });
+
+    markerRef.current = marker;
+
+    return () => {
+      map.remove();
+    };
+  }, []);
+
+  // Update marker position and fly map when pinCoords changes
+  useEffect(() => {
+    if (mapRef.current && markerRef.current && pinCoords) {
+      markerRef.current.setLngLat(pinCoords);
+      mapRef.current.flyTo({ center: pinCoords, zoom: 14 });
+    }
+  }, [pinCoords]);
+
+  // Auto-geocode address input changes
+  useEffect(() => {
+    const fullQuery = [city, state, address].filter(Boolean).join(", ");
+    if (!fullQuery.trim()) return;
+
+    const timer = setTimeout(async () => {
+      try {
+        const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(fullQuery)}.json?access_token=${MAPBOX_TOKEN}&country=in&limit=1`;
+        const res = await fetch(url);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.features && data.features.length > 0) {
+            const [gLng, gLat] = data.features[0].center;
+            onPinChange([gLng, gLat]);
+          }
+        }
+      } catch (err) {
+        console.warn("Mapbox geocoding error:", err);
+      }
+    }, 800);
+
+    return () => clearTimeout(timer);
+  }, [address, city, state]);
+
+  return (
+    <div className="w-full h-80 rounded-2xl overflow-hidden relative border border-slate-200 shadow-inner group">
+      <div ref={mapContainerRef} className="w-full h-full" />
+      <div className="absolute top-3 left-3 bg-white/95 backdrop-blur-md px-3 py-1.5 rounded-full shadow-md text-xs font-semibold text-slate-700 flex items-center gap-1.5 border border-slate-200 pointer-events-none">
+        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+        Click map or drag marker to set exact location pin
+      </div>
+      {pinCoords && (
+        <div className="absolute bottom-3 left-3 bg-slate-900/90 text-white text-[11px] font-mono px-3 py-1.5 rounded-lg shadow-md pointer-events-none">
+          Lat: {pinCoords[1].toFixed(6)}, Lng: {pinCoords[0].toFixed(6)}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function PropertyWizard({ propertyId }: PropertyWizardProps) {
   const router = useRouter();
   const { user } = useAuthStore();
@@ -52,6 +158,7 @@ export function PropertyWizard({ propertyId }: PropertyWizardProps) {
   const [saving, setSaving] = useState(false);
   const [uploadingPhotos, setUploadingPhotos] = useState(false);
   const [internalPropId, setInternalPropId] = useState<string | null>(propertyId || null);
+  const [pinCoords, setPinCoords] = useState<[number, number] | null>(null); // [lng, lat]
 
   const [formData, setFormData] = useState({
     name: "",
@@ -78,8 +185,18 @@ export function PropertyWizard({ propertyId }: PropertyWizardProps) {
           propertyId
         );
         
-        const address = prop.location || "";
-        
+        const rawLocation = prop.location || "";
+        const geoMatch = rawLocation.match(/\[GEO:\s*(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)\]/i);
+        let cleanAddress = rawLocation;
+        if (geoMatch) {
+          const lat = parseFloat(geoMatch[1]);
+          const lng = parseFloat(geoMatch[2]);
+          if (!isNaN(lat) && !isNaN(lng)) {
+            setPinCoords([lng, lat]);
+          }
+          cleanAddress = rawLocation.replace(/\[GEO:\s*-?\d+(?:\.\d+)?,\s*-?\d+(?:\.\d+)?\]/gi, '').trim();
+        }
+
         const roomsRes = await databases.listDocuments(
           appwriteConfig.databaseId,
           appwriteConfig.roomCollectionId,
@@ -90,7 +207,7 @@ export function PropertyWizard({ propertyId }: PropertyWizardProps) {
           name: prop.propertyName || prop.title || "",
           type: prop.propertyType || "Hotel",
           description: prop.description || "",
-          address: address,
+          address: cleanAddress,
           city: prop.city || "",
           state: prop.state || "",
           country: "",
@@ -126,6 +243,31 @@ export function PropertyWizard({ propertyId }: PropertyWizardProps) {
     if (!user) return false;
     setSaving(true);
     try {
+      let lat = pinCoords ? pinCoords[1] : null;
+      let lng = pinCoords ? pinCoords[0] : null;
+
+      const cleanAddress = formData.address.replace(/\[GEO:\s*-?\d+(?:\.\d+)?,\s*-?\d+(?:\.\d+)?\]/gi, '').trim();
+
+      if ((!lat || !lng) && (cleanAddress || formData.city)) {
+        try {
+          const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN || '';
+          const query = [formData.city, formData.state, cleanAddress].filter(Boolean).join(", ");
+          const geoRes = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${mapboxToken}&country=in&limit=1`);
+          if (geoRes.ok) {
+            const geoData = await geoRes.json();
+            if (geoData.features && geoData.features.length > 0) {
+              [lng, lat] = geoData.features[0].center;
+            }
+          }
+        } catch (geoErr) {
+          console.warn("Geocoding error on save:", geoErr);
+        }
+      }
+
+      const finalLocation = (lat !== null && lng !== null) 
+        ? `${cleanAddress} [GEO: ${lat.toFixed(6)}, ${lng.toFixed(6)}]`
+        : cleanAddress;
+
       const data = {
         vendorId: user.$id,
         propertyName: formData.name,
@@ -134,7 +276,7 @@ export function PropertyWizard({ propertyId }: PropertyWizardProps) {
         description: formData.description,
         city: formData.city,
         state: formData.state,
-        location: formData.address,
+        location: finalLocation,
         status: "Draft",
         price: 0
       };
@@ -472,24 +614,21 @@ export function PropertyWizard({ propertyId }: PropertyWizardProps) {
                         <Input value={formData.state} onChange={(e) => setFormData({...formData, state: e.target.value})} placeholder="Rajasthan" className="h-14 rounded-xl bg-slate-50/50 border-slate-200 focus-visible:ring-primary/20 text-[15px]" />
                       </div>
                       <div className="space-y-2 sm:col-span-2">
-                        <label className="text-[12px] font-semibold text-slate-700 uppercase tracking-wide">Map Preview</label>
-                        <div className="w-full h-75 bg-slate-100 rounded-xl overflow-hidden relative shadow-inner border border-slate-200">
-                          {([formData.address, formData.city, formData.state].filter(Boolean).join(", ")).length > 0 ? (
-                            <iframe
-                              width="100%"
-                              height="100%"
-                              style={{ border: 0 }}
-                              loading="lazy"
-                              allowFullScreen
-                              referrerPolicy="no-referrer-when-downgrade"
-                              src={`https://maps.google.com/maps?q=${encodeURIComponent([formData.address, formData.city, formData.state].filter(Boolean).join(", "))}&t=&z=13&ie=UTF8&iwloc=&output=embed`}
-                            />
-                          ) : (
-                            <div className="flex items-center justify-center h-full text-slate-400 font-medium">
-                              Type a location above to see map preview
-                            </div>
+                        <div className="flex items-center justify-between">
+                          <label className="text-[12px] font-semibold text-slate-700 uppercase tracking-wide">Interactive Location Map Pin</label>
+                          {pinCoords && (
+                            <span className="text-xs text-emerald-600 font-semibold flex items-center gap-1">
+                              <Check className="w-3.5 h-3.5" /> Pin Selected ({pinCoords[1].toFixed(4)}, {pinCoords[0].toFixed(4)})
+                            </span>
                           )}
                         </div>
+                        <VendorLocationPicker 
+                          address={formData.address}
+                          city={formData.city}
+                          state={formData.state}
+                          pinCoords={pinCoords}
+                          onPinChange={(coords) => setPinCoords(coords)}
+                        />
                       </div>
                     </div>
                   </div>

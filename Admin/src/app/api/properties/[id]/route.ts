@@ -13,7 +13,7 @@ export async function PATCH(
     const { propertyName, propertyType, city, state, location, status } = body;
     
     // Build update object based on what was provided
-    const updateData: any = {};
+    const updateData: Record<string, unknown> = {};
     if (propertyName !== undefined) {
       updateData.propertyName = propertyName;
       updateData.title = propertyName; // Sync title if it exists
@@ -35,7 +35,7 @@ export async function PATCH(
     );
 
     return NextResponse.json(updatedDoc);
-  } catch (error: any) {
+  } catch (error) {
     console.error("Error updating property:", error);
     return NextResponse.json(
       { error: "Failed to update property" },

@@ -15,6 +15,7 @@ export function BookingSummary({
   guests = "2",
   checkIn = "12 Aug 2026",
   checkOut = "15 Aug 2026",
+  gstRate = 5,
   taxes = 2400,
   addons = 1500,
   discount = 0 
@@ -29,12 +30,16 @@ export function BookingSummary({
   guests?: string;
   checkIn?: string;
   checkOut?: string;
+  gstRate?: number;
   taxes?: number;
   addons?: number;
   discount?: number;
 }) {
-  const roomPrice = pricePerNight * nights * rooms;
-  const total = roomPrice + taxes + addons - discount;
+  const isPackage = roomName.startsWith('Package:') || roomName.toLowerCase().includes('package');
+  const roomPrice = isPackage ? pricePerNight : pricePerNight * nights * rooms;
+  const computedGst = Math.round((roomPrice * gstRate) / 100);
+  const actualTaxes = taxes > 0 ? taxes : computedGst;
+  const total = roomPrice + actualTaxes + addons - discount;
   
   const { appliedCoupon, applyCoupon, removeCoupon } = useCheckoutStore();
   const [couponInput, setCouponInput] = useState("");
@@ -145,31 +150,38 @@ export function BookingSummary({
         )}
       </div>
 
-      {/* Price Summary embedded or separate. For the prompt, I will put it here for simplicity. */}
+      {/* Price Summary */}
       <div className="p-6 py-4 bg-brand-sand">
         <div className="space-y-2 mb-4 text-sm">
           <div className="flex justify-between">
-            <span className="text-gray-600">Room Price (₹{pricePerNight.toLocaleString()} × {nights} Nights)</span>
-            <span className="font-medium text-brand-navy">₹{roomPrice.toLocaleString()}</span>
+            <span className="text-gray-600">
+              {isPackage ? 'Package Price (Stays + Food + Activities)' : `Room Charge (₹${pricePerNight.toLocaleString('en-IN')} × ${nights} Nights)`}
+            </span>
+            <span className="font-medium text-brand-navy">₹{roomPrice.toLocaleString('en-IN')}</span>
           </div>
-          <div className="flex justify-between">
-            <span className="text-gray-600">Taxes & Fees</span>
-            <span className="font-medium text-brand-navy">₹{taxes.toLocaleString()}</span>
+          <div className="flex justify-between items-center">
+            <span className="text-gray-600 flex items-center gap-1.5">
+              GST ({gstRate}%)
+              <span className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-1.5 py-0.5 rounded">GST Extra</span>
+            </span>
+            <span className="font-medium text-brand-navy">₹{actualTaxes.toLocaleString('en-IN')}</span>
           </div>
           <div className="flex justify-between">
             <span className="text-gray-600">Add-On Services</span>
-            <span className="font-medium text-brand-navy">₹{addons.toLocaleString()}</span>
+            <span className="font-medium text-brand-navy">₹{addons.toLocaleString('en-IN')}</span>
           </div>
-          <div className="flex justify-between text-green-600">
-            <span>Coupon Discount</span>
-            <span className="font-medium">-₹{discount.toLocaleString()}</span>
-          </div>
+          {discount > 0 && (
+            <div className="flex justify-between text-green-600">
+              <span>Coupon Discount</span>
+              <span className="font-medium">-₹{discount.toLocaleString('en-IN')}</span>
+            </div>
+          )}
         </div>
 
         <div className="pt-4 border-t border-brand-sky flex justify-between items-end">
           <div>
-            <p className="text-xs text-gray-500 mb-0.5">Total Amount</p>
-            <p className="text-2xl font-poppins font-bold text-brand-coral">₹{total.toLocaleString()}</p>
+            <p className="text-xs text-gray-500 mb-0.5">Total Amount (Incl. Taxes)</p>
+            <p className="text-2xl font-poppins font-bold text-brand-coral">₹{total.toLocaleString('en-IN')}</p>
           </div>
         </div>
       </div>

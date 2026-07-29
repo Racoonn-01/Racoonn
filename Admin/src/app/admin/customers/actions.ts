@@ -3,7 +3,7 @@
 import { appwriteServer } from "@/lib/appwrite/server";
 import { Query } from "node-appwrite";
 
-const DATABASE_ID = process.env.APPWRITE_DATABASE_ID!;
+const DATABASE_ID = process.env.APPWRITE_DATABASE_ID || process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID || "6a3cec630035d63ea963";
 
 export async function getAllCustomers() {
   try {
@@ -67,15 +67,17 @@ export async function getAllCustomers() {
       }
       
       const customer = customerMap.get(userId);
-      customer.bookings++;
-      
-      if (booking.status === 'confirmed' || booking.status === 'completed' || booking.paymentStatus === 'Paid') {
-        const payment = payments.documents.find(p => p.bookingId === booking.$id);
-        const amount = payment ? payment.totalAmount : (booking.price * booking.nights);
-        customer.totalSpentNum += amount;
+      if (customer) {
+        customer.bookings++;
         
-        if (booking.status !== 'completed' && booking.status !== 'cancelled') {
-           customer.activeBookings++;
+        if (booking.status === 'confirmed' || booking.status === 'completed' || booking.paymentStatus === 'Paid') {
+          const payment = payments.documents.find(p => p.bookingId === booking.$id);
+          const amount = payment ? payment.totalAmount : (booking.price * booking.nights);
+          customer.totalSpentNum += amount;
+          
+          if (booking.status !== 'completed' && booking.status !== 'cancelled') {
+             customer.activeBookings++;
+          }
         }
       }
     });

@@ -156,3 +156,57 @@
     @apply font-heading tracking-tight;
   }
 }
+
+/* Print Media Styles for Invoices */
+@media print {
+  body {
+    background: #ffffff !important;
+    color: #0f172a !important;
+  }
+
+  /* Hide background elements during print */
+  aside,
+  header,
+  nav,
+  .print-hidden,
+  .print\:hidden {
+    display: none !important;
+  }
+
+  /* Reset fixed positioning for print modal wrapper */
+  .fixed.inset-0 {
+    position: static !important;
+    display: block !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: transparent !important;
+    width: 100% !important;
+    height: auto !important;
+  }
+
+  .printable-invoice-modal {
+    position: static !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-shadow: none !important;
+    border: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+    color: #0f172a !important;
+    overflow: visible !important;
+    max-height: none !important;
+  }
+
+  .printable-invoice {
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+  }
+
+  @page {
+    size: portrait;
+    margin: 10mm;
+  }
+}

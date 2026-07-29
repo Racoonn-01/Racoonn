@@ -2,7 +2,7 @@ import { appwriteServer } from "@/lib/appwrite/server";
 import { Query } from "node-appwrite";
 import VendorsClient, { VendorData, VendorsKPI } from "./VendorsClient";
 
-const DATABASE_ID = process.env.APPWRITE_DATABASE_ID!;
+const DATABASE_ID = process.env.APPWRITE_DATABASE_ID || process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID || "6a3cec630035d63ea963";
 const VENDOR_COLLECTION = "6a3e0fd9da7df0d38588";
 
 const formatCurrency = (value: number) => {

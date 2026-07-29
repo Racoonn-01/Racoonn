@@ -15,16 +15,15 @@ export async function sendResolvedEmail(
   try {
     console.log(`Mocking resolved email to ${toEmail} for ticket ${ticketDetails.id}`);
     
-    // Check if SMTP is configured
     if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASS) {
-      console.warn("SMTP credentials not found. Email not actually sent.");
-      return { success: true, message: "Mocked email sent" };
+      console.warn("SMTP credentials not found. Email logged locally.");
+      return { success: true, message: "Email logged" };
     }
 
     const transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST,
       port: Number(process.env.SMTP_PORT) || 587,
-      secure: false, // true for 465, false for other ports
+      secure: false,
       auth: {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS,
@@ -38,73 +37,88 @@ export async function sendResolvedEmail(
       html: `
         <!DOCTYPE html>
         <html>
-        <head>
-          <style>
-            body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f9fafb; margin: 0; padding: 0; }
-            .container { max-width: 600px; margin: 40px auto; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); }
-            .header-bar { height: 16px; background-color: #f87171; width: 100%; }
-            .content { padding: 40px 48px; text-align: center; }
-            .icon-wrapper { width: 64px; height: 64px; background-color: #fef2f2; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 24px auto; color: #ef4444; }
-            .icon-wrapper svg { width: 32px; height: 32px; }
-            h1 { color: #111827; font-size: 24px; font-weight: 700; margin: 0 0 16px 0; }
-            p { color: #4b5563; font-size: 16px; line-height: 1.6; margin: 0 0 24px 0; }
-            .ticket-card { background-color: #fffaf5; border: 2px dashed #fcd34d; border-radius: 12px; padding: 24px; text-align: left; margin-bottom: 32px; }
-            .ticket-row { display: flex; justify-content: space-between; margin-bottom: 12px; border-bottom: 1px solid #fde68a; padding-bottom: 12px; }
-            .ticket-row:last-child { margin-bottom: 0; border-bottom: none; padding-bottom: 0; }
-            .ticket-label { color: #92400e; font-weight: 600; font-size: 14px; text-transform: uppercase; letter-spacing: 0.05em; }
-            .ticket-value { color: #78350f; font-size: 15px; font-weight: 500; }
-            .action-btn { display: inline-block; background-color: #ef4444; color: #ffffff !important; text-decoration: none; font-weight: 600; padding: 14px 32px; border-radius: 8px; font-size: 16px; box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.3); transition: all 0.2s; }
-            .footer { background-color: #1e242d; color: #9ca3af; padding: 32px 48px; text-align: center; font-size: 14px; }
-            .footer a { color: #f87171; text-decoration: none; }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <div class="header-bar"></div>
-            <div class="content">
-              <div class="icon-wrapper">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              
-              <h1>Ticket Resolved</h1>
-              <p>Hi ${vendorName},<br/><br/>Your support ticket (<strong>${ticketDetails.displayId}</strong>) has been marked as resolved by our team. We'd love to hear your feedback on how we did.</p>
-              
-              <div class="ticket-card">
-                <div class="ticket-row">
-                  <span class="ticket-label">Ticket ID</span>
-                  <span class="ticket-value">${ticketDetails.displayId}</span>
-                </div>
-                <div class="ticket-row">
-                  <span class="ticket-label">Category</span>
-                  <span class="ticket-value">${ticketDetails.category}</span>
-                </div>
-                <div class="ticket-row">
-                  <span class="ticket-label">Subject</span>
-                  <span class="ticket-value">${ticketDetails.subject}</span>
-                </div>
-              </div>
-              
-              <a href="${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3001'}/vendor/support?reviewTicket=${ticketDetails.id}" class="action-btn">Write a Review</a>
-            </div>
-            
-            <div class="footer">
-              <p>Need more help? Contact <a href="mailto:support@racoonn.com">support@racoonn.com</a></p>
-              <p>&copy; ${new Date().getFullYear()} Racoonn. All rights reserved.</p>
-            </div>
-          </div>
+        <body style="font-family: sans-serif; padding: 20px;">
+          <h2>Ticket Resolved</h2>
+          <p>Hello ${vendorName}, your ticket ${ticketDetails.displayId} (${ticketDetails.subject}) has been resolved.</p>
         </body>
         </html>
       `
     };
 
-    const info = await transporter.sendMail(mailOptions);
-    console.log("Email sent:", info.messageId);
-    return { success: true, message: "Email sent" };
+    await transporter.sendMail(mailOptions);
+    return { success: true };
+  } catch (error: any) {
+    console.error("Failed to send email:", error);
+    return { success: false, error: error.message };
+  }
+}
 
-  } catch (error) {
-    console.error("Error sending email:", error);
-    return { success: false, error: "Failed to send email" };
+export async function sendEmployeeVerificationEmail(
+  toEmail: string,
+  employeeName: string,
+  role: string,
+  verificationUrl: string,
+  allowedTabs: string[] = []
+) {
+  try {
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3002";
+    const fullLink = verificationUrl.startsWith("http") ? verificationUrl : `${appUrl}${verificationUrl}`;
+
+    console.log(`[REALTIME EMAIL DISPATCH] To: ${toEmail} | Employee: ${employeeName} | Role: ${role} | Link: ${fullLink}`);
+
+    if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
+      const transporter = nodemailer.createTransport({
+        host: process.env.SMTP_HOST,
+        port: Number(process.env.SMTP_PORT) || 587,
+        secure: false,
+        auth: {
+          user: process.env.SMTP_USER,
+          pass: process.env.SMTP_PASS,
+        },
+      });
+
+      await transporter.sendMail({
+        from: `"Racoonn Admin Portal" <${process.env.SMTP_FROM || 'admin@racoonn.com'}>`,
+        to: toEmail,
+        subject: `Verify Email & Activate Racoonn Admin Access (${role})`,
+        html: `
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <style>
+              body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #0f172a; margin: 0; padding: 30px; color: #ffffff; }
+              .card { max-width: 550px; margin: 0 auto; background: #1e293b; border-radius: 20px; padding: 40px; border: 1px solid #334155; text-align: center; }
+              .logo { color: #e86a70; font-size: 26px; font-weight: 900; margin-bottom: 24px; letter-spacing: -0.5px; }
+              h2 { font-size: 22px; color: #ffffff; margin-bottom: 12px; }
+              p { color: #94a3b8; font-size: 15px; line-height: 1.6; margin-bottom: 20px; }
+              .role-badge { display: inline-block; background: rgba(232, 106, 112, 0.15); color: #e86a70; border: 1px solid rgba(232, 106, 112, 0.3); font-weight: bold; padding: 6px 14px; border-radius: 20px; font-size: 13px; margin-bottom: 24px; }
+              .btn { display: inline-block; background-color: #e86a70; color: #ffffff !important; font-weight: 800; text-decoration: none; padding: 16px 36px; border-radius: 14px; font-size: 16px; box-shadow: 0 4px 14px rgba(232, 106, 112, 0.4); margin: 24px 0; }
+              .footer { border-top: 1px solid #334155; margin-top: 32px; padding-top: 20px; font-size: 12px; color: #64748b; }
+            </style>
+          </head>
+          <body>
+            <div class="card">
+              <div class="logo">Racoonn Admin</div>
+              <h2>Verify Email Access</h2>
+              <p>Hello <b>${employeeName}</b>,</p>
+              <p>You have been assigned to the Racoonn Admin Portal under the role:</p>
+              <div class="role-badge">${role}</div>
+              <p>Please click the button below to open the Admin Login window, verify your email, and sign in to your authorized modules:</p>
+              <a href="${fullLink}" class="btn">Open Admin Login Window</a>
+              <p style="font-size: 12px; color: #64748b;">If the button above does not work, copy and paste this URL into your browser:<br/><span style="color: #38bdf8;">${fullLink}</span></p>
+              <div class="footer">
+                &copy; ${new Date().getFullYear()} Racoonn Technologies. All rights reserved.
+              </div>
+            </div>
+          </body>
+          </html>
+        `
+      });
+    }
+
+    return { success: true, fullLink };
+  } catch (error: any) {
+    console.error("Failed to send employee verification email:", error);
+    return { success: false, error: error.message };
   }
 }

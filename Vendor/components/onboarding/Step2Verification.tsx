@@ -62,7 +62,10 @@ export function Step2Verification({ onNext, onBack }: { onNext: () => void, onBa
         body: JSON.stringify({ method, identifier })
       });
       
-      if (!res.ok) throw new Error("Failed to send code");
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to send code");
+      }
       
       setCodeSentTo(method);
       setCountdown(60);
@@ -71,8 +74,8 @@ export function Step2Verification({ onNext, onBack }: { onNext: () => void, onBa
       if (method === "email") setEmailOtp(["", "", "", "", "", ""]);
       if (method === "mobile") setMobileOtp(["", "", "", "", "", ""]);
       
-    } catch {
-      setErrorMsg("Failed to send OTP. Please try again.");
+    } catch (err: any) {
+      setErrorMsg(err.message || "Failed to send OTP. Please try again.");
     } finally {
       setIsLoading(false);
     }

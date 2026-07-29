@@ -129,7 +129,7 @@ export default function ReviewsPage() {
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
               <Filter className="h-4 w-4 text-muted-foreground" />
-              <Select value={propertyFilter} onValueChange={setPropertyFilter}>
+              <Select value={propertyFilter} onValueChange={(val) => setPropertyFilter(val ?? "all")}>
                 <SelectTrigger className="w-45">
                   <SelectValue placeholder="All Properties" />
                 </SelectTrigger>
@@ -142,7 +142,7 @@ export default function ReviewsPage() {
               </Select>
             </div>
             <div className="flex items-center gap-2">
-              <Select value={ratingFilter} onValueChange={setRatingFilter}>
+              <Select value={ratingFilter} onValueChange={(val) => setRatingFilter(val ?? "all")}>
                 <SelectTrigger className="w-35">
                   <SelectValue placeholder="All Ratings" />
                 </SelectTrigger>

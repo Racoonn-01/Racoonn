@@ -1,0 +1,13 @@
+[
+  {
+    "id": "sec-1784981657221",
+    "title": "Popular Stays in Haldwani",
+    "subtitle": "Test",
+    "location": "Haldwani",
+    "isActive": true,
+    "order": 1,
+    "propertyIds": [
+      "6a4645d500061bbfb3d1"
+    ]
+  }
+]

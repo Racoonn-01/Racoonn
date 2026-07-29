@@ -8,6 +8,18 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: 'images.unsplash.com',
       },
+      {
+        protocol: 'https',
+        hostname: 'upload.wikimedia.org',
+      },
+      {
+        protocol: 'https',
+        hostname: 'sgp.cloud.appwrite.io',
+      },
+      {
+        protocol: 'https',
+        hostname: 'cloud.appwrite.io',
+      },
     ],
   },
 };

@@ -287,7 +287,7 @@ export default function DashboardOverview() {
     <div className="space-y-6">
       <div className="flex justify-end">
         <div className="w-44">
-          <Select value={timeframe} onValueChange={setTimeframe}>
+          <Select value={timeframe} onValueChange={(val) => val && setTimeframe(val)}>
             <SelectTrigger className="h-10 bg-white border-slate-200 font-semibold text-slate-700 shadow-sm rounded-xl focus:ring-2 focus:ring-[#E86A70]/20 focus:border-[#E86A70]">
               <div className="flex items-center gap-2">
                 <CalendarIcon className="w-4 h-4 text-slate-400" />

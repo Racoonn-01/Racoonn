@@ -81,9 +81,10 @@ export default function Footer() {
             </h4>
             <ul className="space-y-4 mt-2">
               {[
-                { name: 'About Us', path: '/about' },
+                { name: 'Blog', path: '/blog' },
                 { name: 'Search Hotels', path: '/search' },
                 { name: 'Special Offers', path: '/offers' },
+                { name: 'Activities', path: '/activities' },
                 { name: 'Tour Packages', path: '/tours' },
                 { name: 'Destinations', path: '/destinations' },
               ].map((link, index) => (

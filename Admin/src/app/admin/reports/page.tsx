@@ -7,10 +7,11 @@ import { BarChart3, PieChart, TrendingUp, Download } from "lucide-react"
 
 export default function ReportsPage() {
   const reports = [
-    { id: "RPT-110", name: "Monthly Revenue Summary", type: "Financial", generatedAt: "Oct 1, 2023", format: "PDF/CSV" },
-    { id: "RPT-109", name: "Vendor Performance Metrics", type: "Analytics", generatedAt: "Sep 28, 2023", format: "CSV" },
-    { id: "RPT-108", name: "User Growth Trends", type: "Growth", generatedAt: "Sep 25, 2023", format: "PDF" },
-    { id: "RPT-107", name: "Q3 Board Presentation", type: "Executive", generatedAt: "Sep 15, 2023", format: "PDF" },
+    { id: "GST-2026-Q2", name: "GST 5% & 18% Tax Returns Audit", type: "Tax Compliance", generatedAt: "Jul 27, 2026", format: "CSV / PDF" },
+    { id: "RPT-110", name: "Monthly Revenue Summary", type: "Financial", generatedAt: "Jul 1, 2026", format: "PDF/CSV" },
+    { id: "RPT-109", name: "Vendor Performance Metrics", type: "Analytics", generatedAt: "Jun 28, 2026", format: "CSV" },
+    { id: "RPT-108", name: "User Growth Trends", type: "Growth", generatedAt: "Jun 25, 2026", format: "PDF" },
+    { id: "RPT-107", name: "Q2 Executive Board Presentation", type: "Executive", generatedAt: "Jun 15, 2026", format: "PDF" },
   ]
 
   return (

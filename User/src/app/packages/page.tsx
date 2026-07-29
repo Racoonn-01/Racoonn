@@ -1,7 +1,7 @@
 "use client"
 
-import { useState } from 'react';
-import { packages } from '@/data/packages';
+import { useState, useEffect } from 'react';
+import { packages as defaultPackages } from '@/data/packages';
 import TourCard from '@/components/packages/TourCard';
 import { SlidersHorizontal, ChevronDown } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -10,6 +10,68 @@ export default function PackagesPage() {
   const [showFilters, setShowFilters] = useState(false);
   const [selectedFilters, setSelectedFilters] = useState<string[]>([]);
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
+  const [packageList, setPackageList] = useState<any[]>([]);
+
+  const fetchCMSPackages = async () => {
+    try {
+      const res = await fetch("/api/cms/packages");
+      const contentType = res.headers.get("content-type") || "";
+      if (!res.ok || !contentType.includes("application/json")) {
+        setPackageList(defaultPackages);
+        return;
+      }
+      const json = await res.json();
+      if (json.success && Array.isArray(json.packages)) {
+        const publishedOnly = json.packages.filter((p: any) => p.status === 'published');
+        const mapped = publishedOnly.map((cmsPkg: any) => {
+          const minPrice = cmsPkg.pricing && cmsPkg.pricing[0] ? cmsPkg.pricing[0].pricePerPerson : 0;
+          return {
+            id: cmsPkg.id,
+            title: cmsPkg.title,
+            location: cmsPkg.metaTitle || 'Uttarakhand',
+            duration: cmsPkg.itinerary && cmsPkg.itinerary.length > 0 
+              ? `${cmsPkg.itinerary.length + 1} Days / ${cmsPkg.itinerary.length} Nights` 
+              : '5 Days / 4 Nights',
+            features: 'Meals | Stay | Transfer',
+            price: `₹${minPrice.toLocaleString('en-IN')}`,
+            badge: 'Featured',
+            badgeColor: 'text-brand-coral',
+            images: cmsPkg.images && cmsPkg.images.length > 0 
+              ? cmsPkg.images 
+              : ["https://images.unsplash.com/photo-1595815771614-ade9d652a65d?w=800&q=80"]
+          };
+        });
+        setPackageList(mapped);
+      } else {
+        setPackageList([]);
+      }
+    } catch (err) {
+      console.error("Error fetching live CMS packages:", err);
+      setPackageList([]);
+    }
+  };
+
+  useEffect(() => {
+    fetchCMSPackages();
+
+    const handleUpdate = () => fetchCMSPackages();
+    window.addEventListener("cms_packages_updated", handleUpdate);
+
+    let bc: BroadcastChannel | null = null;
+    if (typeof window !== "undefined" && "BroadcastChannel" in window) {
+      bc = new BroadcastChannel("racoonn_cms_channel");
+      bc.onmessage = (event) => {
+        if (event.data && event.data.type === "PACKAGES_UPDATED") {
+          fetchCMSPackages();
+        }
+      };
+    }
+
+    return () => {
+      window.removeEventListener("cms_packages_updated", handleUpdate);
+      if (bc) bc.close();
+    };
+  }, []);
 
   const filters = [
     'Price', 'Duration', 'Uttarakhand', 'Himachal', 'Goa', 'International', 'Bestseller', 'Trending', 'New'
@@ -24,14 +86,12 @@ export default function PackagesPage() {
   };
 
   // Basic filtering logic
-  const filteredPackages = packages.filter(pkg => {
+  const filteredPackages = packageList.filter(pkg => {
     if (selectedFilters.length === 0) return true;
     
-    // Check if any selected filter matches the package's location or badge
-    // (ignoring Price and Duration which would need complex dropdown logic)
     return selectedFilters.every(filter => {
       if (filter === 'Price' || filter === 'Duration') return true;
-      return pkg.location.includes(filter) || pkg.badge.includes(filter);
+      return pkg.location.toLowerCase().includes(filter.toLowerCase()) || pkg.badge.toLowerCase().includes(filter.toLowerCase());
     });
   });
 

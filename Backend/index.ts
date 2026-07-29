@@ -13,7 +13,20 @@ const PORT = process.env.PORT || 5005;
 app.use(cors());
 app.use(express.json());
 
-const otpStore = new Map();
+interface OtpRecord {
+    code: string;
+    expiresAt: number;
+    lastSentAt: number;
+    attempts: number;
+}
+
+interface RequestLimitRecord {
+    count: number;
+    firstRequestTime: number;
+}
+
+const otpStore = new Map<string, OtpRecord>();
+const requestLimits = new Map<string, RequestLimitRecord>();
 
 app.get('/health', (req, res) => {
     res.status(200).json({ status: 'ok', message: 'Racoonn Backend is running!' });
@@ -26,12 +39,42 @@ app.post('/api/otp/send', async (req, res) => {
             return res.status(400).json({ error: 'Method and identifier required' });
         }
 
+        const now = Date.now();
+
+        // 1. Rate Limit: Check resend cooldown (60 seconds)
+        const existingOtp = otpStore.get(identifier);
+        if (existingOtp && (now - existingOtp.lastSentAt) < 60 * 1000) {
+            const waitSeconds = Math.ceil((60 * 1000 - (now - existingOtp.lastSentAt)) / 1000);
+            return res.status(429).json({ 
+                error: `Please wait ${waitSeconds} seconds before requesting a new OTP.` 
+            });
+        }
+
+        // 2. Rate Limit: Max requests per identifier window (5 requests per 15 mins)
+        const limitWin = 15 * 60 * 1000;
+        const userLimit = requestLimits.get(identifier) || { count: 0, firstRequestTime: now };
+        if (now - userLimit.firstRequestTime > limitWin) {
+            userLimit.count = 1;
+            userLimit.firstRequestTime = now;
+        } else {
+            userLimit.count += 1;
+        }
+        requestLimits.set(identifier, userLimit);
+
+        if (userLimit.count > 5) {
+            return res.status(429).json({ 
+                error: 'Too many OTP requests. Please try again after 15 minutes.' 
+            });
+        }
+
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
         
-        // Store OTP with 1 min expiry
+        // Store OTP with 5 min validity, reset attempt counter
         otpStore.set(identifier, {
             code: otp,
-            expiresAt: Date.now() + 1 * 60 * 1000
+            expiresAt: now + 5 * 60 * 1000,
+            lastSentAt: now,
+            attempts: 0
         });
 
         if (method === 'email') {
@@ -47,13 +90,7 @@ app.post('/api/otp/send', async (req, res) => {
 
             const templatePath = path.join(__dirname, 'templates/emails/verification-code.html');
             let htmlTemplate = fs.readFileSync(templatePath, 'utf8');
-            
-            // Format the code to add spaces between digits (e.g., "7 3 1 9 2 4")
-            // Wait, the template has 731924 without spaces but with letter-spacing. Let's just replace 731924 with the code.
             htmlTemplate = htmlTemplate.replace('731924', otp);
-            
-            // Also need to read base64 logo if we want to inject it here.
-            // But since the template ALREADY has the base64 injected from our earlier step, we don't need to do it again!
             
             await transporter.sendMail({
                 from: '"Racoonn" <support@racoonn.com>',
@@ -66,7 +103,7 @@ app.post('/api/otp/send', async (req, res) => {
             console.log(`Mock SMS OTP ${otp} sent to ${identifier}`);
         }
 
-        res.json({ success: true });
+        res.json({ success: true, message: 'OTP sent successfully.' });
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Failed to send OTP' });
@@ -78,19 +115,37 @@ app.post('/api/otp/verify', (req, res) => {
     const stored = otpStore.get(identifier);
 
     if (!stored) {
-        return res.status(400).json({ error: 'No OTP found or it expired.' });
+        return res.status(400).json({ error: 'No OTP found or it has expired.' });
     }
-    
+
     if (Date.now() > stored.expiresAt) {
         otpStore.delete(identifier);
-        return res.status(400).json({ error: 'OTP has expired.' });
+        return res.status(400).json({ error: 'OTP has expired. Please request a new one.' });
+    }
+
+    // Check failed attempts limit (max 3 allowed)
+    if (stored.attempts >= 3) {
+        otpStore.delete(identifier);
+        return res.status(429).json({ 
+            error: 'Maximum verification attempts exceeded. Please request a new OTP.' 
+        });
     }
 
     if (stored.code === code) {
         otpStore.delete(identifier);
-        return res.json({ success: true, message: 'Verified' });
+        return res.json({ success: true, message: 'Verified successfully.' });
     } else {
-        return res.status(400).json({ error: 'Invalid OTP code.' });
+        stored.attempts += 1;
+        const remaining = 3 - stored.attempts;
+        if (remaining <= 0) {
+            otpStore.delete(identifier);
+            return res.status(400).json({ 
+                error: 'Invalid OTP. Maximum attempts exceeded. Please request a new OTP.' 
+            });
+        }
+        return res.status(400).json({ 
+            error: `Invalid OTP code. ${remaining} attempt(s) remaining.` 
+        });
     }
 });
 

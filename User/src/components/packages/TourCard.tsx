@@ -9,11 +9,19 @@ import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/pagination';
 
-// Import type for the pkg prop
-import { packages } from '@/data/packages';
-type PackageType = typeof packages[0];
+export interface TourCardPackage {
+  id: string | number;
+  title: string;
+  location: string;
+  duration: string;
+  features: string;
+  price: string;
+  badge: string;
+  badgeColor: string;
+  images: string[];
+}
 
-export default function TourCard({ pkg }: { pkg: PackageType }) {
+export default function TourCard({ pkg }: { pkg: TourCardPackage }) {
   return (
     <div 
       className="w-full h-full bg-white rounded-2xl shadow-[0_4px_20px_rgb(0,0,0,0.06)] border border-gray-100 overflow-hidden group/card hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] transition-shadow duration-300 flex flex-col transform-gpu"

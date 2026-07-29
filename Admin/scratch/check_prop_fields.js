@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
 const { Client, Databases } = require('node-appwrite');
 
 const client = new Client()

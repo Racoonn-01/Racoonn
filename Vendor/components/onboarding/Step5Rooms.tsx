@@ -126,6 +126,9 @@ export function Step5Rooms({ onNext, onBack }: { onNext: () => void, onBack: () 
             propertyId: propertyId,
             name: room.name,
             price: parseInt(room.price) || 0,
+            gstRate: 5,
+            gstCategory: "GST_5",
+            isTaxInclusive: false,
             occupancy: parseInt(room.occupancy) || 1,
             size: parseInt(room.size) || 0,
             photos: uploadedPhotoUrls

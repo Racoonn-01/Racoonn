@@ -39,7 +39,7 @@ export default async function PropertyViewPage({ params }: { params: Promise<{ i
       try {
         const vendor = await db.getDocument(DATABASE_ID, VENDOR_COLLECTION, property.vendorId || property.userId);
         vendorName = vendor.businessName || vendor.firstName || "Unknown Vendor";
-      } catch (_) {
+      } catch {
         console.error("Vendor not found");
       }
     }
@@ -60,7 +60,7 @@ export default async function PropertyViewPage({ params }: { params: Promise<{ i
       });
       if (lowest < Number.MAX_VALUE) minPrice = lowest;
       
-    } catch (_) {
+    } catch {
       console.error("Error fetching rooms");
     }
 

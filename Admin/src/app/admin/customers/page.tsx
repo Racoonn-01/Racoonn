@@ -44,7 +44,7 @@ export default function CustomersPage() {
   }, [])
 
   const stats = useMemo(() => {
-    let totalCustomers = customers.length;
+    const totalCustomers = customers.length;
     let activeBookings = 0;
     let totalRevenue = 0;
     let suspended = 0;

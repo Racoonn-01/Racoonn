@@ -310,9 +310,6 @@ export default function SettingsPage() {
           <TabsTrigger value="billing" className="data-active:bg-white data-active:text-primary data-active:shadow-sm text-slate-500 rounded-full h-auto py-2 px-5 flex items-center gap-2 font-medium transition-all shrink-0">
             <CreditCard className="w-4 h-4" /> Billing & Payouts
           </TabsTrigger>
-          <TabsTrigger value="notifications" className="data-active:bg-white data-active:text-primary data-active:shadow-sm text-slate-500 rounded-full h-auto py-2 px-5 flex items-center gap-2 font-medium transition-all shrink-0">
-            <Bell className="w-4 h-4" /> Notifications
-          </TabsTrigger>
           <TabsTrigger value="security" className="data-active:bg-white data-active:text-primary data-active:shadow-sm text-slate-500 rounded-full h-auto py-2 px-5 flex items-center gap-2 font-medium transition-all shrink-0">
             <Shield className="w-4 h-4" /> Security
           </TabsTrigger>
@@ -545,42 +542,6 @@ export default function SettingsPage() {
             </motion.div>
           </TabsContent>
 
-          <TabsContent value="notifications" className="space-y-6 outline-none">
-            <motion.div layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
-            <Card className="border-0 shadow-sm ring-1 ring-slate-100 rounded-xl">
-              <CardHeader>
-                <CardTitle className="font-heading">Notification Preferences</CardTitle>
-                <CardDescription>Choose what alerts you want to receive.</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label className="text-base font-semibold text-secondary">New Bookings</Label>
-                    <p className="text-sm text-slate-500">Receive an email when a new booking is made.</p>
-                  </div>
-                  <Switch defaultChecked />
-                </div>
-                <div className="w-full h-px bg-slate-100"></div>
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label className="text-base font-semibold text-secondary">Cancellations</Label>
-                    <p className="text-sm text-slate-500">Receive an SMS when a booking is cancelled.</p>
-                  </div>
-                  <Switch defaultChecked />
-                </div>
-                <div className="w-full h-px bg-slate-100"></div>
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label className="text-base font-semibold text-secondary">New Guest Messages</Label>
-                    <p className="text-sm text-slate-500">Receive push notifications for chat messages.</p>
-                  </div>
-                  <Switch defaultChecked />
-                </div>
-              </CardContent>
-            </Card>
-            </motion.div>
-          </TabsContent>
-
           <TabsContent value="security" className="space-y-6 outline-none">
             <motion.div layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
             <Card className="border-0 shadow-sm ring-1 ring-slate-100 rounded-xl">
@@ -612,59 +573,6 @@ export default function SettingsPage() {
                     {isUpdatingPassword ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : null}
                     Update Password
                   </Button>
-                </div>
-
-                {/* Two-Factor Authentication Section */}
-                <div className="pt-6 border-t border-slate-100 space-y-6">
-                  <div className="flex items-start sm:items-center justify-between gap-4">
-                    <div className="space-y-1">
-                      <h3 className="text-base font-semibold text-slate-800 flex items-center gap-2">
-                        Two-Factor Authentication (2FA)
-                        <span className="px-2 py-0.5 rounded-full bg-green-100 text-green-700 text-xs font-semibold">Enabled</span>
-                      </h3>
-                      <p className="text-sm text-slate-500">Protect your account with an extra layer of security.</p>
-                    </div>
-                    <Switch defaultChecked className="mt-1 sm:mt-0" />
-                  </div>
-                  <Button variant="outline" className="h-11 px-6 rounded-xl border-slate-200 hover:bg-slate-50 font-medium transition-all w-full sm:w-auto">
-                    Manage 2FA Settings
-                  </Button>
-                </div>
-
-                {/* Active Sessions Section */}
-                <div className="pt-6 border-t border-slate-100 space-y-6">
-                  <div className="space-y-1">
-                    <h3 className="text-base font-semibold text-slate-800">Active Sessions</h3>
-                    <p className="text-sm text-slate-500">Manage devices that are currently logged into your account.</p>
-                  </div>
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between p-4 rounded-xl border border-slate-100 bg-slate-50/50">
-                      <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-                          <Shield className="w-5 h-5" />
-                        </div>
-                        <div>
-                          <p className="text-sm font-semibold text-slate-800">MacBook Pro (Mac OS)</p>
-                          <p className="text-xs text-slate-500">Mumbai, India • Active Now</p>
-                        </div>
-                      </div>
-                      <p className="text-xs font-medium text-primary bg-primary/10 px-2.5 py-1 rounded-full">Current Device</p>
-                    </div>
-                    <div className="flex items-center justify-between p-4 rounded-xl border border-slate-100">
-                      <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-500">
-                          <Shield className="w-5 h-5" />
-                        </div>
-                        <div>
-                          <p className="text-sm font-semibold text-slate-800">iPhone 14 Pro (iOS)</p>
-                          <p className="text-xs text-slate-500">New Delhi, India • Last active 2h ago</p>
-                        </div>
-                      </div>
-                      <Button variant="ghost" className="text-red-600 hover:text-red-700 hover:bg-red-50 text-sm font-medium h-9 px-3 rounded-lg">
-                        Revoke
-                      </Button>
-                    </div>
-                  </div>
                 </div>
               </CardContent>
             </Card>

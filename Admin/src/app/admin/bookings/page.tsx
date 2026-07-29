@@ -6,15 +6,55 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
-import { Search, Eye, Filter, CalendarCheck, CalendarX, CalendarClock, DollarSign, Download, Calendar, Loader2 } from "lucide-react"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import {
+  Search,
+  Eye,
+  Filter,
+  CalendarCheck,
+  CalendarX,
+  CalendarClock,
+  DollarSign,
+  Download,
+  Calendar,
+  Loader2,
+  User,
+  Mail,
+  Phone,
+  MapPin,
+  Building2,
+  Receipt,
+  Printer,
+  Sparkles,
+  CreditCard,
+  CheckCircle2
+} from "lucide-react"
 import { getAllBookings } from "./actions"
 
 export type BookingData = {
   id: string;
   realId: string;
   customer: string;
+  guestEmail?: string;
+  guestPhone?: string;
+  guestCountry?: string;
+  specialRequests?: string;
   property: string;
+  hotelLocation?: string;
   amount: string;
+  roomPrice?: number;
+  taxes?: number;
+  serviceFees?: number;
+  discount?: number;
+  totalAmountNum?: number;
+  nights?: number;
+  adults?: number;
+  children?: number;
   status: string;
   checkIn: string;
   checkOut: string;
@@ -25,6 +65,11 @@ export default function BookingsPage() {
   const [activeTab, setActiveTab] = useState("all")
   const [bookings, setBookings] = useState<BookingData[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [searchQuery, setSearchQuery] = useState("")
+
+  // Modal State for Booking Details Popup
+  const [selectedBooking, setSelectedBooking] = useState<BookingData | null>(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
 
   useEffect(() => {
     async function loadBookings() {
@@ -62,9 +107,27 @@ export default function BookingsPage() {
   }, [bookings])
 
   const filteredBookings = bookings.filter(b => {
-    if (activeTab === "all") return true;
-    return b.status === activeTab;
+    const matchesSearch = 
+      b.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      b.customer.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      b.property.toLowerCase().includes(searchQuery.toLowerCase());
+
+    const matchesTab = activeTab === "all" || b.status === activeTab;
+
+    return matchesSearch && matchesTab;
   })
+
+  const handleOpenDetails = (booking: BookingData) => {
+    setSelectedBooking(booking)
+    setIsModalOpen(true)
+  }
+
+  // Clean special requests by removing internal GST metadata string if present
+  const getCleanSpecialRequests = (rawRequests?: string) => {
+    if (!rawRequests) return "";
+    const cleaned = rawRequests.replace(/\[GST Info:[^\]]*\]/g, "").trim();
+    return cleaned === "None" ? "" : cleaned;
+  }
 
   return (
     <div className="space-y-8 pb-8">
@@ -81,7 +144,7 @@ export default function BookingsPage() {
 
       {/* KPI Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card className="bg-linear-to-br from-card to-card/50 border-muted/50 shadow-sm">
+        <Card className="bg-linear-to-br from-card to-card/50 border-muted/50 shadow-xs">
           <CardContent className="p-6">
             <div className="flex justify-between items-start">
               <div className="space-y-2">
@@ -98,7 +161,7 @@ export default function BookingsPage() {
           </CardContent>
         </Card>
 
-        <Card className="bg-linear-to-br from-card to-card/50 border-muted/50 shadow-sm">
+        <Card className="bg-linear-to-br from-card to-card/50 border-muted/50 shadow-xs">
           <CardContent className="p-6">
             <div className="flex justify-between items-start">
               <div className="space-y-2">
@@ -115,7 +178,7 @@ export default function BookingsPage() {
           </CardContent>
         </Card>
 
-        <Card className="bg-linear-to-br from-card to-card/50 border-muted/50 shadow-sm">
+        <Card className="bg-linear-to-br from-card to-card/50 border-muted/50 shadow-xs">
           <CardContent className="p-6">
             <div className="flex justify-between items-start">
               <div className="space-y-2">
@@ -132,7 +195,7 @@ export default function BookingsPage() {
           </CardContent>
         </Card>
 
-        <Card className="bg-linear-to-br from-card to-card/50 border-muted/50 shadow-sm">
+        <Card className="bg-linear-to-br from-card to-card/50 border-muted/50 shadow-xs">
           <CardContent className="p-6">
             <div className="flex justify-between items-start">
               <div className="space-y-2">
@@ -151,13 +214,18 @@ export default function BookingsPage() {
       </div>
 
       {/* Main Content Area */}
-      <div className="rounded-2xl border bg-card/40 shadow-sm backdrop-blur-xl overflow-hidden">
+      <div className="rounded-2xl border bg-card/40 shadow-xs backdrop-blur-xl overflow-hidden">
         {/* Toolbar */}
         <div className="p-4 border-b flex flex-col sm:flex-row items-center justify-between gap-4 bg-muted/10">
           <div className="flex items-center gap-2 w-full sm:w-auto">
             <div className="relative w-full sm:w-80">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Search bookings by ID, Customer..." className="w-full pl-9 bg-background border-muted-foreground/20 rounded-full h-10" />
+              <Input 
+                placeholder="Search bookings by ID, Customer..." 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-9 bg-background border-muted-foreground/20 rounded-full h-10" 
+              />
             </div>
           </div>
           
@@ -169,7 +237,7 @@ export default function BookingsPage() {
                   onClick={() => setActiveTab(tab)}
                   className={`px-4 py-1.5 rounded-full text-sm font-medium capitalize transition-all ${
                     activeTab === tab 
-                      ? "bg-background text-foreground shadow-sm" 
+                      ? "bg-background text-foreground shadow-xs" 
                       : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
@@ -217,9 +285,13 @@ export default function BookingsPage() {
                   const datesStr = `${checkInDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric'})} - ${checkOutDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric'})}`;
                   
                   return (
-                    <TableRow key={booking.id} className="group hover:bg-muted/20 transition-colors">
+                    <TableRow 
+                      key={booking.id} 
+                      onClick={() => handleOpenDetails(booking)}
+                      className="group cursor-pointer hover:bg-muted/30 transition-colors"
+                    >
                       <TableCell className="py-4">
-                        <span className="font-bold text-foreground bg-muted px-2 py-1 rounded-md">{booking.id}</span>
+                        <span className="font-bold text-foreground bg-muted px-2.5 py-1 rounded-md">{booking.id}</span>
                         <div className="text-xs text-muted-foreground mt-1.5">Booked: {booking.bookedAt}</div>
                       </TableCell>
                       <TableCell>
@@ -256,8 +328,16 @@ export default function BookingsPage() {
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button variant="ghost" size="sm" className="opacity-0 group-hover:opacity-100 transition-opacity bg-primary/10 text-primary hover:bg-primary hover:text-white rounded-full px-4">
-                          <Eye className="mr-2 h-4 w-4" /> View Details
+                        <Button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleOpenDetails(booking);
+                          }}
+                          variant="ghost" 
+                          size="sm" 
+                          className="bg-primary/10 text-primary hover:bg-primary hover:text-white rounded-full px-4 font-semibold shadow-2xs transition-all"
+                        >
+                          <Eye className="mr-1.5 h-4 w-4" /> View Details
                         </Button>
                       </TableCell>
                     </TableRow>
@@ -277,6 +357,192 @@ export default function BookingsPage() {
           </div>
         </div>
       </div>
+
+      {/* Premium Wide Booking Details Modal */}
+      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+        <DialogContent className="sm:max-w-3xl md:max-w-4xl w-full rounded-3xl p-0 overflow-hidden bg-background border border-border shadow-2xl max-h-[90vh] flex flex-col">
+          {selectedBooking && (() => {
+            const cleanRequests = getCleanSpecialRequests(selectedBooking.specialRequests);
+            const roomTariff = selectedBooking.roomPrice || 0;
+            const gstTax = selectedBooking.taxes || 0;
+            const totalPaid = selectedBooking.totalAmountNum || (roomTariff + gstTax);
+
+            return (
+              <div className="flex flex-col h-full overflow-y-auto">
+                {/* Header Banner */}
+                <div className="bg-slate-900 text-white p-6 sm:p-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-800">
+                  <div>
+                    <div className="flex items-center gap-3">
+                      <h3 className="text-2xl font-black tracking-tight">{selectedBooking.id}</h3>
+                      <span className={`px-3 py-1 rounded-full text-xs font-extrabold uppercase tracking-wider ${
+                        selectedBooking.status === 'confirmed' ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30' :
+                        selectedBooking.status === 'completed' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' :
+                        selectedBooking.status === 'cancelled' ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30' :
+                        'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                      }`}>
+                        {selectedBooking.status}
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-400 mt-1">Booked on {selectedBooking.bookedAt} • Real ID: {selectedBooking.realId}</p>
+                  </div>
+                  <div className="text-left sm:text-right">
+                    <span className="text-xs text-slate-400 font-medium">Total Paid</span>
+                    <p className="text-2xl font-black text-[#E86A70]">{selectedBooking.amount}</p>
+                  </div>
+                </div>
+
+                {/* Content Body Grid */}
+                <div className="p-6 sm:p-8 space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    
+                    {/* Left Column: Guest & Stay Details */}
+                    <div className="space-y-6">
+                      
+                      {/* Guest Info Box */}
+                      <div className="p-5 rounded-2xl bg-slate-50/80 border border-slate-200/80 space-y-3">
+                        <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-2">
+                          <User className="w-4 h-4 text-rose-500" /> Guest Information
+                        </h4>
+                        <div className="space-y-2 text-sm pt-1">
+                          <div className="flex items-center gap-3">
+                            <div className="h-10 w-10 rounded-full bg-slate-200 text-slate-700 font-bold flex items-center justify-center text-sm uppercase">
+                              {selectedBooking.customer.substring(0, 2)}
+                            </div>
+                            <div>
+                              <p className="font-bold text-slate-900 text-base">{selectedBooking.customer}</p>
+                              <p className="text-xs text-slate-500">{selectedBooking.guestCountry}</p>
+                            </div>
+                          </div>
+                          <div className="pt-2 space-y-1.5 text-xs text-slate-600">
+                            <p className="flex items-center gap-2">
+                              <Mail className="w-3.5 h-3.5 text-slate-400" /> {selectedBooking.guestEmail}
+                            </p>
+                            <p className="flex items-center gap-2">
+                              <Phone className="w-3.5 h-3.5 text-slate-400" /> {selectedBooking.guestPhone}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Property & Stay Box */}
+                      <div className="p-5 rounded-2xl bg-slate-50/80 border border-slate-200/80 space-y-3">
+                        <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-2">
+                          <Building2 className="w-4 h-4 text-rose-500" /> Property & Stay Details
+                        </h4>
+                        <div className="space-y-3 text-sm pt-1">
+                          <div>
+                            <span className="text-xs text-slate-400 font-medium">Property Name</span>
+                            <p className="font-bold text-slate-900">{selectedBooking.property}</p>
+                            <p className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
+                              <MapPin className="w-3 h-3 text-slate-400" /> {selectedBooking.hotelLocation}
+                            </p>
+                          </div>
+                          <div className="pt-2 border-t border-slate-200/60 grid grid-cols-2 gap-4">
+                            <div>
+                              <span className="text-xs text-slate-400 font-medium">Check-In</span>
+                              <p className="font-bold text-slate-900">
+                                {new Date(selectedBooking.checkIn).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                              </p>
+                            </div>
+                            <div>
+                              <span className="text-xs text-slate-400 font-medium">Check-Out</span>
+                              <p className="font-bold text-slate-900">
+                                {new Date(selectedBooking.checkOut).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                              </p>
+                            </div>
+                          </div>
+                          <p className="text-xs text-slate-500 font-medium bg-white px-3 py-2 rounded-xl border border-slate-200/60">
+                            Stays: <b>{selectedBooking.nights || 1} Night(s)</b> • Guests: <b>{selectedBooking.adults || 1} Adult(s), {selectedBooking.children || 0} Child(ren)</b>
+                          </p>
+                        </div>
+                      </div>
+
+                    </div>
+
+                    {/* Right Column: Payment Breakdown & Notes */}
+                    <div className="space-y-6">
+                      
+                      {/* Financial Breakdown Box */}
+                      <div className="p-5 rounded-2xl bg-slate-50/80 border border-slate-200/80 space-y-3">
+                        <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-2">
+                          <Receipt className="w-4 h-4 text-rose-500" /> Payment & Financial Breakdown
+                        </h4>
+                        <div className="space-y-2.5 text-sm pt-1">
+                          <div className="flex justify-between text-slate-600">
+                            <span>Base Room Tariff</span>
+                            <span className="font-semibold text-slate-900">
+                              ₹{roomTariff.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                            </span>
+                          </div>
+                          <div className="flex justify-between text-slate-600">
+                            <span>Statutory GST Taxes</span>
+                            <span className="font-semibold text-slate-900">
+                              ₹{gstTax.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                            </span>
+                          </div>
+                          {(selectedBooking.serviceFees || 0) > 0 && (
+                            <div className="flex justify-between text-slate-600">
+                              <span>Service & Add-on Fees</span>
+                              <span className="font-semibold text-slate-900">
+                                ₹{(selectedBooking.serviceFees || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                              </span>
+                            </div>
+                          )}
+                          {(selectedBooking.discount || 0) > 0 && (
+                            <div className="flex justify-between text-emerald-600">
+                              <span>Discount</span>
+                              <span className="font-semibold">
+                                -₹{(selectedBooking.discount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                              </span>
+                            </div>
+                          )}
+                          <div className="h-px bg-slate-200/80 my-2"></div>
+                          <div className="flex justify-between items-center text-base font-black">
+                            <span className="text-slate-900">Total Paid by Guest</span>
+                            <span className="text-[#E86A70] text-lg font-black">
+                              ₹{totalPaid.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Special Requests (Only shown if actual guest instructions exist) */}
+                      {cleanRequests && (
+                        <div className="p-4 rounded-2xl bg-amber-500/5 border border-amber-500/20 text-xs text-amber-900">
+                          <span className="font-bold mb-1 flex items-center gap-1.5">
+                            <Sparkles className="w-3.5 h-3.5 text-amber-600" /> Guest Special Instructions
+                          </span>
+                          <p className="leading-relaxed text-amber-800">{cleanRequests}</p>
+                        </div>
+                      )}
+
+                    </div>
+
+                  </div>
+                </div>
+
+                {/* Footer Buttons */}
+                <div className="p-6 bg-slate-50 border-t border-slate-200/80 flex justify-end gap-3 mt-auto">
+                  <Button 
+                    onClick={() => setIsModalOpen(false)} 
+                    variant="outline" 
+                    className="rounded-xl px-6 h-11 font-semibold border-slate-300 hover:bg-slate-100 text-slate-700"
+                  >
+                    Close
+                  </Button>
+                  <Button 
+                    onClick={() => window.print()} 
+                    className="rounded-xl px-6 h-11 bg-[#E86A70] hover:bg-[#d5585e] text-white font-bold shadow-md transition-all"
+                  >
+                    <Printer className="mr-2 h-4 w-4" /> Print Details
+                  </Button>
+                </div>
+
+              </div>
+            );
+          })()}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

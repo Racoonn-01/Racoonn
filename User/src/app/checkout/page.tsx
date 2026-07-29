@@ -8,6 +8,7 @@ import { CheckoutFlow } from "@/components/checkout/CheckoutFlow";
 import { CheckoutSidebar } from "@/components/checkout/CheckoutSidebar";
 import { MobileCheckoutBar } from "@/components/checkout/MobileCheckoutBar";
 import logo from "@/assets/Racoonn-Logo-02.png";
+import { calculateRoomGst } from "@/lib/gst";
 
 export const metadata = {
   title: "Checkout | Racoonn Hotel Booking",
@@ -33,8 +34,9 @@ export default async function CheckoutPage({ searchParams }: { searchParams: Pro
 
   const roomPrice = price * nights * rooms;
   
-  // Hardcoded constants for the UI flow (could be dynamic in real app)
-  const taxes = Math.floor(roomPrice * 0.1); // 10% tax
+  // Calculate statutory GST based on price per night
+  const gstResult = calculateRoomGst(price, nights, rooms);
+  const taxes = gstResult.gstAmount;
   const addons = 0; // Default to 0, client components recalculate this
   const discount = 0; // Default to 0, coupons are dynamic
   

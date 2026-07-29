@@ -1,8 +1,7 @@
 "use client";
 
-import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Minus, Plus, Wifi, Utensils, Zap, Key, PawPrint, ChevronDown, Home, Building2, Warehouse } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Minus, Plus, Wifi, Utensils, Zap, Key, PawPrint, ChevronDown, Home, Building2, Warehouse, X, IndianRupee } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export interface FilterState {
@@ -24,13 +23,19 @@ interface FilterModalProps {
   matchCount?: number;
 }
 
-export default function FilterModal({ isOpen, onClose, onApply, initialFilters, matchCount = 0 }: FilterModalProps) {
+const MIN_ALLOWED = 1000;
+const MAX_ALLOWED = 100000;
 
+export default function FilterModal({ isOpen, onClose, onApply, initialFilters, matchCount = 0 }: FilterModalProps) {
   const [bedrooms, setBedrooms] = useState<number | 'Any'>(initialFilters?.bedrooms ?? 'Any');
   const [beds, setBeds] = useState<number | 'Any'>(initialFilters?.beds ?? 'Any');
   const [bathrooms, setBathrooms] = useState<number | 'Any'>(initialFilters?.bathrooms ?? 'Any');
-  const [minPrice, setMinPrice] = useState<number>(initialFilters?.minPrice ?? 4800);
-  const [maxPrice, setMaxPrice] = useState<number>(initialFilters?.maxPrice ?? 58000);
+  const [minPrice, setMinPrice] = useState<number>(initialFilters?.minPrice ?? 1000);
+  const [maxPrice, setMaxPrice] = useState<number>(initialFilters?.maxPrice ?? 100000);
+  const [minInputVal, setMinInputVal] = useState<string>(String(initialFilters?.minPrice ?? 1000));
+  const [maxInputVal, setMaxInputVal] = useState<string>(String(initialFilters?.maxPrice ?? 100000));
+  const [activeThumb, setActiveThumb] = useState<"min" | "max">("min");
+
   const [showAllAmenities, setShowAllAmenities] = useState(false);
   const [selectedAmenities, setSelectedAmenities] = useState<string[]>(initialFilters?.selectedAmenities ?? []);
   const [showPropertyType, setShowPropertyType] = useState(false);
@@ -39,25 +44,40 @@ export default function FilterModal({ isOpen, onClose, onApply, initialFilters, 
   const [showHostLanguage, setShowHostLanguage] = useState(false);
   const [selectedBookingOptions, setSelectedBookingOptions] = useState<string[]>(initialFilters?.selectedBookingOptions ?? []);
 
-  // Update internal state if initialFilters changes
-  React.useEffect(() => {
-    // Avoid calling setState synchronously within an effect if not needed, but here it's used to reset on initialFilters change.
-    // Setting state in an effect is fine for syncing props to state, but can cause extra renders.
-    // Instead of using effect, we can just use them as initial values, but since it's a modal that might change, it's fine.
-    // To silence the warning:
-    if (initialFilters) {
-      setTimeout(() => {
-        setBedrooms(initialFilters.bedrooms);
-        setBeds(initialFilters.beds);
-        setBathrooms(initialFilters.bathrooms);
-        setMinPrice(initialFilters.minPrice);
-        setMaxPrice(initialFilters.maxPrice);
-        setSelectedAmenities(initialFilters.selectedAmenities);
-        setSelectedPropertyTypes(initialFilters.selectedPropertyTypes);
-        setSelectedBookingOptions(initialFilters.selectedBookingOptions);
-      }, 0);
+  const modalRef = useRef<HTMLDivElement>(null);
+
+  // Sync internal state when modal opens or initialFilters changes
+  useEffect(() => {
+    if (isOpen) {
+      setBedrooms(initialFilters?.bedrooms ?? 'Any');
+      setBeds(initialFilters?.beds ?? 'Any');
+      setBathrooms(initialFilters?.bathrooms ?? 'Any');
+      const minP = initialFilters?.minPrice ?? 1000;
+      const maxP = initialFilters?.maxPrice ?? 100000;
+      setMinPrice(minP);
+      setMaxPrice(maxP);
+      setMinInputVal(String(minP));
+      setMaxInputVal(String(maxP));
+      setSelectedAmenities(initialFilters?.selectedAmenities ?? []);
+      setSelectedPropertyTypes(initialFilters?.selectedPropertyTypes ?? []);
+      setSelectedBookingOptions(initialFilters?.selectedBookingOptions ?? []);
     }
-  }, [initialFilters]);
+  }, [isOpen, initialFilters]);
+
+  // Click outside to dismiss
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (modalRef.current && !modalRef.current.contains(event.target as Node)) {
+        onClose();
+      }
+    }
+    if (isOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isOpen, onClose]);
 
   const handleApply = () => {
     if (onApply) {
@@ -76,14 +96,29 @@ export default function FilterModal({ isOpen, onClose, onApply, initialFilters, 
   };
 
   const handleClearAll = () => {
-    setBedrooms('Any');
-    setBeds('Any');
-    setBathrooms('Any');
-    setMinPrice(4800);
-    setMaxPrice(58000);
-    setSelectedAmenities([]);
-    setSelectedPropertyTypes([]);
-    setSelectedBookingOptions([]);
+    const defaultState: FilterState = {
+      bedrooms: 'Any',
+      beds: 'Any',
+      bathrooms: 'Any',
+      minPrice: 1000,
+      maxPrice: 100000,
+      selectedAmenities: [],
+      selectedPropertyTypes: [],
+      selectedBookingOptions: [],
+    };
+    setBedrooms(defaultState.bedrooms);
+    setBeds(defaultState.beds);
+    setBathrooms(defaultState.bathrooms);
+    setMinPrice(defaultState.minPrice);
+    setMaxPrice(defaultState.maxPrice);
+    setMinInputVal(String(defaultState.minPrice));
+    setMaxInputVal(String(defaultState.maxPrice));
+    setSelectedAmenities(defaultState.selectedAmenities);
+    setSelectedPropertyTypes(defaultState.selectedPropertyTypes);
+    setSelectedBookingOptions(defaultState.selectedBookingOptions);
+    if (onApply) {
+      onApply(defaultState);
+    }
   };
 
   const toggleAmenity = (amenity: string) => {
@@ -104,21 +139,64 @@ export default function FilterModal({ isOpen, onClose, onApply, initialFilters, 
     );
   };
 
-  const minAllowed = 1000;
-  const maxAllowed = 100000;
-
-  const handleMinChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = Math.min(Number(e.target.value), maxPrice - 1000);
-    setMinPrice(value);
-  };
-
-  const handleMaxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = Math.max(Number(e.target.value), minPrice + 1000);
-    setMaxPrice(value);
-  };
-
   const getPercent = (value: number) => {
-    return Math.round(((value - minAllowed) / (maxAllowed - minAllowed)) * 100);
+    return Math.round(((value - MIN_ALLOWED) / (MAX_ALLOWED - MIN_ALLOWED)) * 100);
+  };
+
+  const handleMinSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = Math.min(Number(e.target.value), maxPrice - 1000);
+    setMinPrice(val);
+    setMinInputVal(String(val));
+    setActiveThumb("min");
+  };
+
+  const handleMaxSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = Math.max(Number(e.target.value), minPrice + 1000);
+    setMaxPrice(val);
+    setMaxInputVal(String(val));
+    setActiveThumb("max");
+  };
+
+  const handleMinInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const valStr = e.target.value;
+    setMinInputVal(valStr);
+    const num = Number(valStr);
+    if (!isNaN(num) && num >= MIN_ALLOWED && num <= maxPrice - 500) {
+      setMinPrice(num);
+    }
+  };
+
+  const handleMinInputBlur = () => {
+    const num = Number(minInputVal);
+    if (isNaN(num) || num < MIN_ALLOWED) {
+      setMinPrice(MIN_ALLOWED);
+      setMinInputVal(String(MIN_ALLOWED));
+    } else if (num > maxPrice - 500) {
+      const clamped = Math.max(MIN_ALLOWED, maxPrice - 500);
+      setMinPrice(clamped);
+      setMinInputVal(String(clamped));
+    }
+  };
+
+  const handleMaxInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const valStr = e.target.value;
+    setMaxInputVal(valStr);
+    const num = Number(valStr);
+    if (!isNaN(num) && num >= minPrice + 500 && num <= MAX_ALLOWED) {
+      setMaxPrice(num);
+    }
+  };
+
+  const handleMaxInputBlur = () => {
+    const num = Number(maxInputVal);
+    if (isNaN(num) || num > MAX_ALLOWED) {
+      setMaxPrice(MAX_ALLOWED);
+      setMaxInputVal(String(MAX_ALLOWED));
+    } else if (num < minPrice + 500) {
+      const clamped = Math.min(MAX_ALLOWED, minPrice + 500);
+      setMaxPrice(clamped);
+      setMaxInputVal(String(clamped));
+    }
   };
 
   const increment = (state: number | 'Any', setter: (v: number | 'Any') => void) => {
@@ -132,456 +210,434 @@ export default function FilterModal({ isOpen, onClose, onApply, initialFilters, 
     else setter(state - 1);
   };
 
+  const histogramBars = [
+    2, 4, 8, 14, 25, 40, 65, 80, 95, 100, 85, 70, 55, 45, 30, 20, 15, 25, 35, 50,
+    60, 40, 25, 18, 12, 8, 5, 3, 2, 1
+  ];
+
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-3xl p-0 gap-0 overflow-hidden bg-white sm:rounded-2xl h-[90vh] md:h-[85vh] flex flex-col">
-        <DialogHeader className="p-4 border-b border-gray-200 shrink-0">
-          <DialogTitle className="text-center font-bold text-[16px]">Filters</DialogTitle>
-        </DialogHeader>
+    <AnimatePresence>
+      {isOpen && (
+        <>
+          {/* Smooth Backdrop */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 z-40 bg-black/30 backdrop-blur-[3px]"
+            onClick={onClose}
+          />
 
-          {/* Scrollable Content Area */}
-        <div className="overflow-y-auto p-6 flex-1 text-gray-900">
-          
-          {/* Price range */}
-          <section className="mb-8 mt-2">
-            <h3 className="text-[22px] font-semibold mb-2">Price range</h3>
-            <p className="text-[15px] text-gray-800 mb-8">Trip price, includes all fees</p>
-
-            {/* Histogram Mockup */}
-            <div className="flex items-end justify-start h-16 gap-0.5 w-full max-w-2xl px-8">
-              {[0, 0, 0, 0, 2, 4, 1, 0, 0, 0, 2, 0, 0, 0, 6, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 3, 3, 0, 3, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0].map((height, i) => (
-                <div 
-                  key={i} 
-                  className="w-full rounded-t-sm transition-colors bg-[#E31C5F]"
-                  style={{ height: height === 0 ? '0%' : `${height * 15}%` }}
-                />
-              ))}
-            </div>
-            
-            {/* Range Slider Functional */}
-            <div className="relative w-full max-w-2xl h-10 mb-8 -mt-3 px-8 group">
-              <div className="absolute top-1/2 left-8 right-8 h-0.5 bg-gray-200 -translate-y-1/2 rounded-full" />
-              <div 
-                className="absolute top-1/2 h-0.5 bg-[#E31C5F] -translate-y-1/2 rounded-full" 
-                style={{ left: `calc(2rem + ${getPercent(minPrice)}%)`, right: `calc(2rem + ${100 - getPercent(maxPrice)}%)` }}
-              />
-              
-              <input
-                type="range"
-                min={minAllowed}
-                max={maxAllowed}
-                step={500}
-                value={minPrice}
-                onChange={handleMinChange}
-                className="absolute top-1/2 left-8 right-8 -translate-y-1/2 h-0 appearance-none pointer-events-none [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:w-10 [&::-webkit-slider-thumb]:h-10 [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:border [&::-webkit-slider-thumb]:border-gray-200 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:shadow-[0_2px_6px_rgba(0,0,0,0.15)] z-10"
-              />
-              <input
-                type="range"
-                min={minAllowed}
-                max={maxAllowed}
-                step={500}
-                value={maxPrice}
-                onChange={handleMaxChange}
-                className="absolute top-1/2 left-8 right-8 -translate-y-1/2 h-0 appearance-none pointer-events-none [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:w-10 [&::-webkit-slider-thumb]:h-10 [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:border [&::-webkit-slider-thumb]:border-gray-200 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:shadow-[0_2px_6px_rgba(0,0,0,0.15)] z-20"
-              />
-            </div>
-
-            {/* Min / Max Inputs */}
-            <div className="flex items-center justify-between gap-6 w-full max-w-2xl px-4 mt-8">
-              <div className="flex flex-col items-center w-35">
-                <label className="text-[14px] text-gray-500 font-medium mb-3">Minimum</label>
-                <div className="border border-gray-300 rounded-full py-3.5 px-4 w-full flex justify-center focus-within:border-black focus-within:ring-1 focus-within:ring-black">
-                  <span className="text-gray-900 text-[15px]">₹</span>
-                  <input 
-                    type="number" 
-                    value={minPrice} 
-                    onChange={(e) => setMinPrice(Number(e.target.value) || minAllowed)} 
-                    className="w-16 outline-none bg-transparent text-center text-[15px] text-gray-900" 
-                  />
-                </div>
-              </div>
-              <div className="flex flex-col items-center w-35">
-                <label className="text-[14px] text-gray-500 font-medium mb-3">Maximum</label>
-                <div className="border border-gray-300 rounded-full py-3.5 px-4 w-full flex justify-center focus-within:border-black focus-within:ring-1 focus-within:ring-black">
-                  <span className="text-gray-900 text-[15px]">₹</span>
-                  <input 
-                    type="text" 
-                    value={maxPrice === maxAllowed ? `${maxPrice}+` : maxPrice} 
-                    onChange={(e) => setMaxPrice(parseInt(e.target.value.replace(/\D/g, '')) || maxAllowed)} 
-                    className="w-20 outline-none bg-transparent text-center text-[15px] text-gray-900" 
-                  />
-                </div>
-              </div>
-            </div>
-          </section>
-
-          <hr className="border-gray-200 mb-8 max-w-2xl" />
-
-          {/* Rooms and beds */}
-          <section className="mb-8">
-            <h3 className="text-lg font-semibold mb-6">Rooms and beds</h3>
-            
-            <div className="flex flex-col gap-6 max-w-2xl">
-              {/* Bedrooms */}
-              <div className="flex items-center justify-between">
-                <span className="text-[15px] font-normal text-gray-800">Bedrooms</span>
-                <div className="flex items-center gap-4">
-                  <button 
-                    onClick={() => decrement(bedrooms, setBedrooms)}
-                    className={`w-8 h-8 rounded-full border flex items-center justify-center transition-colors ${
-                      bedrooms === 'Any' ? 'border-gray-200 text-gray-300 cursor-not-allowed bg-gray-50' : 'border-gray-400 text-gray-500 hover:border-gray-900 hover:text-gray-900'
-                    }`}
-                    disabled={bedrooms === 'Any'}
-                  >
-                    <Minus size={14} />
-                  </button>
-                  <span className="w-8 text-center font-normal text-[15px]">{bedrooms}</span>
-                  <button 
-                    onClick={() => increment(bedrooms, setBedrooms)}
-                    className="w-8 h-8 rounded-full border border-gray-400 text-gray-500 flex items-center justify-center transition-colors hover:border-gray-900 hover:text-gray-900"
-                  >
-                    <Plus size={14} />
-                  </button>
-                </div>
-              </div>
-
-              {/* Beds */}
-              <div className="flex items-center justify-between">
-                <span className="text-[15px] font-normal text-gray-800">Beds</span>
-                <div className="flex items-center gap-4">
-                  <button 
-                    onClick={() => decrement(beds, setBeds)}
-                    className={`w-8 h-8 rounded-full border flex items-center justify-center transition-colors ${
-                      beds === 'Any' ? 'border-gray-200 text-gray-300 cursor-not-allowed bg-gray-50' : 'border-gray-400 text-gray-500 hover:border-gray-900 hover:text-gray-900'
-                    }`}
-                    disabled={beds === 'Any'}
-                  >
-                    <Minus size={14} />
-                  </button>
-                  <span className="w-8 text-center font-normal text-[15px]">{beds}</span>
-                  <button 
-                    onClick={() => increment(beds, setBeds)}
-                    className="w-8 h-8 rounded-full border border-gray-400 text-gray-500 flex items-center justify-center transition-colors hover:border-gray-900 hover:text-gray-900"
-                  >
-                    <Plus size={14} />
-                  </button>
-                </div>
-              </div>
-
-              {/* Bathrooms */}
-              <div className="flex items-center justify-between">
-                <span className="text-[15px] font-normal text-gray-800">Bathrooms</span>
-                <div className="flex items-center gap-4">
-                  <button 
-                    onClick={() => decrement(bathrooms, setBathrooms)}
-                    className={`w-8 h-8 rounded-full border flex items-center justify-center transition-colors ${
-                      bathrooms === 'Any' ? 'border-gray-200 text-gray-300 cursor-not-allowed bg-gray-50' : 'border-gray-400 text-gray-500 hover:border-gray-900 hover:text-gray-900'
-                    }`}
-                    disabled={bathrooms === 'Any'}
-                  >
-                    <Minus size={14} />
-                  </button>
-                  <span className="w-8 text-center font-normal text-[15px]">{bathrooms}</span>
-                  <button 
-                    onClick={() => increment(bathrooms, setBathrooms)}
-                    className="w-8 h-8 rounded-full border border-gray-400 text-gray-500 flex items-center justify-center transition-colors hover:border-gray-900 hover:text-gray-900"
-                  >
-                    <Plus size={14} />
-                  </button>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          <hr className="border-gray-200 mb-8 max-w-2xl" />
-
-          {/* Amenities */}
-          <section className="mb-8">
-            <h3 className="text-lg font-semibold mb-6">Amenities</h3>
-            <div className="flex flex-wrap gap-3 max-w-2xl">
-              {[
-                { id: 'Wifi', icon: <Wifi size={18} className="text-gray-700" />, label: 'Wifi' },
-                { id: 'Kitchen', icon: <Utensils size={18} className="text-gray-700" />, label: 'Kitchen' },
-                { id: 'Washing machine', icon: <span className="text-[18px]">🧺</span>, label: 'Washing machine' },
-                { id: 'Tumble dryer', icon: <span className="text-[18px]">🌀</span>, label: 'Tumble dryer' },
-                { id: 'Air conditioning', icon: <span className="text-[18px]">❄️</span>, label: 'Air conditioning' },
-                { id: 'Heating', icon: <span className="text-[18px]">🌡️</span>, label: 'Heating' },
-              ].map((amenity) => (
-                <button 
-                  key={amenity.id}
-                  onClick={() => toggleAmenity(amenity.id)}
-                  className={`flex items-center gap-2 rounded-full px-5 py-2.5 transition-colors ${
-                    selectedAmenities.includes(amenity.id) 
-                      ? 'border-2 border-gray-900 bg-gray-50' 
-                      : 'border border-gray-300 hover:border-gray-900'
-                  }`}
-                >
-                  {amenity.icon}
-                  <span className="text-[14px] font-normal">{amenity.label}</span>
-                </button>
-              ))}
-            </div>
-              
-            <AnimatePresence>
-              {showAllAmenities && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0, marginTop: 0 }}
-                  animate={{ height: "auto", opacity: 1, marginTop: 12 }}
-                  exit={{ height: 0, opacity: 0, marginTop: 0 }}
-                  transition={{ duration: 0.3, ease: "easeInOut" }}
-                  className="flex flex-wrap gap-3 max-w-2xl overflow-hidden"
-                >
-                  {[
-                    { id: 'Pool', icon: <span className="text-[18px]">🏊</span>, label: 'Pool' },
-                    { id: 'Hot tub', icon: <span className="text-[18px]">♨️</span>, label: 'Hot tub' },
-                    { id: 'Patio', icon: <span className="text-[18px]">🪑</span>, label: 'Patio' },
-                    { id: 'BBQ grill', icon: <span className="text-[18px]">🥩</span>, label: 'BBQ grill' },
-                    { id: 'Fire pit', icon: <span className="text-[18px]">🔥</span>, label: 'Fire pit' },
-                    { id: 'Pool table', icon: <span className="text-[18px]">🎱</span>, label: 'Pool table' },
-                    { id: 'Indoor fireplace', icon: <span className="text-[18px]">🪵</span>, label: 'Indoor fireplace' },
-                    { id: 'Dedicated workspace', icon: <span className="text-[18px]">💻</span>, label: 'Dedicated workspace' },
-                  ].map((amenity) => (
-                    <button 
-                      key={amenity.id}
-                      onClick={() => toggleAmenity(amenity.id)}
-                      className={`flex items-center gap-2 rounded-full px-5 py-2.5 transition-colors ${
-                        selectedAmenities.includes(amenity.id) 
-                          ? 'border-2 border-gray-900 bg-gray-50' 
-                          : 'border border-gray-300 hover:border-gray-900'
-                      }`}
-                    >
-                      {amenity.icon}
-                      <span className="text-[14px] font-normal">{amenity.label}</span>
-                    </button>
-                  ))}
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            <button 
-              onClick={() => setShowAllAmenities(!showAllAmenities)}
-              className="mt-4 font-medium underline text-[15px] flex items-center gap-1 hover:text-gray-600"
+          {/* Smooth Popup Modal Card */}
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
+            <motion.div
+              ref={modalRef}
+              initial={{ opacity: 0, scale: 0.92, y: 16 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.92, y: 16 }}
+              transition={{ type: "spring", stiffness: 380, damping: 28 }}
+              className="pointer-events-auto max-w-3xl w-full bg-white rounded-3xl shadow-2xl border border-gray-100 overflow-hidden flex flex-col h-[85vh] max-h-[850px]"
             >
-              {showAllAmenities ? 'Show less' : 'Show more'} 
-              <ChevronDown size={16} className={showAllAmenities ? 'rotate-180 transition-transform' : 'transition-transform'} />
-            </button>
-          </section>
-
-          <hr className="border-gray-200 mb-8 max-w-2xl" />
-
-          {/* Booking options */}
-          <section className="mb-8">
-            <h3 className="text-lg font-semibold mb-6">Booking options</h3>
-            <div className="flex flex-wrap gap-3 max-w-2xl">
-              {[
-                { id: 'Instant Book', icon: <Zap size={18} className="text-gray-700" />, label: 'Instant Book' },
-                { id: 'Self check-in', icon: <Key size={18} className="text-gray-700" />, label: 'Self check-in' },
-                { id: 'Allows pets', icon: <PawPrint size={18} className="text-gray-700" />, label: 'Allows pets' },
-              ].map((option) => (
-                <button 
-                  key={option.id}
-                  onClick={() => toggleBookingOption(option.id)}
-                  className={`flex items-center gap-2 rounded-full px-5 py-2.5 transition-colors ${
-                    selectedBookingOptions.includes(option.id)
-                      ? 'border-2 border-gray-900 bg-gray-50' 
-                      : 'border border-gray-300 hover:border-gray-900'
-                  }`}
+              {/* Header */}
+              <div className="p-4 px-6 border-b border-gray-100 flex items-center justify-between bg-gray-50/50 shrink-0">
+                <h2 className="text-lg font-bold text-gray-900 mx-auto">Filters</h2>
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="absolute right-6 p-2 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-full transition-colors"
                 >
-                  {option.icon}
-                  <span className="text-[14px] font-normal">{option.label}</span>
+                  <X size={18} />
                 </button>
-              ))}
-            </div>
-          </section>
+              </div>
 
-          {/* Accordion List */}
-          <div className="max-w-2xl flex flex-col">
-            <button 
-              onClick={() => setShowPropertyType(!showPropertyType)}
-              className="py-6 flex items-center justify-between w-full hover:bg-gray-50 transition-colors"
-            >
-              <span className="text-lg font-semibold">Property type</span>
-              <ChevronDown size={20} className={`text-gray-500 transition-transform ${showPropertyType ? 'rotate-180' : ''}`} />
-            </button>
-            <AnimatePresence>
-              {showPropertyType && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: "auto", opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.3, ease: "easeInOut" }}
-                  className="overflow-hidden"
-                >
-                  <div className="flex flex-wrap gap-3 pb-6">
+              {/* Scrollable Content Area */}
+              <div className="overflow-y-auto p-6 md:p-8 flex-1 text-gray-900 space-y-8">
+                
+                {/* Price range */}
+                <section className="mt-2">
+                  <h3 className="text-xl font-bold mb-1 text-gray-900">Price range</h3>
+                  <p className="text-sm text-gray-500 mb-6">Trip price, includes all fees</p>
+
+                  {/* Histogram Mockup */}
+                  <div className="flex items-end justify-between h-20 gap-1 w-full max-w-2xl px-4">
+                    {histogramBars.map((height, idx) => {
+                      const barPercent = (idx / (histogramBars.length - 1)) * 100;
+                      const minPct = getPercent(minPrice);
+                      const maxPct = getPercent(maxPrice);
+                      const inRange = barPercent >= minPct && barPercent <= maxPct;
+
+                      return (
+                        <div 
+                          key={idx} 
+                          className={`w-full rounded-t transition-all duration-200 ${
+                            inRange ? "bg-rose-500 shadow-sm" : "bg-gray-200"
+                          }`}
+                          style={{ height: `${height}%` }}
+                        />
+                      );
+                    })}
+                  </div>
+                  
+                  {/* Range Slider Container */}
+                  <div className="relative w-full max-w-2xl h-8 flex items-center mb-6">
+                    <div className="absolute left-0 right-0 h-1.5 bg-gray-200 rounded-full" />
+                    <div 
+                      className="absolute h-1.5 bg-rose-500 rounded-full" 
+                      style={{ left: `${getPercent(minPrice)}%`, right: `${100 - getPercent(maxPrice)}%` }}
+                    />
+                    
+                    <input
+                      type="range"
+                      min={MIN_ALLOWED}
+                      max={MAX_ALLOWED}
+                      step={500}
+                      value={minPrice}
+                      onChange={handleMinSliderChange}
+                      onMouseDown={() => setActiveThumb("min")}
+                      onTouchStart={() => setActiveThumb("min")}
+                      className={`absolute w-full h-1.5 appearance-none bg-transparent pointer-events-none ${
+                        activeThumb === "min" ? "z-30" : "z-20"
+                      } [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:w-6 [&::-webkit-slider-thumb]:h-6 [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-rose-500 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:cursor-grab hover:[&::-webkit-slider-thumb]:scale-110 active:[&::-webkit-slider-thumb]:cursor-grabbing transition-transform`}
+                    />
+                    <input
+                      type="range"
+                      min={MIN_ALLOWED}
+                      max={MAX_ALLOWED}
+                      step={500}
+                      value={maxPrice}
+                      onChange={handleMaxSliderChange}
+                      onMouseDown={() => setActiveThumb("max")}
+                      onTouchStart={() => setActiveThumb("max")}
+                      className={`absolute w-full h-1.5 appearance-none bg-transparent pointer-events-none ${
+                        activeThumb === "max" ? "z-30" : "z-20"
+                      } [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:w-6 [&::-webkit-slider-thumb]:h-6 [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-rose-500 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:cursor-grab hover:[&::-webkit-slider-thumb]:scale-110 active:[&::-webkit-slider-thumb]:cursor-grabbing transition-transform`}
+                    />
+                  </div>
+
+                  {/* Min / Max Editable Inputs */}
+                  <div className="grid grid-cols-2 gap-4 max-w-2xl">
+                    <div className="border border-gray-200 rounded-2xl p-3 focus-within:border-gray-900 focus-within:ring-1 focus-within:ring-gray-900 transition-all bg-gray-50/30">
+                      <label className="block text-[11px] font-semibold uppercase tracking-wider text-gray-500 mb-1">Minimum</label>
+                      <div className="flex items-center gap-1 font-semibold text-gray-900 text-base">
+                        <IndianRupee size={15} className="text-gray-500 shrink-0" />
+                        <input 
+                          type="text"
+                          inputMode="numeric"
+                          value={minInputVal} 
+                          onChange={handleMinInputChange} 
+                          onBlur={handleMinInputBlur}
+                          className="w-full bg-transparent outline-none font-bold text-gray-900 text-base" 
+                        />
+                      </div>
+                    </div>
+
+                    <div className="border border-gray-200 rounded-2xl p-3 focus-within:border-gray-900 focus-within:ring-1 focus-within:ring-gray-900 transition-all bg-gray-50/30">
+                      <label className="block text-[11px] font-semibold uppercase tracking-wider text-gray-500 mb-1">Maximum</label>
+                      <div className="flex items-center gap-1 font-semibold text-gray-900 text-base">
+                        <IndianRupee size={15} className="text-gray-500 shrink-0" />
+                        <input 
+                          type="text" 
+                          inputMode="numeric"
+                          value={maxInputVal} 
+                          onChange={handleMaxInputChange} 
+                          onBlur={handleMaxInputBlur}
+                          className="w-full bg-transparent outline-none font-bold text-gray-900 text-base" 
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </section>
+
+                <hr className="border-gray-100 max-w-2xl" />
+
+                {/* Rooms and beds */}
+                <section className="space-y-6 max-w-2xl">
+                  <h3 className="text-xl font-bold text-gray-900">Rooms and beds</h3>
+                  <div className="space-y-5">
+                    {/* Bedrooms */}
+                    <div className="flex items-center justify-between">
+                      <span className="text-[15px] font-medium text-gray-800">Bedrooms</span>
+                      <div className="flex items-center gap-4">
+                        <button 
+                          type="button"
+                          onClick={() => decrement(bedrooms, setBedrooms)}
+                          className={`w-9 h-9 rounded-full border flex items-center justify-center transition-colors ${
+                            bedrooms === 'Any' ? 'border-gray-200 text-gray-300 cursor-not-allowed bg-gray-50' : 'border-gray-400 text-gray-600 hover:border-gray-900 hover:text-gray-900'
+                          }`}
+                          disabled={bedrooms === 'Any'}
+                        >
+                          <Minus size={14} />
+                        </button>
+                        <span className="w-8 text-center font-bold text-[15px] text-gray-900">{bedrooms}</span>
+                        <button 
+                          type="button"
+                          onClick={() => increment(bedrooms, setBedrooms)}
+                          className="w-9 h-9 rounded-full border border-gray-400 text-gray-600 flex items-center justify-center transition-colors hover:border-gray-900 hover:text-gray-900"
+                        >
+                          <Plus size={14} />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Beds */}
+                    <div className="flex items-center justify-between">
+                      <span className="text-[15px] font-medium text-gray-800">Beds</span>
+                      <div className="flex items-center gap-4">
+                        <button 
+                          type="button"
+                          onClick={() => decrement(beds, setBeds)}
+                          className={`w-9 h-9 rounded-full border flex items-center justify-center transition-colors ${
+                            beds === 'Any' ? 'border-gray-200 text-gray-300 cursor-not-allowed bg-gray-50' : 'border-gray-400 text-gray-600 hover:border-gray-900 hover:text-gray-900'
+                          }`}
+                          disabled={beds === 'Any'}
+                        >
+                          <Minus size={14} />
+                        </button>
+                        <span className="w-8 text-center font-bold text-[15px] text-gray-900">{beds}</span>
+                        <button 
+                          type="button"
+                          onClick={() => increment(beds, setBeds)}
+                          className="w-9 h-9 rounded-full border border-gray-400 text-gray-600 flex items-center justify-center transition-colors hover:border-gray-900 hover:text-gray-900"
+                        >
+                          <Plus size={14} />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Bathrooms */}
+                    <div className="flex items-center justify-between">
+                      <span className="text-[15px] font-medium text-gray-800">Bathrooms</span>
+                      <div className="flex items-center gap-4">
+                        <button 
+                          type="button"
+                          onClick={() => decrement(bathrooms, setBathrooms)}
+                          className={`w-9 h-9 rounded-full border flex items-center justify-center transition-colors ${
+                            bathrooms === 'Any' ? 'border-gray-200 text-gray-300 cursor-not-allowed bg-gray-50' : 'border-gray-400 text-gray-600 hover:border-gray-900 hover:text-gray-900'
+                          }`}
+                          disabled={bathrooms === 'Any'}
+                        >
+                          <Minus size={14} />
+                        </button>
+                        <span className="w-8 text-center font-bold text-[15px] text-gray-900">{bathrooms}</span>
+                        <button 
+                          type="button"
+                          onClick={() => increment(bathrooms, setBathrooms)}
+                          className="w-9 h-9 rounded-full border border-gray-400 text-gray-600 flex items-center justify-center transition-colors hover:border-gray-900 hover:text-gray-900"
+                        >
+                          <Plus size={14} />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+
+                <hr className="border-gray-100 max-w-2xl" />
+
+                {/* Amenities */}
+                <section className="max-w-2xl">
+                  <h3 className="text-xl font-bold mb-4 text-gray-900">Amenities</h3>
+                  <div className="flex flex-wrap gap-2.5">
                     {[
-                      { id: 'House', icon: <Home size={20} className="text-gray-800" />, label: 'House' },
-                      { id: 'Guest house', icon: <Warehouse size={20} className="text-gray-800" />, label: 'Guest house' },
-                      { id: 'Hotel', icon: <Building2 size={20} className="text-gray-800" />, label: 'Hotel' },
-                    ].map((type) => (
+                      { id: 'Wifi', icon: <Wifi size={18} className="text-gray-700" />, label: 'Wifi' },
+                      { id: 'Kitchen', icon: <Utensils size={18} className="text-gray-700" />, label: 'Kitchen' },
+                      { id: 'Washing machine', icon: <span className="text-[18px]">🧺</span>, label: 'Washing machine' },
+                      { id: 'Tumble dryer', icon: <span className="text-[18px]">🌀</span>, label: 'Tumble dryer' },
+                      { id: 'Air conditioning', icon: <span className="text-[18px]">❄️</span>, label: 'Air conditioning' },
+                      { id: 'Heating', icon: <span className="text-[18px]">🌡️</span>, label: 'Heating' },
+                    ].map((amenity) => (
                       <button 
-                        key={type.id}
-                        onClick={() => togglePropertyType(type.id)}
-                        className={`flex items-center gap-3 rounded-full px-5 py-3 transition-colors ${
-                          selectedPropertyTypes.includes(type.id) 
-                            ? 'border-2 border-gray-900 bg-gray-50' 
-                            : 'border border-gray-300 hover:border-gray-900'
+                        key={amenity.id}
+                        type="button"
+                        onClick={() => toggleAmenity(amenity.id)}
+                        className={`flex items-center gap-2 rounded-full px-5 py-2.5 transition-all text-sm font-medium ${
+                          selectedAmenities.includes(amenity.id) 
+                            ? 'border-2 border-gray-900 bg-gray-900 text-white' 
+                            : 'border border-gray-300 hover:border-gray-900 text-gray-800'
                         }`}
                       >
-                        {type.icon}
-                        <span className="text-[15px] font-normal">{type.label}</span>
+                        {amenity.icon}
+                        <span>{amenity.label}</span>
                       </button>
                     ))}
                   </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-            <hr className="border-gray-200" />
-            <button 
-              onClick={() => setShowAccessibility(!showAccessibility)}
-              className="py-6 flex items-center justify-between w-full hover:bg-gray-50 transition-colors"
-            >
-              <span className="text-lg font-semibold">Accessibility features</span>
-              <ChevronDown size={20} className={`text-gray-500 transition-transform ${showAccessibility ? 'rotate-180' : ''}`} />
-            </button>
-            <AnimatePresence>
-              {showAccessibility && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: "auto", opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.3, ease: "easeInOut" }}
-                  className="overflow-hidden"
-                >
-                  <div className="flex flex-col gap-8 pb-8 pt-2">
-                    {/* Guest entrance and parking */}
-                    <div>
-                      <h4 className="font-semibold text-[15px] mb-4">Guest entrance and parking</h4>
-                      <div className="flex flex-col gap-4">
-                        <label className="flex items-center gap-4 cursor-pointer">
-                          <input type="checkbox" className="w-5.5 h-5.5 rounded border-gray-300 accent-black cursor-pointer" />
-                          <span className="text-[15px] font-normal">Step-free access</span>
-                        </label>
-                        <label className="flex items-center gap-4 cursor-pointer">
-                          <input type="checkbox" className="w-5.5 h-5.5 rounded border-gray-300 accent-black cursor-pointer" />
-                          <span className="text-[15px] font-normal">Disabled parking spot</span>
-                        </label>
-                        <label className="flex items-center gap-4 cursor-pointer">
-                          <input type="checkbox" className="w-5.5 h-5.5 rounded border-gray-300 accent-black cursor-pointer" />
-                          <span className="text-[15px] font-normal">Guest entrance wider than 32 inches (81 centimetres)</span>
-                        </label>
-                      </div>
-                    </div>
+                    
+                  <AnimatePresence>
+                    {showAllAmenities && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0, marginTop: 0 }}
+                        animate={{ height: "auto", opacity: 1, marginTop: 12 }}
+                        exit={{ height: 0, opacity: 0, marginTop: 0 }}
+                        transition={{ duration: 0.25, ease: "easeInOut" }}
+                        className="flex flex-wrap gap-2.5 overflow-hidden"
+                      >
+                        {[
+                          { id: 'Pool', icon: <span className="text-[18px]">🏊</span>, label: 'Pool' },
+                          { id: 'Hot tub', icon: <span className="text-[18px]">♨️</span>, label: 'Hot tub' },
+                          { id: 'Patio', icon: <span className="text-[18px]">🪑</span>, label: 'Patio' },
+                          { id: 'BBQ grill', icon: <span className="text-[18px]">🥩</span>, label: 'BBQ grill' },
+                          { id: 'Fire pit', icon: <span className="text-[18px]">🔥</span>, label: 'Fire pit' },
+                          { id: 'Pool table', icon: <span className="text-[18px]">🎱</span>, label: 'Pool table' },
+                          { id: 'Indoor fireplace', icon: <span className="text-[18px]">🪵</span>, label: 'Indoor fireplace' },
+                          { id: 'Dedicated workspace', icon: <span className="text-[18px]">💻</span>, label: 'Dedicated workspace' },
+                        ].map((amenity) => (
+                          <button 
+                            key={amenity.id}
+                            type="button"
+                            onClick={() => toggleAmenity(amenity.id)}
+                            className={`flex items-center gap-2 rounded-full px-5 py-2.5 transition-all text-sm font-medium ${
+                              selectedAmenities.includes(amenity.id) 
+                                ? 'border-2 border-gray-900 bg-gray-900 text-white' 
+                                : 'border border-gray-300 hover:border-gray-900 text-gray-800'
+                            }`}
+                          >
+                            {amenity.icon}
+                            <span>{amenity.label}</span>
+                          </button>
+                        ))}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
 
-                    {/* Bedroom */}
-                    <div>
-                      <h4 className="font-semibold text-[15px] mb-4">Bedroom</h4>
-                      <div className="flex flex-col gap-4">
-                        <label className="flex items-center gap-4 cursor-pointer">
-                          <input type="checkbox" className="w-5.5 h-5.5 rounded border-gray-300 accent-black cursor-pointer" />
-                          <span className="text-[15px] font-normal">Step-free bedroom access</span>
-                        </label>
-                        <label className="flex items-center gap-4 cursor-pointer">
-                          <input type="checkbox" className="w-5.5 h-5.5 rounded border-gray-300 accent-black cursor-pointer" />
-                          <span className="text-[15px] font-normal">Bedroom entrance wider than 32 inches (81 centimetres)</span>
-                        </label>
-                      </div>
-                    </div>
+                  <button 
+                    type="button"
+                    onClick={() => setShowAllAmenities(!showAllAmenities)}
+                    className="mt-4 font-semibold text-sm underline flex items-center gap-1 hover:text-gray-600 transition-colors"
+                  >
+                    {showAllAmenities ? 'Show less' : 'Show more'} 
+                    <ChevronDown size={16} className={showAllAmenities ? 'rotate-180 transition-transform' : 'transition-transform'} />
+                  </button>
+                </section>
 
-                    {/* Bathroom */}
-                    <div>
-                      <h4 className="font-semibold text-[15px] mb-4">Bathroom</h4>
-                      <div className="flex flex-col gap-4">
-                        <label className="flex items-center gap-4 cursor-pointer">
-                          <input type="checkbox" className="w-5.5 h-5.5 rounded border-gray-300 accent-black cursor-pointer" />
-                          <span className="text-[15px] font-normal">Step-free bathroom access</span>
-                        </label>
-                        <label className="flex items-center gap-4 cursor-pointer">
-                          <input type="checkbox" className="w-5.5 h-5.5 rounded border-gray-300 accent-black cursor-pointer" />
-                          <span className="text-[15px] font-normal">Bathroom entrance wider than 32 inches (81 centimetres)</span>
-                        </label>
-                        <label className="flex items-center gap-4 cursor-pointer">
-                          <input type="checkbox" className="w-5.5 h-5.5 rounded border-gray-300 accent-black cursor-pointer" />
-                          <span className="text-[15px] font-normal">Toilet grab bar</span>
-                        </label>
-                        <label className="flex items-center gap-4 cursor-pointer">
-                          <input type="checkbox" className="w-5.5 h-5.5 rounded border-gray-300 accent-black cursor-pointer" />
-                          <span className="text-[15px] font-normal">Shower grab bar</span>
-                        </label>
-                        <label className="flex items-center gap-4 cursor-pointer">
-                          <input type="checkbox" className="w-5.5 h-5.5 rounded border-gray-300 accent-black cursor-pointer" />
-                          <span className="text-[15px] font-normal">Step-free shower</span>
-                        </label>
-                        <label className="flex items-center gap-4 cursor-pointer">
-                          <input type="checkbox" className="w-5.5 h-5.5 rounded border-gray-300 accent-black cursor-pointer" />
-                          <span className="text-[15px] font-normal">Shower or bath chair</span>
-                        </label>
-                      </div>
-                    </div>
+                <hr className="border-gray-100 max-w-2xl" />
 
-                    {/* Adaptive equipment */}
-                    <div>
-                      <h4 className="font-semibold text-[15px] mb-4">Adaptive equipment</h4>
-                      <div className="flex flex-col gap-4">
-                        <label className="flex items-center gap-4 cursor-pointer">
-                          <input type="checkbox" className="w-5.5 h-5.5 rounded border-gray-300 accent-black cursor-pointer" />
-                          <span className="text-[15px] font-normal">Ceiling or mobile hoist</span>
-                        </label>
-                      </div>
-                    </div>
+                {/* Booking options */}
+                <section className="max-w-2xl">
+                  <h3 className="text-xl font-bold mb-4 text-gray-900">Booking options</h3>
+                  <div className="flex flex-wrap gap-2.5">
+                    {[
+                      { id: 'Instant Book', icon: <Zap size={18} className="text-gray-700" />, label: 'Instant Book' },
+                      { id: 'Self check-in', icon: <Key size={18} className="text-gray-700" />, label: 'Self check-in' },
+                      { id: 'Allows pets', icon: <PawPrint size={18} className="text-gray-700" />, label: 'Allows pets' },
+                    ].map((option) => (
+                      <button 
+                        key={option.id}
+                        type="button"
+                        onClick={() => toggleBookingOption(option.id)}
+                        className={`flex items-center gap-2 rounded-full px-5 py-2.5 transition-all text-sm font-medium ${
+                          selectedBookingOptions.includes(option.id)
+                            ? 'border-2 border-gray-900 bg-gray-900 text-white' 
+                            : 'border border-gray-300 hover:border-gray-900 text-gray-800'
+                        }`}
+                      >
+                        {option.icon}
+                        <span>{option.label}</span>
+                      </button>
+                    ))}
                   </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-            <hr className="border-gray-200" />
-            <button 
-              onClick={() => setShowHostLanguage(!showHostLanguage)}
-              className="py-6 flex items-center justify-between w-full hover:bg-gray-50 transition-colors"
-            >
-              <span className="text-lg font-semibold">Host language</span>
-              <ChevronDown size={20} className={`text-gray-500 transition-transform ${showHostLanguage ? 'rotate-180' : ''}`} />
-            </button>
-            <AnimatePresence>
-              {showHostLanguage && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: "auto", opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.3, ease: "easeInOut" }}
-                  className="overflow-hidden"
+                </section>
+
+                {/* Accordion List */}
+                <div className="max-w-2xl flex flex-col pt-2">
+                  <button 
+                    type="button"
+                    onClick={() => setShowPropertyType(!showPropertyType)}
+                    className="py-4 flex items-center justify-between w-full hover:bg-gray-50 transition-colors rounded-xl px-2"
+                  >
+                    <span className="text-lg font-bold text-gray-900">Property type</span>
+                    <ChevronDown size={20} className={`text-gray-500 transition-transform ${showPropertyType ? 'rotate-180' : ''}`} />
+                  </button>
+                  <AnimatePresence>
+                    {showPropertyType && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.25, ease: "easeInOut" }}
+                        className="overflow-hidden"
+                      >
+                        <div className="flex flex-wrap gap-2.5 pb-4 pt-1 px-2">
+                          {[
+                            { id: 'House', icon: <Home size={18} />, label: 'House' },
+                            { id: 'Guest house', icon: <Warehouse size={18} />, label: 'Guest house' },
+                            { id: 'Hotel', icon: <Building2 size={18} />, label: 'Hotel' },
+                          ].map((type) => (
+                            <button 
+                              key={type.id}
+                              type="button"
+                              onClick={() => togglePropertyType(type.id)}
+                              className={`flex items-center gap-2.5 rounded-full px-5 py-2.5 transition-all text-sm font-medium ${
+                                selectedPropertyTypes.includes(type.id) 
+                                  ? 'border-2 border-gray-900 bg-gray-900 text-white' 
+                                  : 'border border-gray-300 hover:border-gray-900 text-gray-800'
+                              }`}
+                            >
+                              {type.icon}
+                              <span>{type.label}</span>
+                            </button>
+                          ))}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  <hr className="border-gray-100 my-2" />
+
+                  <button 
+                    type="button"
+                    onClick={() => setShowAccessibility(!showAccessibility)}
+                    className="py-4 flex items-center justify-between w-full hover:bg-gray-50 transition-colors rounded-xl px-2"
+                  >
+                    <span className="text-lg font-bold text-gray-900">Accessibility features</span>
+                    <ChevronDown size={20} className={`text-gray-500 transition-transform ${showAccessibility ? 'rotate-180' : ''}`} />
+                  </button>
+                  <AnimatePresence>
+                    {showAccessibility && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.25, ease: "easeInOut" }}
+                        className="overflow-hidden"
+                      >
+                        <div className="flex flex-col gap-3 pb-4 pt-1 px-4">
+                          <label className="flex items-center gap-3 cursor-pointer text-sm font-medium text-gray-800">
+                            <input type="checkbox" className="w-5 h-5 rounded border-gray-300 accent-gray-900 cursor-pointer" />
+                            <span>Step-free guest entrance</span>
+                          </label>
+                          <label className="flex items-center gap-3 cursor-pointer text-sm font-medium text-gray-800">
+                            <input type="checkbox" className="w-5 h-5 rounded border-gray-300 accent-gray-900 cursor-pointer" />
+                            <span>Guest entrance wider than 32 inches</span>
+                          </label>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+
+              </div>
+
+              {/* Footer */}
+              <div className="border-t border-gray-100 p-4 px-6 flex items-center justify-between bg-gray-50/50 shrink-0">
+                <button 
+                  type="button"
+                  onClick={handleClearAll}
+                  className="font-semibold text-sm text-gray-600 hover:text-gray-900 underline transition-colors"
                 >
-                  <div className="grid grid-cols-2 gap-4 pb-8 pt-2">
-                    <label className="flex items-center gap-4 cursor-pointer">
-                      <input type="checkbox" className="w-5.5 h-5.5 rounded border-gray-300 accent-black cursor-pointer" />
-                      <span className="text-[15px] font-normal">English</span>
-                    </label>
-                    <label className="flex items-center gap-4 cursor-pointer">
-                      <input type="checkbox" className="w-5.5 h-5.5 rounded border-gray-300 accent-black cursor-pointer" />
-                      <span className="text-[15px] font-normal">Hindi</span>
-                    </label>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+                  Clear all
+                </button>
+                <button 
+                  type="button"
+                  onClick={handleApply}
+                  className="bg-gray-900 hover:bg-black text-white font-bold text-sm py-3 px-7 rounded-xl shadow-md transition-transform active:scale-95"
+                >
+                  Show {matchCount} places
+                </button>
+              </div>
+            </motion.div>
           </div>
-
-        </div>
-
-        {/* Footer */}
-        <div className="border-t border-gray-200 p-4 px-6 flex items-center justify-between bg-white shrink-0">
-          <button 
-            onClick={handleClearAll}
-            className="font-semibold text-[15px] text-[#b0b0b0] hover:text-gray-900 transition-colors"
-          >
-            Clear
-          </button>
-          <button 
-            className="bg-[#222222] text-white font-semibold py-3.5 px-6 rounded-lg hover:bg-black transition-colors"
-            onClick={handleApply}
-          >
-            Show {matchCount} places
-          </button>
-        </div>
-      </DialogContent>
-    </Dialog>
+        </>
+      )}
+    </AnimatePresence>
   );
 }

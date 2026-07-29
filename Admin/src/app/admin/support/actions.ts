@@ -1,19 +1,33 @@
 "use server";
 
 import { appwriteServer } from "@/lib/appwrite/server";
-import { Query } from "node-appwrite";
+import { Models, Query } from "node-appwrite";
 import { sendResolvedEmail } from "@/lib/actions/email";
 
-const DATABASE_ID = process.env.APPWRITE_DATABASE_ID!;
+const DATABASE_ID = process.env.APPWRITE_DATABASE_ID || process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID || "6a3cec630035d63ea963";
 const TICKETS_COLLECTION_ID = process.env.APPWRITE_TICKETS_COLLECTION_ID!;
 
 export async function getAppwriteConfig() {
   return {
-    endpoint: process.env.APPWRITE_ENDPOINT!,
-    projectId: process.env.APPWRITE_PROJECT_ID!,
-    databaseId: process.env.APPWRITE_DATABASE_ID!,
-    ticketsCollectionId: process.env.APPWRITE_TICKETS_COLLECTION_ID!
+    endpoint:
+      process.env.APPWRITE_ENDPOINT ||
+      process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT ||
+      "https://cloud.appwrite.io/v1",
+    projectId:
+      process.env.APPWRITE_PROJECT_ID ||
+      process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID ||
+      "",
+    databaseId: process.env.APPWRITE_DATABASE_ID || "",
+    ticketsCollectionId: process.env.APPWRITE_TICKETS_COLLECTION_ID || ""
   };
+}
+
+interface UserProfileDocument extends Models.Document {
+  userId?: string;
+  name?: string;
+  email?: string;
+  phone?: string;
+  businessName?: string;
 }
 
 export async function getAllTickets() {
@@ -30,10 +44,10 @@ export async function getAllTickets() {
     // Assuming vendorId is used, let's fetch vendor profiles to map the name.
     const vendorIds = [...new Set(tickets.documents.map(t => t.vendorId))].filter(Boolean);
     
-    let userProfiles: any[] = [];
+    let userProfiles: UserProfileDocument[] = [];
     try {
         if (vendorIds.length > 0) {
-            const profileResp = await databases.listDocuments(
+            const profileResp = await databases.listDocuments<UserProfileDocument>(
                 DATABASE_ID,
                 'userprofiles',
                 [Query.equal('userId', vendorIds), Query.limit(100)]

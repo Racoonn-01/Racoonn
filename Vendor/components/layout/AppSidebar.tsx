@@ -31,6 +31,7 @@ const navItems = [
   { title: "Guests", url: "/vendor/guests", icon: Users },
   { title: "Reviews", url: "/vendor/reviews", icon: Star },
   { title: "Earnings", url: "/vendor/earnings", icon: Wallet },
+  { title: "Invoices", url: "/vendor/invoices", icon: FileText },
   { title: "Documents", url: "/vendor/documents", icon: FileText },
   { title: "Support", url: "/vendor/support", icon: LifeBuoy },
   { title: "Settings", url: "/vendor/settings", icon: Settings },

@@ -20,9 +20,9 @@ export interface Ticket {
   time: string;
   category: string;
   description: string;
-  vendorEmail: string;
-  vendorPhone: string;
-  vendorBusinessName: string;
+  vendorEmail?: string;
+  vendorPhone?: string;
+  vendorBusinessName?: string;
 }
 
 export default function SupportPage() {
@@ -30,8 +30,8 @@ export default function SupportPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null)
 
-  const loadTickets = async () => {
-    setIsLoading(true)
+  const loadTickets = async (showLoading = false) => {
+    if (showLoading) setIsLoading(true)
     try {
       const data = await getAllTickets()
       setTickets(data)
@@ -43,11 +43,28 @@ export default function SupportPage() {
   }
 
   useEffect(() => {
-    loadTickets()
+    let ignore = false;
+
+    async function fetchInitialTickets() {
+      try {
+        const data = await getAllTickets();
+        if (!ignore) {
+          setTickets(data);
+          setIsLoading(false);
+        }
+      } catch (e) {
+        console.error(e);
+        if (!ignore) setIsLoading(false);
+      }
+    }
+
+    fetchInitialTickets();
+
     let unsubscribe: () => void;
 
     // Setup realtime subscription
     getAppwriteConfig().then(config => {
+      if (ignore) return;
       const client = new Client()
         .setEndpoint(config.endpoint)
         .setProject(config.projectId);
@@ -55,12 +72,15 @@ export default function SupportPage() {
       unsubscribe = client.subscribe(
         `databases.${config.databaseId}.collections.${config.ticketsCollectionId}.documents`,
         () => {
-          loadTickets();
+          getAllTickets().then(data => {
+            if (!ignore) setTickets(data);
+          }).catch(console.error);
         }
       );
     });
 
     return () => {
+      ignore = true;
       if (unsubscribe) unsubscribe();
     }
   }, [])
@@ -123,8 +143,10 @@ export default function SupportPage() {
               </div>
               <div className="w-50">
                 <Select value={selectedTicket.status} onValueChange={(val) => {
-                  handleStatusChange(selectedTicket.id, val)
-                  setSelectedTicket({...selectedTicket, status: val})
+                  if (val) {
+                    handleStatusChange(selectedTicket.id, val)
+                    setSelectedTicket({...selectedTicket, status: val})
+                  }
                 }}>
                   <SelectTrigger className={`h-10 w-full ${selectedTicket.status === "Open" ? "text-amber-600 border-amber-200 bg-amber-50" : selectedTicket.status === "Resolved" || selectedTicket.status === "Closed" ? "text-emerald-600 border-emerald-200 bg-emerald-50" : "text-blue-600 border-blue-200 bg-blue-50"}`}>
                     <SelectValue />
@@ -290,7 +312,9 @@ export default function SupportPage() {
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <Select value={ticket.status} onValueChange={(val) => handleStatusChange(ticket.id, val)}>
+                      <Select value={ticket.status} onValueChange={(val) => {
+                        if (val) handleStatusChange(ticket.id, val)
+                      }}>
                         <SelectTrigger className={`h-8 w-32.5 ${ticket.status === "Open" ? "text-amber-600 border-amber-200 bg-amber-50" : ticket.status === "Resolved" || ticket.status === "Closed" ? "text-emerald-600 border-emerald-200 bg-emerald-50" : "text-blue-600 border-blue-200 bg-blue-50"}`}>
                           <SelectValue />
                         </SelectTrigger>

@@ -1,10 +1,10 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { 
   Plus, Trash2, Image as ImageIcon, ArrowLeft, Pencil, 
   IndianRupee, ChevronLeft, ChevronRight, X, Check,
-  Building
+  Building, Loader2, Search
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -34,11 +34,36 @@ type ItineraryDay = {
   points: ItineraryPoint[];
 }
 
+type HotelOption = {
+  id: string;
+  title: string;
+  description: string;
+  image: string;
+  tags: string[];
+  pricePerNight: number;
+  isDefault: boolean;
+}
+
+type ActivityOption = {
+  id: string;
+  title: string;
+  description: string;
+  image: string;
+  pricePerPerson: number;
+  priceLabel: string;
+}
+
 type Package = {
   id: string;
   title: string;
+  location: string;
+  duration: string;
+  features: string;
+  badge: string;
   images: string[];
   pricing: PricingSlab[];
+  hotelOptions: HotelOption[];
+  activityOptions: ActivityOption[];
   metaTitle: string;
   metaDescription: string;
   metaKeywords: string[];
@@ -46,48 +71,249 @@ type Package = {
   status: 'draft' | 'published';
 }
 
-const mockPackages: Package[] = [
-  {
-    id: "1",
-    title: "Kashmir Tour Package – 5 Days & 4 Nights",
-    images: ["https://images.unsplash.com/photo-1595815771614-ade9d652a65d?w=800&q=80"],
-    pricing: [
-      { id: "p1", minPersons: 1, maxPersons: 1, pricePerPerson: 10000 },
-      { id: "p2", minPersons: 2, maxPersons: 4, pricePerPerson: 8000 },
-    ],
-    metaTitle: "Kashmir Tour Package",
-    metaDescription: "Experience the beauty of Kashmir.",
-    metaKeywords: ["kashmir", "tour", "package", "travel"],
-    itinerary: [
-      { id: "i1", dayNumber: 1, title: "Arrival in Srinagar", activities: "Pickup from airport, Shikara ride on Dal Lake.", points: [
-        { title: "Welcome drink on arrival", description: "Enjoy a refreshing Kashmiri Kahwa." },
-        { title: "Private Shikara ride", description: "A 1-hour romantic Shikara ride." }
-      ] },
-      { id: "i2", dayNumber: 2, title: "Gulmarg Excursion", activities: "Gondola ride, Skiing, Snowboarding.", points: [
-        { title: "Phase 1 Gondola ticket included", description: "Take the cable car to Kongdori." }
-      ] }
-    ],
-    status: 'published'
-  }
-]
-
 const emptyForm: Package = {
   id: "",
   title: "",
+  location: "Uttarakhand",
+  duration: "6 Days / 5 Nights",
+  features: "Meals | Stay | Transfer",
+  badge: "Bestseller",
   images: [],
-  pricing: [{ id: Date.now().toString(), minPersons: 1, maxPersons: 2, pricePerPerson: 0 }],
+  pricing: [{ id: Date.now().toString(), minPersons: 1, maxPersons: 2, pricePerPerson: 18999 }],
+  hotelOptions: [
+    {
+      id: "h1",
+      title: "Premium Hotel Stay",
+      description: "Experience maximum comfort in our handpicked 3 or 4-star properties.",
+      image: "https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=600&auto=format&fit=crop",
+      tags: ["AC Rooms", "Breakfast Included"],
+      pricePerNight: 3500,
+      isDefault: true
+    },
+    {
+      id: "h2",
+      title: "Experiential Swiss Camps",
+      description: "For applicable locations, enjoy a night under the stars in our luxury swiss tents.",
+      image: "https://images.unsplash.com/photo-1523987355523-c7b5b0dd90a7?q=80&w=600&auto=format&fit=crop",
+      tags: ["Luxury Tents", "All Meals"],
+      pricePerNight: 4200,
+      isDefault: false
+    }
+  ],
+  activityOptions: [
+    {
+      id: "a1",
+      title: "Guided Local Sightseeing",
+      description: "Explore the best landmarks and hidden gems with our expert local guides.",
+      image: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=600&auto=format&fit=crop",
+      pricePerPerson: 0,
+      priceLabel: "Included in Package"
+    },
+    {
+      id: "a2",
+      title: "Adventure Sports Pass",
+      description: "Get an adrenaline rush with our adventure sports pass.",
+      image: "https://images.unsplash.com/photo-1593693397690-362cb9666fc2?q=80&w=600&auto=format&fit=crop",
+      pricePerPerson: 2500,
+      priceLabel: "+ ₹2,500 / person"
+    }
+  ],
   metaTitle: "",
   metaDescription: "",
   metaKeywords: [],
-  itinerary: [{ id: Date.now().toString(), dayNumber: 1, title: "", activities: "", points: [] }],
+  itinerary: [{ id: Date.now().toString(), dayNumber: 1, title: "Arrival & Welcome", activities: "Check-in and local sightseeing", points: [] }],
   status: 'draft'
 }
 
+const PRESET_ACTIVITIES = [
+  {
+    id: "act-1",
+    title: "Guided Local Sightseeing",
+    description: "Explore the best landmarks and hidden gems with our expert local guides. Includes photography points and cultural hubs.",
+    image: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=600&auto=format&fit=crop",
+    pricePerPerson: 0,
+    priceLabel: "Included in Package"
+  },
+  {
+    id: "act-2",
+    title: "Adventure Sports Pass",
+    description: "Get an adrenaline rush with zip-lining, river rafting, and bungee jumping passes.",
+    image: "https://images.unsplash.com/photo-1593693397690-362cb9666fc2?q=80&w=600&auto=format&fit=crop",
+    pricePerPerson: 2500,
+    priceLabel: "+ ₹2,500 / person"
+  },
+  {
+    id: "act-3",
+    title: "Campfire & Music Evening",
+    description: "Enjoy a cozy mountain evening under stars with live acoustic music and bonfire.",
+    image: "https://images.unsplash.com/photo-1510312305653-8ed496efae75?q=80&w=600&auto=format&fit=crop",
+    pricePerPerson: 800,
+    priceLabel: "+ ₹800 / person"
+  },
+  {
+    id: "act-4",
+    title: "Mountain Trekking & Camping",
+    description: "Guided day trek into scenic valley trails with outdoor camping gear provided.",
+    image: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=600&auto=format&fit=crop",
+    pricePerPerson: 1800,
+    priceLabel: "+ ₹1,800 / person"
+  },
+  {
+    id: "act-5",
+    title: "Wildlife Safari Pass",
+    description: "Open jeep safari through national park tiger reserves with expert forest guides.",
+    image: "https://images.unsplash.com/photo-1516426122078-c23e76319801?q=80&w=600&auto=format&fit=crop",
+    pricePerPerson: 3200,
+    priceLabel: "+ ₹3,200 / person"
+  }
+];
+
 export default function PackagesPage() {
-  const [packages, setPackages] = useState<Package[]>(mockPackages)
+  const [packages, setPackages] = useState<Package[]>([])
+  const [loading, setLoading] = useState(true)
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [formStep, setFormStep] = useState(1)
   const [formData, setFormData] = useState<Package>(emptyForm)
+  const [availableProperties, setAvailableProperties] = useState<any[]>([])
+  const [isLoadingProperties, setIsLoadingProperties] = useState(false)
+  const [propertySearch, setPropertySearch] = useState('')
+  const [activitySearch, setActivitySearch] = useState('')
+
+  const fetchAvailableProperties = async () => {
+    try {
+      setIsLoadingProperties(true);
+      const res = await fetch("/api/cms/properties");
+      const json = await res.json();
+      if (json.success && Array.isArray(json.properties)) {
+        setAvailableProperties(json.properties);
+      }
+    } catch (err) {
+      console.error("Error fetching properties for packages:", err);
+    } finally {
+      setIsLoadingProperties(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchAvailableProperties();
+  }, []);
+
+  const toggleSelectProperty = (prop: any) => {
+    setFormData(prev => {
+      const currentList = prev.hotelOptions || [];
+      const exists = currentList.some(h => h.id === prop.id || h.title === prop.title);
+      if (exists) {
+        return {
+          ...prev,
+          hotelOptions: currentList.filter(h => h.id !== prop.id && h.title !== prop.title)
+        };
+      } else {
+        return {
+          ...prev,
+          hotelOptions: [
+            ...currentList,
+            {
+              id: prop.id,
+              title: prop.title,
+              description: `Stay at ${prop.title} situated in ${prop.location || prop.city || 'prime location'}.`,
+              image: prop.image || "https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=600&auto=format&fit=crop",
+              tags: ["AC Rooms", "Breakfast Included"],
+              pricePerNight: prop.price || 3500,
+              isDefault: currentList.length === 0
+            }
+          ]
+        };
+      }
+    });
+  };
+
+  const toggleSelectActivity = (act: typeof PRESET_ACTIVITIES[0]) => {
+    setFormData(prev => {
+      const currentList = prev.activityOptions || [];
+      const exists = currentList.some(a => a.id === act.id || a.title === act.title);
+      if (exists) {
+        return {
+          ...prev,
+          activityOptions: currentList.filter(a => a.id !== act.id && a.title !== act.title)
+        };
+      } else {
+        return {
+          ...prev,
+          activityOptions: [
+            ...currentList,
+            {
+              id: act.id,
+              title: act.title,
+              description: act.description,
+              image: act.image,
+              pricePerPerson: act.pricePerPerson,
+              priceLabel: act.priceLabel
+            }
+          ]
+        };
+      }
+    });
+  };
+
+  const fetchPackages = async () => {
+    try {
+      setLoading(true);
+      const res = await fetch("/api/cms/packages");
+      const json = await res.json();
+      if (json.success && Array.isArray(json.packages)) {
+        setPackages(json.packages);
+      }
+    } catch (err) {
+      console.error("Error fetching packages:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchPackages();
+
+    const handleLocalUpdate = () => fetchPackages();
+    window.addEventListener("cms_packages_updated", handleLocalUpdate);
+
+    let bc: BroadcastChannel | null = null;
+    if (typeof window !== "undefined" && "BroadcastChannel" in window) {
+      bc = new BroadcastChannel("racoonn_cms_channel");
+      bc.onmessage = (event) => {
+        if (event.data && event.data.type === "PACKAGES_UPDATED") {
+          if (Array.isArray(event.data.data)) {
+            setPackages(event.data.data);
+          } else {
+            fetchPackages();
+          }
+        }
+      };
+    }
+
+    return () => {
+      window.removeEventListener("cms_packages_updated", handleLocalUpdate);
+      if (bc) bc.close();
+    };
+  }, []);
+
+  const savePackagesToServer = async (newList: Package[]) => {
+    setPackages(newList);
+    try {
+      await fetch("/api/cms/packages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ packages: newList }),
+      });
+      window.dispatchEvent(new Event("cms_packages_updated"));
+      if (typeof window !== "undefined" && "BroadcastChannel" in window) {
+        const bc = new BroadcastChannel("racoonn_cms_channel");
+        bc.postMessage({ type: "PACKAGES_UPDATED", data: newList });
+        bc.close();
+      }
+    } catch (err) {
+      console.error("Error saving packages:", err);
+    }
+  };
 
   const handleOpenForm = (pkg?: Package) => {
     if (pkg) {
@@ -106,9 +332,17 @@ export default function PackagesPage() {
 
   const handleDelete = (id: string) => {
     if (confirm("Are you sure you want to delete this package?")) {
-      setPackages(packages.filter(p => p.id !== id))
+      const updated = packages.filter(p => p.id !== id);
+      savePackagesToServer(updated);
     }
   }
+
+  const handleToggleStatus = (id: string) => {
+    const updated = packages.map(p => 
+      p.id === id ? { ...p, status: (p.status === 'published' ? 'draft' : 'published') as 'draft' | 'published' } : p
+    );
+    savePackagesToServer(updated);
+  };
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault()
@@ -121,13 +355,14 @@ export default function PackagesPage() {
     if (formData.pricing.length === 0) return alert("At least one pricing slab is required")
     
     const existingIndex = packages.findIndex(p => p.id === formData.id)
+    let updated: Package[] = []
     if (existingIndex >= 0) {
-      const updated = [...packages]
+      updated = [...packages]
       updated[existingIndex] = formData
-      setPackages(updated)
     } else {
-      setPackages([formData, ...packages])
+      updated = [formData, ...packages]
     }
+    savePackagesToServer(updated)
     handleCloseForm()
   }
 
@@ -285,6 +520,75 @@ export default function PackagesPage() {
     }))
   }
 
+  // Hotel Options Handlers
+  const addHotelOption = () => {
+    setFormData(prev => ({
+      ...prev,
+      hotelOptions: [
+        ...(prev.hotelOptions || []),
+        {
+          id: Date.now().toString(),
+          title: "",
+          description: "",
+          image: "https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=600&auto=format&fit=crop",
+          tags: ["AC Rooms", "Breakfast Included"],
+          pricePerNight: 3500,
+          isDefault: (prev.hotelOptions || []).length === 0
+        }
+      ]
+    }))
+  }
+
+  const updateHotelOption = (id: string, field: keyof HotelOption, value: any) => {
+    setFormData(prev => ({
+      ...prev,
+      hotelOptions: (prev.hotelOptions || []).map(h => 
+        h.id === id ? { ...h, [field]: value } : h
+      )
+    }))
+  }
+
+  const removeHotelOption = (id: string) => {
+    setFormData(prev => ({
+      ...prev,
+      hotelOptions: (prev.hotelOptions || []).filter(h => h.id !== id)
+    }))
+  }
+
+  // Activity Options Handlers
+  const addActivityOption = () => {
+    setFormData(prev => ({
+      ...prev,
+      activityOptions: [
+        ...(prev.activityOptions || []),
+        {
+          id: Date.now().toString(),
+          title: "",
+          description: "",
+          image: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=600&auto=format&fit=crop",
+          pricePerPerson: 0,
+          priceLabel: "Included in Package"
+        }
+      ]
+    }))
+  }
+
+  const updateActivityOption = (id: string, field: keyof ActivityOption, value: any) => {
+    setFormData(prev => ({
+      ...prev,
+      activityOptions: (prev.activityOptions || []).map(a => 
+        a.id === id ? { ...a, [field]: value } : a
+      )
+    }))
+  }
+
+  const removeActivityOption = (id: string) => {
+    setFormData(prev => ({
+      ...prev,
+      activityOptions: (prev.activityOptions || []).filter(a => a.id !== id)
+    }))
+  }
+
   // Views
   if (isFormOpen) {
     return (
@@ -298,7 +602,7 @@ export default function PackagesPage() {
               {packages.some(p => p.id === formData.id) ? 'Edit Package' : 'Create New Package'}
             </h2>
             <p className="text-muted-foreground text-sm mt-1">
-              {formStep === 1 ? 'Step 1: Fill in the details below to configure your travel package.' : 'Step 2: Package Itinerary & Builder'}
+              {formStep === 1 ? 'Step 1: Fill in package details, accommodations & activities.' : 'Step 2: Package Itinerary & Builder'}
             </p>
           </div>
           <div className="ml-auto flex items-center gap-4">
@@ -323,20 +627,62 @@ export default function PackagesPage() {
           {formStep === 1 && (
             <>
               {/* Section 1: Basic Info */}
-          <section className="bg-white p-8 rounded-2xl shadow-sm border border-slate-100">
-            <h3 className="text-lg font-bold mb-6 text-[#1F2E4A]">1. Package Information</h3>
-            <div className="grid gap-2">
-              <Label htmlFor="title" className="font-semibold text-slate-700">Package Title <span className="text-red-500">*</span></Label>
-              <Input 
-                id="title" 
-                placeholder="e.g. Kashmir Tour Package – 5 Days & 4 Nights" 
-                value={formData.title}
-                onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-                className="h-12 rounded-xl border-slate-200"
-                required
-              />
-            </div>
-          </section>
+              <section className="bg-white p-8 rounded-2xl shadow-sm border border-slate-100 space-y-6">
+                <h3 className="text-lg font-bold text-[#1F2E4A]">1. Package Information</h3>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="grid gap-2 sm:col-span-2">
+                    <Label htmlFor="title" className="font-semibold text-slate-700">Package Title <span className="text-red-500">*</span></Label>
+                    <Input 
+                      id="title" 
+                      placeholder="e.g. Kashmir Tour Package – 5 Days & 4 Nights" 
+                      value={formData.title}
+                      onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+                      className="h-12 rounded-xl border-slate-200"
+                      required
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="location" className="font-semibold text-slate-700">Location / Destination</Label>
+                    <Input 
+                      id="location" 
+                      placeholder="e.g. Uttarakhand, Himachal, Goa" 
+                      value={formData.location || ''}
+                      onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
+                      className="h-11 rounded-xl border-slate-200"
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="duration" className="font-semibold text-slate-700">Duration</Label>
+                    <Input 
+                      id="duration" 
+                      placeholder="e.g. 6 Days / 5 Nights" 
+                      value={formData.duration || ''}
+                      onChange={(e) => setFormData(prev => ({ ...prev, duration: e.target.value }))}
+                      className="h-11 rounded-xl border-slate-200"
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="features" className="font-semibold text-slate-700">Features Line</Label>
+                    <Input 
+                      id="features" 
+                      placeholder="e.g. Meals | Stay | Transfer | Sightseeing" 
+                      value={formData.features || ''}
+                      onChange={(e) => setFormData(prev => ({ ...prev, features: e.target.value }))}
+                      className="h-11 rounded-xl border-slate-200"
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="badge" className="font-semibold text-slate-700">Badge Tag</Label>
+                    <Input 
+                      id="badge" 
+                      placeholder="e.g. Bestseller, Popular, New, Trending" 
+                      value={formData.badge || ''}
+                      onChange={(e) => setFormData(prev => ({ ...prev, badge: e.target.value }))}
+                      className="h-11 rounded-xl border-slate-200"
+                    />
+                  </div>
+                </div>
+              </section>
 
           {/* Section 2: Image Gallery */}
           <section className="bg-white p-8 rounded-2xl shadow-sm border border-slate-100">
@@ -461,9 +807,133 @@ export default function PackagesPage() {
             </div>
           </section>
 
-          {/* Section 4: SEO Data */}
+          {/* Section 4: Accommodations Options (Stays Tab) */}
+          <section className="bg-white p-8 rounded-2xl shadow-sm border border-slate-100 space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+              <div>
+                <h3 className="text-lg font-bold text-[#1F2E4A]">4. Accommodations Options (Stays Tab)</h3>
+                <p className="text-sm text-muted-foreground mt-1">Select multiple properties from database for package accommodations.</p>
+              </div>
+            </div>
+
+            {/* Property Selector Grid */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between gap-4">
+                <Label className="text-xs uppercase tracking-wider text-slate-500 font-bold">Select Stays / Properties ({formData.hotelOptions?.length || 0} Selected)</Label>
+                <div className="relative w-64">
+                  <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <Input 
+                    placeholder="Search properties..." 
+                    value={propertySearch}
+                    onChange={(e) => setPropertySearch(e.target.value)}
+                    className="pl-8 h-8 rounded-xl text-xs border-slate-200"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 max-h-64 overflow-y-auto p-2 bg-slate-50 border border-slate-200 rounded-2xl">
+                {isLoadingProperties ? (
+                  <div className="col-span-full py-8 text-center text-xs text-slate-500 flex items-center justify-center gap-2">
+                    <Loader2 className="w-4 h-4 animate-spin text-brand-coral" /> Loading database properties...
+                  </div>
+                ) : availableProperties.length === 0 ? (
+                  <p className="col-span-full py-8 text-center text-xs text-slate-500">No properties available in database.</p>
+                ) : (
+                  availableProperties
+                    .filter(p => p.title.toLowerCase().includes(propertySearch.toLowerCase()) || p.location.toLowerCase().includes(propertySearch.toLowerCase()))
+                    .map((prop) => {
+                      const isSelected = (formData.hotelOptions || []).some(h => h.id === prop.id || h.title === prop.title);
+                      return (
+                        <div 
+                          key={prop.id}
+                          onClick={() => toggleSelectProperty(prop)}
+                          className={`flex items-center gap-3 p-2.5 rounded-xl cursor-pointer transition-all border ${
+                            isSelected 
+                              ? "border-emerald-500 bg-emerald-50/70 shadow-xs" 
+                              : "border-slate-200 bg-white hover:border-slate-300"
+                          }`}
+                        >
+                          <div className="relative w-10 h-10 rounded-lg overflow-hidden shrink-0 bg-slate-200">
+                            <Image src={prop.image} alt={prop.title} fill className="object-cover" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h4 className="text-xs font-bold text-slate-900 truncate">{prop.title}</h4>
+                            <p className="text-[10px] text-slate-500 truncate">{prop.location || 'Uttarakhand'}</p>
+                          </div>
+                          <div className={`w-5 h-5 rounded-full border flex items-center justify-center transition-colors ${
+                            isSelected ? "bg-emerald-600 border-emerald-600 text-white" : "border-slate-300 bg-white"
+                          }`}>
+                            {isSelected && <Check size={12} />}
+                          </div>
+                        </div>
+                      );
+                    })
+                )}
+              </div>
+            </div>
+          </section>
+
+          {/* Section 5: Activities Options (Activities Tab) */}
+          <section className="bg-white p-8 rounded-2xl shadow-sm border border-slate-100 space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+              <div>
+                <h3 className="text-lg font-bold text-[#1F2E4A]">5. Activities Options (Activities Tab)</h3>
+                <p className="text-sm text-muted-foreground mt-1">Select multiple activity options for package activities.</p>
+              </div>
+            </div>
+
+            {/* Activity Preset Selector Grid */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between gap-4">
+                <Label className="text-xs uppercase tracking-wider text-slate-500 font-bold">Select Preset Activities ({formData.activityOptions?.length || 0} Selected)</Label>
+                <div className="relative w-64">
+                  <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <Input 
+                    placeholder="Search activities..." 
+                    value={activitySearch}
+                    onChange={(e) => setActivitySearch(e.target.value)}
+                    className="pl-8 h-8 rounded-xl text-xs border-slate-200"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 max-h-64 overflow-y-auto p-2 bg-slate-50 border border-slate-200 rounded-2xl">
+                {PRESET_ACTIVITIES
+                  .filter(a => a.title.toLowerCase().includes(activitySearch.toLowerCase()) || a.description.toLowerCase().includes(activitySearch.toLowerCase()))
+                  .map((act) => {
+                    const isSelected = (formData.activityOptions || []).some(a => a.id === act.id || a.title === act.title);
+                    return (
+                      <div 
+                        key={act.id}
+                        onClick={() => toggleSelectActivity(act)}
+                        className={`flex items-center gap-3 p-2.5 rounded-xl cursor-pointer transition-all border ${
+                          isSelected 
+                            ? "border-blue-500 bg-blue-50/70 shadow-xs" 
+                            : "border-slate-200 bg-white hover:border-slate-300"
+                        }`}
+                      >
+                        <div className="relative w-10 h-10 rounded-lg overflow-hidden shrink-0 bg-slate-200">
+                          <Image src={act.image} alt={act.title} fill className="object-cover" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h4 className="text-xs font-bold text-slate-900 truncate">{act.title}</h4>
+                          <p className="text-[10px] text-slate-500 truncate">{act.pricePerPerson === 0 ? 'Included' : `+ ₹${act.pricePerPerson} / person`}</p>
+                        </div>
+                        <div className={`w-5 h-5 rounded-full border flex items-center justify-center transition-colors ${
+                          isSelected ? "bg-blue-600 border-blue-600 text-white" : "border-slate-300 bg-white"
+                        }`}>
+                          {isSelected && <Check size={12} />}
+                        </div>
+                      </div>
+                    );
+                  })}
+              </div>
+            </div>
+          </section>
+
+          {/* Section 6: SEO Data */}
           <section className="bg-white p-8 rounded-2xl shadow-sm border border-slate-100">
-            <h3 className="text-lg font-bold mb-6 text-[#1F2E4A]">4. SEO Metadata</h3>
+            <h3 className="text-lg font-bold mb-6 text-[#1F2E4A]">6. SEO Metadata</h3>
             <div className="grid gap-6">
               <div className="grid gap-2">
                 <Label htmlFor="metaTitle" className="font-semibold text-slate-700">Meta Title</Label>
@@ -656,7 +1126,12 @@ export default function PackagesPage() {
         </Button>
       </div>
 
-      {packages.length === 0 ? (
+      {loading ? (
+        <div className="flex flex-col justify-center items-center h-64 border border-dashed rounded-3xl bg-slate-50">
+          <Loader2 className="w-8 h-8 text-brand-coral animate-spin mb-2" />
+          <p className="text-muted-foreground font-medium text-sm">Loading real-time packages...</p>
+        </div>
+      ) : packages.length === 0 ? (
         <div className="flex flex-col justify-center items-center h-64 border-2 border-dashed rounded-3xl bg-slate-50">
           <p className="text-muted-foreground font-medium mb-4">No packages created yet.</p>
           <Button variant="outline" onClick={() => handleOpenForm()} className="rounded-full">
@@ -668,7 +1143,7 @@ export default function PackagesPage() {
           {packages.map(pkg => (
             <div key={pkg.id} className="flex flex-col sm:flex-row gap-6 bg-white p-4 rounded-3xl border shadow-sm items-center">
               <div className="relative w-full sm:w-48 h-32 rounded-2xl overflow-hidden shrink-0 bg-slate-100">
-                {pkg.images.length > 0 ? (
+                {pkg.images && pkg.images.length > 0 ? (
                   <Image src={pkg.images[0]} alt={pkg.title} fill className="object-cover" />
                 ) : (
                   <div className="flex items-center justify-center w-full h-full text-slate-400">
@@ -681,10 +1156,13 @@ export default function PackagesPage() {
                   <div>
                     <h3 className="font-bold text-xl text-[#1F2E4A] line-clamp-1">{pkg.title}</h3>
                     <div className="flex items-center gap-3 mt-2">
-                      <span className={`px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${pkg.status === 'published' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
+                      <button 
+                        onClick={() => handleToggleStatus(pkg.id)}
+                        className={`px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider cursor-pointer hover:opacity-80 transition-opacity ${pkg.status === 'published' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}
+                      >
                         {pkg.status}
-                      </span>
-                      <span className="text-sm text-slate-500 font-medium">{pkg.pricing.length} Pricing Slab(s)</span>
+                      </button>
+                      <span className="text-sm text-slate-500 font-medium">{(pkg.pricing || []).length} Pricing Slab(s)</span>
                     </div>
                   </div>
                   <div className="flex gap-2">

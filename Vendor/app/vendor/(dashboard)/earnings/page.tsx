@@ -15,6 +15,7 @@ import { jsPDF } from "jspdf";
 
 export default function EarningsPage() {
   const { user } = useAuthStore();
+  const [dateFilter, setDateFilter] = useState("");
   const [netEarnings, setNetEarnings] = useState(0);
   const [upcomingPayout, setUpcomingPayout] = useState(0);
   const [pendingClearance, setPendingClearance] = useState(0);
@@ -98,7 +99,7 @@ export default function EarningsPage() {
 
         // Map to charts (last 7 months)
         const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-        const newChartData = [];
+        const newChartData: Array<{ name: string; amount: number; month: number; year: number }> = [];
         for (let i = 6; i >= 0; i--) {
           const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
           newChartData.push({ name: monthNames[d.getMonth()], amount: 0, month: d.getMonth(), year: d.getFullYear() });
@@ -278,9 +279,18 @@ export default function EarningsPage() {
             <h2 className="text-3xl font-heading font-bold text-secondary">Earnings & Payouts</h2>
             <p className="text-slate-500 mt-1">Track your revenue, view payouts, and download invoices.</p>
           </div>
-          <Button onClick={handleDownloadStatement} className="bg-[#1F2E4A] hover:bg-[#151E2D] text-white rounded-xl shadow-sm gap-2">
-            <Download className="w-4 h-4" /> Download Statement
-          </Button>
+          <div className="flex items-center gap-3 w-full md:w-auto">
+            <input
+              type="date"
+              value={dateFilter}
+              onChange={(e) => setDateFilter(e.target.value)}
+              className="px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-slate-200 w-full md:w-auto"
+              title="Filter by Date"
+            />
+            <Button onClick={handleDownloadStatement} className="bg-[#1F2E4A] hover:bg-[#151E2D] text-white rounded-xl shadow-sm gap-2 whitespace-nowrap">
+              <Download className="w-4 h-4" /> Download Statement
+            </Button>
+          </div>
         </div>
       </motion.div>
 
@@ -391,8 +401,8 @@ export default function EarningsPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 text-sm">
-                    {payouts.length > 0 ? (
-                      payouts.map((payout) => (
+                    {payouts.filter(p => !dateFilter || (new Date(p.date).toISOString().startsWith(dateFilter))).length > 0 ? (
+                      payouts.filter(p => !dateFilter || (new Date(p.date).toISOString().startsWith(dateFilter))).map((payout) => (
                         <tr key={payout.id} className="hover:bg-slate-50/80 transition-colors">
                           <td className="p-4 pl-6 font-mono font-medium text-slate-600">{payout.id}</td>
                           <td className="p-4 text-slate-600 font-medium">{payout.date}</td>
@@ -445,8 +455,8 @@ export default function EarningsPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 text-sm">
-                    {bookings.length > 0 ? (
-                      bookings.map((booking) => (
+                    {bookings.filter((b) => !dateFilter || b.createdAt.startsWith(dateFilter)).length > 0 ? (
+                      bookings.filter((b) => !dateFilter || b.createdAt.startsWith(dateFilter)).map((booking) => (
                         <tr key={booking.id} className="hover:bg-slate-50/80 transition-colors">
                           <td className="p-4 pl-6 font-mono font-medium text-slate-600">{booking.id}</td>
                           <td className="p-4 font-semibold text-secondary">{booking.guest}</td>

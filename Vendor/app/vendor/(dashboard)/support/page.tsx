@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useState, useEffect } from "react";
+import { Suspense, useState, useEffect, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -34,7 +34,7 @@ function SupportContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
-  const loadTickets = async () => {
+  const loadTickets = useCallback(async () => {
     if (!user?.$id) return;
     setIsLoadingTickets(true);
     try {
@@ -45,7 +45,7 @@ function SupportContent() {
     } finally {
       setIsLoadingTickets(false);
     }
-  };
+  }, [user]);
 
   useEffect(() => {
     loadTickets();
@@ -63,7 +63,7 @@ function SupportContent() {
     return () => {
       unsubscribe();
     };
-  }, [user]);
+  }, [user, loadTickets]);
 
   // Handle auto-opening the review modal from email link
   useEffect(() => {

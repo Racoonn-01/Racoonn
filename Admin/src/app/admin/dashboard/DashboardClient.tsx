@@ -2,7 +2,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { BadgeDollarSign, Users, Building2, CalendarDays } from "lucide-react"
+import { BadgeDollarSign, Users, Building2, CalendarDays, RotateCcw } from "lucide-react"
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
@@ -12,7 +12,7 @@ export interface KPIData {
   change: string;
   color: string;
   bg: string;
-  iconName: "BadgeDollarSign" | "Users" | "Building2" | "CalendarDays";
+  iconName: "BadgeDollarSign" | "Users" | "Building2" | "CalendarDays" | "RotateCcw";
 }
 
 export interface ChartData {
@@ -24,7 +24,7 @@ export interface ActivityData {
   title: string;
   desc: string;
   time: string;
-  iconName: "BadgeDollarSign" | "Users" | "Building2" | "CalendarDays";
+  iconName: "BadgeDollarSign" | "Users" | "Building2" | "CalendarDays" | "RotateCcw";
   color: string;
   bg: string;
 }
@@ -40,6 +40,7 @@ const iconMap = {
   Users,
   Building2,
   CalendarDays,
+  RotateCcw,
 }
 
 export default function DashboardClient({ kpiData, chartData, recentActivity }: DashboardClientProps) {

@@ -10,6 +10,8 @@ import { getProperty } from "@/lib/appwrite/api";
 import { useEffect, useState } from "react";
 import { DEFAULT_ADDONS } from "@/components/checkout/AddonSelector";
 
+import { calculateRoomGst } from "@/lib/gst";
+
 export function CheckoutSidebar({
   nights = 3,
   rooms = 1,
@@ -32,12 +34,10 @@ export function CheckoutSidebar({
   const searchParams = useSearchParams();
   const hotelId = searchParams.get('hotelId') || useCheckoutStore.getState().selectedHotelId || 'hotel-123';
 
-
-
   const displayAddons = propertyAddons === null ? [] : (propertyAddons.length > 0 ? propertyAddons : DEFAULT_ADDONS);
 
   const dynamicAddonsTotal = selectedAddons.reduce((sum, addonId) => {
-    const addon = displayAddons.find(a => a.id === addonId);
+    const addon = displayAddons.find(a => (a.id === addonId || a.$id === addonId));
     return sum + (addon?.price || 0);
   }, 0);
   const clientRoomName = searchParams.get('roomName');
@@ -62,8 +62,10 @@ export function CheckoutSidebar({
   const clientCheckOut = formatUrlDate(searchParams.get('checkOut')) || "15 Aug 2026";
   const clientGuests = searchParams.get('guests') || "2";
 
-  // Calculate taxes and dynamic discounts based on actual values
-  const roomTotal = finalPrice * nights * rooms;
+  // Calculate statutory GST based on price per night
+  const isPackage = finalRoomName.startsWith('Package:') || finalRoomName.toLowerCase().includes('package') || hotelId.startsWith('pkg-');
+  const roomTotal = isPackage ? finalPrice : finalPrice * nights * rooms;
+  
   let dynamicDiscount = 0;
   if (appliedCoupon) {
     if (appliedCoupon.type === 'fixed') {
@@ -73,7 +75,9 @@ export function CheckoutSidebar({
     }
   }
 
-  const finalTaxes = Math.floor(roomTotal * 0.1);
+  const gstResult = calculateRoomGst(finalPrice, nights, rooms, dynamicAddonsTotal);
+  const finalTaxes = gstResult.gstAmount;
+  const currentGstRate = gstResult.gstRate;
 
   if (currentStep === 4) return null;
 
@@ -91,6 +95,7 @@ export function CheckoutSidebar({
           guests={clientGuests}
           checkIn={clientCheckIn}
           checkOut={clientCheckOut}
+          gstRate={currentGstRate}
           taxes={finalTaxes}
           addons={dynamicAddonsTotal}
           discount={dynamicDiscount}

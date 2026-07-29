@@ -3,7 +3,7 @@
 import { appwriteServer } from "@/lib/appwrite/server";
 import { Query } from "node-appwrite";
 
-const DATABASE_ID = process.env.APPWRITE_DATABASE_ID!;
+const DATABASE_ID = process.env.APPWRITE_DATABASE_ID || process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID || "6a3cec630035d63ea963";
 const REVIEWS_COLLECTION_ID = '6a59c6f526bfcf71ddbf';
 const PROPERTIES_COLLECTION_ID = 'properties';
 

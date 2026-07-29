@@ -204,7 +204,29 @@ export function Step4Property({ onNext, onBack }: { onNext: () => void, onBack: 
       saveToLocal();
       
       const existingPropertyId = currentProfile.currentPropertyId;
-      
+      const fullAddr = `${registeredAddress ? registeredAddress + ", " : ""}${city}, ${propertyState}`;
+      let lat: number | null = null;
+      let lng: number | null = null;
+
+      if (fullAddr) {
+        try {
+          const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN || '';
+          const geoRes = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(fullAddr)}.json?access_token=${mapboxToken}&country=in&limit=1`);
+          if (geoRes.ok) {
+            const geoData = await geoRes.json();
+            if (geoData.features && geoData.features.length > 0) {
+              [lng, lat] = geoData.features[0].center;
+            }
+          }
+        } catch (geoErr) {
+          console.warn("Geocoding error in Step4Property:", geoErr);
+        }
+      }
+
+      const finalLocation = (lat !== null && lng !== null)
+        ? `${fullAddr} [GEO: ${lat.toFixed(6)}, ${lng.toFixed(6)}]`
+        : fullAddr;
+
       const propertyData = {
         vendorId: currentUser.$id,
         propertyName,
@@ -212,7 +234,7 @@ export function Step4Property({ onNext, onBack }: { onNext: () => void, onBack: 
         propertyType: selectedType,
         city,
         state: propertyState,
-        location: `${registeredAddress ? registeredAddress + ", " : ""}${city}, ${propertyState}`,
+        location: finalLocation,
         description,
         price: 0,
         status: "Pending"

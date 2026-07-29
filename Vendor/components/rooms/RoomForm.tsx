@@ -42,6 +42,9 @@ export function RoomForm({ roomId }: RoomFormProps) {
     size: "",
     price: "",
     discountPrice: "",
+    gstRate: "5",
+    gstCategory: "GST_5",
+    isTaxInclusive: false,
     mealPlan: "Room Only",
     cancellation: "Non-refundable",
     description: "",
@@ -79,6 +82,9 @@ export function RoomForm({ roomId }: RoomFormProps) {
             size: roomRes.size?.toString() || "",
             price: roomRes.price?.toString() || "",
             discountPrice: "", 
+            gstRate: (roomRes.gstRate ?? 5).toString(),
+            gstCategory: roomRes.gstCategory || `GST_${roomRes.gstRate ?? 5}`,
+            isTaxInclusive: roomRes.isTaxInclusive ?? false,
             mealPlan: "Room Only", 
             cancellation: "Non-refundable", 
             description: roomRes.description || "",
@@ -146,6 +152,8 @@ export function RoomForm({ roomId }: RoomFormProps) {
       const existingPhotos = selectedImages.filter(img => !img.startsWith('blob:'));
       const finalPhotos = [...existingPhotos, ...uploadedUrls];
 
+      const gstRateNum = parseFloat(formData.gstRate) || 5;
+
       const roomData = {
         vendorId: user.$id,
         propertyId: formData.propertyId,
@@ -156,6 +164,9 @@ export function RoomForm({ roomId }: RoomFormProps) {
         size: parseInt(formData.size) || 0,
         price: parseFloat(formData.price) || 0,
         discountPrice: parseFloat(formData.discountPrice) || 0,
+        gstRate: gstRateNum,
+        gstCategory: `GST_${gstRateNum}`,
+        isTaxInclusive: formData.isTaxInclusive,
         mealPlan: formData.mealPlan,
         cancellation: formData.cancellation,
         description: formData.description,
@@ -304,28 +315,62 @@ export function RoomForm({ roomId }: RoomFormProps) {
             </div>
           </div>
 
-          <div className="grid sm:grid-cols-2 gap-4">
+          <div className="grid sm:grid-cols-3 gap-4 bg-slate-50/70 p-5 rounded-2xl border border-slate-100">
             <div className="space-y-1.5">
-              <Label htmlFor="price" className="text-[12px] font-semibold text-slate-700 uppercase tracking-wide">Price per Night (₹) *</Label>
+              <Label htmlFor="price" className="text-[12px] font-semibold text-slate-700 uppercase tracking-wide">Base Price / Night (₹) *</Label>
               <Input 
                 id="price" 
                 type="number" 
                 value={formData.price}
-                onChange={(e) => setFormData({...formData, price: e.target.value})}
-                placeholder="e.g. 32000" min={0} 
-                className="h-12 rounded-xl bg-slate-50/50 border-slate-200 focus-visible:ring-primary/20" 
+                onChange={(e) => {
+                  const val = e.target.value;
+                  const p = parseFloat(val) || 0;
+                  let autoRate = "5";
+                  if (p <= 1000) autoRate = "0";
+                  else if (p <= 7500) autoRate = "5";
+                  else autoRate = "18";
+
+                  setFormData(prev => ({
+                    ...prev,
+                    price: val,
+                    gstRate: autoRate,
+                    gstCategory: `GST_${autoRate}`
+                  }));
+                }}
+                placeholder="e.g. 5000" min={0} 
+                className="h-12 rounded-xl bg-white border-slate-200 focus-visible:ring-primary/20" 
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="original-price" className="text-[12px] font-semibold text-slate-700 uppercase tracking-wide">Original Price (₹)</Label>
-              <Input 
-                id="original-price" 
-                type="number" 
-                value={formData.discountPrice}
-                onChange={(e) => setFormData({...formData, discountPrice: e.target.value})}
-                placeholder="e.g. 40000" min={0} 
-                className="h-12 rounded-xl bg-slate-50/50 border-slate-200 focus-visible:ring-primary/20" 
-              />
+              <Label htmlFor="gst-slab" className="text-[12px] font-semibold text-slate-700 uppercase tracking-wide">GST Slab (%) *</Label>
+              <select 
+                id="gst-slab" 
+                value={formData.gstRate}
+                onChange={(e) => setFormData({...formData, gstRate: e.target.value, gstCategory: `GST_${e.target.value}`})}
+                className="flex h-12 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 appearance-none font-medium"
+              >
+                <option value="0">0% (Below ₹1,000 - Exempt)</option>
+                <option value="5">5% (₹1,001 to ₹7,500 - No ITC)</option>
+                <option value="18">18% (Above ₹7,500 - With ITC)</option>
+              </select>
+              <p className="text-[10px] text-slate-500 mt-1 font-medium">
+                {formData.gstRate === "0" && "• Below ₹1,000/night: Exempt from GST"}
+                {formData.gstRate === "5" && "• ₹1,001 to ₹7,500/night: 5% GST (No ITC)"}
+                {formData.gstRate === "18" && "• Above ₹7,500/night: 18% GST (With ITC)"}
+              </p>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-[12px] font-semibold text-slate-700 uppercase tracking-wide">Guest Tax Preview</Label>
+              <div className="h-12 rounded-xl bg-emerald-50 border border-emerald-200/80 px-4 flex items-center justify-between text-xs font-bold text-emerald-900">
+                <span>Guest Pays / Night:</span>
+                <span className="text-base text-emerald-700">
+                  ₹{(() => {
+                    const bp = parseFloat(formData.price) || 0;
+                    const gr = parseFloat(formData.gstRate) || 0;
+                    return (bp + (bp * gr) / 100).toLocaleString('en-IN', { minimumFractionDigits: 2 });
+                  })()}
+                </span>
+              </div>
             </div>
           </div>
 

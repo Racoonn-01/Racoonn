@@ -11,7 +11,7 @@ export interface Property {
   title: string;
   subtitle: string;
   details: string;
-  dates: string;
+  dates?: string;
   price: number;
   originalPrice?: number;
   rating: number;
@@ -20,9 +20,28 @@ export interface Property {
   isGuestFavorite?: boolean;
   freeCancellation?: boolean;
   status?: string;
+  location?: string;
+  city?: string;
+  state?: string;
+  lat?: number;
+  lng?: number;
+  isSelected?: boolean;
+  bedrooms?: number;
+  beds?: number;
+  bathrooms?: number;
+  propertyType?: string;
+  amenities?: string[];
 }
 
-export default function PropertyCard({ property }: { property: Property }) {
+export default function PropertyCard({ 
+  property, 
+  isSelected = false, 
+  onSelect 
+}: { 
+  property: Property; 
+  isSelected?: boolean; 
+  onSelect?: (id: string) => void; 
+}) {
   const { profile, toggleSavedHotel } = useAuthStore();
   const savedHotelIds = profile?.savedHotels || [];
   const isLiked = savedHotelIds.includes(property.id);
@@ -33,8 +52,19 @@ export default function PropertyCard({ property }: { property: Property }) {
     toggleSavedHotel(property.id);
   };
 
+  const handleClick = () => {
+    if (onSelect) onSelect(property.id);
+  };
+
   return (
-    <Link href={`/property/${property.id}`} className="group flex flex-col gap-3">
+    <Link 
+      href={`/property/${property.id}`} 
+      id={`property-card-${property.id}`}
+      onClick={handleClick}
+      className={`group flex flex-col gap-3 p-2 rounded-2xl transition-all duration-300 ${
+        isSelected ? 'bg-brand-coral/5 ring-2 ring-brand-coral shadow-lg scale-[1.01]' : 'hover:bg-gray-50'
+      }`}
+    >
       {/* Property Image */}
       <div className="relative aspect-4/3 rounded-xl overflow-hidden bg-gray-200">
         <Image 

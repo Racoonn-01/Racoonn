@@ -8,7 +8,8 @@ import {
   Home, 
   Map, 
   Package, 
-  ChevronLeft
+  ChevronLeft,
+  FileText
 } from "lucide-react"
 
 import {
@@ -24,6 +25,7 @@ import Image from "next/image"
 
 const navItems = [
   { title: "Overview", url: "/cms", icon: LayoutDashboard },
+  { title: "Blog Management", url: "/cms/blogs", icon: FileText },
   { title: "Popular Stay", url: "/cms/popular-stays", icon: Home },
   { title: "Popular Destinations", url: "/cms/popular-destinations", icon: Map },
   { title: "Create Packages", url: "/cms/packages", icon: Package },

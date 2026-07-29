@@ -1,8 +1,11 @@
 'use client';
 
-import { useState, use } from 'react';
+import { useState, useEffect, use } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useCheckoutStore } from '@/store/checkoutStore';
+import { useAuthStore } from '@/store/authStore';
 import { 
   MapPin, 
   Clock, 
@@ -23,7 +26,13 @@ import {
   Pencil,
   X
 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { packages } from '@/data/packages';
+import { getProperties } from '@/lib/appwrite/api';
+import { Models } from 'appwrite';
+import { format, addDays } from 'date-fns';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Pagination, Autoplay } from 'swiper/modules';
 import 'swiper/css';
@@ -31,31 +40,263 @@ import 'swiper/css/navigation';
 import 'swiper/css/pagination';
 
 export default function PackageDetails({ params }: { params: Promise<{ id: string }> }) {
+  const router = useRouter();
+  const setRoomDetails = useCheckoutStore((state) => state.setRoomDetails);
   const resolvedParams = use(params);
-  const pkgId = parseInt(resolvedParams.id || '1');
-  const pkg = packages.find(p => p.id === pkgId) || packages[0];
+  const rawPkgId = resolvedParams.id || '1';
+  const [pkg, setPkg] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [itinerary, setItinerary] = useState<any[]>([]);
+
+  useEffect(() => {
+    async function loadCMSPackage() {
+      try {
+        const res = await fetch("/api/cms/packages");
+        const json = await res.json();
+        if (json.success && Array.isArray(json.packages) && json.packages.length > 0) {
+          const cmsFound = json.packages.find((p: any) => String(p.id) === String(rawPkgId));
+          if (cmsFound) {
+            const minPrice = cmsFound.pricing && cmsFound.pricing[0] ? cmsFound.pricing[0].pricePerPerson : 0;
+            setPkg({
+              ...cmsFound,
+              id: cmsFound.id,
+              title: cmsFound.title,
+              location: cmsFound.location || cmsFound.metaTitle || '',
+              duration: cmsFound.duration || (cmsFound.itinerary && cmsFound.itinerary.length > 0 ? `${cmsFound.itinerary.length + 1} Days / ${cmsFound.itinerary.length} Nights` : ''),
+              features: cmsFound.features || '',
+              price: minPrice ? `₹${minPrice.toLocaleString('en-IN')}` : 'Price on Request',
+              basePriceNum: minPrice,
+              badge: cmsFound.badge || (cmsFound.status === 'published' ? 'Featured' : 'Draft'),
+              badgeColor: 'text-brand-coral',
+              images: cmsFound.images && cmsFound.images.length > 0 ? cmsFound.images : ['https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?q=80&w=2000&auto=format&fit=crop']
+            });
+
+            if (cmsFound.itinerary && Array.isArray(cmsFound.itinerary) && cmsFound.itinerary.length > 0) {
+              setItinerary(cmsFound.itinerary);
+            }
+
+            if (cmsFound.hotelOptions && Array.isArray(cmsFound.hotelOptions) && cmsFound.hotelOptions.length > 0) {
+              setHotelOptions(cmsFound.hotelOptions);
+            }
+
+            if (cmsFound.activityOptions && Array.isArray(cmsFound.activityOptions) && cmsFound.activityOptions.length > 0) {
+              setActivityOptions(cmsFound.activityOptions);
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Error loading live CMS package:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    loadCMSPackage();
+  }, [rawPkgId]);
   const [activeTab, setActiveTab] = useState('plan');
   const [openDay, setOpenDay] = useState<number>(1);
   const [selectedHotel, setSelectedHotel] = useState<number>(0);
   const [selectedActivities, setSelectedActivities] = useState<number[]>([]);
-  const [adultsCount, setAdultsCount] = useState<number>(2);
+  const [adultsCount, setAdultsCount] = useState<number>(1);
   const [isHotelModalOpen, setIsHotelModalOpen] = useState(false);
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const [isAllReviewsModalOpen, setIsAllReviewsModalOpen] = useState(false);
+  const [newRating, setNewRating] = useState<number>(0);
+  const [newReviewName, setNewReviewName] = useState('');
+  const [newReviewCategory, setNewReviewCategory] = useState('Experience');
+  const [newReviewText, setNewReviewText] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isCopied, setIsCopied] = useState(false);
+
+  const { profile, toggleSavedHotel, isAuthenticated } = useAuthStore();
+  const isSaved = profile?.savedHotels?.includes(rawPkgId) || false;
+
+  // Date selection state
+  const [startDate, setStartDate] = useState<Date | undefined>(undefined);
+  const [endDate, setEndDate] = useState<Date | undefined>(undefined);
+  const [isStartOpen, setIsStartOpen] = useState(false);
+  const [isEndOpen, setIsEndOpen] = useState(false);
+
+  // Available Hotel Options (Initialized with live CMS / Appwrite properties)
+  const [hotelOptions, setHotelOptions] = useState<any[]>([]);
+
+  // Fetch real-time hotel properties from Appwrite DB if not specified in CMS package
+  useEffect(() => {
+    async function loadLiveProperties() {
+      try {
+        const docs = await getProperties();
+        if (docs && docs.length > 0) {
+          const mapped = docs.slice(0, 6).map((d: Models.Document, idx: number) => {
+            const doc = d as unknown as Record<string, unknown>;
+            const rawPrice = Number(
+              doc.price || doc.startingPrice || doc.minPrice || doc.basePrice || doc.pricePerNight || 3500
+            );
+            const photos = Array.isArray(doc.photos) ? doc.photos : [];
+            const photoUrl = photos[0] ? String(photos[0]) : 'https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=600&auto=format&fit=crop';
+            
+            return {
+              id: String(doc.$id || idx),
+              title: String(doc.propertyName || doc.title || 'Premium Property Stay'),
+              description: String(doc.description || 'Handpicked premium property featuring top-notch hospitality and modern comfort.'),
+              image: photoUrl,
+              tags: doc.city ? [String(doc.city), 'AC Rooms'] : ['AC Rooms', 'Breakfast Included'],
+              pricePerNight: rawPrice > 0 ? rawPrice : 3500,
+              isDefault: idx === 0,
+              priceLabel: idx === 0 ? 'Included in Package' : ''
+            };
+          });
+
+          setHotelOptions(prev => prev.length > 0 ? prev : mapped);
+        }
+      } catch (err) {
+        console.error('Error loading Appwrite property data:', err);
+      }
+    }
+    loadLiveProperties();
+  }, []);
+
+  // Available Activity Options
+  const [activityOptions, setActivityOptions] = useState([
+    {
+      id: 0,
+      title: 'Guided Local Sightseeing',
+      description: 'Explore the best landmarks and hidden gems with our expert local guides. Includes photography points and cultural hubs.',
+      image: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=600&auto=format&fit=crop',
+      pricePerPerson: 0,
+      priceLabel: 'Included in Package'
+    },
+    {
+      id: 1,
+      title: 'Adventure Sports Pass',
+      description: 'Get an adrenaline rush with our adventure sports pass. Includes zip-lining, river rafting, and bungee jumping (where applicable).',
+      image: 'https://images.unsplash.com/photo-1593693397690-362cb9666fc2?q=80&w=600&auto=format&fit=crop',
+      pricePerPerson: 2500,
+      priceLabel: '+ ₹2,500 / person'
+    }
+  ]);
+
+  // Parse duration nights (e.g. "6 Days / 5 Nights" -> 5)
+  const nightsMatch = pkg.duration.match(/(\d+)\s*Nights?/i);
+  const nightsCount = nightsMatch ? parseInt(nightsMatch[1], 10) : 1;
+
+  const handleStartDateSelect = (date: Date | undefined) => {
+    if (!date) return;
+    setStartDate(date);
+
+    // Automatically set end date based on package nights count
+    if (!endDate || endDate <= date) {
+      const autoEndDate = addDays(date, nightsCount);
+      setEndDate(autoEndDate);
+    }
+
+    setIsStartOpen(false);
+    // Smoothly auto open end date picker
+    setTimeout(() => {
+      setIsEndOpen(true);
+    }, 150);
+  };
+
+  const handleEndDateSelect = (date: Date | undefined) => {
+    if (!date) return;
+    setEndDate(date);
+    setIsEndOpen(false);
+  };
 
   // Parse base price from string like "₹18,999" to number 18999
   const basePriceNum = parseInt(pkg.price.replace(/[^\d]/g, ''), 10) || 0;
+
+  // Accommodation extra cost per person relative to default base option (Hotel 0)
+  // Deduct included base hotel price and add selected hotel price
+  const baseHotelPrice = hotelOptions[0]?.pricePerNight ?? 0;
+  const currentHotelPrice = (hotelOptions[selectedHotel] || hotelOptions[0])?.pricePerNight ?? 0;
+  const hotelExtraPerPerson = (currentHotelPrice - baseHotelPrice) * nightsCount;
+
+  // Activities extra cost per person
+  const activitiesExtraPerPerson = selectedActivities.reduce((sum, actIndex) => {
+    const act = activityOptions[actIndex];
+    return sum + (act ? act.pricePerPerson : 0);
+  }, 0);
+
+  // Total price per person and grand total
+  const effectivePricePerPerson = basePriceNum + hotelExtraPerPerson + activitiesExtraPerPerson;
+  const totalPriceNum = effectivePricePerPerson * adultsCount;
+
   const totalPriceFormatted = new Intl.NumberFormat('en-IN', {
     style: 'currency',
     currency: 'INR',
     maximumFractionDigits: 0
-  }).format(basePriceNum * adultsCount);
+  }).format(totalPriceNum);
+
+  const pricePerPersonFormatted = new Intl.NumberFormat('en-IN', {
+    style: 'currency',
+    currency: 'INR',
+    maximumFractionDigits: 0
+  }).format(effectivePricePerPerson);
 
   const toggleActivity = (index: number) => {
     setSelectedActivities(prev => 
       prev.includes(index) ? prev.filter(i => i !== index) : [...prev, index]
     );
   };
+
+  const handleBookPackage = () => {
+    const pkgIdStr = String(pkg.id || rawPkgId);
+    const selectedStay = hotelOptions[selectedHotel] || hotelOptions[0];
+    const pkgImage = (pkg.images && pkg.images[0]) || (selectedStay?.image) || 'https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=600&auto=format&fit=crop';
+    const finalAdults = adultsCount > 0 ? adultsCount : 1;
+    const finalPackagePrice = adultsCount > 0 ? totalPriceNum : effectivePricePerPerson;
+
+    // Store room / package details in checkout store
+    setRoomDetails(
+      `pkg-${pkgIdStr}`,
+      `Package: ${pkg.title}`,
+      finalPackagePrice,
+      pkg.title,
+      pkgImage,
+      pkg.location
+    );
+
+    // Build URL search params for checkout page
+    const query = new URLSearchParams();
+    query.set('hotelId', `pkg-${pkgIdStr}`);
+    query.set('roomName', `Package: ${pkg.title}`);
+    query.set('price', finalPackagePrice.toString());
+    query.set('hotelName', pkg.title);
+    query.set('hotelLocation', pkg.location);
+    query.set('hotelImage', pkgImage);
+    query.set('guests', finalAdults.toString());
+    query.set('adults', finalAdults.toString());
+    
+    if (startDate) {
+      query.set('checkIn', startDate.toISOString().split('T')[0]);
+    }
+    if (endDate) {
+      query.set('checkOut', endDate.toISOString().split('T')[0]);
+    }
+
+    router.push(`/checkout?${query.toString()}`);
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center pt-24 pb-20">
+        <div className="w-12 h-12 border-4 border-gray-200 border-t-brand-coral rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
+  if (!pkg) {
+    return (
+      <div className="min-h-screen flex items-center justify-center pt-24 pb-20">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Package Not Found</h2>
+          <p className="text-gray-600 mb-6">The package you are looking for does not exist or has been removed.</p>
+          <Link href="/packages" className="px-6 py-3 bg-brand-coral text-white font-bold rounded-xl hover:bg-brand-coral/90 transition-colors">
+            Browse Packages
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-white text-[#222222]">
@@ -86,7 +327,7 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
             <div className="flex items-center gap-4 text-[15px] font-medium text-gray-800">
               <span className="flex items-center gap-1">
                 <Star size={16} className="fill-current text-gray-900" />
-                4.8 · <span onClick={() => setIsAllReviewsModalOpen(true)} className="underline underline-offset-4 font-semibold text-gray-600 cursor-pointer hover:text-gray-900 transition-colors">128 reviews</span>
+                {Number(pkg.rating) > 0 ? pkg.rating : 'New'} · <span onClick={() => setIsAllReviewsModalOpen(true)} className="underline underline-offset-4 font-semibold text-gray-600 cursor-pointer hover:text-gray-900 transition-colors">{pkg.reviews || 0} reviews</span>
               </span>
               <span className="text-gray-300">•</span>
               <span className="flex items-center gap-1 text-gray-600">
@@ -98,11 +339,29 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
               </span>
             </div>
             <div className="flex items-center gap-4 text-[15px] font-medium">
-              <button className="flex items-center gap-2 hover:bg-gray-100 px-3 py-2 rounded-lg transition-colors">
-                <Share size={16} /> <span className="underline underline-offset-4">Share</span>
+              <button 
+                onClick={() => {
+                  navigator.clipboard.writeText(window.location.href);
+                  setIsCopied(true);
+                  setTimeout(() => setIsCopied(false), 2000);
+                }}
+                className="flex items-center gap-2 hover:bg-gray-100 px-3 py-2 rounded-lg transition-colors"
+              >
+                <Share size={16} /> <span className="underline underline-offset-4">{isCopied ? 'Copied!' : 'Share'}</span>
               </button>
-              <button className="flex items-center gap-2 hover:bg-gray-100 px-3 py-2 rounded-lg transition-colors">
-                <Heart size={16} /> <span className="underline underline-offset-4">Save</span>
+              <button 
+                onClick={() => {
+                  if (!isAuthenticated) {
+                    // Ideally open auth modal, but for now we rely on the store's behavior
+                    router.push('/login');
+                  } else {
+                    toggleSavedHotel(rawPkgId);
+                  }
+                }}
+                className="flex items-center gap-2 hover:bg-gray-100 px-3 py-2 rounded-lg transition-colors"
+              >
+                <Heart size={16} className={isSaved ? "fill-brand-coral text-brand-coral" : ""} /> 
+                <span className="underline underline-offset-4">{isSaved ? 'Saved' : 'Save'}</span>
               </button>
             </div>
           </div>
@@ -113,7 +372,7 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
           <h1 className="text-[26px] font-bold mb-2 font-heading leading-tight">{pkg.title}</h1>
           <div className="flex flex-wrap gap-y-2 gap-x-4 text-[14px] text-gray-600">
              <span className="flex items-center gap-1 font-semibold text-gray-900">
-                <Star size={14} className="fill-current" /> 4.8 (128)
+                <Star size={14} className="fill-current" /> {Number(pkg.rating) > 0 ? pkg.rating : 'New'} ({pkg.reviews || 0})
              </span>
              <span className="flex items-center gap-1"><MapPin size={14} /> {pkg.location}</span>
              <span className="flex items-center gap-1"><Clock size={14} /> {pkg.duration}</span>
@@ -152,24 +411,106 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
             <div className="flex flex-col md:flex-row md:items-center gap-4 md:gap-8 w-full">
               {/* Price */}
               <div className="flex flex-col shrink-0 pl-1">
-                <div className="flex items-baseline gap-1">
-                  <span className="text-[24px] font-bold text-gray-900">{totalPriceFormatted}</span>
+                <div className="flex items-baseline gap-1 overflow-hidden h-8">
+                  <AnimatePresence mode="wait">
+                    <motion.span 
+                      key={totalPriceFormatted}
+                      initial={{ opacity: 0, y: 12, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -12, scale: 0.95 }}
+                      transition={{ duration: 0.22, ease: "easeOut" }}
+                      className="text-[24px] font-bold text-gray-900 inline-block leading-tight"
+                    >
+                      {totalPriceFormatted}
+                    </motion.span>
+                  </AnimatePresence>
                   <span className="text-gray-500 text-[14px]">total</span>
                 </div>
-                <div className="text-[12px] text-gray-500">{pkg.price} / person</div>
+                <div className="text-[12px] font-medium text-gray-600 flex items-center gap-1.5 min-h-5">
+                  <AnimatePresence mode="wait">
+                    <motion.span
+                      key={pricePerPersonFormatted}
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -6 }}
+                      transition={{ duration: 0.18 }}
+                      className="inline-block"
+                    >
+                      {pricePerPersonFormatted} / person
+                    </motion.span>
+                  </AnimatePresence>
+                  <AnimatePresence>
+                    {(hotelExtraPerPerson !== 0 || activitiesExtraPerPerson > 0) && (
+                      <motion.span 
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.8 }}
+                        transition={{ duration: 0.2 }}
+                        className="text-[10px] text-brand-coral font-bold bg-brand-coral/10 px-2 py-0.5 rounded-full border border-brand-coral/20 shrink-0"
+                      >
+                        Customized
+                      </motion.span>
+                    )}
+                  </AnimatePresence>
+                </div>
               </div>
 
               {/* Booking Inputs */}
               <div className="flex w-full flex-col sm:flex-row border border-gray-300 rounded-xl overflow-hidden divide-y sm:divide-y-0 sm:divide-x divide-gray-300">
                 <div className="flex w-full sm:w-2/3 divide-x divide-gray-300">
-                  <div className="w-1/2 p-2.5 cursor-pointer hover:bg-gray-50 transition-colors">
-                    <div className="text-[10px] font-bold uppercase tracking-wider text-gray-900">Start Date</div>
-                    <div className="text-[13px] text-gray-600 mt-0.5 whitespace-nowrap overflow-hidden text-ellipsis">Add date</div>
-                  </div>
-                  <div className="w-1/2 p-2.5 cursor-pointer hover:bg-gray-50 transition-colors">
-                    <div className="text-[10px] font-bold uppercase tracking-wider text-gray-900">End Date</div>
-                    <div className="text-[13px] text-gray-600 mt-0.5 whitespace-nowrap overflow-hidden text-ellipsis">Add date</div>
-                  </div>
+                  {/* Start Date Popover */}
+                  <Popover open={isStartOpen} onOpenChange={setIsStartOpen}>
+                    <PopoverTrigger className="w-1/2 p-2.5 cursor-pointer hover:bg-gray-50 transition-colors text-left outline-none group">
+                      <div className="text-[10px] font-bold uppercase tracking-wider text-gray-900 group-hover:text-brand-coral transition-colors">Start Date</div>
+                      <div className="text-[13px] font-semibold text-gray-800 mt-0.5 whitespace-nowrap overflow-hidden text-ellipsis">
+                        {startDate ? format(startDate, 'dd/MM/yyyy') : 'Add date'}
+                      </div>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-4 rounded-3xl shadow-[0_12px_40px_rgba(0,0,0,0.12)] border border-gray-100 bg-white z-50" align="start" sideOffset={8}>
+                      <div className="flex items-center justify-between px-2 pb-3 mb-2 border-b border-gray-100">
+                        <div className="flex items-center gap-2">
+                          <span className="w-2.5 h-2.5 rounded-full bg-brand-coral animate-pulse" />
+                          <span className="text-xs font-bold uppercase tracking-wider text-brand-navy">
+                            Select Start Date
+                          </span>
+                        </div>
+                      </div>
+                      <Calendar
+                        mode="single"
+                        selected={startDate}
+                        onSelect={handleStartDateSelect}
+                        disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                        className="p-1"
+                      />
+                    </PopoverContent>
+                  </Popover>
+
+                  {/* End Date Popover */}
+                  <Popover open={isEndOpen} onOpenChange={setIsEndOpen}>
+                    <PopoverTrigger className="w-1/2 p-2.5 cursor-pointer hover:bg-gray-50 transition-colors text-left outline-none group">
+                      <div className="text-[10px] font-bold uppercase tracking-wider text-gray-900 group-hover:text-brand-coral transition-colors">End Date</div>
+                      <div className="text-[13px] font-semibold text-gray-800 mt-0.5 whitespace-nowrap overflow-hidden text-ellipsis">
+                        {endDate ? format(endDate, 'dd/MM/yyyy') : 'Add date'}
+                      </div>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-4 rounded-3xl shadow-[0_12px_40px_rgba(0,0,0,0.12)] border border-gray-100 bg-white z-50" align="start" sideOffset={8}>
+                      <div className="flex items-center justify-between px-2 pb-3 mb-2 border-b border-gray-100">
+                        <div className="flex items-center gap-2">
+                          <span className="w-2.5 h-2.5 rounded-full bg-brand-navy animate-pulse" />
+                          <span className="text-xs font-bold uppercase tracking-wider text-brand-navy">
+                            Select End Date
+                          </span>
+                        </div>
+                      </div>
+                      <Calendar
+                        mode="single"
+                        selected={endDate}
+                        onSelect={handleEndDateSelect}
+                        disabled={(date) => (startDate ? date <= startDate : date < new Date(new Date().setHours(0, 0, 0, 0)))}
+                        className="p-1"
+                      />
+                    </PopoverContent>
+                  </Popover>
                 </div>
                 <div className="w-full sm:w-1/3 p-2.5 transition-colors flex flex-col justify-center">
                   <div className="text-[10px] font-bold uppercase tracking-wider text-gray-900 mb-0.5">Travelers</div>
@@ -194,7 +535,10 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
 
             {/* Book Button */}
             <div className="w-full md:w-auto shrink-0">
-              <button className="w-full md:w-auto bg-brand-coral hover:bg-brand-coral/90 text-white font-bold text-[15px] px-8 py-3.5 rounded-xl transition-all shadow-sm active:scale-[0.98] whitespace-nowrap">
+              <button 
+                onClick={handleBookPackage} 
+                className="w-full md:w-auto bg-brand-coral hover:bg-brand-coral/90 text-white font-bold text-[15px] px-8 py-3.5 rounded-xl transition-all shadow-sm active:scale-[0.98] whitespace-nowrap cursor-pointer"
+              >
                 Book Now
               </button>
               <p className="text-center text-gray-500 text-[11px] mt-2 font-medium md:hidden">You won&apos;t be charged yet</p>
@@ -247,306 +591,217 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
 
             {/* Tab Content */}
             <div className="py-8 min-h-100">
-              
-              {/* Tab 1: Tour Plan */}
+                {/* Tab 1: Tour Plan */}
               {activeTab === 'plan' && (
                 <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
                   <h3 className="text-[20px] font-bold text-gray-900 mb-6 font-heading">Tour Flow & Start Location</h3>
-                  <div className="flex flex-col gap-4">
-                    
-                    {/* Day 1 */}
-                    <div className="border border-gray-200 rounded-xl overflow-hidden bg-white">
-                      <button 
-                        onClick={() => setOpenDay(openDay === 1 ? 0 : 1)}
-                        className={`w-full flex items-center justify-between p-5 bg-white hover:bg-gray-50 transition-colors ${openDay === 1 ? 'border-b border-gray-100' : ''}`}
-                      >
-                        <div className="flex items-center gap-4">
-                          <div className="w-12 h-12 rounded-full bg-brand-coral/10 flex items-center justify-center shrink-0">
-                            <CalendarDays className="text-brand-coral" size={24} />
-                          </div>
-                          <div className="text-left">
-                            <h4 className="font-bold text-[18px] text-brand-coral">Day 1</h4>
-                            <p className="text-gray-600 text-[15px] font-medium mt-0.5">Arrival & Hotel Check-in</p>
-                          </div>
-                        </div>
-                        {openDay === 1 ? <ChevronUp className="text-brand-coral" size={24} /> : <ChevronDown className="text-brand-coral" size={24} />}
-                      </button>
-                      
-                      <div 
-                        className={`grid transition-all duration-300 ease-in-out ${openDay === 1 ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}
-                      >
-                        <div className="overflow-hidden">
-                          <div className="p-5 pt-0 border-t border-gray-100 bg-white">
-                            <div className="relative pl-8 ml-6 border-l border-brand-coral/30 py-4 flex flex-col gap-8 mt-4">
-                              
-                              {/* Point 1 */}
-                              <div className="relative">
-                                <div className="absolute -left-9.5 top-1.5 w-3 h-3 rounded-full bg-brand-coral ring-4 ring-white" />
-                                <h5 className="font-bold text-gray-900 text-[15px]">Pickup from Airport / Railway Station</h5>
-                                <p className="text-gray-600 text-[14px] mt-1">Our representative will greet you and assist with your transfer.</p>
-                              </div>
-                              
-                              {/* Point 2 */}
-                              <div className="relative">
-                                <div className="absolute -left-9.5 top-1.5 w-3 h-3 rounded-full bg-brand-coral ring-4 ring-white" />
-                                <h5 className="font-bold text-gray-900 text-[15px]">Transfer to Hotel</h5>
-                                <p className="text-gray-600 text-[14px] mt-1">Enjoy a comfortable drive to your premium hotel.</p>
-                              </div>
-                              
-                              {/* Point 3 */}
-                              <div className="relative">
-                                <div className="absolute -left-9.5 top-1.5 w-3 h-3 rounded-full bg-brand-coral ring-4 ring-white" />
-                                <h5 className="font-bold text-gray-900 text-[15px]">Check-in at Hotel</h5>
-                                <p className="text-gray-600 text-[14px] mt-1">Complete check-in formalities and relax in your room.</p>
-                                <div className="flex gap-3 mt-3">
-                                  <button 
-                                    onClick={() => setIsHotelModalOpen(true)}
-                                    className="flex items-center gap-2 px-3 py-1.5 border border-brand-coral text-brand-coral rounded-lg text-[13px] font-semibold hover:bg-brand-coral hover:text-white transition-colors"
-                                  >
-                                    <Hotel size={14} /> View Hotel
-                                  </button>
-                                  <button 
-                                    onClick={() => setActiveTab('stays')}
-                                    className="flex items-center gap-2 px-3 py-1.5 border border-gray-300 text-gray-600 rounded-lg text-[13px] font-semibold hover:bg-gray-50 transition-colors"
-                                  >
-                                    <Pencil size={14} /> Change Hotel
-                                  </button>
+                  {itinerary.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-12 border border-dashed border-gray-200 rounded-2xl bg-gray-50 text-center">
+                      <p className="text-gray-500 font-medium text-sm">No detailed itinerary added for this package yet.</p>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col gap-4">
+                      {itinerary.map((day, dIdx) => {
+                        const dayNum = day.dayNumber || (dIdx + 1);
+                        const isDayOpen = openDay === dayNum;
+                        return (
+                          <div key={day.id || dIdx} className="border border-gray-200 rounded-xl overflow-hidden bg-white">
+                            <button 
+                              onClick={() => setOpenDay(isDayOpen ? 0 : dayNum)}
+                              className={`w-full flex items-center justify-between p-5 bg-white hover:bg-gray-50 transition-colors ${isDayOpen ? 'border-b border-gray-100' : ''}`}
+                            >
+                              <div className="flex items-center gap-4">
+                                <div className="w-12 h-12 rounded-full bg-brand-coral/10 flex items-center justify-center shrink-0">
+                                  <CalendarDays className="text-brand-coral" size={24} />
+                                </div>
+                                <div className="text-left">
+                                  <h4 className="font-bold text-[18px] text-brand-coral">Day {dayNum}</h4>
+                                  <p className="text-gray-600 text-[15px] font-medium mt-0.5">{day.title || day.activities || `Day ${dayNum} Overview`}</p>
                                 </div>
                               </div>
-                              
-                              {/* Point 4 */}
-                              <div className="relative">
-                                <div className="absolute -left-9.5 top-1.5 w-3 h-3 rounded-full bg-brand-coral ring-4 ring-white" />
-                                <h5 className="font-bold text-gray-900 text-[15px]">Evening at Leisure</h5>
-                                <p className="text-gray-600 text-[14px] mt-1">Unwind and enjoy the hotel amenities or take a stroll nearby.</p>
-                              </div>
-
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Day 2 */}
-                    <div className="border border-gray-200 rounded-xl overflow-hidden bg-white">
-                      <button 
-                        onClick={() => setOpenDay(openDay === 2 ? 0 : 2)}
-                        className={`w-full flex items-center justify-between p-5 bg-white hover:bg-gray-50 transition-colors ${openDay === 2 ? 'border-b border-gray-100' : ''}`}
-                      >
-                        <div className="flex items-center gap-4">
-                          <div className="w-12 h-12 rounded-full bg-brand-coral/10 flex items-center justify-center shrink-0">
-                            <CalendarDays className="text-brand-coral" size={24} />
-                          </div>
-                          <div className="text-left">
-                            <h4 className="font-bold text-[18px] text-brand-coral">Day 2</h4>
-                            <p className="text-gray-600 text-[15px] font-medium mt-0.5">Local Sightseeing & Activities</p>
-                          </div>
-                        </div>
-                        {openDay === 2 ? <ChevronUp className="text-brand-coral" size={24} /> : <ChevronDown className="text-brand-coral" size={24} />}
-                      </button>
-                      
-                      <div 
-                        className={`grid transition-all duration-300 ease-in-out ${openDay === 2 ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}
-                      >
-                        <div className="overflow-hidden">
-                          <div className="p-5 pt-0 bg-white">
-                            <div className="relative pl-8 ml-6 border-l border-brand-coral/30 py-4 flex flex-col gap-8 mt-4">
-                              <div className="relative">
-                                <div className="absolute -left-9.5 top-1.5 w-3 h-3 rounded-full bg-brand-coral ring-4 ring-white" />
-                                <h5 className="font-bold text-gray-900 text-[15px]">Guided Tour</h5>
-                                <p className="text-gray-600 text-[14px] mt-1">Explore major landmarks, scenic viewpoints, and cultural hubs.</p>
+                              {isDayOpen ? <ChevronUp className="text-brand-coral" size={24} /> : <ChevronDown className="text-brand-coral" size={24} />}
+                            </button>
+                            
+                            <div className={`grid transition-all duration-300 ease-in-out ${isDayOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
+                              <div className="overflow-hidden">
+                                <div className="p-5 pt-0 border-t border-gray-100 bg-white">
+                                  <div className="relative pl-8 ml-6 border-l border-brand-coral/30 py-4 flex flex-col gap-6 mt-4">
+                                    {(day.points && day.points.length > 0) ? (
+                                      day.points.map((pt: any, pIdx: number) => (
+                                        <div key={pIdx} className="relative">
+                                          <div className="absolute -left-9.5 top-1.5 w-3 h-3 rounded-full bg-brand-coral ring-4 ring-white" />
+                                          <h5 className="font-bold text-gray-900 text-[15px]">{pt.title}</h5>
+                                          <p className="text-gray-600 text-[14px] mt-1">{pt.description}</p>
+                                          {(pt.hasHotelActions || pt.title?.toLowerCase().includes('hotel') || pt.title?.toLowerCase().includes('check-in')) && (
+                                            <div className="flex gap-3 mt-3">
+                                              <button 
+                                                onClick={() => setIsHotelModalOpen(true)}
+                                                className="flex items-center gap-2 px-3 py-1.5 border border-brand-coral text-brand-coral rounded-lg text-[13px] font-semibold hover:bg-brand-coral hover:text-white transition-colors"
+                                              >
+                                                <Hotel size={14} /> View Hotel
+                                              </button>
+                                              <button 
+                                                onClick={() => setActiveTab('stays')}
+                                                className="flex items-center gap-2 px-3 py-1.5 border border-gray-300 text-gray-600 rounded-lg text-[13px] font-semibold hover:bg-gray-50 transition-colors"
+                                              >
+                                                <Pencil size={14} /> Change Hotel
+                                              </button>
+                                            </div>
+                                          )}
+                                        </div>
+                                      ))
+                                    ) : (
+                                      <div className="relative">
+                                        <div className="absolute -left-9.5 top-1.5 w-3 h-3 rounded-full bg-brand-coral ring-4 ring-white" />
+                                        <h5 className="font-bold text-gray-900 text-[15px]">{day.activities || day.title || 'Sightseeing & Activities'}</h5>
+                                        <p className="text-gray-600 text-[14px] mt-1">Enjoy scheduled activities and sightseeings for Day {dayNum}.</p>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
                               </div>
                             </div>
                           </div>
-                        </div>
-                      </div>
+                        );
+                      })}
                     </div>
-
-                    {/* Day 3 */}
-                    <div className="border border-gray-200 rounded-xl overflow-hidden bg-white">
-                      <button 
-                        onClick={() => setOpenDay(openDay === 3 ? 0 : 3)}
-                        className={`w-full flex items-center justify-between p-5 bg-white hover:bg-gray-50 transition-colors ${openDay === 3 ? 'border-b border-gray-100' : ''}`}
-                      >
-                        <div className="flex items-center gap-4">
-                          <div className="w-12 h-12 rounded-full bg-brand-coral/10 flex items-center justify-center shrink-0">
-                            <CalendarDays className="text-brand-coral" size={24} />
-                          </div>
-                          <div className="text-left">
-                            <h4 className="font-bold text-[18px] text-brand-coral">Day 3</h4>
-                            <p className="text-gray-600 text-[15px] font-medium mt-0.5">Adventure & Exploration</p>
-                          </div>
-                        </div>
-                        {openDay === 3 ? <ChevronUp className="text-brand-coral" size={24} /> : <ChevronDown className="text-brand-coral" size={24} />}
-                      </button>
-                      
-                      <div 
-                        className={`grid transition-all duration-300 ease-in-out ${openDay === 3 ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}
-                      >
-                        <div className="overflow-hidden">
-                          <div className="p-5 pt-0 bg-white">
-                            <div className="relative pl-8 ml-6 border-l border-brand-coral/30 py-4 flex flex-col gap-8 mt-4">
-                              <div className="relative">
-                                <div className="absolute -left-9.5 top-1.5 w-3 h-3 rounded-full bg-brand-coral ring-4 ring-white" />
-                                <h5 className="font-bold text-gray-900 text-[15px]">Experiential Day Trip</h5>
-                                <p className="text-gray-600 text-[14px] mt-1">Head out for an experiential day trip including optional adventure sports.</p>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Day 4 */}
-                    <div className="border border-gray-200 rounded-xl overflow-hidden bg-white">
-                      <button 
-                        onClick={() => setOpenDay(openDay === 4 ? 0 : 4)}
-                        className={`w-full flex items-center justify-between p-5 bg-white hover:bg-gray-50 transition-colors ${openDay === 4 ? 'border-b border-gray-100' : ''}`}
-                      >
-                        <div className="flex items-center gap-4">
-                          <div className="w-12 h-12 rounded-full bg-brand-coral/10 flex items-center justify-center shrink-0">
-                            <CalendarDays className="text-brand-coral" size={24} />
-                          </div>
-                          <div className="text-left">
-                            <h4 className="font-bold text-[18px] text-brand-coral">Day 4</h4>
-                            <p className="text-gray-600 text-[15px] font-medium mt-0.5">End Location & Departure</p>
-                          </div>
-                        </div>
-                        {openDay === 4 ? <ChevronUp className="text-brand-coral" size={24} /> : <ChevronDown className="text-brand-coral" size={24} />}
-                      </button>
-                      
-                      <div 
-                        className={`grid transition-all duration-300 ease-in-out ${openDay === 4 ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}
-                      >
-                        <div className="overflow-hidden">
-                          <div className="p-5 pt-0 bg-white">
-                            <div className="relative pl-8 ml-6 border-l border-brand-coral/30 py-4 flex flex-col gap-8 mt-4">
-                              <div className="relative">
-                                <div className="absolute -left-9.5 top-1.5 w-3 h-3 rounded-full bg-brand-coral ring-4 ring-white" />
-                                <h5 className="font-bold text-gray-900 text-[15px]">Drop off at Airport</h5>
-                                <p className="text-gray-600 text-[14px] mt-1">Check out from the hotel and drop off at the {pkg.location} airport or station.</p>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                  )}
                 </div>
               )}
 
               {/* Tab 2: Stays */}
               {activeTab === 'stays' && (
                 <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-                  <h3 className="text-[20px] font-bold text-gray-900 mb-6 font-heading">Available Accommodations</h3>
-                  <p className="text-gray-600 mb-6">Select your preferred accommodation type for this tour package.</p>
+                  <h3 className="text-[20px] font-bold text-gray-900 mb-2 font-heading">Available Accommodations</h3>
+                  <p className="text-gray-600 mb-6 text-[15px]">Select your preferred accommodation type for this tour package.</p>
                   
-                  <div className="flex flex-col gap-4">
-                    {/* Hotel Option 1 */}
-                    <div 
-                      onClick={() => setSelectedHotel(0)}
-                      className={`flex flex-col sm:flex-row gap-4 p-4 rounded-2xl border-2 transition-all cursor-pointer ${selectedHotel === 0 ? 'border-gray-900 bg-gray-50' : 'border-gray-200 hover:border-gray-300'}`}
-                    >
-                      <div className="w-full sm:w-50 h-35 relative rounded-xl overflow-hidden shrink-0">
-                        <Image src="https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=600&auto=format&fit=crop" alt="Premium Hotel" fill className="object-cover" />
-                      </div>
-                      <div className="flex flex-col justify-between grow">
-                        <div>
-                          <div className="flex justify-between items-start">
-                            <h4 className="font-bold text-[18px] text-gray-900">Premium Hotel Stay</h4>
-                            {selectedHotel === 0 && <CheckCircle2 className="text-gray-900 w-6 h-6" />}
-                          </div>
-                          <p className="text-[14px] text-gray-600 mt-2 line-clamp-2">Experience maximum comfort in our handpicked 3 or 4-star properties. Features excellent amenities, prime locations, and top-tier hygiene standards.</p>
-                        </div>
-                        <div className="mt-4 flex items-center justify-between">
-                          <div className="flex flex-wrap items-center gap-4 text-[13px] text-gray-500 font-medium">
-                            <span className="flex items-center gap-1"><Hotel size={14}/> AC Rooms</span>
-                            <span className="flex items-center gap-1"><Utensils size={14}/> Breakfast Included</span>
-                          </div>
-                          <div className="text-[16px] font-bold text-gray-900 shrink-0">₹3,500 <span className="text-[13px] font-normal text-gray-500">/ night</span></div>
-                        </div>
-                      </div>
+                  {hotelOptions.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-12 border border-dashed border-gray-200 rounded-2xl bg-gray-50 text-center">
+                      <p className="text-gray-500 font-medium text-sm">No accommodation options available for this package right now.</p>
                     </div>
-
-                    {/* Hotel Option 2 */}
-                    <div 
-                      onClick={() => setSelectedHotel(1)}
-                      className={`flex flex-col sm:flex-row gap-4 p-4 rounded-2xl border-2 transition-all cursor-pointer ${selectedHotel === 1 ? 'border-gray-900 bg-gray-50' : 'border-gray-200 hover:border-gray-300'}`}
-                    >
-                      <div className="w-full sm:w-50 h-35 relative rounded-xl overflow-hidden shrink-0">
-                        <Image src="https://images.unsplash.com/photo-1523987355523-c7b5b0dd90a7?q=80&w=600&auto=format&fit=crop" alt="Luxury Camp" fill className="object-cover" />
-                      </div>
-                      <div className="flex flex-col justify-between grow">
-                        <div>
-                          <div className="flex justify-between items-start">
-                            <h4 className="font-bold text-[18px] text-gray-900">Experiential Swiss Camps</h4>
-                            {selectedHotel === 1 && <CheckCircle2 className="text-gray-900 w-6 h-6" />}
+                  ) : (
+                    <div className="flex flex-col gap-4">
+                      {hotelOptions.map((hotel, index) => {
+                      const isSelected = selectedHotel === index;
+                      return (
+                        <motion.div
+                          key={hotel.id}
+                          whileHover={{ scale: 1.008 }}
+                          whileTap={{ scale: 0.995 }}
+                          transition={{ duration: 0.2 }}
+                          onClick={() => setSelectedHotel(index)}
+                          className={`flex flex-col sm:flex-row gap-4 p-4 rounded-2xl border-2 transition-all duration-300 cursor-pointer ${
+                            isSelected 
+                              ? 'border-gray-900 bg-gray-50/90 shadow-md ring-1 ring-gray-900/10' 
+                              : 'border-gray-200 hover:border-gray-300 bg-white hover:bg-gray-50/40'
+                          }`}
+                        >
+                          <div className="w-full sm:w-50 h-35 relative rounded-xl overflow-hidden shrink-0">
+                            <Image src={hotel.image} alt={hotel.title} fill className="object-cover transition-transform duration-500 hover:scale-105" />
                           </div>
-                          <p className="text-[14px] text-gray-600 mt-2 line-clamp-2">For applicable locations, enjoy a night under the stars in our luxury swiss tents. Includes bonfire, stargazing, and attached modern washrooms.</p>
-                        </div>
-                        <div className="mt-4 flex items-center justify-between">
-                          <div className="flex flex-wrap items-center gap-4 text-[13px] text-gray-500 font-medium">
-                            <span className="flex items-center gap-1"><Tent size={14}/> Luxury Tents</span>
-                            <span className="flex items-center gap-1"><Utensils size={14}/> All Meals</span>
+                          <div className="flex flex-col justify-between grow">
+                            <div>
+                              <div className="flex justify-between items-start gap-2">
+                                <h4 className="font-bold text-[18px] text-gray-900">{hotel.title}</h4>
+                                <AnimatePresence>
+                                  {isSelected && (
+                                    <motion.div
+                                      initial={{ scale: 0, opacity: 0 }}
+                                      animate={{ scale: 1, opacity: 1 }}
+                                      exit={{ scale: 0, opacity: 0 }}
+                                      transition={{ type: "spring", stiffness: 500, damping: 25 }}
+                                    >
+                                      <CheckCircle2 className="text-gray-900 w-6 h-6 shrink-0" />
+                                    </motion.div>
+                                  )}
+                                </AnimatePresence>
+                              </div>
+                              <p className="text-[14px] text-gray-600 mt-2 line-clamp-2">{hotel.description}</p>
+                            </div>
+                            <div className="mt-4 flex items-center justify-between">
+                              <div className="flex flex-wrap items-center gap-4 text-[13px] text-gray-500 font-medium">
+                                {(hotel.tags || []).map((tag: string, tIdx: number) => (
+                                  <span key={tIdx} className="flex items-center gap-1">
+                                    {tIdx === 0 ? <Hotel size={14}/> : <Utensils size={14}/>} {tag}
+                                  </span>
+                                ))}
+                              </div>
+                              <div className="shrink-0">
+                                {hotel.isDefault ? (
+                                  <span className="text-[13px] font-bold text-brand-coral bg-brand-coral/10 px-3 py-1 rounded-full border border-brand-coral/20">
+                                    Included in Package
+                                  </span>
+                                ) : (
+                                  <span className="text-[14px] font-bold text-gray-900">
+                                    {hotel.pricePerNight >= baseHotelPrice ? '+ ' : '- '}
+                                    ₹{Math.abs(hotel.pricePerNight - baseHotelPrice).toLocaleString('en-IN')}{' '}
+                                    <span className="text-[13px] font-normal text-gray-500">/ night</span>
+                                  </span>
+                                )}
+                              </div>
+                            </div>
                           </div>
-                          <div className="text-[16px] font-bold text-gray-900 shrink-0">₹4,200 <span className="text-[13px] font-normal text-gray-500">/ night</span></div>
-                        </div>
-                      </div>
+                        </motion.div>
+                      );
+                    })}
                     </div>
-                  </div>
+                  )}
                 </div>
               )}
 
               {/* Tab 3: Activities */}
               {activeTab === 'activities' && (
                 <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-                  <h3 className="text-[20px] font-bold text-gray-900 mb-6 font-heading">Included & Optional Activities</h3>
-                  <p className="text-gray-600 mb-6">Select the activities you want to add to your itinerary.</p>
+                  <h3 className="text-[20px] font-bold text-gray-900 mb-2 font-heading">Included & Optional Activities</h3>
+                  <p className="text-gray-600 mb-6 text-[15px]">Select the activities you want to add to your itinerary.</p>
                   
                   <div className="flex flex-col gap-4">
-                    {/* Activity Option 1 */}
-                    <div 
-                      onClick={() => toggleActivity(0)}
-                      className={`flex flex-col sm:flex-row gap-4 p-4 rounded-2xl border-2 transition-all cursor-pointer ${selectedActivities.includes(0) ? 'border-brand-coral bg-brand-coral/5' : 'border-gray-200 hover:border-gray-300'}`}
-                    >
-                      <div className="w-full sm:w-37.5 h-30 relative rounded-xl overflow-hidden shrink-0">
-                        <Image src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=600&auto=format&fit=crop" alt="Local Sightseeing" fill className="object-cover" />
-                      </div>
-                      <div className="flex flex-col justify-between grow">
-                        <div>
-                          <div className="flex justify-between items-start">
-                            <h4 className="font-bold text-[18px] text-gray-900">Guided Local Sightseeing</h4>
-                            {selectedActivities.includes(0) && <CheckCircle2 className="text-brand-coral w-6 h-6" />}
+                    {activityOptions.map((act, index) => {
+                      const isSelected = selectedActivities.includes(index);
+                      return (
+                        <motion.div
+                          key={act.id}
+                          whileHover={{ scale: 1.008 }}
+                          whileTap={{ scale: 0.995 }}
+                          transition={{ duration: 0.2 }}
+                          onClick={() => toggleActivity(index)}
+                          className={`flex flex-col sm:flex-row gap-4 p-4 rounded-2xl border-2 transition-all duration-300 cursor-pointer ${
+                            isSelected 
+                              ? 'border-brand-coral bg-brand-coral/5 shadow-sm ring-1 ring-brand-coral/20' 
+                              : 'border-gray-200 hover:border-gray-300 bg-white hover:bg-gray-50/40'
+                          }`}
+                        >
+                          <div className="w-full sm:w-37.5 h-30 relative rounded-xl overflow-hidden shrink-0">
+                            <Image src={act.image} alt={act.title} fill className="object-cover transition-transform duration-500 hover:scale-105" />
                           </div>
-                          <p className="text-[14px] text-gray-600 mt-2 line-clamp-2">Explore the best landmarks and hidden gems with our expert local guides. Includes photography points and cultural hubs.</p>
-                        </div>
-                        <div className="mt-4 flex items-center gap-4 text-[13px] text-brand-coral font-bold">
-                          Included in Package
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Activity Option 2 */}
-                    <div 
-                      onClick={() => toggleActivity(1)}
-                      className={`flex flex-col sm:flex-row gap-4 p-4 rounded-2xl border-2 transition-all cursor-pointer ${selectedActivities.includes(1) ? 'border-brand-coral bg-brand-coral/5' : 'border-gray-200 hover:border-gray-300'}`}
-                    >
-                      <div className="w-full sm:w-37.5 h-30 relative rounded-xl overflow-hidden shrink-0">
-                        <Image src="https://images.unsplash.com/photo-1593693397690-362cb9666fc2?q=80&w=600&auto=format&fit=crop" alt="Adventure Sports" fill className="object-cover" />
-                      </div>
-                      <div className="flex flex-col justify-between grow">
-                        <div>
-                          <div className="flex justify-between items-start">
-                            <h4 className="font-bold text-[18px] text-gray-900">Adventure Sports Pass</h4>
-                            {selectedActivities.includes(1) && <CheckCircle2 className="text-brand-coral w-6 h-6" />}
+                          <div className="flex flex-col justify-between grow">
+                            <div>
+                              <div className="flex justify-between items-start gap-2">
+                                <h4 className="font-bold text-[18px] text-gray-900">{act.title}</h4>
+                                <AnimatePresence>
+                                  {isSelected && (
+                                    <motion.div
+                                      initial={{ scale: 0, opacity: 0 }}
+                                      animate={{ scale: 1, opacity: 1 }}
+                                      exit={{ scale: 0, opacity: 0 }}
+                                      transition={{ type: "spring", stiffness: 500, damping: 25 }}
+                                    >
+                                      <CheckCircle2 className="text-brand-coral w-6 h-6 shrink-0" />
+                                    </motion.div>
+                                  )}
+                                </AnimatePresence>
+                              </div>
+                              <p className="text-[14px] text-gray-600 mt-2 line-clamp-2">{act.description}</p>
+                            </div>
+                            <div className="mt-4 flex items-center justify-between">
+                              <span className={`text-[13px] font-bold ${act.pricePerPerson === 0 ? "text-brand-coral" : "text-gray-900"}`}>
+                                {act.priceLabel}
+                              </span>
+                            </div>
                           </div>
-                          <p className="text-[14px] text-gray-600 mt-2 line-clamp-2">Get an adrenaline rush with our adventure sports pass. Includes zip-lining, river rafting, and bungee jumping (where applicable).</p>
-                        </div>
-                        <div className="mt-4 flex items-center gap-4 text-[13px] text-gray-900 font-bold">
-                          + ₹2,500 / person
-                        </div>
-                      </div>
-                    </div>
+                        </motion.div>
+                      );
+                    })}
                   </div>
                 </div>
               )}
@@ -556,14 +811,14 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
                 <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
                   <div className="flex items-center gap-4 mb-8 pb-8 border-b border-gray-200">
                     <div className="text-center">
-                      <h3 className="text-[48px] font-black text-gray-900 leading-none">4.8</h3>
+                      <h3 className="text-[48px] font-black text-gray-900 leading-none">{Number(pkg.rating) > 0 ? pkg.rating : 'New'}</h3>
                       <div className="flex items-center justify-center gap-1 mt-1 text-gray-900">
                         <Star size={12} className="fill-current" /><Star size={12} className="fill-current" /><Star size={12} className="fill-current" /><Star size={12} className="fill-current" /><StarHalf size={12} className="fill-current" />
                       </div>
                     </div>
                     <div>
                       <h4 className="font-bold text-[18px] text-gray-900">Guest Favorite</h4>
-                      <p className="text-gray-500 text-[14px]">Based on 128 verified reviews</p>
+                      <p className="text-gray-500 text-[14px]">Based on {pkg.reviews || 0} verified reviews</p>
                     </div>
                     <div className="ml-auto">
                       <button 
@@ -575,37 +830,20 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
                     </div>
                   </div>
                   
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                    <div>
-                      <div className="flex items-center gap-3 mb-2">
-                        <div className="w-10 h-10 bg-gray-200 rounded-full" />
-                        <div>
-                          <p className="font-bold text-[14px]">Rahul S.</p>
-                          <p className="text-[12px] text-gray-500">October 2025</p>
-                        </div>
-                      </div>
-                      <p className="text-[14px] text-gray-700">&quot;Amazing experience! The tour flow was perfect and the stays were top-notch.&quot;</p>
+                  {Number(pkg.reviews) > 0 ? (
+                    <div className="mt-4">
+                      <button 
+                        onClick={() => setIsAllReviewsModalOpen(true)}
+                        className="px-6 py-3 border border-gray-900 text-gray-900 font-bold rounded-xl hover:bg-gray-50 transition-colors"
+                      >
+                        Show all {pkg.reviews} reviews
+                      </button>
                     </div>
-                    <div>
-                      <div className="flex items-center gap-3 mb-2">
-                        <div className="w-10 h-10 bg-gray-200 rounded-full" />
-                        <div>
-                          <p className="font-bold text-[14px]">Priya M.</p>
-                          <p className="text-[12px] text-gray-500">September 2025</p>
-                        </div>
-                      </div>
-                      <p className="text-[14px] text-gray-700">&quot;Everything was taken care of. The activities included were totally worth it!&quot;</p>
+                  ) : (
+                    <div className="py-8 text-center bg-gray-50 rounded-xl border border-gray-100">
+                      <p className="text-gray-500 font-medium">No reviews yet. Be the first to leave a review!</p>
                     </div>
-                  </div>
-                  
-                  <div className="mt-8">
-                    <button 
-                      onClick={() => setIsAllReviewsModalOpen(true)}
-                      className="px-6 py-3 border border-gray-900 text-gray-900 font-bold rounded-xl hover:bg-gray-50 transition-colors"
-                    >
-                      Show all 241 reviews
-                    </button>
-                  </div>
+                  )}
                 </div>
               )}
 
@@ -853,52 +1091,121 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
         )}
 
         {/* Write Review Modal */}
-        {isReviewModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
-            <div 
-              className="absolute inset-0 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200"
-              onClick={() => setIsReviewModalOpen(false)}
-            />
-            <div className="relative w-full max-w-lg bg-white rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-              <div className="flex items-center justify-between p-6 border-b border-gray-100">
-                <h3 className="text-xl font-bold text-gray-900 font-heading">Write a Review</h3>
+        <AnimatePresence>
+          {isReviewModalOpen && (
+            <motion.div 
+              initial={{ opacity: 0, y: 50 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 50 }}
+              transition={{ duration: 0.3 }}
+              className="fixed inset-0 z-50 bg-white overflow-y-auto"
+            >
+              <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-md border-b border-gray-100 px-6 py-4 flex items-center">
                 <button 
                   onClick={() => setIsReviewModalOpen(false)}
-                  className="w-8 h-8 flex items-center justify-center bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-full transition-colors"
+                  className="w-10 h-10 rounded-full hover:bg-gray-100 flex items-center justify-center transition-colors mr-4"
                 >
-                  <X size={18} />
+                  <X size={24} />
                 </button>
               </div>
-              <div className="p-6">
-                <div className="mb-6">
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Overall Rating</label>
-                  <div className="flex gap-2">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <button key={star} className="text-gray-300 hover:text-yellow-400 transition-colors">
-                        <Star size={32} className="fill-current" />
-                      </button>
-                    ))}
+  
+              <div className="max-w-150 mx-auto px-6 py-10">
+                <h2 className="text-[32px] font-bold text-brand-navy mb-10">
+                  Write a review
+                </h2>
+                
+                <div className="space-y-8">
+                  <div>
+                    <h3 className="text-[18px] font-semibold text-brand-navy mb-4">Your Name</h3>
+                    <input 
+                      type="text"
+                      value={newReviewName}
+                      onChange={(e) => setNewReviewName(e.target.value)}
+                      placeholder="Enter your name"
+                      className="w-full p-4 rounded-xl border border-gray-300 focus:border-brand-navy focus:ring-1 focus:ring-brand-navy outline-none"
+                    />
+                  </div>
+                  
+                  <div>
+                    <h3 className="text-[18px] font-semibold text-brand-navy mb-4">Overall rating</h3>
+                    <div className="flex gap-2">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <button 
+                          key={star}
+                          type="button"
+                          onClick={() => setNewRating(star)}
+                          className="transition-transform hover:scale-110 focus:outline-none"
+                        >
+                          <Star 
+                            size={40} 
+                            className={`${star <= newRating ? 'fill-amber-400 text-amber-400' : 'text-gray-300'}`} 
+                            strokeWidth={1.5}
+                          />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+  
+                  <div>
+                    <h3 className="text-[18px] font-semibold text-brand-navy mb-4">What aspect are you reviewing?</h3>
+                    <select 
+                      value={newReviewCategory}
+                      onChange={(e) => setNewReviewCategory(e.target.value)}
+                      className="w-full p-4 rounded-xl border border-gray-300 focus:border-brand-navy focus:ring-1 focus:ring-brand-navy outline-none bg-white appearance-none"
+                    >
+                      {['Experience', 'Value', 'Guide', 'Accommodation', 'Food', 'Other'].map(filter => (
+                        <option key={filter} value={filter}>{filter}</option>
+                      ))}
+                    </select>
+                  </div>
+  
+                  <div>
+                    <h3 className="text-[18px] font-semibold text-brand-navy mb-4">Your review</h3>
+                    <textarea 
+                      rows={6}
+                      value={newReviewText}
+                      onChange={(e) => setNewReviewText(e.target.value)}
+                      placeholder="Share your experience..."
+                      className="w-full p-4 rounded-xl border border-gray-300 focus:border-brand-navy focus:ring-1 focus:ring-brand-navy outline-none resize-none"
+                    />
+                  </div>
+  
+                  <div className="pt-4 border-t border-gray-200 flex justify-end gap-4">
+                    <button 
+                      onClick={() => setIsReviewModalOpen(false)}
+                      className="px-6 py-3 font-semibold text-[15px] hover:underline"
+                      disabled={isSubmitting}
+                    >
+                      Cancel
+                    </button>
+                    <button 
+                      onClick={() => {
+                        // Submit logic would go here
+                        setIsSubmitting(true);
+                        setTimeout(() => {
+                          setIsSubmitting(false);
+                          setIsReviewModalOpen(false);
+                          setNewRating(0);
+                          setNewReviewName('');
+                          setNewReviewText('');
+                        }, 1000);
+                      }}
+                      className={`px-8 py-3 rounded-xl font-semibold text-[15px] transition-colors flex items-center gap-2 ${
+                        newRating > 0 && newReviewText.length > 0 && newReviewName.length > 0
+                          ? 'bg-brand-coral text-white hover:bg-[#d95d62]'
+                          : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                      }`}
+                      disabled={newRating === 0 || newReviewText.length === 0 || newReviewName.length === 0 || isSubmitting}
+                    >
+                      {isSubmitting ? <div className="w-5 h-5 rounded-full border-2 border-white border-t-transparent animate-spin" /> : null}
+                      {isSubmitting ? 'Submitting...' : 'Submit'}
+                    </button>
                   </div>
                 </div>
-                <div className="mb-6">
-                  <label htmlFor="reviewText" className="block text-sm font-semibold text-gray-700 mb-2">Your Review</label>
-                  <textarea 
-                    id="reviewText" 
-                    rows={4} 
-                    className="w-full border border-gray-300 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-brand-coral/50 focus:border-brand-coral resize-none"
-                    placeholder="Tell us about your experience..."
-                  ></textarea>
-                </div>
-                <button 
-                  className="w-full bg-brand-coral hover:bg-brand-coral/90 text-white font-bold py-3.5 rounded-xl transition-all shadow-sm active:scale-[0.98]"
-                  onClick={() => setIsReviewModalOpen(false)}
-                >
-                  Submit Review
-                </button>
               </div>
-            </div>
-          </div>
-        )}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
   );
 }

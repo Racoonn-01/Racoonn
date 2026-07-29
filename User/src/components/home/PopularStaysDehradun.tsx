@@ -4,8 +4,14 @@ import { useRef, useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Heart, ChevronRight, Star } from 'lucide-react';
+import { databases } from '@/lib/appwrite/config';
+import { Query } from 'appwrite';
 import { isActiveProperty } from '@/lib/utils';
 import { getProperties } from '@/lib/appwrite/api';
+
+import { Models } from 'appwrite';
+
+const DATABASE_ID = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID!;
 
 const dehradunStays = [
   {
@@ -69,25 +75,51 @@ export default function PopularStaysDehradun() {
     async function loadProperties() {
       const data = await getProperties();
       if (data && data.length > 0) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const dehradunProps = data.filter((doc: any) => 
-          (doc.city && (doc.city.toLowerCase().includes('dehradun') || doc.city.toLowerCase().includes('haldwani'))) || 
-          (doc.location && (doc.location.toLowerCase().includes('dehradun') || doc.location.toLowerCase().includes('haldwani')))
-        );
+        // Fetch rooms for room price mapping
+        const roomsMap: Record<string, number> = {};
+        try {
+          const roomColId = process.env.NEXT_PUBLIC_APPWRITE_ROOM_COLLECTION_ID || 'rooms';
+          const roomsRes = await databases.listDocuments(DATABASE_ID, roomColId, [Query.limit(500)]);
+          roomsRes.documents.forEach((d: Models.Document) => {
+            const room = d as unknown as Record<string, unknown>;
+            const pId = room.propertyId as string;
+            const p = Number(room.price || room.roomPrice || room.basePrice || 0);
+            if (pId && p > 0) {
+              if (!roomsMap[pId] || p < roomsMap[pId]) {
+                roomsMap[pId] = p;
+              }
+            }
+          });
+        } catch (e) {
+          console.error("Could not fetch rooms for price mapping:", e);
+        }
+
+        const dehradunProps = data.filter((d: Models.Document) => {
+          const doc = d as unknown as Record<string, unknown>;
+          const city = String(doc.city || '').toLowerCase();
+          const location = String(doc.location || '').toLowerCase();
+          return city.includes('dehradun') || city.includes('haldwani') || location.includes('dehradun') || location.includes('haldwani');
+        });
         
         if (dehradunProps.length > 0) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const mappedProperties = dehradunProps.map((doc: any) => ({
-            id: doc.$id,
-            title: doc.propertyName || doc.title || 'Unknown Property',
-            location: doc.location || `${doc.city || ''}, ${doc.state || ''}`,
-            details: doc.description || doc.details || '',
-            rating: doc.rating || 'New',
-            reviews: doc.reviewsCount || 0,
-            price: `₹${doc.price || 0}`,
-            image: (doc.photos && doc.photos[0]) ? doc.photos[0] : 'https://images.unsplash.com/photo-1542314831-c6a4d14d837e?q=80&w=800&auto=format&fit=crop',
-            status: doc.status?.toLowerCase(),
-          }));
+          const mappedProperties = dehradunProps.map((d: Models.Document) => {
+            const doc = d as unknown as Record<string, unknown>;
+            const rawPrice = Number(doc.price || doc.startingPrice || doc.minPrice || doc.basePrice || doc.pricePerNight || roomsMap[String(doc.$id)] || 0);
+            const displayPrice = rawPrice > 0 ? `₹${rawPrice.toLocaleString('en-IN')}` : '₹4,500';
+            const photos = Array.isArray(doc.photos) ? doc.photos : [];
+
+            return {
+              id: String(doc.$id || ''),
+              title: String(doc.propertyName || doc.title || 'Unknown Property'),
+              location: String(doc.location || `${doc.city || ''}, ${doc.state || ''}`),
+              details: String(doc.description || doc.details || ''),
+              rating: doc.rating ? String(doc.rating) : 'New',
+              reviews: Number(doc.reviewsCount || 0),
+              price: displayPrice,
+              image: photos[0] ? String(photos[0]) : 'https://images.unsplash.com/photo-1542314831-c6a4d14d837e?q=80&w=800&auto=format&fit=crop',
+              status: typeof doc.status === 'string' ? doc.status.toLowerCase() : undefined,
+            };
+          });
           setProperties(mappedProperties);
         }
       }
@@ -135,16 +167,16 @@ export default function PopularStaysDehradun() {
               </div>
 
               {/* Info */}
-              <div className="flex flex-col flex-1">
-                <div className="flex justify-between items-start">
-                  <h3 className="font-semibold text-[15px] text-gray-900 pr-2 line-clamp-2">{stay.title}</h3>
+              <div className="flex flex-col flex-1 min-w-0">
+                <div className="flex justify-between items-start min-w-0">
+                  <h3 className="font-semibold text-[15px] text-gray-900 pr-2 line-clamp-1 flex-1 min-w-0">{stay.title}</h3>
                   <div className="flex items-center gap-1 text-[14px] font-medium shrink-0 ml-2">
                     <Star size={13} className="fill-gray-900 text-gray-900" />
                     {Number(stay.rating) > 0 ? stay.rating : 'New'} <span className="text-gray-500 font-normal">({stay.reviews})</span>
                   </div>
                 </div>
-                <p className="text-[14px] text-gray-500 truncate mt-0.5">{stay.location}</p>
-                <p className="text-[14px] text-gray-500 line-clamp-2">{stay.details}</p>
+                <p className="text-[14px] text-gray-500 truncate mt-0.5 w-full">{stay.location}</p>
+                <p className="text-[14px] text-gray-500 line-clamp-2 w-full">{stay.details}</p>
                 <div className="mt-auto pt-2 flex items-baseline gap-1">
                   <span className="text-[15px] font-semibold text-gray-900">{stay.price}</span>
                   <span className="text-[14px] text-gray-900">per night</span>

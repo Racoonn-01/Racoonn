@@ -15,7 +15,7 @@ const navLinks = [
   { name: 'Stays', href: '/search' },
   { name: 'Packages', href: '/packages' },
   { name: 'Offers', href: '/search?type=offers' },
-  { name: 'About Us', href: '/about' },
+  { name: 'Activities', href: '/activities' },
   { name: 'Help', href: '/help' },
 ];
 

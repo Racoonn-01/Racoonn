@@ -1,8 +1,10 @@
 "use client"
 
 import * as React from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import Image from "next/image"
 import { 
   LayoutDashboard, 
   Users, 
@@ -13,15 +15,16 @@ import {
   BadgeDollarSign, 
   CreditCard, 
   HandCoins, 
+  FileText,
   MessageSquare, 
   LifeBuoy, 
   Megaphone, 
   BarChart3, 
   Bell, 
   AlertTriangle, 
-  Activity, 
   Shield, 
-  Settings 
+  Settings,
+  Tent
 } from "lucide-react"
 
 import {
@@ -35,43 +38,84 @@ import {
   SidebarSeparator,
 } from "@/components/ui/sidebar"
 
-const navItems = [
-  { title: "Dashboard", url: "/admin/dashboard", icon: LayoutDashboard },
-  { title: "Vendor Management", url: "/admin/vendors", icon: Users },
-  { title: "Verification Center", url: "/admin/verification", icon: ShieldCheck },
-  { title: "Properties", url: "/admin/properties", icon: Building2 },
-  { title: "Bookings", url: "/admin/bookings", icon: CalendarDays },
-  { title: "Customers", url: "/admin/customers", icon: UserCircle },
+interface NavItem {
+  title: string;
+  url: string;
+  icon: React.ElementType;
+  key: string;
+}
+
+const navItems: NavItem[] = [
+  { title: "Dashboard", url: "/admin/dashboard", icon: LayoutDashboard, key: "Dashboard" },
+  { title: "Vendor Management", url: "/admin/vendors", icon: Users, key: "Vendors" },
+  { title: "Verification Center", url: "/admin/verification", icon: ShieldCheck, key: "Verification" },
+  { title: "Properties", url: "/admin/properties", icon: Building2, key: "Properties" },
+  { title: "Bookings", url: "/admin/bookings", icon: CalendarDays, key: "Bookings" },
+  { title: "Customers", url: "/admin/customers", icon: UserCircle, key: "Customers" },
 ]
 
-const financialItems = [
-  { title: "Revenue", url: "/admin/revenue", icon: BadgeDollarSign },
-  { title: "Payments", url: "/admin/payments", icon: CreditCard },
-  { title: "Payouts", url: "/admin/payouts", icon: HandCoins },
+const financialItems: NavItem[] = [
+  { title: "Revenue", url: "/admin/revenue", icon: BadgeDollarSign, key: "Revenue" },
+  { title: "Payments", url: "/admin/payments", icon: CreditCard, key: "Payments" },
+  { title: "Payouts", url: "/admin/payouts", icon: HandCoins, key: "Payouts" },
+  { title: "Invoice System", url: "/admin/invoices", icon: FileText, key: "Invoices" },
 ]
 
-const operationsItems = [
-  { title: "Reviews", url: "/admin/reviews", icon: MessageSquare },
-  { title: "Support", url: "/admin/support", icon: LifeBuoy },
-  { title: "Marketing", url: "/admin/marketing", icon: Megaphone },
-  // { title: "CMS", url: "/cms", icon: FileText },
+const operationsItems: NavItem[] = [
+  { title: "Reviews", url: "/admin/reviews", icon: MessageSquare, key: "Reviews" },
+  { title: "Support", url: "/admin/support", icon: LifeBuoy, key: "Support" },
+  { title: "Marketing", url: "/admin/marketing", icon: Megaphone, key: "Marketing" },
+  { title: "Activities", url: "/admin/activities", icon: Tent, key: "Activities" },
 ]
 
-const systemItems = [
-  { title: "Reports", url: "/admin/reports", icon: BarChart3 },
-  { title: "Notifications", url: "/admin/notifications", icon: Bell },
-  { title: "Fraud Detection", url: "/admin/fraud", icon: AlertTriangle },
-  { title: "Audit Logs", url: "/admin/audit", icon: Activity },
-  { title: "Role Management", url: "/admin/roles", icon: Shield },
-  { title: "Settings", url: "/admin/settings", icon: Settings },
+const systemItems: NavItem[] = [
+  { title: "Reports", url: "/admin/reports", icon: BarChart3, key: "Reports" },
+  { title: "Notifications", url: "/admin/notifications", icon: Bell, key: "Notifications" },
+  { title: "Fraud Detection", url: "/admin/fraud", icon: AlertTriangle, key: "Fraud" },
+  { title: "Role Management", url: "/admin/roles", icon: Shield, key: "Roles" },
+  { title: "Settings", url: "/admin/settings", icon: Settings, key: "Settings" },
 ]
-
-import Image from "next/image"
 
 export function AdminSidebar() {
   const pathname = usePathname()
+  const [session, setSession] = useState<{ email?: string; name?: string; allowedTabs?: string[] } | null>(null)
 
-  const renderMenuItems = (items: typeof navItems) => (
+  useEffect(() => {
+    try {
+      const cookies = document.cookie.split("; ");
+      const sessionCookie = cookies.find(row => row.startsWith("racoonn_admin_session="));
+      if (sessionCookie) {
+        const val = decodeURIComponent(sessionCookie.split("=")[1]);
+        const parsedSession = JSON.parse(val);
+        // Only set session if it changed to prevent cascading renders
+        if (JSON.stringify(session) !== JSON.stringify(parsedSession)) {
+          setSession(parsedSession);
+        }
+      }
+    } catch (e) {
+      console.error("Failed to parse session cookie:", e);
+    }
+  }, [pathname]);
+
+  const allowedTabs: string[] = session?.allowedTabs || [];
+  const isRootAdmin = session?.email === "admin@racoonn.com" || session?.email === "admin" || !session;
+  const isSuperAdmin = isRootAdmin || allowedTabs.includes("all");
+
+  const isTabAllowed = (key: string) => {
+    if (isSuperAdmin) return true;
+    return allowedTabs.includes(key);
+  };
+
+  const filterItems = (items: NavItem[]) => {
+    return items.filter(item => isTabAllowed(item.key));
+  };
+
+  const visibleNav = filterItems(navItems);
+  const visibleFinancial = filterItems(financialItems);
+  const visibleOperations = filterItems(operationsItems);
+  const visibleSystem = filterItems(systemItems);
+
+  const renderMenuItems = (items: NavItem[]) => (
     <SidebarMenu>
       {items.map((item) => {
         const isActive = pathname.startsWith(item.url)
@@ -80,7 +124,7 @@ export function AdminSidebar() {
             <SidebarMenuButton 
               isActive={isActive} 
               tooltip={item.title}
-              className={`rounded-xl transition-all duration-200 ${isActive ? 'bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground font-medium shadow-sm' : 'hover:bg-muted font-normal text-muted-foreground hover:text-foreground'}`}
+              className={`rounded-xl transition-all duration-200 ${isActive ? 'bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground font-medium shadow-xs' : 'hover:bg-muted font-normal text-muted-foreground hover:text-foreground'}`}
               render={<Link href={item.url} className="flex flex-row items-center gap-3 py-5" />}
             >
               <item.icon className="h-5 w-5 shrink-0" />
@@ -112,35 +156,54 @@ export function AdminSidebar() {
           />
         </div>
       </SidebarHeader>
+
       <SidebarContent className="gap-2">
-        <div className="px-3 py-2">
-          {renderMenuItems(navItems)}
-        </div>
-        <SidebarSeparator className="mx-4 opacity-50" />
-        <div className="px-3 py-2">
-          <div className="mb-2 px-4 text-xs font-bold text-muted-foreground/70 uppercase tracking-widest group-data-[collapsible=icon]:hidden">Finance</div>
-          {renderMenuItems(financialItems)}
-        </div>
-        <SidebarSeparator className="mx-4 opacity-50" />
-        <div className="px-3 py-2">
-          <div className="mb-2 px-4 text-xs font-bold text-muted-foreground/70 uppercase tracking-widest group-data-[collapsible=icon]:hidden">Operations</div>
-          {renderMenuItems(operationsItems)}
-        </div>
-        <SidebarSeparator className="mx-4 opacity-50" />
-        <div className="px-3 py-2">
-          <div className="mb-2 px-4 text-xs font-bold text-muted-foreground/70 uppercase tracking-widest group-data-[collapsible=icon]:hidden">System</div>
-          {renderMenuItems(systemItems)}
-        </div>
+        {visibleNav.length > 0 && (
+          <div className="px-3 py-2">
+            {renderMenuItems(visibleNav)}
+          </div>
+        )}
+
+        {visibleFinancial.length > 0 && (
+          <>
+            <SidebarSeparator className="mx-4 opacity-50" />
+            <div className="px-3 py-2">
+              <div className="mb-2 px-4 text-xs font-bold text-muted-foreground/70 uppercase tracking-widest group-data-[collapsible=icon]:hidden">Finance</div>
+              {renderMenuItems(visibleFinancial)}
+            </div>
+          </>
+        )}
+
+        {visibleOperations.length > 0 && (
+          <>
+            <SidebarSeparator className="mx-4 opacity-50" />
+            <div className="px-3 py-2">
+              <div className="mb-2 px-4 text-xs font-bold text-muted-foreground/70 uppercase tracking-widest group-data-[collapsible=icon]:hidden">Operations</div>
+              {renderMenuItems(visibleOperations)}
+            </div>
+          </>
+        )}
+
+        {visibleSystem.length > 0 && (
+          <>
+            <SidebarSeparator className="mx-4 opacity-50" />
+            <div className="px-3 py-2">
+              <div className="mb-2 px-4 text-xs font-bold text-muted-foreground/70 uppercase tracking-widest group-data-[collapsible=icon]:hidden">System</div>
+              {renderMenuItems(visibleSystem)}
+            </div>
+          </>
+        )}
       </SidebarContent>
+
       <SidebarFooter>
         <div className="p-4 group-data-[collapsible=icon]:hidden">
           <div className="flex items-center gap-3 rounded-xl p-3 hover:bg-muted/50 transition-colors cursor-pointer -mx-3">
             <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary font-bold">
-              SA
+              {session?.name ? session.name.substring(0, 2).toUpperCase() : "SA"}
             </div>
             <div className="flex flex-col">
-              <span className="text-sm font-semibold leading-none text-foreground">Super Admin</span>
-              <span className="text-xs text-muted-foreground mt-1 font-medium">admin@racoonn.com</span>
+              <span className="text-sm font-semibold leading-none text-foreground">{session?.name || "Super Admin"}</span>
+              <span className="text-xs text-muted-foreground mt-1 font-medium">{session?.email || "admin@racoonn.com"}</span>
             </div>
           </div>
         </div>

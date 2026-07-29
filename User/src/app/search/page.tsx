@@ -6,108 +6,201 @@ import PropertyCard, { Property } from '@/components/search/PropertyCard';
 import MapMockup from '@/components/search/MapMockup';
 import { SlidersHorizontal, ChevronDown } from 'lucide-react';
 import FilterModal, { FilterState } from '@/components/search/FilterModal';
-import { isActiveProperty } from '@/lib/utils';
+import PricePopover from '@/components/search/PricePopover';
+import { isActiveProperty, parseLocationGeo } from '@/lib/utils';
 import { getProperties } from '@/lib/appwrite/api';
+import { databases } from '@/lib/appwrite/config';
 
-const mockProperties: Property[] = [
-  {
-    id: 's1',
-    images: [
-      'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?q=80&w=800&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1502672260266-1c1529393614?q=80&w=800&auto=format&fit=crop',
-    ],
-    title: 'Hotel in Gurugram',
-    subtitle: 'Charming Studio | Kitchenette & Balcony',
-    details: '1 bedroom · 1 king bed · 1 bathroom',
-    dates: '3–8 Jun',
-    price: 11497,
-    rating: 4.52,
-    reviews: 463,
-    isSuperhost: true,
-    freeCancellation: true,
-    status: 'active',
-  },
-  {
-    id: 's2',
-    images: [
-      'https://images.unsplash.com/photo-1502672023488-70e25813eb80?q=80&w=800&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1493809842364-78817add7ffb?q=80&w=800&auto=format&fit=crop',
-    ],
-    title: 'Flat in Gurugram',
-    subtitle: 'Stylish Luxury 1BHK w/ Balcony | Prime DLF Phase 3',
-    details: '1 bedroom · 1 bed · 1 bathroom',
-    dates: '4–9 Jun',
-    price: 18369,
-    rating: 4.71,
-    reviews: 414,
-    freeCancellation: true,
-    status: 'active',
-  },
-  {
-    id: 's3',
-    images: [
-      'https://images.unsplash.com/photo-1512918728675-ed5a9ecdebfd?q=80&w=800&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1513694203232-719a280e022f?q=80&w=800&auto=format&fit=crop',
-    ],
-    title: 'Guest House in Noida',
-    subtitle: 'Modern Room near Metro | Free Parking & Wi-Fi',
-    details: '1 bedroom · 1 king bed · 1 bathroom',
-    dates: '3–8 Jun',
-    price: 1299,
-    rating: 4.6,
-    reviews: 312,
-    isSuperhost: true,
-    freeCancellation: true,
-    status: 'active',
-  },
-  {
-    id: 's4',
-    images: [
-      'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?q=80&w=800&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1484154218962-a197022b5858?q=80&w=800&auto=format&fit=crop',
-    ],
-    title: 'Apartment in Faridabad',
-    subtitle: 'Cozy 2BHK | Fully Furnished | Near Bata Chowk',
-    details: '2 bedrooms · 2 beds · 2 bathrooms',
-    dates: '3–8 Jun',
-    price: 2199,
-    rating: 4.9,
-    reviews: 218,
-    isGuestFavorite: true,
-    status: 'active',
-  },
-];
+const DATABASE_ID = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID!;
 
 const filters = [
-  'Price', 'Type of place', 'Washing machine', 'WiFi', 'Allows pets', 'Instant Book', 'Air conditioning', 'Free parking', 'TV', 'Kitchen'
+  'Price', 'Washing machine', 'WiFi', 'Allows pets', 'Instant Book', 'Air conditioning', 'Free parking', 'TV', 'Kitchen'
 ];
+
+interface AppwriteDoc {
+  $id: string;
+  propertyName?: string;
+  title?: string;
+  description?: string;
+  bedrooms?: number;
+  beds?: number;
+  bathrooms?: number;
+  location?: string;
+  city?: string;
+  state?: string;
+  lat?: number;
+  lng?: number;
+  rating?: number;
+  reviewsCount?: number;
+  price?: number;
+  startingPrice?: number;
+  minPrice?: number;
+  basePrice?: number;
+  pricePerNight?: number;
+  photos?: string[];
+  status?: string;
+  propertyId?: string;
+  roomPrice?: number;
+  amenities?: string[] | string;
+  amenityList?: string[] | string;
+}
+
+function checkPropertyAmenity(property: Property, filterKey: string, searchString: string): boolean {
+  const f = filterKey.toLowerCase().trim();
+  const propertyAmenities = property.amenities || [];
+
+  const hasVendorAmenity = (...keys: string[]) => {
+    return propertyAmenities.some((a) =>
+      keys.some((k) => a === k || a.includes(k))
+    );
+  };
+
+  if (f.includes('wifi') || f === 'wifi') {
+    if (hasVendorAmenity('wifi', 'internet')) return true;
+    return searchString.includes('wifi') || searchString.includes('wi-fi') || searchString.includes('internet');
+  }
+
+  if (f.includes('parking') || f.includes('free parking')) {
+    if (hasVendorAmenity('parking', 'ev', 'garage')) return true;
+    return searchString.includes('park') || searchString.includes('garage');
+  }
+
+  if (f.includes('kitchen')) {
+    if (hasVendorAmenity('kitchen', 'restaurant', 'room_service')) return true;
+    return searchString.includes('kitchen') || searchString.includes('cook');
+  }
+
+  if (f.includes('wash') || f.includes('machine') || f.includes('laundry')) {
+    if (hasVendorAmenity('laundry', 'washer', 'dryer')) return true;
+    return searchString.includes('wash') || searchString.includes('machine') || searchString.includes('laundry');
+  }
+
+  if (f.includes('air') || f.includes('conditioning') || f === 'ac') {
+    if (hasVendorAmenity('ac', 'air', 'conditioning')) return true;
+    return searchString.includes('air') || searchString.includes('ac') || searchString.includes('cool') || searchString.includes('condition');
+  }
+
+  if (f.includes('pet') || f.includes('allows pets')) {
+    if (hasVendorAmenity('pets', 'pet')) return true;
+    return searchString.includes('pet') || searchString.includes('dog') || searchString.includes('cat') || searchString.includes('allow');
+  }
+
+  if (f.includes('instant') || f.includes('instant book')) {
+    return Boolean(property.isSuperhost || searchString.includes('instant'));
+  }
+
+  if (f === 'tv' || f.includes('tv')) {
+    if (hasVendorAmenity('tv', 'smart_tv', 'television')) return true;
+    return searchString.includes('tv') || searchString.includes('television');
+  }
+
+  if (f.includes('pool')) {
+    if (hasVendorAmenity('pool', 'swimming')) return true;
+    return searchString.includes('pool') || searchString.includes('swim');
+  }
+
+  if (f.includes('gym') || f.includes('fitness')) {
+    if (hasVendorAmenity('gym', 'fitness')) return true;
+    return searchString.includes('gym') || searchString.includes('fitness');
+  }
+
+  if (f.includes('spa')) {
+    if (hasVendorAmenity('spa')) return true;
+    return searchString.includes('spa') || searchString.includes('massage');
+  }
+
+  if (f.includes('balcony') || f.includes('patio')) {
+    if (hasVendorAmenity('balcony', 'patio', 'terrace')) return true;
+    return searchString.includes('balcony') || searchString.includes('patio') || searchString.includes('terrace');
+  }
+
+  if (f.includes('bar')) {
+    if (hasVendorAmenity('bar')) return true;
+    return searchString.includes('bar') || searchString.includes('lounge');
+  }
+
+  if (propertyAmenities.length > 0) {
+    if (propertyAmenities.some((a) => a.includes(f) || f.includes(a))) return true;
+  }
+
+  return searchString.includes(f);
+}
 
 function SearchContent() {
   const searchParams = useSearchParams();
-  const location = searchParams.get('location') || 'Delhi NCR';
-  const [properties, setProperties] = useState<Property[]>(mockProperties);
+  const location = searchParams.get('location') || searchParams.get('destination') || 'anywhere';
+  const [properties, setProperties] = useState<Property[]>([]);
+  const [loading, setLoading] = useState(true);
   const [selectedFilters, setSelectedFilters] = useState<string[]>([]);
+  const [selectedPropertyId, setSelectedPropertyId] = useState<string | null>(null);
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+  const [isPricePopoverOpen, setIsPricePopoverOpen] = useState(false);
   const [advancedFilters, setAdvancedFilters] = useState<FilterState | null>(null);
 
   useEffect(() => {
     async function loadProperties() {
+      setLoading(true);
       const data = await getProperties();
-      if (data && data.length > 0) {
-        const mappedProperties: Property[] = data.map((doc: any) => ({
-          id: doc.$id,
-          title: doc.propertyName || doc.title || 'Unknown Property',
-          subtitle: doc.description || '',
-          details: `${doc.bedrooms || 0} bedrooms · ${doc.beds || 0} beds · ${doc.bathrooms || 0} bathrooms`,
-          location: doc.location || `${doc.city || ''}, ${doc.state || ''}`,
-          rating: doc.rating || 0,
-          reviews: doc.reviewsCount || 0,
-          price: doc.price || 0,
-          images: (doc.photos && doc.photos.length > 0) ? doc.photos : ['https://images.unsplash.com/photo-1542314831-c6a4d14d837e?q=80&w=800&auto=format&fit=crop'],
-          status: doc.status?.toLowerCase() || 'active',
-        }));
+      
+      // Fetch rooms to calculate accurate min starting price for properties without a valid price
+      const roomsMap: Record<string, number> = {};
+      try {
+        const roomsRes = await databases.listDocuments(
+          DATABASE_ID,
+          process.env.NEXT_PUBLIC_APPWRITE_ROOM_COLLECTION_ID || '6791e8430032e5ce6c98'
+        );
+        roomsRes.documents.forEach((room: Record<string, any>) => {
+          const roomPrice = Number(room.price || 0);
+          if (room.propertyId && roomPrice > 0) {
+            if (!roomsMap[room.propertyId] || roomPrice < roomsMap[room.propertyId]) {
+              roomsMap[room.propertyId] = roomPrice;
+            }
+          }
+        });
+      } catch (err) {
+        console.warn('Failed to load rooms for price mapping:', err);
+      }
+
+      if (data) {
+        const mappedProperties: Property[] = data.map((doc: AppwriteDoc) => {
+          const rawPrice = Number(doc.price || doc.startingPrice || doc.minPrice || doc.basePrice || doc.pricePerNight || roomsMap[doc.$id] || 0);
+          const { cleanLocation, lat: geoLat, lng: geoLng } = parseLocationGeo(doc.location || "");
+          const numBedrooms = Number(doc.bedrooms || 1);
+          const numBeds = Number(doc.beds || numBedrooms || 1);
+          const numBathrooms = Number(doc.bathrooms || 1);
+
+          const rawAmenities = doc.amenities || doc.amenityList || [];
+          const amenitiesArr: string[] = Array.isArray(rawAmenities)
+            ? rawAmenities.map((a: unknown) => String(a).toLowerCase())
+            : typeof rawAmenities === 'string'
+            ? rawAmenities.split(',').map((a: string) => a.trim().toLowerCase())
+            : [];
+
+          return {
+            id: doc.$id,
+            title: doc.propertyName || doc.title || 'Unknown Property',
+            subtitle: doc.description || '',
+            details: `${numBedrooms} bedrooms · ${numBeds} beds · ${numBathrooms} bathrooms`,
+            location: [cleanLocation, doc.city, doc.state].filter(Boolean).join(", ") || `${doc.city || ''}, ${doc.state || ''}`,
+            city: doc.city || '',
+            state: doc.state || '',
+            lat: doc.lat || geoLat,
+            lng: doc.lng || geoLng,
+            rating: doc.rating || 0,
+            reviews: doc.reviewsCount || 0,
+            price: rawPrice > 0 ? rawPrice : 3500,
+            images: (doc.photos && doc.photos.length > 0) ? doc.photos : ['https://images.unsplash.com/photo-1542314831-c6a4d14d837e?q=80&w=800&auto=format&fit=crop'],
+            status: doc.status?.toLowerCase() || 'active',
+            bedrooms: numBedrooms,
+            beds: numBeds,
+            bathrooms: numBathrooms,
+            propertyType: doc.title || doc.description || '',
+            amenities: amenitiesArr,
+          };
+        });
         setProperties(mappedProperties);
       }
+      setLoading(false);
     }
     loadProperties();
   }, []);
@@ -123,7 +216,7 @@ function SearchContent() {
   const filteredProperties = properties.filter(property => {
     if (!isActiveProperty(property)) return false;
 
-    const urlLocation = searchParams.get('location');
+    const urlLocation = searchParams.get('location') || searchParams.get('destination');
     if (urlLocation && urlLocation.trim() !== '' && urlLocation.toLowerCase() !== 'anywhere') {
       const propLocStr = `${property.location} ${property.title} ${property.subtitle}`.toLowerCase();
       if (!propLocStr.includes(urlLocation.toLowerCase())) {
@@ -139,81 +232,72 @@ function SearchContent() {
       if (!matchesAi && words.length > 0) return false;
     }
 
-    const searchString = `${property.title} ${property.subtitle} ${property.details}`.toLowerCase();
+    const searchString = `${property.title} ${property.subtitle} ${property.details} ${property.location} ${property.city} ${property.state}`.toLowerCase();
 
-    // 1. Check quick filters
+    // 1. Check quick filters (pill buttons)
     if (selectedFilters.length > 0) {
       const quickMatch = selectedFilters.every(filter => {
-        const f = filter.toLowerCase();
-        if (f === 'wifi') return searchString.includes('wi-fi') || searchString.includes('wifi');
-        if (f === 'free parking') return searchString.includes('parking');
-        if (f === 'kitchen') return searchString.includes('kitchen');
-        return true; 
+        if (filter === 'Price') return true;
+        return checkPropertyAmenity(property, filter, searchString);
       });
       if (!quickMatch) return false;
     }
 
-    // 2. Check advanced filters from modal
+    // 2. Check advanced filters from popup modal & price popover
     if (advancedFilters) {
-      // Price
+      // Price Range
       if (property.price < advancedFilters.minPrice || property.price > advancedFilters.maxPrice) {
         return false;
       }
 
-      // Rooms and beds (parse from `property.details`)
-      const extractNumber = (keyword: string) => {
-        const regex = new RegExp(`(\\d+)\\s+${keyword}`);
-        const match = property.details.match(regex);
-        return match ? parseInt(match[1], 10) : 0;
-      };
-
+      // Bedrooms
       if (advancedFilters.bedrooms !== 'Any') {
-        const bedrooms = extractNumber('bedroom');
-        if (bedrooms < advancedFilters.bedrooms) return false;
+        const reqBedrooms = Number(advancedFilters.bedrooms);
+        const propBedrooms = property.bedrooms || 1;
+        if (propBedrooms < reqBedrooms) return false;
       }
 
+      // Beds
       if (advancedFilters.beds !== 'Any') {
-        const beds = extractNumber('bed');
-        if (beds < advancedFilters.beds) return false;
+        const reqBeds = Number(advancedFilters.beds);
+        const propBeds = property.beds || property.bedrooms || 1;
+        if (propBeds < reqBeds) return false;
       }
 
+      // Bathrooms
       if (advancedFilters.bathrooms !== 'Any') {
-        const bathrooms = extractNumber('bathroom');
-        if (bathrooms < advancedFilters.bathrooms) return false;
+        const reqBathrooms = Number(advancedFilters.bathrooms);
+        const propBathrooms = property.bathrooms || 1;
+        if (propBathrooms < reqBathrooms) return false;
       }
 
-      // Property Types (check title/subtitle)
-      if (advancedFilters.selectedPropertyTypes.length > 0) {
-        const hasType = advancedFilters.selectedPropertyTypes.some(type => 
-          property.title.toLowerCase().includes(type.toLowerCase()) || 
-          property.subtitle.toLowerCase().includes(type.toLowerCase())
-        );
+      // Property Types (House, Guest house, Hotel, Villa, etc.)
+      if (advancedFilters.selectedPropertyTypes && advancedFilters.selectedPropertyTypes.length > 0) {
+        const hasType = advancedFilters.selectedPropertyTypes.some(type => {
+          const t = type.toLowerCase();
+          return (
+            property.title.toLowerCase().includes(t) || 
+            property.subtitle.toLowerCase().includes(t) ||
+            (property.propertyType && property.propertyType.toLowerCase().includes(t))
+          );
+        });
         if (!hasType) return false;
       }
 
-      // Amenities (best effort text match)
-      if (advancedFilters.selectedAmenities.length > 0) {
+      // Amenities
+      if (advancedFilters.selectedAmenities && advancedFilters.selectedAmenities.length > 0) {
         const hasAmenities = advancedFilters.selectedAmenities.every(amenity => {
-          const a = amenity.toLowerCase();
-          if (a === 'wifi') return searchString.includes('wi-fi') || searchString.includes('wifi');
-          if (a === 'kitchen') return searchString.includes('kitchen');
-          // For other amenities not in mock data strings, we'll gracefully ignore or we could strict match and return false.
-          // Since our mock data is small, strict matching would return 0 results. 
-          // But a true filter should be strict. Let's do a loose match if they aren't common keywords.
-          if (['wifi', 'kitchen', 'parking'].some(k => a.includes(k))) {
-             return searchString.includes(a);
-          }
-          return true;
+          return checkPropertyAmenity(property, amenity, searchString);
         });
         if (!hasAmenities) return false;
       }
 
       // Booking Options
-      if (advancedFilters.selectedBookingOptions.length > 0) {
+      if (advancedFilters.selectedBookingOptions && advancedFilters.selectedBookingOptions.length > 0) {
         const hasBookingOptions = advancedFilters.selectedBookingOptions.every(option => {
-           if (option === 'Instant Book' && !property.isSuperhost) return false; // mockup logic
-           if (option === 'Allows pets' && !searchString.includes('pet')) return true; // allow since no data
-           return true;
+          if (option === 'Instant Book') return property.isSuperhost || searchString.includes('instant');
+          if (option === 'Allows pets') return searchString.includes('pet') || searchString.includes('dog') || searchString.includes('allow');
+          return true;
         });
         if (!hasBookingOptions) return false;
       }
@@ -237,16 +321,18 @@ function SearchContent() {
           <div className="h-8 w-px bg-gray-200 shrink-0 mx-1" />
           
           {filters.map((filter, idx) => {
-            const isDropdown = idx < 2; // Price, Type of place
+            const isDropdown = filter === 'Price';
             const isSelected = selectedFilters.includes(filter);
 
             if (isDropdown) {
               return (
                 <button 
                   key={idx}
-                  onClick={() => setIsFilterModalOpen(true)}
+                  onClick={() => setIsPricePopoverOpen(true)}
                   className={`flex items-center gap-2 border rounded-full px-4 py-2 transition-colors shrink-0 font-medium text-[14px] ${
-                    isSelected ? 'border-gray-900 bg-gray-100 text-gray-900' : 'border-gray-300 hover:border-gray-900 text-gray-700'
+                    isSelected || (advancedFilters && (advancedFilters.minPrice > 1000 || advancedFilters.maxPrice < 100000))
+                      ? 'border-gray-900 bg-gray-100 text-gray-900 font-semibold' 
+                      : 'border-gray-300 hover:border-gray-900 text-gray-700'
                   }`}
                 >
                   {filter} <ChevronDown size={14} />
@@ -274,7 +360,11 @@ function SearchContent() {
         
         {/* Right Panel: Map */}
         <div className="w-full h-[50vh] relative z-0 shrink-0 lg:h-full lg:relative lg:w-[45%] xl:w-[40%] lg:rounded-2xl overflow-hidden shadow-sm lg:border border-gray-200 order-1 lg:order-2">
-          <MapMockup />
+          <MapMockup 
+            properties={filteredProperties} 
+            selectedPropertyId={selectedPropertyId} 
+            onSelectProperty={(id) => setSelectedPropertyId(id)} 
+          />
         </div>
 
         {/* Left Panel: Property List */}
@@ -285,16 +375,36 @@ function SearchContent() {
           <div className="px-4 pb-4 lg:p-6 lg:pt-6">
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end mb-6 gap-4">
               <div>
-                <h1 className="text-[24px] lg:text-[28px] font-bold text-gray-900">Over 1,000 homes</h1>
+                <h1 className="text-[24px] lg:text-[28px] font-bold text-gray-900">
+                  {filteredProperties.length === 0 
+                    ? 'No homes found' 
+                    : filteredProperties.length === 1 
+                      ? '1 stay found' 
+                      : `${filteredProperties.length} homes available`}
+                </h1>
                 <p className="text-[14px] lg:text-[15px] text-gray-600 mt-1">Stays in {location}</p>
               </div>
 
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-10">
-              {filteredProperties.length > 0 ? (
+              {loading ? (
+                [1, 2, 3, 4].map((n) => (
+                  <div key={n} className="animate-pulse flex flex-col gap-3">
+                    <div className="w-full h-64 bg-gray-200 rounded-2xl" />
+                    <div className="w-3/4 h-5 bg-gray-200 rounded-md" />
+                    <div className="w-1/2 h-4 bg-gray-200 rounded-md" />
+                    <div className="w-1/3 h-5 bg-gray-200 rounded-md mt-2" />
+                  </div>
+                ))
+              ) : filteredProperties.length > 0 ? (
                 filteredProperties.map((property) => (
-                  <PropertyCard key={property.id} property={property} />
+                  <PropertyCard 
+                    key={property.id} 
+                    property={property} 
+                    isSelected={selectedPropertyId === property.id}
+                    onSelect={(id) => setSelectedPropertyId(id)}
+                  />
                 ))
               ) : (
                 <div className="col-span-1 sm:col-span-2 text-center py-12 text-gray-500">
@@ -320,6 +430,34 @@ function SearchContent() {
         initialFilters={advancedFilters || undefined}
         onApply={(filters) => setAdvancedFilters(filters)}
         matchCount={filteredProperties.length}
+      />
+
+      {/* Price Popover */}
+      <PricePopover
+        isOpen={isPricePopoverOpen}
+        onClose={() => setIsPricePopoverOpen(false)}
+        minPrice={advancedFilters?.minPrice ?? 1000}
+        maxPrice={advancedFilters?.maxPrice ?? 100000}
+        matchCount={filteredProperties.length}
+        onApply={(min, max) => {
+          setAdvancedFilters((prev) => ({
+            bedrooms: prev?.bedrooms ?? 'Any',
+            beds: prev?.beds ?? 'Any',
+            bathrooms: prev?.bathrooms ?? 'Any',
+            selectedAmenities: prev?.selectedAmenities ?? [],
+            selectedPropertyTypes: prev?.selectedPropertyTypes ?? [],
+            selectedBookingOptions: prev?.selectedBookingOptions ?? [],
+            minPrice: min,
+            maxPrice: max,
+          }));
+          if (!selectedFilters.includes('Price')) {
+            setSelectedFilters((prev) => [...prev, 'Price']);
+          }
+        }}
+        onClear={() => {
+          setAdvancedFilters((prev) => (prev ? { ...prev, minPrice: 1000, maxPrice: 100000 } : null));
+          setSelectedFilters((prev) => prev.filter((f) => f !== 'Price'));
+        }}
       />
     </div>
   );

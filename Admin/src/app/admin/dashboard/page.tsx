@@ -2,14 +2,12 @@ import { appwriteServer } from "@/lib/appwrite/server";
 import DashboardClient, { KPIData, ChartData, ActivityData } from "./DashboardClient";
 import { Query } from "node-appwrite";
 
-const DATABASE_ID = process.env.APPWRITE_DATABASE_ID!;
+const DATABASE_ID = process.env.APPWRITE_DATABASE_ID || process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID || "6a3cec630035d63ea963";
 const VENDOR_COLLECTION = "6a3e0fd9da7df0d38588"; // Hardcoded for now based on discovery
 
 // Format currency
 const formatCurrency = (value: number) => {
-  if (value >= 1000000) return `₹${(value / 1000000).toFixed(1)}M`;
-  if (value >= 1000) return `₹${(value / 1000).toFixed(1)}K`;
-  return `₹${value}`;
+  return `₹${Math.round(value).toLocaleString('en-IN')}`;
 };
 
 // Calculate percentage change
@@ -34,8 +32,9 @@ const getRelativeTime = (dateString: string) => {
   return `${diffInDays} days ago`;
 };
 
-export default async function DashboardPage({ searchParams }: { searchParams?: { filter?: string } }) {
-  const filter = searchParams?.filter || 'today';
+export default async function DashboardPage({ searchParams }: { searchParams?: Promise<{ filter?: string }> }) {
+  const resolvedSearchParams = await searchParams;
+  const filter = resolvedSearchParams?.filter || 'today';
   let kpiData: KPIData[] | null = null;
   let chartData: ChartData[] | null = null;
   let recentActivity: ActivityData[] | null = null;
@@ -160,8 +159,60 @@ export default async function DashboardPage({ searchParams }: { searchParams?: {
 
     let currentPeriodBookings = 0;
     let previousPeriodBookings = 0;
+    let totalRefund = 0;
+    let currentPeriodRefund = 0;
+    let previousPeriodRefund = 0;
+
     bookings.documents.forEach(b => {
       const date = new Date(b.$createdAt);
+      const isCancelled = b.status?.toLowerCase() === 'cancelled' || b.status?.toLowerCase() === 'canceled';
+
+      if (isCancelled) {
+        let bookingAmt = 0;
+        if (typeof b.totalAmount === 'number') bookingAmt = b.totalAmount;
+        else if (typeof b.amount === 'number') bookingAmt = b.amount;
+        else if (typeof b.amount === 'string') bookingAmt = parseFloat(b.amount.replace(/[^0-9.]/g, '')) || 0;
+        else if (typeof b.price === 'number') bookingAmt = b.price;
+        else if (typeof b.price === 'string') bookingAmt = parseFloat(b.price.replace(/[^0-9.]/g, '')) || 0;
+
+        let refundAmt = 0;
+        if (typeof b.refundAmount === 'number') {
+          refundAmt = b.refundAmount;
+        } else {
+          // Cancellation policy:
+          // > 48 hours before check-in: 100% refund
+          // 24 to 48 hours before check-in: 80% refund (20% fee)
+          // < 24 hours before check-in: 0% refund (100% fee)
+          const checkInRaw = b.checkIn || b.checkInDate || b.rawCheckIn;
+          const cancelledAtRaw = b.cancelledAt || b.updatedAt || b.$createdAt;
+
+          if (checkInRaw) {
+            const checkInDate = new Date(checkInRaw);
+            const cancelledDate = new Date(cancelledAtRaw);
+            const hoursUntilCheckIn = (checkInDate.getTime() - cancelledDate.getTime()) / (1000 * 60 * 60);
+
+            if (hoursUntilCheckIn >= 48) {
+              refundAmt = bookingAmt;
+            } else if (hoursUntilCheckIn >= 24) {
+              refundAmt = bookingAmt * 0.8;
+            } else if (hoursUntilCheckIn < 24 && hoursUntilCheckIn > 0) {
+              refundAmt = 0;
+            } else {
+              refundAmt = bookingAmt;
+            }
+          } else {
+            refundAmt = bookingAmt;
+          }
+        }
+
+        totalRefund += refundAmt;
+        if (isLifetime || date >= currentPeriodStart) {
+          currentPeriodRefund += refundAmt;
+        } else if (date >= previousPeriodStart && date <= previousPeriodEnd) {
+          previousPeriodRefund += refundAmt;
+        }
+      }
+
       if (isLifetime || date >= currentPeriodStart) currentPeriodBookings++;
       else if (date >= previousPeriodStart && date <= previousPeriodEnd) previousPeriodBookings++;
     });
@@ -202,9 +253,17 @@ export default async function DashboardPage({ searchParams }: { searchParams?: {
       },
       { 
         title: "Total Bookings", 
-        value: isLifetime ? bookings.total.toString() : currentPeriodBookings.toString(), 
+        value: (isLifetime ? bookings.documents.length : currentPeriodBookings).toString(), 
         iconName: "CalendarDays", 
         change: getChange(currentPeriodBookings, previousPeriodBookings), 
+        color: "text-amber-500", 
+        bg: "bg-amber-500/10" 
+      },
+      { 
+        title: "Refund Money", 
+        value: formatCurrency(isLifetime ? totalRefund : currentPeriodRefund), 
+        iconName: "RotateCcw", 
+        change: getChange(currentPeriodRefund, previousPeriodRefund), 
         color: "text-orange-500", 
         bg: "bg-orange-500/10" 
       },

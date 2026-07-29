@@ -3,19 +3,21 @@ import { Plus, Check, Sparkles, Car, Plane, Coffee, Shield, Clock, Wine, Utensil
 import { motion } from "framer-motion";
 import { useCheckoutStore } from "@/store/checkoutStore";
 
-export const DEFAULT_ADDONS = [
+export interface AddonType {
+  id?: string;
+  $id?: string;
+  title?: string;
+  name?: string;
+  price?: number;
+  description?: string;
+}
+
+export const DEFAULT_ADDONS: AddonType[] = [
   { id: "airport", title: "Airport Transfer", price: 1200, description: "Hassle-free pickup and drop-off" },
   { id: "breakfast", title: "Breakfast Package", price: 800, description: "Daily buffet breakfast per person" },
   { id: "spa", title: "Spa Access", price: 1500, description: "Unlimited access to wellness center" },
   { id: "insurance", title: "Travel Insurance", price: 450, description: "Comprehensive trip coverage" }
 ];
-
-interface AddonType {
-  id: string;
-  title: string;
-  price: number;
-  description: string;
-}
 
 interface AddonSelectorProps {
   addons: AddonType[];
@@ -45,16 +47,18 @@ export function AddonSelector({ addons }: AddonSelectorProps) {
       <p className="text-sm text-gray-500 mb-6">Select premium add-ons for a better experience</p>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {displayAddons.map((addon) => {
-          const isSelected = selected.includes(addon.id);
-          const Icon = getIconForTitle(addon.title);
+        {displayAddons.map((addon, index) => {
+          const addonId = addon.id || addon.$id || `addon-${index}`;
+          const addonTitle = addon.title || addon.name || "Add-on Service";
+          const isSelected = selected.includes(addonId);
+          const Icon = getIconForTitle(addonTitle);
           
           return (
             <motion.div
               whileHover={{ y: -2 }}
               whileTap={{ scale: 0.98 }}
-              key={addon.id}
-              onClick={() => toggle(addon.id)}
+              key={addonId}
+              onClick={() => toggle(addonId)}
               className={`relative cursor-pointer rounded-xl border-2 p-4 transition-colors flex flex-col h-full ${
                 isSelected 
                   ? "border-brand-coral bg-brand-soft-coral/30" 
@@ -73,9 +77,9 @@ export function AddonSelector({ addons }: AddonSelectorProps) {
               </div>
               
               <div className="mt-auto">
-                <h3 className="font-bold text-brand-navy text-sm mb-1">{addon.title}</h3>
-                <p className="text-xs text-gray-500 mb-3">{addon.description}</p>
-                <div className="font-medium text-brand-coral">₹{addon.price}</div>
+                <h3 className="font-bold text-brand-navy text-sm mb-1">{addonTitle}</h3>
+                {addon.description && <p className="text-xs text-gray-500 mb-3">{addon.description}</p>}
+                <div className="font-medium text-brand-coral">₹{addon.price || 0}</div>
               </div>
             </motion.div>
           );

@@ -42,13 +42,19 @@ export interface PropertyAmenitiesProps {
   amenities?: string[];
 }
 
-const FEATURED_AMENITIES = [
-  { icon: Wifi, text: 'Fast wifi – 340 Mbps' },
-  { icon: Waves, text: 'Private outdoor pool' },
-  { icon: Wind, text: 'Central air conditioning' },
-  { icon: Coffee, text: 'Espresso machine' },
-  { icon: Tv, text: '75" HDTV with premium cable' },
-  { icon: Car, text: 'Free valet parking on premises' },
+interface DisplayAmenity {
+  icon: any;
+  text: string;
+  category?: string;
+}
+
+const FEATURED_AMENITIES: DisplayAmenity[] = [
+  { icon: Wifi, text: 'Fast wifi – 340 Mbps', category: 'Internet and office' },
+  { icon: Waves, text: 'Private outdoor pool', category: 'Outdoor' },
+  { icon: Wind, text: 'Central air conditioning', category: 'Heating and cooling' },
+  { icon: Coffee, text: 'Espresso machine', category: 'Kitchen and dining' },
+  { icon: Tv, text: '75" HDTV with premium cable', category: 'Entertainment' },
+  { icon: Car, text: 'Free valet parking on premises', category: 'Parking and facilities' },
 ];
 
 const AMENITY_GROUPS = [

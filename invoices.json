@@ -1,0 +1,93 @@
+[
+  {
+    "id": "inv-wd-1785060403332",
+    "invoiceNumber": "RAC-WD-2026-455",
+    "type": "withdrawal",
+    "vendorId": "6a44e9d4003015938636",
+    "vendorName": "Vivek rolex",
+    "vendorBusiness": "blackrolex1144",
+    "vendorEmail": "blackrolex1144@gmail.com",
+    "vendorPhone": "+91 7900310444",
+    "vendorAddress": "Dewalchaurh kham near ram darbar, , ",
+    "vendorGstin": "",
+    "bankName": "HDFC Bank",
+    "accountHolder": "Vivek rolex",
+    "accountNumber": "987654321098",
+    "ifsc": "HDFC0001234",
+    "upiId": "+91 7900310444@upi",
+    "bookingIds": [
+      "6a50a05e00115e6d8ffb"
+    ],
+    "grossAmount": 28950,
+    "platformFeeRate": 25,
+    "platformFeeAmount": 7238,
+    "issueDate": "2026-07-26",
+    "dueDate": "2026-08-02",
+    "items": [
+      {
+        "id": "gross-6a50a05e00115e6d8ffb",
+        "description": "Booking #6a50a05e00115e6d8ffb Revenue (Vivek Verma · Golden Palm)",
+        "quantity": 1,
+        "unitPrice": 28950,
+        "amount": 28950,
+        "bookingId": "6a50a05e00115e6d8ffb"
+      },
+      {
+        "id": "fee-deduction-1785060403332",
+        "description": "Racoonn Platform Commission Fee (25% Slab Deduction)",
+        "quantity": 1,
+        "unitPrice": -7238,
+        "amount": -7238
+      }
+    ],
+    "subtotal": 28950,
+    "taxRate": 0,
+    "taxAmount": 0,
+    "discount": 0,
+    "totalAmount": 21712,
+    "status": "Paid",
+    "notes": "Please process this payout invoice to the specified bank account / UPI ID. Thank you!",
+    "createdAt": "2026-07-26T10:06:43.332Z",
+    "adminRemarks": "Payout Processed via Bank Transfer (NEFT/RTGS) (UTR: UTR1785060414026)",
+    "updatedAt": "2026-07-29T08:30:35.755Z"
+  },
+  {
+    "id": "inv-1784985556488",
+    "invoiceNumber": "RAC-INV-2026-774",
+    "vendorId": "6a44e9d4003015938636",
+    "vendorName": "Vendor",
+    "vendorBusiness": "blackrolex1144",
+    "vendorEmail": "blackrolex1144@gmail.com",
+    "vendorPhone": "+91 7900310444",
+    "vendorAddress": "Dewalchaurh kham near ram darbar",
+    "vendorGstin": "22AAAAA0000A1Z5",
+    "issueDate": "2026-07-25",
+    "dueDate": "2026-08-08",
+    "items": [
+      {
+        "id": "1",
+        "description": "Monthly Racoonn Platform Commission Fee (10%)",
+        "quantity": 1,
+        "unitPrice": 4500,
+        "amount": 4500
+      },
+      {
+        "id": "2",
+        "description": "Featured Popular Stay Banner Promotion",
+        "quantity": 1,
+        "unitPrice": 1500,
+        "amount": 1500
+      }
+    ],
+    "subtotal": 6000,
+    "taxRate": 18,
+    "taxAmount": 1080,
+    "discount": 0,
+    "totalAmount": 7080,
+    "status": "Rejected",
+    "notes": "Thank you for partnering with Racoonn Stays. Please make payments before due date.",
+    "createdAt": "2026-07-25T13:19:16.488Z",
+    "updatedAt": "2026-07-29T08:37:49.797Z",
+    "adminRemarks": "Rejected (Incomplete documentation): Associated bookings returned to vendor's available balance."
+  }
+]

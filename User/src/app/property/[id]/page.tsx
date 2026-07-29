@@ -21,10 +21,11 @@ import PropertyReviews from '@/components/property/PropertyReviews';
 import PropertyAmenities from '@/components/property/PropertyAmenities';
 import PropertyHeaderActions from '@/components/property/PropertyHeaderActions';
 import ReserveButton from '@/components/property/ReserveButton';
+import RoomListWithAvailability from '@/components/property/RoomListWithAvailability';
 import { notFound } from 'next/navigation';
 import { allProperties } from '@/data/properties';
 import { mockHotels } from '@/data/mockHotels';
-import { isActiveProperty } from '@/lib/utils';
+import { isActiveProperty, parseLocationGeo } from '@/lib/utils';
 import { databases } from '@/lib/appwrite/config';
 import { getReviews } from '@/lib/appwrite/api';
 import { Query } from 'appwrite';
@@ -81,7 +82,7 @@ export default async function PropertyDetails({ params }: { params: Promise<{ id
           notFound();
         }
         title = realProperty.propertyName || realProperty.title || title;
-        location = realProperty.location || `${realProperty.city || ''}, ${realProperty.state || ''}`;
+        location = [realProperty.location, realProperty.city, realProperty.state].filter(Boolean).join(", ") || `${realProperty.city || ''}, ${realProperty.state || ''}`;
         if (realProperty.photos && realProperty.photos.length > 0) {
           images = realProperty.photos;
         }
@@ -202,101 +203,14 @@ export default async function PropertyDetails({ params }: { params: Promise<{ id
               Show additional filters <ChevronDown size={14} />
             </button>
 
-            {/* Rooms Table */}
-            <div className="border border-gray-200 rounded-2xl overflow-hidden">
-              {/* Table Header */}
-              <div className="hidden md:flex bg-gray-50 border-b border-gray-200 p-4 text-[13px] font-bold text-gray-500 uppercase tracking-wider">
-                <div className="w-[40%]">Room type</div>
-                <div className="w-[30%]">Meal plan and conditions</div>
-                <div className="w-[30%]">Price per night</div>
-              </div>
-
-              {rooms && rooms.length > 0 ? (
-                rooms.map((room, index) => (
-                  <div key={room.$id || index} className="flex flex-col md:flex-row border-b border-gray-200 last:border-b-0">
-                    <div className="w-full md:w-[40%] p-6 border-b md:border-b-0 md:border-r border-gray-200">
-                      <h3 className="text-[18px] font-bold text-brand-navy mb-2 hover:underline cursor-pointer">{room.name}</h3>
-                      <p className="text-[14px] text-gray-600 mb-4">Max Occupancy: {room.occupancy} • Size: {room.size} sq ft</p>
-                      <div className="flex gap-2 text-brand-coral font-medium text-[13px] mb-3">
-                        <span className="flex items-center gap-1"><Wifi size={14} /> Free WiFi</span>
-                      </div>
-                      {room.images && room.images.length > 0 ? (
-                        <RoomImageSlider images={room.images} />
-                      ) : (
-                        <div className="w-full aspect-video bg-gray-100 rounded-lg flex items-center justify-center text-gray-400 text-sm">
-                          No images
-                        </div>
-                      )}
-                    </div>
-                    <div className="w-full md:w-[30%] p-6 border-b md:border-b-0 md:border-r border-gray-200">
-                      <div className="space-y-3">
-                        {room.mealPlan && room.mealPlan !== 'Room Only' ? (
-                          <div className="flex items-start gap-2">
-                            <Coffee size={18} className="text-gray-400 mt-0.5 shrink-0" />
-                            <div>
-                              <span className="text-[14px] font-semibold text-green-700">{room.mealPlan}</span>
-                            </div>
-                          </div>
-                        ) : room.mealPlan === 'Room Only' ? (
-                          <div className="flex items-start gap-2">
-                            <Coffee size={18} className="text-gray-400 mt-0.5 shrink-0" />
-                            <div>
-                              <span className="text-[14px] font-semibold text-gray-700">{room.mealPlan}</span>
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="flex items-start gap-2">
-                            <Coffee size={18} className="text-gray-400 mt-0.5 shrink-0" />
-                            <div>
-                              <span className="text-[14px] font-semibold text-green-700">Breakfast included</span>
-                            </div>
-                          </div>
-                        )}
-                        
-                        {room.cancellation ? (
-                          <div className="flex items-start gap-2">
-                            <ShieldCheck size={18} className="text-gray-400 mt-0.5 shrink-0" />
-                            <div>
-                              <span className={`text-[14px] font-semibold ${room.cancellation === 'Non-refundable' ? 'text-red-600' : 'text-green-700'}`}>
-                                {room.cancellation}
-                              </span>
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="flex items-start gap-2">
-                            <ShieldCheck size={18} className="text-gray-400 mt-0.5 shrink-0" />
-                            <div>
-                              <span className="text-[14px] font-semibold text-green-700">Free cancellation</span>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    <div className="w-full md:w-[30%] p-6 flex flex-col justify-center">
-                      <div className="flex flex-col mb-2">
-                        <div className="flex items-center gap-2">
-                          <span className="text-[24px] font-bold text-brand-navy">₹{room.price?.toLocaleString()}</span>
-                          <Info size={14} className="text-gray-400" />
-                        </div>
-                      </div>
-                      <p className="text-[13px] text-gray-500 mb-6">per night<br />Includes taxes</p>
-                      <ReserveButton 
-                        hotelId={id}
-                        roomName={room.name} 
-                        price={room.price} 
-                        hotelName={title}
-                        hotelImage={images[0]}
-                        hotelLocation={location}
-                      />
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="p-8 text-center text-gray-500">
-                  <p>No rooms available for this property yet.</p>
-                </div>
-              )}
-            </div>
+            {/* Rooms Table with Dynamic Date Rate Availability */}
+            <RoomListWithAvailability
+              propertyId={id}
+              propertyName={title}
+              propertyImage={images[0]}
+              propertyLocation={location}
+              initialRooms={rooms}
+            />
           </div>
 
           {/* Amenities Section */}
@@ -324,18 +238,26 @@ export default async function PropertyDetails({ params }: { params: Promise<{ id
           {/* Location / Map Section */}
           <div id="location" className="scroll-mt-24 border-t border-gray-200 pt-12">
             <h2 className="text-[24px] font-semibold text-brand-navy mb-6">Location</h2>
-            <p className="text-[16px] text-gray-700 mb-6">{location}</p>
-            <div className="w-full h-100 bg-gray-200 rounded-2xl overflow-hidden relative shadow-sm border border-gray-200">
-              <iframe
-                width="100%"
-                height="100%"
-                style={{ border: 0 }}
-                loading="lazy"
-                allowFullScreen
-                referrerPolicy="no-referrer-when-downgrade"
-                src={`https://maps.google.com/maps?q=${encodeURIComponent(location)}&t=&z=13&ie=UTF8&iwloc=&output=embed`}
-              />
-            </div>
+            {(() => {
+              const { cleanLocation, lat, lng } = parseLocationGeo(location);
+              const mapQuery = (lat && lng) ? `${lat},${lng}` : cleanLocation;
+              return (
+                <>
+                  <p className="text-[16px] text-gray-700 mb-6">{cleanLocation}</p>
+                  <div className="w-full h-100 bg-gray-200 rounded-2xl overflow-hidden relative shadow-sm border border-gray-200">
+                    <iframe
+                      width="100%"
+                      height="100%"
+                      style={{ border: 0 }}
+                      loading="lazy"
+                      allowFullScreen
+                      referrerPolicy="no-referrer-when-downgrade"
+                      src={`https://maps.google.com/maps?q=${encodeURIComponent(mapQuery)}&t=&z=14&ie=UTF8&iwloc=&output=embed`}
+                    />
+                  </div>
+                </>
+              );
+            })()}
           </div>
 
           {/* Reviews Section */}

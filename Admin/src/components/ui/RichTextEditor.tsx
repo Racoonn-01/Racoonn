@@ -78,6 +78,7 @@ export default function RichTextEditor({ value, onChange, placeholder }: RichTex
   return (
     <div className="relative">
       <ReactQuill
+        // @ts-ignore: Next.js dynamic import drops the ref typing for ReactQuill
         ref={quillRef}
         theme="snow"
         value={value}

@@ -18,11 +18,12 @@ import {
   DollarSign, 
   TrendingUp,
   Filter,
-  Plus
+  Plus,
+  FileText
 } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuGroup } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 export interface VendorData {
@@ -55,6 +56,67 @@ export default function VendorsClient({ vendors: initialVendors, kpi }: VendorsC
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedVendor, setSelectedVendor] = useState<VendorData | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
+  
+  const [isGstModalOpen, setIsGstModalOpen] = useState(false);
+  const [selectedGstVendor, setSelectedGstVendor] = useState<VendorData | null>(null);
+  const [gstAmount, setGstAmount] = useState<string>("");
+  const [isSendingGst, setIsSendingGst] = useState(false);
+
+  const handleOpenGstModal = (vendor: VendorData) => {
+    setSelectedGstVendor(vendor);
+    setGstAmount("");
+    setIsGstModalOpen(true);
+  };
+
+  const handleSendGstInvoice = async () => {
+    if (!selectedGstVendor || !gstAmount) return;
+    setIsSendingGst(true);
+    
+    const baseAmount = Number(gstAmount);
+    const taxAmt = baseAmount * 0.24;
+    const totalAmount = baseAmount + taxAmt;
+    
+    const invoiceObj = {
+      id: `inv-admin-${Date.now()}`,
+      invoiceNumber: `RAC-GST-${Date.now()}`,
+      type: "billing",
+      vendorId: selectedGstVendor.id,
+      vendorName: selectedGstVendor.name,
+      vendorEmail: selectedGstVendor.email,
+      vendorPhone: "",
+      vendorAddress: "",
+      vendorGstin: "",
+      issueDate: new Date().toISOString().split("T")[0],
+      dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+      items: [{
+        id: `fee-gst-${Date.now()}`,
+        description: `Platform Services`,
+        quantity: 1,
+        unitPrice: baseAmount,
+        amount: baseAmount,
+      }],
+      subtotal: baseAmount,
+      taxRate: 24,
+      taxAmount: taxAmt,
+      totalAmount: totalAmount,
+      status: "Sent",
+      createdAt: new Date().toISOString(),
+    };
+
+    try {
+      await fetch("/api/invoices", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(invoiceObj),
+      });
+      setIsGstModalOpen(false);
+    } catch (err) {
+      console.error("Failed to send GST invoice", err);
+      alert("Failed to send GST invoice");
+    } finally {
+      setIsSendingGst(false);
+    }
+  };
 
   const filteredVendors = vendors.filter(vendor => {
     const matchesTab = activeTab === "all" || vendor.status.toLowerCase() === activeTab.toLowerCase();
@@ -304,6 +366,13 @@ export default function VendorsClient({ vendors: initialVendors, kpi }: VendorsC
                               </DropdownMenuItem>
                             )}
                             <DropdownMenuSeparator />
+                            <DropdownMenuItem 
+                              className="text-indigo-600 focus:text-indigo-600 cursor-pointer rounded-md"
+                              onClick={() => handleOpenGstModal(vendor)}
+                            >
+                              <FileText className="mr-2 h-4 w-4" /> Send 24% GST Invoice
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
                             <DropdownMenuItem className="text-red-600 focus:text-red-600 cursor-pointer rounded-md">
                               <Trash2 className="mr-2 h-4 w-4" /> Delete Vendor
                             </DropdownMenuItem>
@@ -389,6 +458,56 @@ export default function VendorsClient({ vendors: initialVendors, kpi }: VendorsC
               </div>
             </>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* GST Invoice Modal */}
+      <Dialog open={isGstModalOpen} onOpenChange={setIsGstModalOpen}>
+        <DialogContent className="sm:max-w-[425px] rounded-2xl">
+          <DialogHeader>
+            <DialogTitle>Send 24% GST Invoice</DialogTitle>
+            <DialogDescription>
+              Create a billing invoice for {selectedGstVendor?.name}.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <label htmlFor="amount" className="text-sm font-medium">
+                Base Amount (₹)
+              </label>
+              <Input
+                id="amount"
+                type="number"
+                placeholder="Enter base amount"
+                value={gstAmount}
+                onChange={(e) => setGstAmount(e.target.value)}
+              />
+            </div>
+            {gstAmount && !isNaN(Number(gstAmount)) && (
+              <div className="bg-muted/30 p-3 rounded-xl text-sm space-y-1">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Base Amount:</span>
+                  <span>₹{Number(gstAmount).toLocaleString('en-IN')}</span>
+                </div>
+                <div className="flex justify-between text-indigo-600">
+                  <span>GST (24%):</span>
+                  <span>₹{(Number(gstAmount) * 0.24).toLocaleString('en-IN')}</span>
+                </div>
+                <div className="flex justify-between font-bold pt-1 border-t">
+                  <span>Total Invoice Amount:</span>
+                  <span>₹{(Number(gstAmount) * 1.24).toLocaleString('en-IN')}</span>
+                </div>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsGstModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleSendGstInvoice} disabled={!gstAmount || isSendingGst}>
+              {isSendingGst ? "Sending..." : "Send Invoice"}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

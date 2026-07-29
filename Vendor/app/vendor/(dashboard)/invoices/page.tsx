@@ -140,6 +140,8 @@ export default function VendorInvoicesPage() {
   const [notes, setNotes] = useState(
     "Please process this payout invoice to the specified bank account / UPI ID. Thank you!"
   );
+  
+  const [manualGstAmount, setManualGstAmount] = useState<string>("");
 
   // Fetch Invoices & Real-time Bookings
   const loadInvoicesAndBookings = useCallback(async () => {
@@ -434,10 +436,10 @@ export default function VendorInvoicesPage() {
       dueDate,
       items: generatedItems,
       subtotal: selectedGrossTotal,
-      taxRate: 0,
-      taxAmount: 0,
+      taxRate: Number(manualGstAmount) > 0 ? 24 : 0,
+      taxAmount: Number(manualGstAmount) || 0,
       discount: 0,
-      totalAmount: selectedNetEarningsTotal,
+      totalAmount: selectedNetEarningsTotal + (Number(manualGstAmount) || 0),
       status,
       notes,
       createdAt: new Date().toISOString(),
@@ -1088,9 +1090,22 @@ export default function VendorInvoicesPage() {
                   <span>Platform Fee (18% + GST):</span>
                   <span className="font-bold">-₹{selectedPlatformFeeTotal.toLocaleString("en-IN")}</span>
                 </div>
+                <div className="flex justify-between text-indigo-600 items-center">
+                  <span>Add GST (24%) Manual Amount:</span>
+                  <div className="flex items-center gap-1">
+                    <span className="font-bold text-indigo-600">₹</span>
+                    <Input 
+                      type="number"
+                      placeholder="0"
+                      value={manualGstAmount}
+                      onChange={(e) => setManualGstAmount(e.target.value)}
+                      className="w-20 h-7 text-right rounded font-bold text-indigo-600 bg-indigo-50 border-indigo-200 p-1"
+                    />
+                  </div>
+                </div>
                 <div className="border-t pt-2 mt-2 flex justify-between text-base font-black text-emerald-700">
                   <span>Net Payable To Vendor:</span>
-                  <span>₹{selectedNetEarningsTotal.toLocaleString("en-IN")}</span>
+                  <span>₹{(selectedNetEarningsTotal + (Number(manualGstAmount) || 0)).toLocaleString("en-IN")}</span>
                 </div>
               </div>
             </div>

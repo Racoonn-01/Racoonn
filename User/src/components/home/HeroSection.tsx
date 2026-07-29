@@ -564,7 +564,11 @@ export default function HeroSection() {
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-4 pt-2">
 
                 <Link 
-                  href={activeTab === 'packages' ? "/packages" : `/search?location=${encodeURIComponent(destination)}&checkIn=${checkIn?.toISOString() || ''}&checkOut=${checkOut?.toISOString() || ''}&adults=${adults}&children=${children}&rooms=${rooms}`} 
+                  href={
+                    activeTab === 'packages' ? "/packages" : 
+                    activeTab === 'activities' ? `/activities?location=${encodeURIComponent(destination)}&date=${checkIn?.toISOString() || ''}&adults=${adults}&children=${children}` : 
+                    `/search?location=${encodeURIComponent(destination)}&checkIn=${checkIn?.toISOString() || ''}&checkOut=${checkOut?.toISOString() || ''}&adults=${adults}&children=${children}&rooms=${rooms}`
+                  } 
                   className="bg-brand-coral hover:bg-brand-coral/90 text-white pl-7 pr-5 py-3.5 rounded-full font-bold flex items-center justify-center gap-3 transition-all hover:-translate-y-0.5 text-[15px] w-full sm:w-auto min-w-50"
                 >
                   Search

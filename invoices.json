@@ -1,5 +1,61 @@
 [
   {
+    "id": "inv-admin-1785319809124",
+    "invoiceNumber": "RAC-GST-1785319809124",
+    "type": "billing",
+    "vendorId": "6a44e9d4003015938636",
+    "vendorName": "blackrolex1144",
+    "vendorEmail": "blackrolex1144@gmail.com",
+    "vendorPhone": "",
+    "vendorAddress": "",
+    "vendorGstin": "",
+    "issueDate": "2026-07-29",
+    "dueDate": "2026-08-05",
+    "items": [
+      {
+        "id": "fee-gst-1785319809124",
+        "description": "Platform Services",
+        "quantity": 1,
+        "unitPrice": 10000,
+        "amount": 10000
+      }
+    ],
+    "subtotal": 10000,
+    "taxRate": 24,
+    "taxAmount": 2400,
+    "totalAmount": 12400,
+    "status": "Sent",
+    "createdAt": "2026-07-29T10:10:09.124Z"
+  },
+  {
+    "id": "inv-admin-1785319795501",
+    "invoiceNumber": "RAC-GST-1785319795501",
+    "type": "billing",
+    "vendorId": "6a5757440004456047e2",
+    "vendorName": "dilpreetsg08",
+    "vendorEmail": "dilpreetsg08@gmail.com",
+    "vendorPhone": "",
+    "vendorAddress": "",
+    "vendorGstin": "",
+    "issueDate": "2026-07-29",
+    "dueDate": "2026-08-05",
+    "items": [
+      {
+        "id": "fee-gst-1785319795501",
+        "description": "Platform Services",
+        "quantity": 1,
+        "unitPrice": 10000,
+        "amount": 10000
+      }
+    ],
+    "subtotal": 10000,
+    "taxRate": 24,
+    "taxAmount": 2400,
+    "totalAmount": 12400,
+    "status": "Sent",
+    "createdAt": "2026-07-29T10:09:55.501Z"
+  },
+  {
     "id": "inv-wd-1785060403332",
     "invoiceNumber": "RAC-WD-2026-455",
     "type": "withdrawal",
@@ -49,7 +105,7 @@
     "notes": "Please process this payout invoice to the specified bank account / UPI ID. Thank you!",
     "createdAt": "2026-07-26T10:06:43.332Z",
     "adminRemarks": "Payout Processed via Bank Transfer (NEFT/RTGS) (UTR: UTR1785060414026)",
-    "updatedAt": "2026-07-29T08:30:35.755Z"
+    "updatedAt": "2026-07-29T10:06:58.322Z"
   },
   {
     "id": "inv-1784985556488",

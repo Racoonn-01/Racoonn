@@ -24,7 +24,10 @@ import {
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuGroup } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { client, appwriteConfig } from "@/lib/appwrite/client"
+import { Databases, Query } from "appwrite"
 
 export interface VendorData {
   id: string;
@@ -59,22 +62,117 @@ export default function VendorsClient({ vendors: initialVendors, kpi }: VendorsC
   
   const [isGstModalOpen, setIsGstModalOpen] = useState(false);
   const [selectedGstVendor, setSelectedGstVendor] = useState<VendorData | null>(null);
-  const [gstAmount, setGstAmount] = useState<string>("");
   const [isSendingGst, setIsSendingGst] = useState(false);
+  
+  // Bookings state for GST invoice
+  const [vendorBookings, setVendorBookings] = useState<any[]>([]);
+  const [selectedBookingIds, setSelectedBookingIds] = useState<string[]>([]);
+  const [isLoadingBookings, setIsLoadingBookings] = useState(false);
 
-  const handleOpenGstModal = (vendor: VendorData) => {
+  const handleOpenGstModal = async (vendor: VendorData) => {
     setSelectedGstVendor(vendor);
-    setGstAmount("");
+    setSelectedBookingIds([]);
+    setVendorBookings([]);
     setIsGstModalOpen(true);
+    
+    // Fetch bookings for this vendor
+    try {
+      setIsLoadingBookings(true);
+      const db = new Databases(client);
+      const dbId = appwriteConfig.databaseId;
+      
+      // 1. Get properties for this vendor
+      const propsRes = await db.listDocuments(
+        dbId,
+        process.env.NEXT_PUBLIC_APPWRITE_PROPERTY_COLLECTION_ID || 'properties',
+        [Query.equal('vendorId', vendor.id), Query.limit(100)]
+      );
+      
+      const propertyIds = propsRes.documents.map(p => p.$id);
+      
+      if (propertyIds.length > 0) {
+        // 2. Get bookings for these properties
+        const bookingsRes = await db.listDocuments(
+          dbId,
+          'bookings',
+          [Query.equal('hotelId', propertyIds), Query.orderDesc('$createdAt'), Query.limit(100)]
+        );
+        
+        // 3. Get payments to calculate gross amount
+        const bookingIds = bookingsRes.documents.map(b => b.$id);
+        let paymentsRes = { documents: [] as any[] };
+        
+        if (bookingIds.length > 0) {
+          paymentsRes = await db.listDocuments(
+            dbId,
+            'booking_payments',
+            [Query.equal('bookingId', bookingIds), Query.limit(100)]
+          );
+        }
+        
+        const mapped = bookingsRes.documents.map(b => {
+          const payment = paymentsRes.documents.find(p => p.bookingId === b.$id);
+          const gross = payment ? Number(payment.totalAmount || 0) : 12000;
+          const fee = Math.round((gross * 18) / 100); // 18% platform fee
+          return {
+            id: b.$id,
+            hotelName: b.hotelName || "Property",
+            checkIn: new Date(b.checkIn).toLocaleDateString(),
+            checkOut: new Date(b.checkOut).toLocaleDateString(),
+            grossAmount: gross,
+            platformFee: fee,
+            status: b.status
+          };
+        });
+        
+        // Filter out non-completed bookings (optional, but usually GST is sent on completed/paid bookings)
+        // We'll just show all so admin can decide
+        setVendorBookings(mapped);
+      }
+    } catch (err) {
+      console.error("Error fetching vendor bookings", err);
+    } finally {
+      setIsLoadingBookings(false);
+    }
   };
 
+  const handleToggleBooking = (id: string) => {
+    setSelectedBookingIds(prev => 
+      prev.includes(id) ? prev.filter(bId => bId !== id) : [...prev, id]
+    );
+  };
+
+  const toggleAllBookings = () => {
+    if (selectedBookingIds.length === vendorBookings.length && vendorBookings.length > 0) {
+      setSelectedBookingIds([]);
+    } else {
+      setSelectedBookingIds(vendorBookings.map(b => b.id));
+    }
+  };
+
+  const selectedBookingsTotalFee = vendorBookings
+    .filter(b => selectedBookingIds.includes(b.id))
+    .reduce((sum, b) => sum + b.platformFee, 0);
+
   const handleSendGstInvoice = async () => {
-    if (!selectedGstVendor || !gstAmount) return;
+    if (!selectedGstVendor || selectedBookingIds.length === 0) return;
     setIsSendingGst(true);
     
-    const baseAmount = Number(gstAmount);
+    const baseAmount = selectedBookingsTotalFee;
     const taxAmt = baseAmount * 0.24;
     const totalAmount = baseAmount + taxAmt;
+    
+    // Format line items
+    const selectedBookingsItems = vendorBookings
+      .filter(b => selectedBookingIds.includes(b.id))
+      .map(b => ({
+        id: `fee-${b.id}`,
+        description: `Platform Fee (18%) for Booking #${b.id.substring(0, 8)} at ${b.hotelName}`,
+        quantity: 1,
+        unitPrice: b.platformFee,
+        amount: b.platformFee,
+        bookingId: b.id
+      }));
     
     const invoiceObj = {
       id: `inv-admin-${Date.now()}`,
@@ -88,13 +186,7 @@ export default function VendorsClient({ vendors: initialVendors, kpi }: VendorsC
       vendorGstin: "",
       issueDate: new Date().toISOString().split("T")[0],
       dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
-      items: [{
-        id: `fee-gst-${Date.now()}`,
-        description: `Platform Services`,
-        quantity: 1,
-        unitPrice: baseAmount,
-        amount: baseAmount,
-      }],
+      items: selectedBookingsItems,
       subtotal: baseAmount,
       taxRate: 24,
       taxAmount: taxAmt,
@@ -109,6 +201,37 @@ export default function VendorsClient({ vendors: initialVendors, kpi }: VendorsC
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(invoiceObj),
       });
+      // Send email to vendor
+      try {
+        await fetch("/api/send-email", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            to: selectedGstVendor.email,
+            subject: `GST Invoice (24%) Generated - Racoonn Platform`,
+            text: `Dear ${selectedGstVendor.name},\n\nA GST Invoice for platform services has been generated. Total Amount: ₹${totalAmount.toLocaleString('en-IN')}.\n\nThank you,\nRacoonn Admin`,
+            html: `
+              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
+                <h2 style="color: #4f46e5;">GST Invoice Generated</h2>
+                <p>Dear <strong>${selectedGstVendor.name}</strong>,</p>
+                <p>A new GST invoice has been generated for platform services (18% Commission + 24% GST) regarding your recent bookings.</p>
+                <div style="background-color: #f9fafb; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                  <p style="margin: 5px 0;"><strong>Invoice Reference:</strong> RAC-GST-${Date.now()}</p>
+                  <p style="margin: 5px 0;"><strong>Base Amount (Platform Fees):</strong> ₹${baseAmount.toLocaleString('en-IN')}</p>
+                  <p style="margin: 5px 0;"><strong>GST (24%):</strong> ₹${taxAmt.toLocaleString('en-IN')}</p>
+                  <hr style="border: 0; border-top: 1px solid #e5e7eb; margin: 10px 0;" />
+                  <p style="margin: 5px 0; font-size: 18px; color: #10b981;"><strong>Total Amount:</strong> ₹${totalAmount.toLocaleString('en-IN')}</p>
+                </div>
+                <p>You can view the full details in your vendor dashboard.</p>
+                <p style="color: #6b7280; font-size: 12px; margin-top: 30px;">Thank you for partnering with Racoonn!</p>
+              </div>
+            `
+          })
+        });
+      } catch (emailErr) {
+        console.error("Failed to send GST invoice email", emailErr);
+      }
+
       setIsGstModalOpen(false);
     } catch (err) {
       console.error("Failed to send GST invoice", err);
@@ -463,49 +586,94 @@ export default function VendorsClient({ vendors: initialVendors, kpi }: VendorsC
 
       {/* GST Invoice Modal */}
       <Dialog open={isGstModalOpen} onOpenChange={setIsGstModalOpen}>
-        <DialogContent className="sm:max-w-[425px] rounded-2xl">
-          <DialogHeader>
+        <DialogContent className="sm:max-w-[700px] rounded-2xl max-h-[85vh] flex flex-col overflow-hidden">
+          <DialogHeader className="px-6 py-4 border-b border-muted">
             <DialogTitle>Send 24% GST Invoice</DialogTitle>
             <DialogDescription>
-              Create a billing invoice for {selectedGstVendor?.name}.
+              Select completed bookings to calculate platform fee and 24% GST for {selectedGstVendor?.name}.
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <label htmlFor="amount" className="text-sm font-medium">
-                Base Amount (₹)
-              </label>
-              <Input
-                id="amount"
-                type="number"
-                placeholder="Enter base amount"
-                value={gstAmount}
-                onChange={(e) => setGstAmount(e.target.value)}
-              />
-            </div>
-            {gstAmount && !isNaN(Number(gstAmount)) && (
-              <div className="bg-muted/30 p-3 rounded-xl text-sm space-y-1">
+          
+          <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+            {isLoadingBookings ? (
+              <div className="flex justify-center items-center py-12">
+                <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
+              </div>
+            ) : vendorBookings.length === 0 ? (
+              <div className="text-center py-12 text-muted-foreground bg-muted/20 rounded-xl">
+                No bookings found for this vendor.
+              </div>
+            ) : (
+              <div className="border rounded-xl overflow-hidden">
+                <Table>
+                  <TableHeader className="bg-muted/50">
+                    <TableRow>
+                      <TableHead className="w-[50px] text-center">
+                        <Checkbox 
+                          checked={selectedBookingIds.length === vendorBookings.length && vendorBookings.length > 0}
+                          onCheckedChange={toggleAllBookings}
+                        />
+                      </TableHead>
+                      <TableHead>Booking Details</TableHead>
+                      <TableHead>Dates</TableHead>
+                      <TableHead className="text-right">Platform Fee (18%)</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {vendorBookings.map((b) => (
+                      <TableRow key={b.id}>
+                        <TableCell className="text-center">
+                          <Checkbox 
+                            checked={selectedBookingIds.includes(b.id)}
+                            onCheckedChange={() => handleToggleBooking(b.id)}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <p className="font-medium">{b.hotelName}</p>
+                          <p className="text-xs text-muted-foreground uppercase">{b.id.substring(0, 8)}</p>
+                        </TableCell>
+                        <TableCell>
+                          <p className="text-sm">{b.checkIn} - {b.checkOut}</p>
+                          <Badge variant="outline" className="mt-1 text-[10px]">{b.status}</Badge>
+                        </TableCell>
+                        <TableCell className="text-right font-medium">
+                          ₹{b.platformFee.toLocaleString('en-IN')}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+            
+            {selectedBookingIds.length > 0 && (
+              <div className="bg-muted/30 p-4 rounded-xl text-sm space-y-2 mt-4">
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Base Amount:</span>
-                  <span>₹{Number(gstAmount).toLocaleString('en-IN')}</span>
+                  <span className="text-muted-foreground">Selected Bookings:</span>
+                  <span className="font-semibold">{selectedBookingIds.length}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Base Amount (Total Fees):</span>
+                  <span>₹{selectedBookingsTotalFee.toLocaleString('en-IN')}</span>
                 </div>
                 <div className="flex justify-between text-indigo-600">
                   <span>GST (24%):</span>
-                  <span>₹{(Number(gstAmount) * 0.24).toLocaleString('en-IN')}</span>
+                  <span>₹{(selectedBookingsTotalFee * 0.24).toLocaleString('en-IN')}</span>
                 </div>
-                <div className="flex justify-between font-bold pt-1 border-t">
+                <div className="flex justify-between font-bold pt-2 border-t text-base">
                   <span>Total Invoice Amount:</span>
-                  <span>₹{(Number(gstAmount) * 1.24).toLocaleString('en-IN')}</span>
+                  <span>₹{(selectedBookingsTotalFee * 1.24).toLocaleString('en-IN')}</span>
                 </div>
               </div>
             )}
           </div>
-          <DialogFooter>
+          
+          <DialogFooter className="px-6 py-4 border-t border-muted bg-muted/10">
             <Button variant="outline" onClick={() => setIsGstModalOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleSendGstInvoice} disabled={!gstAmount || isSendingGst}>
-              {isSendingGst ? "Sending..." : "Send Invoice"}
+            <Button onClick={handleSendGstInvoice} disabled={selectedBookingIds.length === 0 || isSendingGst}>
+              {isSendingGst ? "Sending..." : "Send Invoice & Email"}
             </Button>
           </DialogFooter>
         </DialogContent>

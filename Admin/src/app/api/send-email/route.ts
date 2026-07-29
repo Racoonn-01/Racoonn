@@ -4,7 +4,7 @@ import nodemailer from "nodemailer";
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { to, subject, text, status, reason, vendorName, ownerName } = body;
+    const { to, subject, text, html, attachments, status, reason, vendorName, ownerName } = body;
 
     if (!to) {
       return NextResponse.json({ success: false, error: "Recipient email is required" }, { status: 400 });
@@ -28,13 +28,13 @@ export async function POST(request: Request) {
 
     const recipientEmail = to.trim();
     let emailSubject = subject;
-    let htmlContent = "";
+    let htmlContent = html || "";
 
     const name = ownerName || "Partner";
     const business = vendorName || "Your Property";
     const normStatus = (status || "").toString().toLowerCase().trim();
 
-    if (normStatus.includes("approved")) {
+    if (!html && normStatus.includes("approved")) {
       emailSubject = emailSubject || `🎉 Congratulations! Your Racoonn Vendor Account is Fully Verified`;
       htmlContent = `<div style="font-family: Arial, sans-serif; padding: 24px; color: #1e293b; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 16px;">
         <div style="text-align: center; margin-bottom: 24px;">
@@ -59,7 +59,7 @@ export async function POST(request: Request) {
         <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0;" />
         <p style="font-size: 12px; color: #94a3b8; text-align: center; margin: 0;">Racoonn Audit & Compliance Team • Automated Notification</p>
       </div>`;
-    } else if (normStatus.includes("reject")) {
+    } else if (!html && normStatus.includes("reject")) {
       emailSubject = emailSubject || `⚠️ Action Required: Racoonn Vendor Account Verification Unsuccessful`;
       htmlContent = `<div style="font-family: Arial, sans-serif; padding: 24px; color: #1e293b; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 16px;">
         <div style="text-align: center; margin-bottom: 24px;">
@@ -89,7 +89,7 @@ export async function POST(request: Request) {
         <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0;" />
         <p style="font-size: 12px; color: #94a3b8; text-align: center; margin: 0;">Racoonn Audit & Compliance Team • Automated Notification</p>
       </div>`;
-    } else {
+    } else if (!html) {
       emailSubject = emailSubject || `⏳ Status Update: Your Verification Documents are Under Review`;
       htmlContent = `<div style="font-family: Arial, sans-serif; padding: 24px; color: #1e293b; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 16px;">
         <div style="text-align: center; margin-bottom: 24px;">
@@ -109,13 +109,17 @@ export async function POST(request: Request) {
       </div>`;
     }
 
-    const mailOptions = {
-      from: `"Racoonn Compliance Team" <${user}>`,
+    const mailOptions: any = {
+      from: `"Racoonn Notification System" <${user}>`,
       to: recipientEmail,
       subject: emailSubject,
       text: text || emailSubject,
       html: htmlContent
     };
+
+    if (attachments && Array.isArray(attachments)) {
+      mailOptions.attachments = attachments;
+    }
 
     const info = await transporter.sendMail(mailOptions);
     console.log(`\n✅ [REAL GMAIL SMTP DISPATCH SUCCESS] Status: ${status} (${normStatus}) | Message ID: ${info.messageId} -> Sent to ${recipientEmail}\n`);

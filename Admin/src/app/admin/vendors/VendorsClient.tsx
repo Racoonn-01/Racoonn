@@ -28,6 +28,8 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { client, appwriteConfig } from "@/lib/appwrite/client"
 import { Databases, Query } from "appwrite"
+import jsPDF from "jspdf"
+import autoTable from "jspdf-autotable"
 
 export interface VendorData {
   id: string;
@@ -195,6 +197,47 @@ export default function VendorsClient({ vendors: initialVendors, kpi }: VendorsC
       createdAt: new Date().toISOString(),
     };
 
+    // Generate PDF Data URI for attachment
+    let pdfDataUri = "";
+    try {
+      const doc = new jsPDF();
+      doc.setFontSize(22);
+      doc.setTextColor(79, 70, 229); // Indigo
+      doc.text("Racoonn Platform", 14, 22);
+      
+      doc.setFontSize(10);
+      doc.setTextColor(100, 100, 100);
+      doc.text("GST Invoice (Platform Services)", 14, 30);
+      
+      doc.setFontSize(12);
+      doc.setTextColor(0, 0, 0);
+      doc.text(`Invoice Number: ${invoiceObj.invoiceNumber}`, 14, 45);
+      doc.text(`Date: ${invoiceObj.issueDate}`, 14, 52);
+      doc.text(`Status: ${invoiceObj.status}`, 14, 59);
+
+      doc.setFontSize(14);
+      doc.text("Billed To:", 14, 75);
+      doc.setFontSize(10);
+      doc.text(`Vendor: ${invoiceObj.vendorName}`, 14, 82);
+      doc.text(`Email: ${invoiceObj.vendorEmail}`, 14, 88);
+
+      autoTable(doc, {
+        startY: 100,
+        head: [["Description", "Amount"]],
+        body: [
+          ["Platform Fees (Base Amount)", `INR ${baseAmount.toLocaleString("en-IN")}`],
+          ["GST (24%)", `INR ${taxAmt.toLocaleString("en-IN")}`],
+          ["Total Amount", `INR ${totalAmount.toLocaleString("en-IN")}`]
+        ],
+        theme: "striped",
+        headStyles: { fillColor: [79, 70, 229] }
+      });
+      
+      pdfDataUri = doc.output("datauristring");
+    } catch (e) {
+      console.error("Error generating PDF invoice", e);
+    }
+
     try {
       await fetch("/api/invoices", {
         method: "POST",
@@ -203,30 +246,42 @@ export default function VendorsClient({ vendors: initialVendors, kpi }: VendorsC
       });
       // Send email to vendor
       try {
+        const payload: any = {
+          to: selectedGstVendor.email,
+          subject: `GST Invoice (24%) Generated - Racoonn Platform`,
+          text: `Dear ${selectedGstVendor.name},\n\nA GST Invoice for platform services has been generated. Total Amount: ₹${totalAmount.toLocaleString('en-IN')}.\n\nThank you,\nRacoonn Admin`,
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
+              <h2 style="color: #4f46e5;">GST Invoice Generated</h2>
+              <p>Dear <strong>${selectedGstVendor.name}</strong>,</p>
+              <p>A new GST invoice has been generated for platform services (18% Commission + 24% GST) regarding your recent bookings.</p>
+              <div style="background-color: #f9fafb; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                <p style="margin: 5px 0;"><strong>Invoice Reference:</strong> ${invoiceObj.invoiceNumber}</p>
+                <p style="margin: 5px 0;"><strong>Base Amount (Platform Fees):</strong> ₹${baseAmount.toLocaleString('en-IN')}</p>
+                <p style="margin: 5px 0;"><strong>GST (24%):</strong> ₹${taxAmt.toLocaleString('en-IN')}</p>
+                <hr style="border: 0; border-top: 1px solid #e5e7eb; margin: 10px 0;" />
+                <p style="margin: 5px 0; font-size: 18px; color: #10b981;"><strong>Total Amount:</strong> ₹${totalAmount.toLocaleString('en-IN')}</p>
+              </div>
+              <p>The PDF invoice is attached to this email.</p>
+              <p>You can also view the full details in your vendor dashboard.</p>
+              <p style="color: #6b7280; font-size: 12px; margin-top: 30px;">Thank you for partnering with Racoonn!</p>
+            </div>
+          `
+        };
+
+        if (pdfDataUri) {
+          payload.attachments = [
+            {
+              filename: `${invoiceObj.invoiceNumber}.pdf`,
+              path: pdfDataUri
+            }
+          ];
+        }
+
         await fetch("/api/send-email", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            to: selectedGstVendor.email,
-            subject: `GST Invoice (24%) Generated - Racoonn Platform`,
-            text: `Dear ${selectedGstVendor.name},\n\nA GST Invoice for platform services has been generated. Total Amount: ₹${totalAmount.toLocaleString('en-IN')}.\n\nThank you,\nRacoonn Admin`,
-            html: `
-              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
-                <h2 style="color: #4f46e5;">GST Invoice Generated</h2>
-                <p>Dear <strong>${selectedGstVendor.name}</strong>,</p>
-                <p>A new GST invoice has been generated for platform services (18% Commission + 24% GST) regarding your recent bookings.</p>
-                <div style="background-color: #f9fafb; padding: 15px; border-radius: 8px; margin: 20px 0;">
-                  <p style="margin: 5px 0;"><strong>Invoice Reference:</strong> RAC-GST-${Date.now()}</p>
-                  <p style="margin: 5px 0;"><strong>Base Amount (Platform Fees):</strong> ₹${baseAmount.toLocaleString('en-IN')}</p>
-                  <p style="margin: 5px 0;"><strong>GST (24%):</strong> ₹${taxAmt.toLocaleString('en-IN')}</p>
-                  <hr style="border: 0; border-top: 1px solid #e5e7eb; margin: 10px 0;" />
-                  <p style="margin: 5px 0; font-size: 18px; color: #10b981;"><strong>Total Amount:</strong> ₹${totalAmount.toLocaleString('en-IN')}</p>
-                </div>
-                <p>You can view the full details in your vendor dashboard.</p>
-                <p style="color: #6b7280; font-size: 12px; margin-top: 30px;">Thank you for partnering with Racoonn!</p>
-              </div>
-            `
-          })
+          body: JSON.stringify(payload)
         });
       } catch (emailErr) {
         console.error("Failed to send GST invoice email", emailErr);

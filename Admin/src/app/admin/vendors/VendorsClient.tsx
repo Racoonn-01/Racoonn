@@ -221,14 +221,20 @@ export default function VendorsClient({ vendors: initialVendors, kpi }: VendorsC
       doc.text(`Vendor: ${invoiceObj.vendorName}`, 14, 82);
       doc.text(`Email: ${invoiceObj.vendorEmail}`, 14, 88);
 
+      const tableBody: any[] = selectedBookingsItems.map(item => [
+        item.description,
+        `INR ${item.amount.toLocaleString("en-IN")}`
+      ]);
+      
+      tableBody.push(["", ""]);
+      tableBody.push(["Platform Fees (Base Amount)", `INR ${baseAmount.toLocaleString("en-IN")}`]);
+      tableBody.push(["GST (24%)", `INR ${taxAmt.toLocaleString("en-IN")}`]);
+      tableBody.push(["Total Amount", `INR ${totalAmount.toLocaleString("en-IN")}`]);
+
       autoTable(doc, {
         startY: 100,
         head: [["Description", "Amount"]],
-        body: [
-          ["Platform Fees (Base Amount)", `INR ${baseAmount.toLocaleString("en-IN")}`],
-          ["GST (24%)", `INR ${taxAmt.toLocaleString("en-IN")}`],
-          ["Total Amount", `INR ${totalAmount.toLocaleString("en-IN")}`]
-        ],
+        body: tableBody,
         theme: "striped",
         headStyles: { fillColor: [79, 70, 229] }
       });
@@ -257,6 +263,12 @@ export default function VendorsClient({ vendors: initialVendors, kpi }: VendorsC
               <p>A new GST invoice has been generated for platform services (18% Commission + 24% GST) regarding your recent bookings.</p>
               <div style="background-color: #f9fafb; padding: 15px; border-radius: 8px; margin: 20px 0;">
                 <p style="margin: 5px 0;"><strong>Invoice Reference:</strong> ${invoiceObj.invoiceNumber}</p>
+                <hr style="border: 0; border-top: 1px solid #e5e7eb; margin: 10px 0;" />
+                <h3 style="margin: 10px 0; font-size: 14px; color: #374151;">Selected Bookings</h3>
+                <ul style="margin: 10px 0; padding-left: 20px; font-size: 13px; color: #4b5563;">
+                  ${selectedBookingsItems.map(item => `<li>${item.description}: <strong>₹${item.amount.toLocaleString('en-IN')}</strong></li>`).join('')}
+                </ul>
+                <hr style="border: 0; border-top: 1px solid #e5e7eb; margin: 10px 0;" />
                 <p style="margin: 5px 0;"><strong>Base Amount (Platform Fees):</strong> ₹${baseAmount.toLocaleString('en-IN')}</p>
                 <p style="margin: 5px 0;"><strong>GST (24%):</strong> ₹${taxAmt.toLocaleString('en-IN')}</p>
                 <hr style="border: 0; border-top: 1px solid #e5e7eb; margin: 10px 0;" />

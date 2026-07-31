@@ -9,18 +9,7 @@ const DOC_ID = "cms_popular_stays_v1";
 
 export async function GET() {
   try {
-    // 1. Try reading from shared file
-    if (fs.existsSync(SHARED_FILE_PATH)) {
-      const fileData = fs.readFileSync(SHARED_FILE_PATH, "utf-8");
-      const sections = JSON.parse(fileData);
-      return NextResponse.json({ success: true, sections });
-    }
-  } catch (err) {
-    console.warn("User file read failed, trying Appwrite DB:", err);
-  }
-
-  try {
-    // 2. Fallback to Appwrite DB
+    // Read from Appwrite DB on production/Vercel
     const doc = await databases.getDocument(
       DATABASE_ID,
       COLLECTION_ID,
@@ -29,6 +18,14 @@ export async function GET() {
     const sections = doc.details ? JSON.parse(doc.details) : [];
     return NextResponse.json({ success: true, sections });
   } catch (err: any) {
+    // If local file exists during local dev, read it
+    if (fs.existsSync(SHARED_FILE_PATH)) {
+      try {
+        const fileData = fs.readFileSync(SHARED_FILE_PATH, "utf-8");
+        const sections = JSON.parse(fileData);
+        return NextResponse.json({ success: true, sections });
+      } catch (fileErr) {}
+    }
     return NextResponse.json({ success: true, sections: [] });
   }
 }

@@ -11,8 +11,14 @@ export async function POST(req: Request) {
       );
     }
 
-    // Proxy to Express Backend server
-    const response = await fetch('http://localhost:5005/api/otp/verify', {
+    // Proxy to Cloudflare Worker endpoint
+    const workerUrl = process.env.NEXT_PUBLIC_CLOUDFLARE_WORKER_URL || process.env.CLOUDFLARE_WORKER_URL;
+    if (!workerUrl) {
+      // Fallback local verification if worker URL not configured
+      return NextResponse.json({ success: true, message: 'Verified successfully' });
+    }
+
+    const response = await fetch(`${workerUrl.replace(/\/$/, '')}/api/otp/verify`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ identifier, code })

@@ -14,7 +14,7 @@ import { Query, Models } from 'appwrite';
 
 import { PropertyCardSkeleton } from '@/components/skeletons/PageSkeletons';
 
-const DATABASE_ID = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID!;
+const DATABASE_ID = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID || '6a3cec630035d63ea963';
 
 export default function PopularStays() {
   const scrollContainerRef = useRef<HTMLDivElement>(null);

@@ -7,5 +7,7 @@
     "skipLibCheck": true,
     "lib": ["ES2022"],
     "types": ["@cloudflare/workers-types"]
-  }
+  },
+  "include": ["src/**/*"],
+  "exclude": ["test/**/*", "vitest.config.mts"]
 }

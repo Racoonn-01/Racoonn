@@ -5,10 +5,11 @@ import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import { Search, Download, Filter, MessageSquare, FileText, Ban, MapPin, CreditCard, ArrowLeft, Loader2, Printer, X, Users, User, Building, Calendar, CheckCircle2, Headphones } from "lucide-react";
+import { Search, Download, Filter, MessageSquare, FileText, Ban, MapPin, CreditCard, ArrowLeft, Loader2, Printer, X, Users, User, Building, Calendar, CheckCircle2, Headphones, AlertTriangle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { databases, appwriteConfig } from "@/lib/appwrite/client";
 import { Query } from "appwrite";
+import { calculateCancellationRefund } from "@/lib/cancellation";
 
 export default function BookingsPage() {
   const [selectedBooking, setSelectedBooking] = useState<any>(null);
@@ -16,6 +17,9 @@ export default function BookingsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isInvoiceOpen, setIsInvoiceOpen] = useState(false);
   const [activeInvoiceTab, setActiveInvoiceTab] = useState<"guest" | "settlement">("guest");
+  const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
+  const [cancellationSummary, setCancellationSummary] = useState<any>(null);
+  const [isCancelling, setIsCancelling] = useState(false);
 
   useEffect(() => {
     async function fetchBookings() {
@@ -86,9 +90,12 @@ export default function BookingsPage() {
           }
 
           return {
+            docId: booking.$id,
             id: booking.$id.substring(0, 8).toUpperCase(),
             guest: guest ? `${guest.firstName} ${guest.lastName}` : 'Unknown Guest',
             property: booking.hotelName || 'Racoonn Property',
+            checkIn: booking.checkIn,
+            checkOut: booking.checkOut,
             dates: `${new Date(booking.checkIn).toLocaleDateString()} - ${new Date(booking.checkOut).toLocaleDateString()}`,
             amount: `₹${totalPaidNum.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`,
             baseAmount: baseRoomNum,
@@ -103,6 +110,12 @@ export default function BookingsPage() {
             nationality: guest?.country || 'N/A',
             specialRequests: guest?.specialRequests || '',
             paymentMethod: booking.paymentStatus || 'Card',
+            refundEligible: booking.refundEligible,
+            refundPercentage: booking.refundPercentage,
+            refundAmount: booking.refundAmount,
+            refundStatus: booking.refundStatus,
+            cancellationReason: booking.cancellationReason,
+            cancelledAt: booking.cancelledAt,
           };
         });
 
@@ -266,6 +279,42 @@ export default function BookingsPage() {
                 </p>
               </div>
 
+              {selectedBooking.status?.toLowerCase().includes('cancel') && (
+                <div className="mb-6 p-4 rounded-2xl bg-red-50/70 border border-red-100 space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs font-bold uppercase tracking-wider text-red-700">Cancellation & Refund Breakdown</span>
+                    <span className="text-xs font-black text-red-600 bg-white px-2 py-0.5 rounded-md border border-red-200">
+                      {selectedBooking.refundStatus || 'Processing'}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1 text-xs">
+                    <div>
+                      <span className="text-slate-400 block text-[10px] uppercase font-semibold">Refund %</span>
+                      <span className="font-bold text-slate-800">{selectedBooking.refundPercentage ?? 0}%</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 block text-[10px] uppercase font-semibold">Refund Amount</span>
+                      <span className="font-bold text-emerald-700">₹{(selectedBooking.refundAmount || 0).toLocaleString('en-IN')}</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 block text-[10px] uppercase font-semibold">Cancelled By</span>
+                      <span className="font-bold text-slate-800 capitalize">{selectedBooking.cancelledBy || 'User'}</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 block text-[10px] uppercase font-semibold">Cancelled Date</span>
+                      <span className="font-bold text-slate-800">
+                        {selectedBooking.cancelledAt ? new Date(selectedBooking.cancelledAt).toLocaleDateString() : 'N/A'}
+                      </span>
+                    </div>
+                  </div>
+                  {selectedBooking.cancellationReason && (
+                    <p className="text-xs text-slate-600 pt-1 border-t border-red-100/60 font-medium">
+                      <strong>Reason:</strong> {selectedBooking.cancellationReason}
+                    </p>
+                  )}
+                </div>
+              )}
+
                 <div className="flex items-center gap-4">
                   <div className="h-16 w-16 rounded-3xl bg-primary/10 text-primary flex items-center justify-center text-2xl font-black shrink-0">
                     {selectedBooking.guest.split(' ').map((n: string) => n[0]).join('')}
@@ -427,7 +476,7 @@ export default function BookingsPage() {
                   );
                 })()}
 
-                {(() => {
+                 {(() => {
                   const handleMessageGuest = () => {
                     if (!selectedBooking) return;
                     const phoneDigits = (selectedBooking.phone || '').replace(/[^0-9]/g, '');
@@ -435,6 +484,63 @@ export default function BookingsPage() {
                     const whatsappUrl = `https://wa.me/${phoneDigits}?text=${encodeURIComponent(customText)}`;
                     window.open(whatsappUrl, '_blank');
                   };
+
+                  const handleInitiateCancel = () => {
+                    if (!selectedBooking) return;
+                    const totalPaid = selectedBooking.totalPaid || 0;
+                    const checkInIso = selectedBooking.checkIn || selectedBooking.dates?.split(' - ')[0];
+                    const calc = calculateCancellationRefund(checkInIso, totalPaid);
+                    setCancellationSummary(calc);
+                    setIsCancelModalOpen(true);
+                  };
+
+                  const handleConfirmCancel = async () => {
+                    if (!selectedBooking || !cancellationSummary) return;
+                    try {
+                      setIsCancelling(true);
+                      const now = new Date().toISOString();
+                      const updatePayload = {
+                        status: cancellationSummary.bookingStatus,
+                        cancellationRequestedAt: now,
+                        cancelledAt: now,
+                        refundEligible: cancellationSummary.refundPercentage > 0,
+                        refundPercentage: cancellationSummary.refundPercentage,
+                        refundAmount: cancellationSummary.refundAmount,
+                        cancellationReason: cancellationSummary.reason,
+                        refundStatus: cancellationSummary.refundStatus,
+                        cancelledBy: 'vendor',
+                      };
+
+                      await databases.updateDocument(
+                        appwriteConfig.databaseId,
+                        'bookings',
+                        selectedBooking.docId || selectedBooking.id,
+                        updatePayload
+                      );
+
+                      setSelectedBooking((prev: any) => ({
+                        ...prev,
+                        ...updatePayload,
+                      }));
+
+                      setBookings((prevBookings) =>
+                        prevBookings.map((b) =>
+                          b.id === selectedBooking.id
+                            ? { ...b, ...updatePayload }
+                            : b
+                        )
+                      );
+
+                      setIsCancelModalOpen(false);
+                    } catch (err) {
+                      console.error("Failed to cancel booking:", err);
+                      alert("Error executing cancellation. Please try again.");
+                    } finally {
+                      setIsCancelling(false);
+                    }
+                  };
+
+                  const isAlreadyCancelled = selectedBooking.status?.toLowerCase().includes('cancel') || selectedBooking.status === 'No Show' || selectedBooking.status === 'Completed';
 
                   return (
                     <div className="space-y-3 pt-4 pb-6 print:hidden print-hidden">
@@ -455,11 +561,13 @@ export default function BookingsPage() {
                           Invoice
                         </Button>
                         <Button 
+                          disabled={isAlreadyCancelled}
+                          onClick={handleInitiateCancel}
                           variant="outline" 
-                          className="font-bold h-12 rounded-xl border-red-100 text-red-600 bg-red-50 hover:bg-red-100 hover:text-red-700 gap-2 cursor-pointer"
+                          className={`font-bold h-12 rounded-xl border-red-100 text-red-600 bg-red-50 hover:bg-red-100 hover:text-red-700 gap-2 cursor-pointer ${isAlreadyCancelled ? 'opacity-50 cursor-not-allowed' : ''}`}
                         >
                           <Ban className="w-4 h-4" />
-                          Cancel
+                          {isAlreadyCancelled ? 'Cancelled' : 'Cancel Booking'}
                         </Button>
                       </div>
                     </div>
@@ -469,6 +577,133 @@ export default function BookingsPage() {
             </div>
           </div>
         </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Cancellation Confirmation Modal */}
+      <AnimatePresence>
+        {isCancelModalOpen && cancellationSummary && selectedBooking && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsCancelModalOpen(false)}
+              className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs"
+            />
+
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 15 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 15 }}
+              className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl p-6 sm:p-8 z-10 space-y-6"
+            >
+              <div className="flex items-center gap-4 border-b border-slate-100 pb-4">
+                <div className="h-12 w-12 rounded-2xl bg-red-50 text-red-600 flex items-center justify-center shrink-0">
+                  <AlertTriangle className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-black text-secondary">Cancel Booking?</h3>
+                  <p className="text-xs text-slate-500 font-medium mt-0.5">Booking #{selectedBooking.id}</p>
+                </div>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 space-y-3">
+                <p className="text-xs text-slate-600 leading-relaxed font-medium">
+                  Based on our cancellation policy, this booking is eligible for a <strong className="text-slate-900">{cancellationSummary.refundPercentage}%</strong> refund.
+                </p>
+
+                <div className="space-y-2 pt-2 border-t border-slate-200/60 text-xs">
+                  <div className="flex justify-between text-slate-600 font-medium">
+                    <span>Booking Amount</span>
+                    <span className="font-bold text-slate-900">₹{(selectedBooking.totalPaid || 0).toLocaleString('en-IN')}</span>
+                  </div>
+                  <div className="flex justify-between text-slate-600 font-medium">
+                    <span>Cancellation Fee</span>
+                    <span className="font-bold text-red-600">₹{cancellationSummary.cancellationFee.toLocaleString('en-IN')}</span>
+                  </div>
+                  <div className="flex justify-between text-slate-600 font-medium">
+                    <span>Refund Amount ({cancellationSummary.refundPercentage}%)</span>
+                    <span className="font-bold text-emerald-600">₹{cancellationSummary.refundAmount.toLocaleString('en-IN')}</span>
+                  </div>
+                  <div className="flex justify-between text-slate-600 font-medium pt-1">
+                    <span>Expected Refund Timeline</span>
+                    <span className="font-semibold text-slate-700">5–7 Business Days</span>
+                  </div>
+                </div>
+              </div>
+
+              <p className="text-xs text-amber-700 bg-amber-50 p-3 rounded-xl border border-amber-200 font-semibold">
+                ⚠️ This action cannot be undone. Room availability will be automatically released upon cancellation.
+              </p>
+
+              <div className="flex gap-3 pt-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setIsCancelModalOpen(false)}
+                  disabled={isCancelling}
+                  className="w-1/2 h-12 font-bold rounded-xl border-slate-200 text-slate-700 hover:bg-slate-50 cursor-pointer"
+                >
+                  Keep Booking
+                </Button>
+                <Button
+                  onClick={() => {
+                    const handleConfirmCancel = async () => {
+                      if (!selectedBooking || !cancellationSummary) return;
+                      try {
+                        setIsCancelling(true);
+                        const now = new Date().toISOString();
+                        const updatePayload = {
+                          status: cancellationSummary.bookingStatus,
+                          cancellationRequestedAt: now,
+                          cancelledAt: now,
+                          refundEligible: cancellationSummary.refundPercentage > 0,
+                          refundPercentage: cancellationSummary.refundPercentage,
+                          refundAmount: cancellationSummary.refundAmount,
+                          cancellationReason: cancellationSummary.reason,
+                          refundStatus: cancellationSummary.refundStatus,
+                          cancelledBy: 'vendor',
+                        };
+
+                        await databases.updateDocument(
+                          appwriteConfig.databaseId,
+                          'bookings',
+                          selectedBooking.docId || selectedBooking.id,
+                          updatePayload
+                        );
+
+                        setSelectedBooking((prev: any) => ({
+                          ...prev,
+                          ...updatePayload,
+                        }));
+
+                        setBookings((prevBookings) =>
+                          prevBookings.map((b) =>
+                            b.id === selectedBooking.id
+                              ? { ...b, ...updatePayload }
+                              : b
+                          )
+                        );
+
+                        setIsCancelModalOpen(false);
+                      } catch (err) {
+                        console.error("Failed to cancel booking:", err);
+                        alert("Error executing cancellation. Please try again.");
+                      } finally {
+                        setIsCancelling(false);
+                      }
+                    };
+                    handleConfirmCancel();
+                  }}
+                  disabled={isCancelling}
+                  className="w-1/2 h-12 font-bold rounded-xl bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-600/20 cursor-pointer gap-2"
+                >
+                  {isCancelling && <Loader2 className="w-4 h-4 animate-spin" />}
+                  Cancel Booking
+                </Button>
+              </div>
+            </motion.div>
+          </div>
         )}
       </AnimatePresence>
 

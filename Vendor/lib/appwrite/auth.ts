@@ -4,9 +4,9 @@ import { account, databases, appwriteConfig } from './client';
 export const authService = {
   async register(email: string, password: string, name: string) {
     try {
-      await account.getSession('current');
-      await account.deleteSession('current');
-    } catch {} // Ignore if no session
+      // Clear all active sessions to avoid Appwrite max session limit error (100 sessions per user)
+      await account.deleteSessions();
+    } catch {} // Ignore if no active session
 
     // 1. Create Appwrite Account
     const userAccount = await account.create(ID.unique(), email, password, name);
@@ -43,8 +43,8 @@ export const authService = {
 
   async login(email: string, password: string) {
     try {
-      await account.getSession('current');
-      await account.deleteSession('current');
+      // Delete all existing sessions on login to avoid reaching Appwrite 100 sessions per user limit
+      await account.deleteSessions();
     } catch {} // Ignore if no session
 
     const session = await account.createEmailPasswordSession(email, password);

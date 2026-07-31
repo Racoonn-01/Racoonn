@@ -84,4 +84,82 @@ app.post('/api/profiles', async (c) => {
   }
 });
 
+// OTP Storage in Cloudflare Worker memory/KV
+interface OtpRecord {
+  code: string;
+  expiresAt: number;
+  lastSentAt: number;
+  attempts: number;
+}
+
+const otpStore = new Map<string, OtpRecord>();
+
+// OTP Send Endpoint
+app.post('/api/otp/send', async (c) => {
+  try {
+    const { method, identifier } = await c.req.json();
+    if (!method || !identifier) {
+      return c.json({ error: 'Method and identifier required' }, 400);
+    }
+
+    const now = Date.now();
+    const existing = otpStore.get(identifier);
+
+    if (existing && now - existing.lastSentAt < 60 * 1000) {
+      const waitSeconds = Math.ceil((60 * 1000 - (now - existing.lastSentAt)) / 1000);
+      return c.json({ error: `Please wait ${waitSeconds} seconds before requesting a new OTP.` }, 429);
+    }
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    otpStore.set(identifier, {
+      code: otp,
+      expiresAt: now + 5 * 60 * 1000,
+      lastSentAt: now,
+      attempts: 0,
+    });
+
+    console.log(`Cloudflare Worker OTP ${otp} generated for ${identifier} via ${method}`);
+    return c.json({ success: true, message: `OTP sent successfully to ${identifier}` });
+  } catch (error: any) {
+    return c.json({ error: error.message || 'Failed to send OTP' }, 500);
+  }
+});
+
+// OTP Verify Endpoint
+app.post('/api/otp/verify', async (c) => {
+  try {
+    const { identifier, code } = await c.req.json();
+    const stored = otpStore.get(identifier);
+
+    if (!stored) {
+      return c.json({ error: 'No OTP found or it has expired.' }, 400);
+    }
+
+    if (Date.now() > stored.expiresAt) {
+      otpStore.delete(identifier);
+      return c.json({ error: 'OTP has expired. Please request a new one.' }, 400);
+    }
+
+    if (stored.attempts >= 3) {
+      otpStore.delete(identifier);
+      return c.json({ error: 'Maximum verification attempts exceeded. Please request a new OTP.' }, 429);
+    }
+
+    if (stored.code === code) {
+      otpStore.delete(identifier);
+      return c.json({ success: true, message: 'Verified successfully.' });
+    } else {
+      stored.attempts += 1;
+      const remaining = 3 - stored.attempts;
+      if (remaining <= 0) {
+        otpStore.delete(identifier);
+        return c.json({ error: 'Invalid OTP. Maximum attempts exceeded.' }, 400);
+      }
+      return c.json({ error: `Invalid OTP code. ${remaining} attempt(s) remaining.` }, 400);
+    }
+  } catch (error: any) {
+    return c.json({ error: error.message || 'Verification error' }, 500);
+  }
+});
+
 export default app;

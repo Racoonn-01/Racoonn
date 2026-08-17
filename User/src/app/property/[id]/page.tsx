@@ -171,7 +171,7 @@ export default async function PropertyDetails({ params }: { params: Promise<{ id
               <BedDouble size={18} /> Rooms and prices
             </a>
             <a href="#amenities" className="px-5 py-2.5 rounded-xl font-semibold text-[15px] text-gray-600 hover:bg-gray-50 flex items-center gap-2 transition-colors whitespace-nowrap">
-              <Sparkles size={18} /> Amenities
+              <Coffee size={18} /> Amenities
             </a>
             <a href="#about" className="px-5 py-2.5 rounded-xl font-semibold text-[15px] text-gray-600 hover:bg-gray-50 flex items-center gap-2 transition-colors whitespace-nowrap">
               <Info size={18} /> About the hotel

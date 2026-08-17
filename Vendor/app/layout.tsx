@@ -20,6 +20,7 @@ export const metadata: Metadata = {
 };
 
 import { Toaster } from 'sonner';
+import { AuthGuard } from '@/components/auth/AuthGuard';
 
 export default function RootLayout({
   children,
@@ -33,8 +34,10 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col font-sans" suppressHydrationWarning>
-        <TooltipProvider>{children}</TooltipProvider>
-        <Toaster richColors position="top-center" />
+        <AuthGuard>
+          <TooltipProvider>{children}</TooltipProvider>
+          <Toaster richColors position="top-center" />
+        </AuthGuard>
       </body>
     </html>
   );

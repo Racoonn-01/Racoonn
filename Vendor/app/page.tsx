@@ -25,19 +25,9 @@ export default function AuthPage() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
-  useEffect(() => {
-    checkAuth();
-  }, [checkAuth]);
 
-  useEffect(() => {
-    if (isAuthenticated) {
-      if (!profile || profile.status === 'Pending') {
-        router.push("/vendor/onboarding");
-      } else {
-        router.push("/vendor/dashboard");
-      }
-    }
-  }, [isAuthenticated, profile, router]);
+
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,11 +41,11 @@ export default function AuthPage() {
       } else if (isSignIn) {
         await authService.login(email, password);
         await checkAuth();
-        // Redirect is handled by the useEffect above
+        // Redirect is handled by AuthGuard
       } else {
         await authService.register(email, password, email.split("@")[0]);
         await checkAuth();
-        // Redirect is handled by the useEffect above
+        // Redirect is handled by AuthGuard
       }
     } catch (error: any) {
       toast.error(error.message || "An error occurred during authentication.");

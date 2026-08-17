@@ -24,7 +24,7 @@ export function Step5Rooms({ onNext, onBack }: { onNext: () => void, onBack: () 
   const [rooms, setRooms] = useState<Room[]>([{ id: 1, name: "Deluxe King Room", price: "2500", occupancy: "2", size: "350", photos: [] }]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
-  const { user, profile, checkAuth } = useAuthStore();
+  const { user, profile, refreshProfile } = useAuthStore();
 
   useEffect(() => {
     const fetchRooms = async () => {
@@ -67,14 +67,14 @@ export function Step5Rooms({ onNext, onBack }: { onNext: () => void, onBack: () 
     try {
       let currentUser = user;
       if (!currentUser) {
-        await checkAuth();
+        await refreshProfile();
         currentUser = useAuthStore.getState().user;
         if (!currentUser) throw new Error("You must be logged in.");
       }
 
       let currentProfile = profile;
       if (!currentProfile?.currentPropertyId) {
-        await checkAuth();
+        await refreshProfile();
         currentProfile = useAuthStore.getState().profile;
       }
       
@@ -150,7 +150,7 @@ export function Step5Rooms({ onNext, onBack }: { onNext: () => void, onBack: () 
           profile.$id,
           { onboardingStep: 5 }
         );
-        await checkAuth();
+        await refreshProfile();
       }
       
       onNext();

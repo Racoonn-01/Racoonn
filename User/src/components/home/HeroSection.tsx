@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { format } from 'date-fns';
+import { format, addDays } from 'date-fns';
 import chatbotLogo from '@/assets/Racoonn-Logo-03.png';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -390,7 +390,9 @@ export default function HeroSection() {
                 {/* Check-in / Start Date */}
                 <Popover open={isCheckInOpen} onOpenChange={setIsCheckInOpen}>
                   <PopoverTrigger className="flex items-center gap-4 border border-gray-200 rounded-2xl px-5 py-4 hover:border-brand-coral/40 transition-colors cursor-pointer group flex-1 text-left focus:outline-none focus:ring-2 focus:ring-brand-coral/30">
-                    <CalendarDays size={22} className="text-brand-charcoal/40 group-hover:text-brand-coral transition-colors shrink-0" />
+                    <div className="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center shrink-0">
+                      <CalendarDays size={20} className="text-brand-coral group-hover:scale-110 transition-transform" />
+                    </div>
                     <div>
                       <h4 className="font-semibold text-brand-navy text-[15px]">
                         {activeTab === 'stays' ? 'Check-in' : activeTab === 'packages' ? 'Start date' : 'Date'}
@@ -405,13 +407,16 @@ export default function HeroSection() {
                       mode="single"
                       selected={checkIn}
                       onSelect={(date) => {
+                        if (!date) return;
                         setCheckIn(date);
                         setIsCheckInOpen(false);
-                        if (!checkOut || (date && date >= checkOut)) {
-                          setCheckOut(undefined);
+                        if (!checkOut || date >= checkOut) {
+                          setCheckOut(addDays(date, 1));
                         }
                         if (activeTab !== 'activities') {
-                          setTimeout(() => setIsCheckOutOpen(true), 150);
+                          setTimeout(() => {
+                            setIsCheckOutOpen(true);
+                          }, 150);
                         }
                       }}
                       disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
@@ -426,7 +431,9 @@ export default function HeroSection() {
                 {activeTab !== 'activities' && (
                   <Popover open={isCheckOutOpen} onOpenChange={setIsCheckOutOpen}>
                     <PopoverTrigger className="flex items-center gap-4 border border-gray-200 rounded-2xl px-5 py-4 hover:border-brand-coral/40 transition-colors cursor-pointer group flex-1 text-left focus:outline-none focus:ring-2 focus:ring-brand-coral/30">
-                      <CalendarDays size={22} className="text-brand-charcoal/40 group-hover:text-brand-coral transition-colors shrink-0" />
+                      <div className="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center shrink-0">
+                        <CalendarDays size={20} className="text-brand-coral group-hover:scale-110 transition-transform" />
+                      </div>
                       <div>
                         <h4 className="font-semibold text-brand-navy text-[15px]">
                           {activeTab === 'stays' ? 'Check-out' : 'End date'}
@@ -441,6 +448,7 @@ export default function HeroSection() {
                         mode="single"
                         selected={checkOut}
                         onSelect={(date) => {
+                          if (!date) return;
                           setCheckOut(date);
                           setIsCheckOutOpen(false);
                         }}

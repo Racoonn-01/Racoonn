@@ -100,8 +100,8 @@ export function Step1Account({ onNext }: { onNext: () => void }) {
       }
       
       // Wait for the auth store to pull new data
-      const { checkAuth } = useAuthStore.getState();
-      await checkAuth();
+      const { refreshProfile } = useAuthStore.getState();
+      await refreshProfile();
       
       onNext();
     } catch (error) {

@@ -4,6 +4,9 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { Property } from '@/components/search/PropertyCard';
+import Image from 'next/image';
+import { Star, X, MapPin, Bed, Bath, ArrowRight } from 'lucide-react';
+import Link from 'next/link';
 
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN || '';
 
@@ -45,7 +48,7 @@ const CITY_COORDINATES: Record<string, [number, number]> = {
 const geocodeCache = new Map<string, [number, number]>();
 
 function getDistanceKm(coord1: [number, number], coord2: [number, number]): number {
-  const R = 6371; // Earth radius in km
+  const R = 6371;
   const dLat = (coord2[1] - coord1[1]) * Math.PI / 180;
   const dLon = (coord2[0] - coord1[0]) * Math.PI / 180;
   const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
@@ -69,8 +72,7 @@ async function fetchAddressCoordinates(addressStr: string, proximityCoords?: [nu
     if (res.ok) {
       const data = await res.json();
       if (data.features && data.features.length > 0) {
-        const center = data.features[0].center as [number, number]; // [lng, lat]
-        // If proximityCoords provided, verify distance is within 35km (prevents jumps to Chandigarh/other states)
+        const center = data.features[0].center as [number, number];
         if (proximityCoords && getDistanceKm(center, proximityCoords) > 35) {
           console.warn("Geocoded location too far from target city center, ignoring result:", addressStr, center);
           return null;
@@ -98,7 +100,6 @@ function getPropertyCoordinates(p: Property, index: number, geocodedMap?: Record
     }
   }
 
-  // Fallback centered near Haldwani if Haldwani is in city/state or default to Haldwani/North India
   const isHaldwaniArea = locStr.includes('haldwani') || locStr.includes('kham') || locStr.includes('ram darbar');
   const baseCenter: [number, number] = isHaldwaniArea ? [79.5130, 29.2183] : [78.0322, 30.3165];
   const offsetX = ((index % 5) - 2) * 0.002;
@@ -106,16 +107,193 @@ function getPropertyCoordinates(p: Property, index: number, geocodedMap?: Record
   return [baseCenter[0] + offsetX, baseCenter[1] + offsetY];
 }
 
+// ─── Property Card Overlay ─────────────────────────────────────────────────────
+interface PropertyOverlayProps {
+  property: Property;
+  position: { x: number; y: number };
+  containerW: number;
+  containerH: number;
+  onClose: () => void;
+}
+
+function PropertyOverlay({ property, position, containerW, containerH, onClose }: PropertyOverlayProps) {
+  const imgUrl = property.images?.[0] || 'https://images.unsplash.com/photo-1542314831-c6a4d14d837e?q=80&w=800&auto=format&fit=crop';
+  const priceText = `₹${(property.price || 0).toLocaleString('en-IN')}`;
+  const ratingDisplay = property.rating && Number(property.rating) > 0 ? Number(property.rating).toFixed(1) : null;
+
+  const CARD_W = 280;
+  const CARD_H = 360;
+  const OFFSET_Y = 18;
+  const PAD = 10; // inner padding from map edges
+
+  // Preferred position: horizontally centered on marker, above the marker
+  let left = position.x - CARD_W / 2;
+  let top = position.y - CARD_H - OFFSET_Y;
+
+  // Clamp all 4 edges strictly inside the map container
+  if (left < PAD) left = PAD;
+  if (left + CARD_W > containerW - PAD) left = containerW - CARD_W - PAD;
+  if (top < PAD) top = PAD;
+  if (top + CARD_H > containerH - PAD) top = containerH - CARD_H - PAD;
+
+  // Arrow offset relative to card left edge (points at the actual marker x)
+  const arrowLeft = Math.min(Math.max(position.x - left, 20), CARD_W - 20);
+
+  return (
+    <>
+      {/* Transparent backdrop — clicking dismisses the card */}
+      <div className="absolute inset-0 z-9990" onClick={onClose} />
+
+      {/* Card positioned absolutely within the map container */}
+      <div
+        className="absolute z-9999"
+        style={{
+          left,
+          top,
+          width: CARD_W,
+          animation: 'overlayIn 0.18s cubic-bezier(0.34,1.56,0.64,1) both',
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Main card */}
+        <div
+          className="bg-white rounded-2xl overflow-hidden border border-gray-100/80"
+          style={{ boxShadow: '0 24px 64px rgba(0,0,0,0.25), 0 4px 16px rgba(0,0,0,0.10)' }}
+        >
+          {/* ── Image ── */}
+          <div className="relative h-38.75 w-full overflow-hidden">
+            <Image
+              src={imgUrl}
+              alt={property.title}
+              fill
+              className="object-cover"
+              sizes="280px"
+            />
+            {/* gradient */}
+            <div className="absolute inset-0 bg-linear-to-t from-black/45 via-transparent to-transparent" />
+
+            {/* Rating */}
+            {ratingDisplay && (
+              <div className="absolute top-2.5 left-2.5 bg-white/95 backdrop-blur-sm rounded-full px-2.5 py-1 flex items-center gap-1 shadow-md">
+                <Star size={11} className="fill-amber-400 text-amber-400" />
+                <span className="text-[12px] font-bold text-gray-900">{ratingDisplay}</span>
+                {property.reviews > 0 && (
+                  <span className="text-[10px] text-gray-500">({property.reviews})</span>
+                )}
+              </div>
+            )}
+
+            {/* Close button */}
+            <button
+              onClick={onClose}
+              className="absolute top-2.5 right-2.5 w-7 h-7 bg-black/50 hover:bg-black/70 backdrop-blur-sm rounded-full flex items-center justify-center transition-colors cursor-pointer"
+            >
+              <X size={13} className="text-white" />
+            </button>
+
+            {/* Price badge on image */}
+            <div className="absolute bottom-2.5 right-2.5 bg-white rounded-xl px-3 py-1.5 shadow-lg flex items-baseline gap-0.5">
+              <span className="text-[14px] font-extrabold text-gray-900">{priceText}</span>
+              <span className="text-[10px] font-medium text-gray-400">/night</span>
+            </div>
+
+            {/* Badges */}
+            <div className="absolute top-2.5 right-10 flex gap-1">
+              {property.isSuperhost && (
+                <span className="bg-white/90 text-[10px] font-bold text-gray-800 rounded-full px-2 py-0.5 shadow-sm">Superhost</span>
+              )}
+              {property.isGuestFavorite && (
+                <span className="bg-brand-coral/90 text-[10px] font-bold text-white rounded-full px-2 py-0.5 shadow-sm">★ Fav</span>
+              )}
+            </div>
+          </div>
+
+          {/* ── Content ── */}
+          <div className="p-3.5">
+            <h3 className="text-[14px] font-bold text-gray-900 leading-snug truncate mb-1">
+              {property.title}
+            </h3>
+
+            {property.location && (
+              <div className="flex items-center gap-1 text-gray-500 mb-2.5">
+                <MapPin size={11} className="shrink-0 text-brand-coral" />
+                <span className="text-[12px] truncate">{property.location}</span>
+              </div>
+            )}
+
+            {/* Room details row */}
+            <div className="flex items-center gap-3 text-[11px] text-gray-500 mb-3.5">
+              {(property.bedrooms ?? 0) > 0 && (
+                <span className="flex items-center gap-1">
+                  <Bed size={11} className="text-gray-400" />
+                  {property.bedrooms} bed{property.bedrooms !== 1 ? 's' : ''}
+                </span>
+              )}
+              {(property.bathrooms ?? 0) > 0 && (
+                <span className="flex items-center gap-1">
+                  <Bath size={11} className="text-gray-400" />
+                  {property.bathrooms} bath{property.bathrooms !== 1 ? 's' : ''}
+                </span>
+              )}
+              {property.freeCancellation && (
+                <span className="text-emerald-600 font-semibold">Free cancel</span>
+              )}
+            </div>
+
+            {/* CTA */}
+            <Link
+              href={`/property/${property.id}`}
+              className="flex items-center justify-center gap-1.5 w-full bg-brand-navy hover:bg-brand-coral text-white text-[13px] font-bold py-2.5 rounded-xl transition-all duration-200 cursor-pointer group"
+            >
+              View Property
+              <ArrowRight size={13} className="group-hover:translate-x-0.5 transition-transform duration-150" />
+            </Link>
+          </div>
+        </div>
+
+        {/* Pointer arrow pointing down at the marker */}
+        <div
+          style={{
+            position: 'absolute',
+            bottom: -10,
+            left: arrowLeft - 8,
+            width: 0,
+            height: 0,
+            borderLeft: '9px solid transparent',
+            borderRight: '9px solid transparent',
+            borderTop: '10px solid white',
+            filter: 'drop-shadow(0 3px 4px rgba(0,0,0,0.18))',
+          }}
+        />
+      </div>
+
+      {/* Keyframe animation injected once */}
+      <style>{`
+        @keyframes overlayIn {
+          from { opacity: 0; transform: scale(0.88) translateY(8px); }
+          to   { opacity: 1; transform: scale(1) translateY(0); }
+        }
+      `}</style>
+    </>
+  );
+}
+
+// ─── Main MapMockup Component ──────────────────────────────────────────────────
 interface MapMockupProps {
   properties?: Property[];
   selectedPropertyId?: string | null;
   onSelectProperty?: (id: string) => void;
 }
 
-export default function MapMockup({ 
-  properties = [], 
-  selectedPropertyId = null, 
-  onSelectProperty 
+interface OverlayState {
+  property: Property;
+  screenPos: { x: number; y: number };
+}
+
+export default function MapMockup({
+  properties = [],
+  selectedPropertyId = null,
+  onSelectProperty,
 }: MapMockupProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
@@ -124,54 +302,57 @@ export default function MapMockup({
   const [showSearchAreaBtn, setShowSearchAreaBtn] = useState(false);
   const [mapStyle, setMapStyle] = useState<'streets' | 'satellite'>('streets');
   const [geocodedMap, setGeocodedMap] = useState<Record<string, [number, number]>>({});
+  const [overlay, setOverlay] = useState<OverlayState | null>(null);
+  // Track container dimensions in state (safe to use in render)
+  const [containerSize, setContainerSize] = useState({ w: 600, h: 500 });
 
-  // Geocode property addresses asynchronously with city proximity bias
+  // Keep containerSize in sync with the map container's actual dimensions
+  useEffect(() => {
+    const el = mapContainerRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(([entry]) => {
+      setContainerSize({ w: entry.contentRect.width, h: entry.contentRect.height });
+    });
+    ro.observe(el);
+    // Set initial size
+    setContainerSize({ w: el.clientWidth, h: el.clientHeight });
+    return () => ro.disconnect();
+  }, []);
+
+  // Geocode addresses
   useEffect(() => {
     if (!properties || properties.length === 0) return;
-
     let isMounted = true;
     const resolveGeocodes = async () => {
       const updates: Record<string, [number, number]> = {};
       for (const prop of properties) {
         if (prop.lng && prop.lat) continue;
-
-        // Find city center for proximity bias
         const locText = `${prop.city || ''} ${prop.state || ''} ${prop.location || ''}`.toLowerCase();
         let cityCoords: [number, number] | undefined = undefined;
         for (const [cityKey, coords] of Object.entries(CITY_COORDINATES)) {
-          if (locText.includes(cityKey)) {
-            cityCoords = coords;
-            break;
-          }
+          if (locText.includes(cityKey)) { cityCoords = coords; break; }
         }
-
-        // Format query string with City & State FIRST to anchor search locally
         const queryParts = [prop.city, prop.state, prop.location].filter(Boolean);
         const addressQuery = queryParts.length > 0 ? queryParts.join(", ") : prop.location;
-
         if (addressQuery) {
           const coords = await fetchAddressCoordinates(addressQuery, cityCoords);
-          if (coords) {
-            updates[prop.id] = coords;
-          }
+          if (coords) updates[prop.id] = coords;
         }
       }
       if (isMounted && Object.keys(updates).length > 0) {
         setGeocodedMap(prev => ({ ...prev, ...updates }));
       }
     };
-
     resolveGeocodes();
     return () => { isMounted = false; };
   }, [properties]);
 
-  // Initialize Mapbox map instance
+  // Init map
   useEffect(() => {
     if (!mapContainerRef.current) return;
-
     mapboxgl.accessToken = MAPBOX_TOKEN;
 
-    let initialCenter: [number, number] = [79.5130, 29.2183]; // Default to Haldwani center if present
+    let initialCenter: [number, number] = [79.5130, 29.2183];
     if (properties && properties.length > 0) {
       initialCenter = getPropertyCoordinates(properties[0], 0, geocodedMap);
     }
@@ -184,27 +365,29 @@ export default function MapMockup({
     });
 
     map.addControl(new mapboxgl.NavigationControl(), 'bottom-right');
-    
-    map.on('moveend', () => {
-      setShowSearchAreaBtn(true);
-    });
+    map.on('moveend', () => setShowSearchAreaBtn(true));
+    // Close overlay on map canvas click
+    map.on('click', () => setOverlay(null));
 
     mapRef.current = map;
-
-    return () => {
-      map.remove();
-    };
+    return () => { map.remove(); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Function to render markers on the current map
+  // Convert LngLat coords → pixel position on screen
+  const getScreenPos = useCallback((coords: [number, number]): { x: number; y: number } | null => {
+    const map = mapRef.current;
+    if (!map) return null;
+    const point = map.project(coords as mapboxgl.LngLatLike);
+    return { x: point.x, y: point.y };
+  }, []);
+
+  // Render price-pill markers
   const renderMarkers = useCallback(() => {
     const map = mapRef.current;
     if (!map) return;
-
-    // Clear existing markers
     markersRef.current.forEach(m => m.marker.remove());
     markersRef.current = [];
-
     if (!properties || properties.length === 0) return;
 
     const bounds = new mapboxgl.LngLatBounds();
@@ -215,90 +398,81 @@ export default function MapMockup({
 
       const isSelected = selectedPropertyId === prop.id;
       const priceText = `₹${(prop.price || 0).toLocaleString('en-IN')}`;
-      const imgUrl = prop.images && prop.images[0] ? prop.images[0] : 'https://images.unsplash.com/photo-1542314831-c6a4d14d837e?q=80&w=800&auto=format&fit=crop';
 
-      // Create Marker element
       const el = document.createElement('div');
       el.className = 'custom-realtime-marker';
+      el.style.position = 'relative';
+      el.style.zIndex = isSelected ? '50' : '10';
       el.innerHTML = `
-        <button class="px-3 py-1.5 rounded-full font-bold text-[13px] shadow-lg transition-all duration-300 transform -translate-x-1/2 -translate-y-1/2 cursor-pointer ${
-          isSelected 
-            ? 'bg-gray-900 text-white scale-125 ring-4 ring-brand-coral z-50' 
-            : 'bg-white text-gray-900 border border-gray-200 hover:scale-110 hover:bg-gray-900 hover:text-white'
-        }">
-          ${priceText}
-        </button>
-      `;
-
-      // Create Popup
-      const popup = new mapboxgl.Popup({ offset: 25, closeButton: true }).setHTML(`
-        <div style="width: 200px; padding: 4px;">
-          <img src="${imgUrl}" alt="${prop.title}" style="width: 100%; height: 110px; object-fit: cover; border-radius: 10px; margin-bottom: 8px;" />
-          <div style="font-weight: bold; font-size: 14px; color: #111827; margin-bottom: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${prop.title}</div>
-          <div style="font-size: 12px; color: #4B5563; margin-bottom: 6px;">${prop.location || ''}</div>
-          <div style="display: flex; justify-content: space-between; items-center;">
-            <div style="font-weight: bold; font-size: 14px; color: #111827;">${priceText} <span style="font-weight: normal; font-size: 12px; color: #6B7280;">/ night</span></div>
-            <div style="font-size: 12px; font-weight: bold; color: #E86A70;">★ ${prop.rating ? prop.rating.toFixed(1) : 'New'}</div>
-          </div>
-          <a href="/property/${prop.id}" style="display: block; margin-top: 8px; text-align: center; background-color: #1F2E4A; color: white; border-radius: 8px; padding: 6px 0; font-size: 12px; font-weight: bold; text-decoration: none;">View Details</a>
-        </div>
-      `);
+        <button
+          class="px-3 py-1.5 rounded-full font-bold text-[13px] shadow-lg transition-all duration-200 cursor-pointer ${
+            isSelected
+              ? 'bg-gray-900 text-white scale-125 ring-4 ring-brand-coral'
+              : 'bg-white text-gray-900 border border-gray-200 hover:scale-110 hover:bg-gray-900 hover:text-white'
+          }"
+          style="white-space:nowrap; transform: translate(-50%,-50%);"
+        >${priceText}</button>`;
 
       el.addEventListener('click', (e) => {
         e.stopPropagation();
         if (onSelectProperty) onSelectProperty(prop.id);
         const cardEl = document.getElementById(`property-card-${prop.id}`);
-        if (cardEl) {
-          cardEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        }
+        if (cardEl) cardEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+        const screenPos = getScreenPos(coords);
+        if (screenPos) setOverlay({ property: prop, screenPos });
       });
 
-      const marker = new mapboxgl.Marker({ element: el })
-        .setLngLat(coords)
-        .setPopup(popup)
-        .addTo(map);
-
+      const marker = new mapboxgl.Marker({ element: el }).setLngLat(coords).addTo(map);
       markersRef.current.push({ id: prop.id, marker, coords });
     });
 
     if (properties.length > 0 && !selectedPropertyId) {
       map.fitBounds(bounds, { padding: 80, maxZoom: 13, animate: true });
     }
-  }, [properties, geocodedMap, selectedPropertyId, onSelectProperty]);
+  }, [properties, geocodedMap, selectedPropertyId, onSelectProperty, getScreenPos]);
 
-  // Sync selectedPropertyId marker click/flyTo
+  // Keep overlay position in sync as map moves / zooms
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    const updatePos = () => {
+      setOverlay(prev => {
+        if (!prev) return null;
+        const m = markersRef.current.find(m => m.id === prev.property.id);
+        if (!m) return null;
+        const newPos = getScreenPos(m.coords);
+        if (!newPos) return null;
+        return { ...prev, screenPos: newPos };
+      });
+    };
+    map.on('move', updatePos);
+    map.on('zoom', updatePos);
+    return () => { map.off('move', updatePos); map.off('zoom', updatePos); };
+  }, [getScreenPos]);
+
+  // Fly to selected property
   useEffect(() => {
     if (!selectedPropertyId || !mapRef.current) return;
     const target = markersRef.current.find(m => m.id === selectedPropertyId);
-    if (target) {
-      mapRef.current.flyTo({ center: target.coords, zoom: 14, animate: true });
-      target.marker.togglePopup();
-    }
+    if (target) mapRef.current.flyTo({ center: target.coords, zoom: 14, animate: true });
   }, [selectedPropertyId]);
 
-  // Render markers when properties change or style reloads
-  useEffect(() => {
-    renderMarkers();
-  }, [renderMarkers, mapStyle]);
+  // Re-render markers on dep changes
+  useEffect(() => { renderMarkers(); }, [renderMarkers, mapStyle]);
 
-  // Switch map style
   const handleStyleToggle = (style: 'streets' | 'satellite') => {
     if (mapStyle === style) return;
     setMapStyle(style);
     const map = mapRef.current;
     if (map) {
-      const styleUrl = style === 'satellite'
+      map.setStyle(style === 'satellite'
         ? 'mapbox://styles/mapbox/satellite-streets-v12'
-        : 'mapbox://styles/mapbox/outdoors-v12';
-
-      map.setStyle(styleUrl);
-      map.once('style.load', () => {
-        renderMarkers();
-      });
+        : 'mapbox://styles/mapbox/outdoors-v12');
+      map.once('style.load', () => renderMarkers());
     }
   };
 
-  // Locate user position
   const handleUseMyLocation = () => {
     if (!navigator.geolocation) return;
     navigator.geolocation.getCurrentPosition(
@@ -309,7 +483,7 @@ export default function MapMockup({
           map.flyTo({ center: coords, zoom: 14, animate: true });
           new mapboxgl.Marker({ color: '#10B981' })
             .setLngLat(coords)
-            .setPopup(new mapboxgl.Popup().setHTML('<strong style="padding: 4px; display: block;">Your Location</strong>'))
+            .setPopup(new mapboxgl.Popup().setHTML('<strong style="padding:4px;display:block;">Your Location</strong>'))
             .addTo(map);
         }
       },
@@ -319,10 +493,21 @@ export default function MapMockup({
 
   return (
     <div className="relative w-full h-full bg-gray-100 overflow-hidden">
-      {/* Mapbox Container */}
+      {/* Mapbox canvas */}
       <div ref={mapContainerRef} className="w-full h-full" />
 
-      {/* Floating "Search This Area" Button */}
+      {/* ── Property card overlay (React-rendered) ─────────── */}
+      {overlay && (
+        <PropertyOverlay
+          property={overlay.property}
+          position={overlay.screenPos}
+          containerW={containerSize.w}
+          containerH={containerSize.h}
+          onClose={() => setOverlay(null)}
+        />
+      )}
+
+      {/* Search This Area button */}
       {showSearchAreaBtn && (
         <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20">
           <button
@@ -341,43 +526,29 @@ export default function MapMockup({
         </div>
       )}
 
-      {/* Top Bar Controls */}
+      {/* Top Controls */}
       <div className="absolute top-4 left-4 right-4 flex flex-wrap items-center justify-between gap-2 z-10 pointer-events-none">
-        {/* Street vs Satellite View Switcher */}
         <div className="bg-white/95 backdrop-blur-md rounded-full shadow-lg p-1 flex items-center gap-1 pointer-events-auto border border-gray-200">
           <button
             onClick={() => handleStyleToggle('streets')}
             className={`px-3 py-1.5 rounded-full text-[12px] font-bold transition-all cursor-pointer ${
-              mapStyle === 'streets'
-                ? 'bg-gray-900 text-white shadow-sm'
-                : 'text-gray-700 hover:bg-gray-100'
+              mapStyle === 'streets' ? 'bg-gray-900 text-white shadow-sm' : 'text-gray-700 hover:bg-gray-100'
             }`}
-          >
-            🗺️ Street
-          </button>
+          >🗺️ Street</button>
           <button
             onClick={() => handleStyleToggle('satellite')}
             className={`px-3 py-1.5 rounded-full text-[12px] font-bold transition-all cursor-pointer ${
-              mapStyle === 'satellite'
-                ? 'bg-gray-900 text-white shadow-sm'
-                : 'text-gray-700 hover:bg-gray-100'
+              mapStyle === 'satellite' ? 'bg-gray-900 text-white shadow-sm' : 'text-gray-700 hover:bg-gray-100'
             }`}
-          >
-            🛰️ Satellite
-          </button>
+          >🛰️ Satellite</button>
         </div>
 
-        {/* Right side controls */}
         <div className="flex items-center gap-2 pointer-events-auto">
-          {/* Use My Location Button */}
           <button
             onClick={handleUseMyLocation}
             className="bg-white/95 backdrop-blur-md px-3 py-1.5 rounded-full shadow-lg border border-gray-200 text-[12px] font-bold text-gray-800 hover:bg-gray-900 hover:text-white transition-all cursor-pointer flex items-center gap-1"
-          >
-            📍 My Location
-          </button>
+          >📍 My Location</button>
 
-          {/* Search as I move map toggle */}
           <div className="bg-white/95 backdrop-blur-md rounded-full shadow-lg px-3.5 py-1.5 flex items-center gap-2.5 border border-gray-200">
             <span className="text-[12px] font-semibold text-gray-800 whitespace-nowrap hidden sm:inline">Search as I move</span>
             <button

@@ -68,8 +68,8 @@ export const authService = {
   async loginWithGoogle() {
     account.createOAuth2Session(
       OAuthProvider.Google, // provider
-      `${window.location.origin}/vendor/dashboard`, // success url
-      `${window.location.origin}/vendor/login`  // failure url
+      `${window.location.origin}/`, // success url
+      `${window.location.origin}/`  // failure url
     );
   },
 
@@ -106,5 +106,32 @@ export const authService = {
 
   async resetPassword(userId: string, secret: string, password: string) {
     return await account.updateRecovery(userId, secret, password);
+  },
+
+  async createInitialVendorProfile(user: any) {
+    try {
+      const profile = await databases.createDocument(
+        appwriteConfig.databaseId,
+        appwriteConfig.vendorCollectionId,
+        user.$id,
+        {
+          userId: user.$id,
+          email: user.email,
+          status: 'Pending',
+          role: 'Vendor',
+          businessName: user.name || user.email.split('@')[0],
+        },
+        [
+          Permission.read(Role.user(user.$id)),
+          Permission.write(Role.user(user.$id)),
+          Permission.update(Role.user(user.$id)),
+          Permission.delete(Role.user(user.$id))
+        ]
+      );
+      return profile;
+    } catch (e) {
+      console.warn("Could not create initial vendor profile document:", e);
+      return null;
+    }
   }
 };

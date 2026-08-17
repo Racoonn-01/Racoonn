@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import nodemailer from 'nodemailer';
 
 export async function POST(req: Request) {
   try {
@@ -11,11 +12,48 @@ export async function POST(req: Request) {
       );
     }
 
-    // Proxy to Cloudflare Worker endpoint
     const workerUrl = process.env.NEXT_PUBLIC_CLOUDFLARE_WORKER_URL || process.env.CLOUDFLARE_WORKER_URL;
     if (!workerUrl) {
       // Fallback local response if worker URL not configured
-      return NextResponse.json({ success: true, message: `OTP sent successfully to ${identifier}` });
+      const otp = Math.floor(100000 + Math.random() * 900000).toString();
+      
+      if (method === 'email') {
+         const transporter = nodemailer.createTransport({
+            host: process.env.SMTP_HOST || 'smtp.gmail.com',
+            port: Number(process.env.SMTP_PORT) || 587,
+            secure: false, // true for 465, false for other ports
+            auth: {
+               user: process.env.SMTP_USER,
+               pass: process.env.SMTP_PASS,
+            }
+         });
+         
+         await transporter.sendMail({
+            from: `"Racoonn Partner Program" <${process.env.SMTP_USER}>`,
+            to: identifier,
+            subject: 'Your Racoonn Verification Code',
+            text: `Your verification code is ${otp}. It will expire in 10 minutes.`,
+            html: `<div style="font-family: sans-serif; padding: 20px;">
+                     <h2>Racoonn Partner Verification</h2>
+                     <p>Your verification code is: <strong>${otp}</strong></p>
+                     <p>It will expire in 10 minutes.</p>
+                   </div>`
+         });
+      } else {
+         console.log(`[FAKE SMS] To: ${identifier}, OTP: ${otp}`);
+      }
+
+      const res = NextResponse.json({ success: true, message: `OTP sent successfully to ${identifier}` });
+      const expires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+      const payload = Buffer.from(`${identifier}:${otp}`).toString('base64');
+      
+      res.cookies.set('racoonn_otp', payload, {
+         httpOnly: true,
+         expires,
+         path: '/'
+      });
+
+      return res;
     }
 
     const response = await fetch(`${workerUrl.replace(/\/$/, '')}/api/otp/send`, {

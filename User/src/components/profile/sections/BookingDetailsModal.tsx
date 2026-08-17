@@ -1,6 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, MapPin, Download, CheckCircle, Printer } from 'lucide-react';
 import Image from 'next/image';
+import { calculateHotelGST } from '@/lib/utils/gst';
 
 interface BookingDetailsModalProps {
   isOpen: boolean;
@@ -11,6 +12,16 @@ interface BookingDetailsModalProps {
 
 export default function BookingDetailsModal({ isOpen, onClose, booking, mode }: BookingDetailsModalProps) {
   if (!isOpen || !booking) return null;
+
+  const rawAmount = Number(String(booking.amount || '').replace(/[^0-9]/g, '')) || 18999;
+  const roomPricePerNight = booking.roomPricePerNight || Math.round(rawAmount / 1.18);
+  const gstCalc = calculateHotelGST(roomPricePerNight, booking.nights || 1, 1);
+
+  const roomCharges = booking.priceBeforeTax || gstCalc.priceBeforeTax;
+  const gstRate = booking.gstPercentage ?? gstCalc.gstPercentage;
+  const gstAmount = booking.gstAmount ?? gstCalc.gstAmount;
+  const grandTotal = booking.priceAfterTax || rawAmount || gstCalc.priceAfterTax;
+  const gstType = booking.gstType || gstCalc.gstType;
 
   return (
     <AnimatePresence>
@@ -69,8 +80,13 @@ export default function BookingDetailsModal({ isOpen, onClose, booking, mode }: 
                   </div>
                 </div>
                 
-                <div className="mt-4 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase bg-white border border-gray-200 text-brand-navy">
-                  Status: <span className={booking.status === 'Cancelled' ? 'text-red-500' : 'text-green-600'}>{booking.status}</span>
+                <div className="mt-4 flex flex-wrap items-center gap-3">
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase bg-white border border-gray-200 text-brand-navy">
+                    Status: <span className={booking.status === 'Cancelled' ? 'text-red-500' : 'text-green-600'}>{booking.status}</span>
+                  </div>
+                  <span className="text-xs font-bold text-gray-600 bg-gray-100 px-3 py-1 rounded-full border border-gray-200">
+                    HSN Code for Hotel rent: 9963
+                  </span>
                 </div>
               </div>
             </div>
@@ -101,33 +117,69 @@ export default function BookingDetailsModal({ isOpen, onClose, booking, mode }: 
             {/* Invoice / Pricing Breakdown */}
             {mode === 'invoice' && (
               <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 print:shadow-none print:border-gray-300">
-                <h4 className="font-bold text-brand-navy mb-4 border-b border-gray-100 pb-2">Payment Summary</h4>
+                <h4 className="font-bold text-brand-navy mb-4 border-b border-gray-100 pb-2">Tax Summary</h4>
                 
-                <div className="space-y-3 mb-6">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Room Total</span>
-                    <span className="font-medium text-brand-navy">{booking.amount}</span>
+                <div className="space-y-3 mb-6 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Room Charges</span>
+                    <span className="font-semibold text-brand-navy">₹{roomCharges.toLocaleString('en-IN')}</span>
                   </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Taxes & Fees</span>
-                    <span className="font-medium text-brand-navy">Included</span>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">GST Rate</span>
+                    <span className="font-semibold text-brand-navy">{gstRate}%</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">GST Amount</span>
+                    <span className="font-semibold text-brand-navy">₹{gstAmount.toLocaleString('en-IN')}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">GST Type</span>
+                    <span className="font-semibold text-emerald-600">{gstType}</span>
                   </div>
                 </div>
                 
                 <div className="flex justify-between items-center pt-4 border-t border-dashed border-gray-200">
-                  <span className="font-bold text-brand-navy">Total Paid</span>
-                  <span className="text-xl font-bold text-brand-coral">{booking.amount}</span>
+                  <span className="font-bold text-brand-navy">Grand Total</span>
+                  <span className="text-xl font-bold text-brand-coral">₹{grandTotal.toLocaleString('en-IN')}</span>
                 </div>
+
+                <p className="text-xs text-gray-400 mt-4 italic">
+                  GST applied as per Government of India hotel accommodation GST slab based on room tariff.
+                </p>
               </div>
             )}
 
             {mode === 'details' && (
-              <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-                <h4 className="font-bold text-brand-navy mb-4 border-b border-gray-100 pb-2">Guest Details</h4>
-                <p className="text-sm text-gray-500 mb-2">Primary Guest is the account holder.</p>
-                <p className="font-medium text-brand-navy">Contact Email: <span className="text-gray-600 font-normal">Stored securely in your profile</span></p>
-                <div className="mt-6 flex justify-end">
-                  <p className="text-xl font-bold text-brand-navy">Total: <span className="text-brand-coral">{booking.amount}</span></p>
+              <div className="space-y-4">
+                <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                  <h4 className="font-bold text-brand-navy mb-4 border-b border-gray-100 pb-2">Tax Information</h4>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Room Tariff</span>
+                      <span className="font-semibold text-brand-navy">₹{roomPricePerNight.toLocaleString('en-IN')} / Night</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">GST Slab</span>
+                      <span className="font-semibold text-brand-navy">{gstRate}%</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">GST Amount</span>
+                      <span className="font-semibold text-brand-navy">₹{gstAmount.toLocaleString('en-IN')}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">ITC Status</span>
+                      <span className="font-semibold text-emerald-600">{gstType}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                  <h4 className="font-bold text-brand-navy mb-2 border-b border-gray-100 pb-2">Guest Details</h4>
+                  <p className="text-sm text-gray-500 mb-2">Primary Guest is the account holder.</p>
+                  <div className="flex justify-between items-center pt-2">
+                    <span className="text-sm font-medium text-brand-navy">Total Payable:</span>
+                    <span className="text-xl font-bold text-brand-coral">₹{grandTotal.toLocaleString('en-IN')}</span>
+                  </div>
                 </div>
               </div>
             )}

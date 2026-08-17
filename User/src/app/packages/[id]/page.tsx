@@ -16,7 +16,7 @@ import {
   Utensils,
   CalendarDays,
   Hotel,
-  Activity,
+  Compass,
   StarHalf,
   CheckCircle2,
   PhoneCall,
@@ -571,7 +571,7 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
                 onClick={() => setActiveTab('activities')}
                 className={`flex items-center gap-2 px-4 py-2.5 rounded-full text-[14px] font-semibold transition-colors whitespace-nowrap border ${activeTab === 'activities' ? 'bg-gray-900 text-white border-gray-900' : 'bg-white text-gray-700 border-gray-200 hover:border-gray-900'}`}
               >
-                <Activity size={16} /> Activities
+                <Compass size={16} /> Activities
               </button>
               <button 
                 onClick={() => setActiveTab('reviews')}

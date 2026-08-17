@@ -22,6 +22,12 @@ export default function ProfilePage() {
     setTimeout(() => setMounted(true), 0);
   }, [checkAuth]);
 
+  useEffect(() => {
+    if (mounted && !isLoading && !isAuthenticated) {
+      router.push('/');
+    }
+  }, [mounted, isLoading, isAuthenticated, router]);
+
   if (!mounted) {
     return null;
   }
@@ -35,11 +41,11 @@ export default function ProfilePage() {
     );
   }
 
-  // Only redirect if we are SURE they aren't authenticated (finished loading and still not authenticated)
+  // Render nothing while redirect is in flight
   if (!isAuthenticated) {
-    router.push('/');
     return null;
   }
+
 
   return (
     <div className="min-h-screen bg-[#f8f9fa] text-brand-navy selection:bg-brand-coral selection:text-white pb-24 -mt-25 pt-25">

@@ -4,11 +4,13 @@ import dotenv from 'dotenv';
 import nodemailer from 'nodemailer';
 import fs from 'fs';
 import path from 'path';
+import crypto from 'crypto';
+import Razorpay from 'razorpay';
 
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 5005;
+const PORT = Number(process.env.PORT || 5005);
 
 app.use(cors());
 app.use(express.json());
@@ -30,6 +32,73 @@ const requestLimits = new Map<string, RequestLimitRecord>();
 
 app.get('/health', (req, res) => {
     res.status(200).json({ status: 'ok', message: 'Racoonn Backend is running!' });
+});
+
+function getRazorpayClient() {
+    const keyId = process.env.RAZORPAY_KEY_ID;
+    const keySecret = process.env.RAZORPAY_SECRET;
+
+    if (!keyId || !keySecret) {
+        throw new Error('Razorpay credentials are not configured');
+    }
+
+    return new Razorpay({ key_id: keyId, key_secret: keySecret });
+}
+
+app.post('/api/payments/razorpay/order', async (req, res) => {
+    try {
+        const amount = Number(req.body.amount);
+
+        if (!Number.isFinite(amount) || amount <= 0) {
+            return res.status(400).json({ error: 'A valid payment amount is required.' });
+        }
+
+        const order = await getRazorpayClient().orders.create({
+            amount: Math.round(amount * 100),
+            currency: 'INR',
+            receipt: `rcn_${Date.now()}`,
+            notes: {
+                bookingType: String(req.body.bookingType || 'stay'),
+                bookingId: String(req.body.bookingId || ''),
+            },
+        });
+
+        return res.status(201).json({ order });
+    } catch (error) {
+        console.error('Failed to create Razorpay order:', error);
+        return res.status(500).json({ error: 'Unable to start the payment.' });
+    }
+});
+
+app.post('/api/payments/razorpay/verify', (req, res) => {
+    try {
+        const { razorpay_order_id: orderId, razorpay_payment_id: paymentId, razorpay_signature: signature } = req.body;
+
+        if (!orderId || !paymentId || !signature || !process.env.RAZORPAY_SECRET) {
+            return res.status(400).json({ error: 'Payment verification details are missing.' });
+        }
+
+        const expectedSignature = crypto
+            .createHmac('sha256', process.env.RAZORPAY_SECRET)
+            .update(`${orderId}|${paymentId}`)
+            .digest('hex');
+
+        const expectedSignatureBuffer = Buffer.from(expectedSignature, 'utf8');
+        const signatureBuffer = Buffer.from(String(signature), 'utf8');
+        const isValid = expectedSignatureBuffer.length === signatureBuffer.length && crypto.timingSafeEqual(
+            expectedSignatureBuffer,
+            signatureBuffer
+        );
+
+        if (!isValid) {
+            return res.status(400).json({ error: 'Payment signature verification failed.' });
+        }
+
+        return res.json({ verified: true, paymentId, orderId });
+    } catch (error) {
+        console.error('Failed to verify Razorpay payment:', error);
+        return res.status(500).json({ error: 'Unable to verify the payment.' });
+    }
 });
 
 app.post('/api/otp/send', async (req, res) => {
@@ -149,6 +218,6 @@ app.post('/api/otp/verify', (req, res) => {
     }
 });
 
-app.listen(PORT, () => {
-    console.log(`🚀 Server is running on http://localhost:${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`🚀 Server is running on http://0.0.0.0:${PORT}`);
 });

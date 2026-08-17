@@ -5,7 +5,6 @@ import { TopNavbar } from "@/components/layout/TopNavbar";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { useEffect } from "react";
 import { useAuthStore } from "@/store/authStore";
-import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 
 if (typeof window !== "undefined" && process.env.NODE_ENV === "development") {
@@ -32,18 +31,7 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const { checkAuth, isAuthenticated, isLoading } = useAuthStore();
-  const router = useRouter();
 
-  useEffect(() => {
-    checkAuth();
-  }, [checkAuth]);
-
-  // Optionally protect routes by redirecting to login if not authenticated
-  useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      router.push("/vendor");
-    }
-  }, [isLoading, isAuthenticated, router]);
 
   if (isLoading) {
     return (

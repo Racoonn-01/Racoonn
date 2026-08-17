@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { databases } from '@/lib/appwrite/config';
 import { ID } from 'appwrite';
 import { useAuthStore } from './authStore';
+import { calculateHotelGST } from "@/lib/utils/gst";
 
 const DATABASE_ID = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID!;
 
@@ -329,12 +330,16 @@ export const useCheckoutStore = create<CheckoutState>((set, get) => ({
         const addon = propAddons.find((a: PropertyAddon) => (a.id || a.$id) === addonId);
         return sum + (addon?.price || 0);
       }, 0);
-      
-      const { appliedCoupon } = get();
-      const roomAmount = bookingData.price * bookingData.nights;
-      const gstRate = bookingData.gstRate ?? 5;
-      const gstAmount = Math.round((roomAmount * gstRate) / 100);
 
+      const perNightPrice = bookingData.price || 3500;
+      const nightsCount = bookingData.nights || 1;
+      const gstCalc = calculateHotelGST(perNightPrice, nightsCount, 1);
+
+      const roomAmount = gstCalc.priceBeforeTax;
+      const gstRate = gstCalc.gstPercentage;
+      const gstAmount = gstCalc.gstAmount;
+
+      const { appliedCoupon } = get();
       let discount = 0;
       if (appliedCoupon) {
         if (appliedCoupon.type === 'fixed') {
@@ -344,7 +349,7 @@ export const useCheckoutStore = create<CheckoutState>((set, get) => ({
         }
       }
       
-      const totalAmount = roomAmount + gstAmount + addons - discount;
+      const totalAmount = Math.max(0, gstCalc.priceAfterTax + addons - discount);
       const platformCommissionRate = 18;
       const platformCommissionAmount = Math.round((roomAmount * (platformCommissionRate / 100)) * 100) / 100;
       const vendorSettlement = Math.round((totalAmount - platformCommissionAmount) * 100) / 100;
@@ -356,13 +361,20 @@ export const useCheckoutStore = create<CheckoutState>((set, get) => ({
         roomId: 'room-123',
         checkIn: bookingData.checkIn,
         checkOut: bookingData.checkOut,
-        nights: bookingData.nights,
+        nights: nightsCount,
         status: 'Confirmed',
         paymentStatus: 'Paid',
         hotelName: bookingData.hotelName,
         hotelImage: bookingData.hotelImage || get().hotelImage || 'https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=1600&auto=format&fit=crop',
         hotelLocation: bookingData.hotelLocation || get().hotelLocation || 'Udaipur, Rajasthan, India',
-        adults: bookingData.adults || 2
+        adults: bookingData.adults || 2,
+        roomPricePerNight: gstCalc.roomPricePerNight,
+        gstPercentage: gstCalc.gstPercentage,
+        gstAmount: gstCalc.gstAmount,
+        gstType: gstCalc.gstType,
+        priceBeforeTax: gstCalc.priceBeforeTax,
+        priceAfterTax: gstCalc.priceAfterTax,
+        taxableAmount: gstCalc.taxableAmount,
       });
 
       // Format additional travelers and GST metadata info

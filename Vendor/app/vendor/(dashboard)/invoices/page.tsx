@@ -18,7 +18,6 @@ import {
   Banknote,
   CheckSquare,
   Square,
-  Calendar,
   ShieldAlert,
   Lock,
 } from "lucide-react";
@@ -141,7 +140,10 @@ export default function VendorInvoicesPage() {
     "Please process this payout invoice to the specified bank account / UPI ID. Thank you!"
   );
   
-  const [manualGstAmount, setManualGstAmount] = useState<string>("");
+  // manualGstAmount removed
+  
+  const vendorGstRate = profile?.allow24PercentGst ? 24 : 18;
+
 
   // Fetch Invoices & Real-time Bookings
   const loadInvoicesAndBookings = useCallback(async () => {
@@ -236,28 +238,7 @@ export default function VendorInvoicesPage() {
     loadInvoicesAndBookings();
   }, [loadInvoicesAndBookings]);
 
-  // Calculate Weekly Withdrawal Limit (Max 2 requests per week)
-  const weeklyWithdrawalStats = useMemo(() => {
-    const now = new Date();
-    // Get start of current week (Monday)
-    const day = now.getDay();
-    const diffToMonday = now.getDate() - day + (day === 0 ? -6 : 1);
-    const startOfWeek = new Date(now.setDate(diffToMonday));
-    startOfWeek.setHours(0, 0, 0, 0);
 
-    // Count withdrawal requests submitted in the current week
-    const usedThisWeek = invoices.filter((inv) => {
-      if (inv.type !== "withdrawal" || inv.status === "Cancelled" || inv.status === "Rejected") return false;
-      const invDate = new Date(inv.createdAt || inv.issueDate);
-      return invDate >= startOfWeek;
-    }).length;
-
-    const limit = 2;
-    const remaining = Math.max(0, limit - usedThisWeek);
-    const canSubmit = remaining > 0;
-
-    return { usedThisWeek, limit, remaining, canSubmit };
-  }, [invoices, profile, user]);
 
   // Filtered Eligible Completed Bookings
   const eligibleBookings = useMemo(() => {
@@ -298,6 +279,12 @@ export default function VendorInvoicesPage() {
     () => selectedGrossTotal - selectedPlatformFeeTotal,
     [selectedGrossTotal, selectedPlatformFeeTotal]
   );
+
+  const calculatedGstAmount = useMemo(
+    () => Math.round((selectedNetEarningsTotal * vendorGstRate) / 100),
+    [selectedNetEarningsTotal, vendorGstRate]
+  );
+
 
   // Overall Financial Summaries
   const totalCompletedBookingsCount = useMemo(() => {
@@ -406,7 +393,7 @@ export default function VendorInvoicesPage() {
     // Add Platform Service Fee deduction line
     generatedItems.push({
       id: `fee-deduction-${Date.now()}`,
-      description: `Racoonn Platform Commission Fee (18% + 18% GST Deduction)`,
+      description: `Racoonn Platform Commission Fee (Including GST)`,
       quantity: 1,
       unitPrice: -selectedPlatformFeeTotal,
       amount: -selectedPlatformFeeTotal,
@@ -436,10 +423,10 @@ export default function VendorInvoicesPage() {
       dueDate,
       items: generatedItems,
       subtotal: selectedGrossTotal,
-      taxRate: Number(manualGstAmount) > 0 ? 24 : 0,
-      taxAmount: Number(manualGstAmount) || 0,
+      taxRate: vendorGstRate,
+      taxAmount: calculatedGstAmount,
       discount: 0,
-      totalAmount: selectedNetEarningsTotal + (Number(manualGstAmount) || 0),
+      totalAmount: selectedNetEarningsTotal + calculatedGstAmount,
       status,
       notes,
       createdAt: new Date().toISOString(),
@@ -476,29 +463,7 @@ export default function VendorInvoicesPage() {
           </p>
         </div>
 
-        {/* Weekly Quota Badge */}
-        <div className="flex items-center gap-3 bg-white p-3 rounded-2xl border border-gray-200 shadow-xs">
-          <div className="p-2.5 rounded-xl bg-rose-50 text-rose-600">
-            <Calendar size={20} />
-          </div>
-          <div>
-            <div className="text-xs font-bold text-gray-400 uppercase tracking-wider">Weekly Requests Limit</div>
-            <div className="flex items-center gap-2 mt-0.5">
-              <Badge
-                className={`font-black rounded-lg px-2.5 py-0.5 text-xs ${
-                  weeklyWithdrawalStats.canSubmit
-                    ? "bg-emerald-100 text-emerald-800 border-emerald-200"
-                    : "bg-rose-100 text-rose-800 border-rose-200"
-                }`}
-              >
-                {weeklyWithdrawalStats.usedThisWeek} / {weeklyWithdrawalStats.limit} Used This Week
-              </Badge>
-              <span className="text-xs text-gray-500 font-medium">
-                ({weeklyWithdrawalStats.remaining} Remaining)
-              </span>
-            </div>
-          </div>
-        </div>
+
       </div>
 
       {/* Real-time Financial Summary Cards */}
@@ -619,7 +584,7 @@ export default function VendorInvoicesPage() {
             {/* Submit Withdrawal Request Button */}
             <Button
               onClick={handleOpenCreateModal}
-              disabled={selectedBookingIds.length === 0 || !weeklyWithdrawalStats.canSubmit}
+              disabled={selectedBookingIds.length === 0}
               className="bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white font-bold rounded-xl text-xs px-5 py-2 shadow-md gap-2"
             >
               <Plus size={16} /> Generate & Send Invoice ({selectedBookingIds.length})
@@ -639,7 +604,7 @@ export default function VendorInvoicesPage() {
                   {selectedBookingIds.length} Bookings Selected For Payout
                 </span>
                 <span className="text-gray-500">
-                  Gross Revenue: ₹{selectedGrossTotal.toLocaleString("en-IN")} · Platform Fee (18% + GST): -₹
+                  Gross Revenue: ₹{selectedGrossTotal.toLocaleString("en-IN")} · Platform Fee: -₹
                   {selectedPlatformFeeTotal.toLocaleString("en-IN")}
                 </span>
               </div>
@@ -665,7 +630,7 @@ export default function VendorInvoicesPage() {
                 <th className="p-3">Property</th>
                 <th className="p-3">Completion Date</th>
                 <th className="p-3 text-right">Gross Amount</th>
-                <th className="p-3 text-right">Fee (18%+GST)</th>
+                <th className="p-3 text-right">Fee (Incl. GST)</th>
                 <th className="p-3 text-right">Net Earnings</th>
                 <th className="p-3 text-center">Status</th>
               </tr>
@@ -1056,7 +1021,7 @@ export default function VendorInvoicesPage() {
                     ))}
                     <tr className="bg-rose-50/50 font-bold">
                       <td className="p-3 text-rose-700">
-                        Racoonn Platform Service Fee Deduction (18% + GST)
+                        Racoonn Platform Service Fee Deduction (Including GST)
                       </td>
                       <td className="p-3 text-right text-rose-600 font-black">
                         -₹{selectedPlatformFeeTotal.toLocaleString("en-IN")}
@@ -1087,25 +1052,18 @@ export default function VendorInvoicesPage() {
                   <span className="font-bold text-gray-900">₹{selectedGrossTotal.toLocaleString("en-IN")}</span>
                 </div>
                 <div className="flex justify-between text-rose-600">
-                  <span>Platform Fee (18% + GST):</span>
+                  <span>Platform Fee (Including GST):</span>
                   <span className="font-bold">-₹{selectedPlatformFeeTotal.toLocaleString("en-IN")}</span>
                 </div>
                 <div className="flex justify-between text-indigo-600 items-center">
-                  <span>Add GST (24%) Manual Amount:</span>
+                  <span>Add GST ({vendorGstRate}%):</span>
                   <div className="flex items-center gap-1">
-                    <span className="font-bold text-indigo-600">₹</span>
-                    <Input 
-                      type="number"
-                      placeholder="0"
-                      value={manualGstAmount}
-                      onChange={(e) => setManualGstAmount(e.target.value)}
-                      className="w-20 h-7 text-right rounded font-bold text-indigo-600 bg-indigo-50 border-indigo-200 p-1"
-                    />
+                    <span className="font-bold text-indigo-600">₹{calculatedGstAmount.toLocaleString("en-IN")}</span>
                   </div>
                 </div>
                 <div className="border-t pt-2 mt-2 flex justify-between text-base font-black text-emerald-700">
                   <span>Net Payable To Vendor:</span>
-                  <span>₹{(selectedNetEarningsTotal + (Number(manualGstAmount) || 0)).toLocaleString("en-IN")}</span>
+                  <span>₹{(selectedNetEarningsTotal + calculatedGstAmount).toLocaleString("en-IN")}</span>
                 </div>
               </div>
             </div>
@@ -1142,9 +1100,6 @@ export default function VendorInvoicesPage() {
             <DialogDescription className="text-xs text-gray-500 mt-2 space-y-2">
               <p>
                 You are submitting a payout withdrawal request for <strong>{selectedBookingIds.length} completed bookings</strong> totaling <strong>₹{selectedNetEarningsTotal.toLocaleString("en-IN")}</strong>.
-              </p>
-              <p className="text-amber-700 font-semibold bg-amber-50 p-2.5 rounded-xl border border-amber-200">
-                Weekly Request Counter: This will use request <strong>{weeklyWithdrawalStats.usedThisWeek + 1} of {weeklyWithdrawalStats.limit}</strong> for this week.
               </p>
             </DialogDescription>
           </DialogHeader>
@@ -1194,6 +1149,7 @@ export default function VendorInvoicesPage() {
                   <p className="text-xs text-gray-500 font-medium">Racoonn Hospitality Technologies Private Limited</p>
                   <p className="text-xs text-gray-500">Devbhoomi Uttarakhand, India</p>
                   <p className="text-xs text-gray-500">support@racoonn.com</p>
+                  <p className="text-xs font-bold text-gray-700 mt-0.5">HSN Code for Hotel rent: 9963</p>
                 </div>
 
                 <div className="text-right">

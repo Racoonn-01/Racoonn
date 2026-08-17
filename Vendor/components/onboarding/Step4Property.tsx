@@ -96,7 +96,7 @@ const STATE_CITY_MAP: Record<string, string[]> = {
 const INDIAN_STATES = Object.keys(STATE_CITY_MAP);
 
 export function Step4Property({ onNext, onBack }: { onNext: () => void, onBack: () => void }) {
-  const { user, profile, checkAuth } = useAuthStore();
+  const { user, profile, refreshProfile } = useAuthStore();
   const [propertyName, setPropertyName] = useState("");
   const [selectedType, setSelectedType] = useState("Hotel");
   const [city, setCity] = useState("Mumbai");
@@ -188,7 +188,7 @@ export function Step4Property({ onNext, onBack }: { onNext: () => void, onBack: 
     let currentProfile = profile;
 
     if (!currentUser || !currentProfile) {
-      await checkAuth();
+      await refreshProfile();
       const storeState = useAuthStore.getState();
       currentUser = storeState.user;
       currentProfile = storeState.profile;
@@ -279,7 +279,7 @@ export function Step4Property({ onNext, onBack }: { onNext: () => void, onBack: 
       );
 
       // Refresh auth store to get updated profile
-      await checkAuth();
+      await refreshProfile();
 
       // Proceed to next step
       onNext();

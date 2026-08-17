@@ -1,5 +1,107 @@
 [
   {
+    "id": "inv-wd-1786772580566",
+    "invoiceNumber": "RAC-WD-2026-120",
+    "type": "withdrawal",
+    "vendorId": "6a44e9d4003015938636",
+    "vendorName": "Vivek rolex",
+    "vendorBusiness": "blackrolex1144",
+    "vendorEmail": "blackrolex1144@gmail.com",
+    "vendorPhone": "+91 7900310444",
+    "vendorAddress": "Dewalchaurh kham near ram darbar, , ",
+    "vendorGstin": "",
+    "bankName": "HDFC Bank",
+    "accountHolder": "Vivek rolex",
+    "accountNumber": "987654321098",
+    "ifsc": "HDFC0001234",
+    "upiId": "+91 7900310444@upi",
+    "bookingIds": [
+      "6a748fcb000ba73e28f8"
+    ],
+    "grossAmount": 105,
+    "platformFeeRate": 21.24,
+    "platformFeeAmount": 22,
+    "issueDate": "2026-08-15",
+    "dueDate": "2026-08-22",
+    "items": [
+      {
+        "id": "gross-6a748fcb000ba73e28f8",
+        "description": "Booking #6a748fcb000ba73e28f8 Revenue (stark digital · Golden Edit)",
+        "quantity": 1,
+        "unitPrice": 105,
+        "amount": 105,
+        "bookingId": "6a748fcb000ba73e28f8"
+      },
+      {
+        "id": "fee-deduction-1786772580566",
+        "description": "Racoonn Platform Commission Fee (18% Comm. + GST Deduction)",
+        "quantity": 1,
+        "unitPrice": -22,
+        "amount": -22
+      }
+    ],
+    "subtotal": 105,
+    "taxRate": 24,
+    "taxAmount": 20,
+    "discount": 0,
+    "totalAmount": 103,
+    "status": "Sent",
+    "notes": "Please process this payout invoice to the specified bank account / UPI ID. Thank you!",
+    "createdAt": "2026-08-15T05:43:00.566Z",
+    "updatedAt": "2026-08-15T05:43:11.548Z"
+  },
+  {
+    "id": "inv-wd-1785502166958",
+    "invoiceNumber": "RAC-WD-2026-837",
+    "type": "withdrawal",
+    "vendorId": "6a44e9d4003015938636",
+    "vendorName": "Vivek rolex",
+    "vendorBusiness": "blackrolex1144",
+    "vendorEmail": "blackrolex1144@gmail.com",
+    "vendorPhone": "+91 7900310444",
+    "vendorAddress": "Dewalchaurh kham near ram darbar, , ",
+    "vendorGstin": "",
+    "bankName": "HDFC Bank",
+    "accountHolder": "Vivek rolex",
+    "accountNumber": "987654321098",
+    "ifsc": "HDFC0001234",
+    "upiId": "+91 7900310444@upi",
+    "bookingIds": [
+      "6a6781630029d393b095"
+    ],
+    "grossAmount": 26250,
+    "platformFeeRate": 21.24,
+    "platformFeeAmount": 5576,
+    "issueDate": "2026-07-31",
+    "dueDate": "2026-08-07",
+    "items": [
+      {
+        "id": "gross-6a6781630029d393b095",
+        "description": "Booking #6a6781630029d393b095 Revenue (Vivek Verma · Royal Town)",
+        "quantity": 1,
+        "unitPrice": 26250,
+        "amount": 26250,
+        "bookingId": "6a6781630029d393b095"
+      },
+      {
+        "id": "fee-deduction-1785502166958",
+        "description": "Racoonn Platform Commission Fee (18% + 18% GST Deduction)",
+        "quantity": 1,
+        "unitPrice": -5576,
+        "amount": -5576
+      }
+    ],
+    "subtotal": 26250,
+    "taxRate": 0,
+    "taxAmount": 0,
+    "discount": 0,
+    "totalAmount": 20674,
+    "status": "Sent",
+    "notes": "Please process this payout invoice to the specified bank account / UPI ID. Thank you!",
+    "createdAt": "2026-07-31T12:49:26.958Z",
+    "updatedAt": "2026-08-09T15:22:15.807Z"
+  },
+  {
     "id": "inv-admin-1785321801509",
     "invoiceNumber": "RAC-GST-1785321801509",
     "type": "billing",
@@ -33,8 +135,10 @@
     "taxRate": 24,
     "taxAmount": 2268,
     "totalAmount": 11718,
-    "status": "Sent",
-    "createdAt": "2026-07-29T10:43:21.510Z"
+    "status": "Rejected",
+    "createdAt": "2026-07-29T10:43:21.510Z",
+    "adminRemarks": "Rejected (Incomplete documentation): Associated bookings returned to vendor's available balance.",
+    "updatedAt": "2026-08-09T15:22:31.151Z"
   },
   {
     "id": "inv-admin-1785321062737",

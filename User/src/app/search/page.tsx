@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, Suspense, useEffect } from 'react';
+import React, { useState, Suspense, useEffect, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import PropertyCard, { Property } from '@/components/search/PropertyCard';
 import MapMockup from '@/components/search/MapMockup';
@@ -136,6 +136,9 @@ function SearchContent() {
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   const [isPricePopoverOpen, setIsPricePopoverOpen] = useState(false);
   const [advancedFilters, setAdvancedFilters] = useState<FilterState | null>(null);
+  // Mobile bottom-sheet drag state
+  const [isListExpanded, setIsListExpanded] = useState(false);
+  const dragStartY = useRef(0);
 
   useEffect(() => {
     async function loadProperties() {
@@ -149,7 +152,7 @@ function SearchContent() {
           DATABASE_ID,
           process.env.NEXT_PUBLIC_APPWRITE_ROOM_COLLECTION_ID || '6791e8430032e5ce6c98'
         );
-        roomsRes.documents.forEach((room: Record<string, any>) => {
+        roomsRes.documents.forEach((room: Record<string, string | number | null | undefined>) => {
           const roomPrice = Number(room.price || 0);
           if (room.propertyId && roomPrice > 0) {
             if (!roomsMap[room.propertyId] || roomPrice < roomsMap[room.propertyId]) {
@@ -356,10 +359,14 @@ function SearchContent() {
       </div>
 
       {/* Main Split Layout */}
-      <div className="flex-1 overflow-y-auto lg:overflow-hidden relative flex flex-col lg:flex-row w-full lg:px-6 lg:pb-6 lg:pt-4 lg:gap-6">
+      <div className="flex-1 overflow-hidden lg:overflow-visible relative flex flex-col lg:flex-row w-full lg:px-6 lg:pb-6 lg:pt-4 lg:gap-6">
         
-        {/* Right Panel: Map */}
-        <div className="w-full h-[50vh] relative z-0 shrink-0 lg:h-full lg:relative lg:w-[45%] xl:w-[40%] lg:rounded-2xl overflow-hidden shadow-sm lg:border border-gray-200 order-1 lg:order-2">
+        {/* Map Panel — fills full area on mobile (behind sheet), flex item on desktop */}
+        <div
+          className="absolute inset-0 overflow-hidden
+            lg:static lg:shrink-0 lg:h-full lg:w-[45%] xl:w-[40%]
+            lg:rounded-2xl shadow-sm lg:border border-gray-200 lg:order-2"
+        >
           <MapMockup 
             properties={filteredProperties} 
             selectedPropertyId={selectedPropertyId} 
@@ -367,12 +374,47 @@ function SearchContent() {
           />
         </div>
 
-        {/* Left Panel: Property List */}
-        <div className="min-h-screen flex flex-col bg-slate-50 relative pb-20 lg:pb-0 rounded-t-[32px] -mt-8 pt-4 shadow-[0_-8px_30px_rgba(0,0,0,0.12)] lg:min-h-0 lg:h-full lg:mt-0 lg:pt-0 lg:shadow-[0_4px_24px_rgba(0,0,0,0.06)] lg:rounded-2xl lg:border border-gray-200 lg:w-[55%] xl:w-[60%] lg:flex lg:overflow-y-auto order-2 lg:order-1">
-          {/* Pull Bar Indicator for Mobile */}
-          <div className="w-12 h-1.5 bg-gray-300 rounded-full mx-auto mb-6 lg:hidden shrink-0" />
+        {/* Property List — absolute bottom sheet on mobile, flex item on desktop */}
+        <div
+          className="absolute left-0 right-0 flex flex-col bg-slate-50 rounded-t-[32px]
+            lg:static lg:h-full lg:w-[55%] xl:w-[60%]
+            lg:rounded-2xl lg:border border-gray-200 lg:order-1
+            lg:shadow-[0_4px_24px_rgba(0,0,0,0.06)]"
+          style={{
+            // Mobile: top slides between 50% (peek) and 0 (full screen)
+            top: isListExpanded ? '0' : '50%',
+            bottom: 0,
+            boxShadow: '0 -8px 30px rgba(0,0,0,0.14)',
+            transition: 'top 0.35s cubic-bezier(0.4,0,0.2,1)',
+            zIndex: 10,
+          }}
+        >
+          {/* ── Pull bar / drag handle (mobile only) ── */}
+          <div
+            className="lg:hidden shrink-0 flex flex-col items-center py-3 cursor-pointer select-none"
+            onClick={() => setIsListExpanded(v => !v)}
+            onTouchStart={(e) => {
+              dragStartY.current = e.touches[0].clientY;
+            }}
+            onTouchEnd={(e) => {
+              const delta = dragStartY.current - e.changedTouches[0].clientY;
+              if (delta > 30) setIsListExpanded(true);
+              else if (delta < -30) setIsListExpanded(false);
+            }}
+          >
+            <div className="w-12 h-1.5 bg-gray-300 rounded-full" />
+            {isListExpanded && (
+              <button
+                onClick={(e) => { e.stopPropagation(); setIsListExpanded(false); }}
+                className="mt-3 flex items-center gap-1.5 bg-gray-900 text-white text-[12px] font-bold px-4 py-1.5 rounded-full shadow-lg cursor-pointer"
+              >
+                🗺️ Show Map
+              </button>
+            )}
+          </div>
 
-          <div className="px-4 pb-4 lg:p-6 lg:pt-6">
+          {/* ── Scrollable content ── */}
+          <div className="flex-1 overflow-y-auto px-4 pb-20 lg:px-6 lg:pb-6 lg:pt-6">
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end mb-6 gap-4">
               <div>
                 <h1 className="text-[24px] lg:text-[28px] font-bold text-gray-900">
@@ -384,7 +426,6 @@ function SearchContent() {
                 </h1>
                 <p className="text-[14px] lg:text-[15px] text-gray-600 mt-1">Stays in {location}</p>
               </div>
-
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-10">

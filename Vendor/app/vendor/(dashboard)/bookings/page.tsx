@@ -781,6 +781,7 @@ export default function BookingsPage() {
                       <div className="text-left sm:text-right text-xs text-slate-500 space-y-1">
                         <p>Statement Date: <span className="font-bold text-slate-800">{new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</span></p>
                         <p>Settlement Status: <span className="font-bold text-emerald-600 uppercase bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">PAYOUT SETTLED</span></p>
+                        <p className="font-bold text-slate-700 mt-1">HSN Code for Hotel rent: 9963</p>
                       </div>
                     </div>
 
@@ -872,7 +873,7 @@ export default function BookingsPage() {
                       support@racoonn.com &nbsp;•&nbsp; +91 120 456 7890
                     </p>
                     <p className="text-xs font-bold text-slate-700 pt-0.5">
-                      GSTIN: 09AABCR1234A1Z5
+                      GSTIN: 09AABCR1234A1Z5 &nbsp;•&nbsp; HSN Code for Hotel rent: 9963
                     </p>
                   </div>
 

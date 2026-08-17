@@ -20,11 +20,8 @@ export function WelcomeScreen({ onNext }: { onNext: () => void }) {
       {/* Left Column: Content */}
       <div className="w-full lg:w-[55%] flex flex-col relative z-10 overflow-y-auto">
         {/* Top Navbar */}
-        <div className="px-6 md:px-12 py-8 flex justify-between items-center w-full shrink-0">
+        <div className="px-6 md:px-12 py-8 flex items-center w-full shrink-0">
           <Image src="/racoonn-logo-text.png" alt="Racoonn" width={140} height={40} className="h-8 md:h-10 w-auto" />
-          <Button variant="ghost" className="text-slate-600 hover:text-slate-900 hover:bg-slate-100 font-semibold hidden sm:flex rounded-xl">
-            Have an account? Sign in
-          </Button>
         </div>
 
         {/* Main Content */}

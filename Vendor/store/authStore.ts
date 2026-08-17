@@ -35,6 +35,7 @@ export interface VendorProfile extends Models.Document {
   accountNumber?: string;
   ifsc?: string;
   upiId?: string;
+  allow24PercentGst?: boolean;
 }
 interface AuthState {
   user: Models.User<Models.Preferences> | null;
@@ -43,6 +44,7 @@ interface AuthState {
   isLoading: boolean;
   
   checkAuth: () => Promise<void>;
+  refreshProfile: () => Promise<void>;
   logout: () => Promise<void>;
   setLoading: (loading: boolean) => void;
 }
@@ -58,14 +60,13 @@ export const useAuthStore = create<AuthState>((set) => ({
     try {
       const user = await authService.getCurrentVendorUser();
       if (user) {
-        const profile = await authService.getVendorProfile(user.$id) as unknown as VendorProfile;
-        if (profile) {
-          set({ user, profile, isAuthenticated: true });
-        } else {
+        let profile = await authService.getVendorProfile(user.$id) as unknown as VendorProfile;
+        if (!profile) {
           // Found a user session, but no vendor profile
-          // They must be onboarding. Do not logout!
-          set({ user, profile: null, isAuthenticated: true });
+          // This happens on Google login for new users. Create the profile now.
+          profile = await authService.createInitialVendorProfile(user) as unknown as VendorProfile;
         }
+        set({ user, profile, isAuthenticated: true });
       } else {
         set({ user: null, profile: null, isAuthenticated: false });
       }
@@ -73,6 +74,20 @@ export const useAuthStore = create<AuthState>((set) => ({
       set({ user: null, profile: null, isAuthenticated: false });
     } finally {
       set({ isLoading: false });
+    }
+  },
+
+  refreshProfile: async () => {
+    try {
+      const user = await authService.getCurrentVendorUser();
+      if (user) {
+        let profile = await authService.getVendorProfile(user.$id) as unknown as VendorProfile;
+        if (profile) {
+          set({ profile });
+        }
+      }
+    } catch (error) {
+      console.error("Failed to refresh profile", error);
     }
   },
 

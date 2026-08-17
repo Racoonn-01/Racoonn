@@ -9,11 +9,12 @@ import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/authStore";
 import { databases, storage, appwriteConfig } from "@/lib/appwrite/client";
 import { ID } from "appwrite";
+import Tesseract from "tesseract.js";
 
 export function Step3Business({ onNext, onBack }: { onNext: () => void, onBack: () => void }) {
-  const { user, profile, checkAuth } = useAuthStore();
+  const { user, profile, refreshProfile } = useAuthStore();
   
-  const [bizType, setBizType] = useState<"individual" | "company">((profile?.bizType as "individual" | "company") || "company");
+  const [bizType, setBizType] = useState<"individual" | "company">((profile?.bizType as "individual" | "company") || "individual");
   const [idType, setIdType] = useState<"pan" | "aadhar">((profile?.idType as "pan" | "aadhar") || "pan");
   
   const [legalName, setLegalName] = useState(profile?.businessName || "");
@@ -39,6 +40,88 @@ export function Step3Business({ onNext, onBack }: { onNext: () => void, onBack: 
   
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isVerifyingDoc, setIsVerifyingDoc] = useState(false);
+
+  const verifyDocumentOcr = async (
+    imageSrc: string,
+    docType: "pan" | "aadhar",
+    expectedNumber: string
+  ) => {
+    const { data: { text } } = await Tesseract.recognize(imageSrc, 'eng');
+    const upperText = text.toUpperCase();
+    
+    // Normalize common OCR character misreads (O->0, I/L->1, Z->2, S->5, B->8)
+    const normText = upperText.replace(/O/g, '0').replace(/[IL|]/g, '1').replace(/Z/g, '2').replace(/S/g, '5').replace(/B/g, '8');
+    const cleanAlphanumeric = normText.replace(/[^A-Z0-9]/g, '');
+    const rawAlphanumeric = upperText.replace(/[^A-Z0-9]/g, '');
+    const cleanDigits = normText.replace(/[^0-9]/g, '');
+    const rawDigits = upperText.replace(/[^0-9]/g, '');
+
+    // Strict PAN card detection (standalone 10-char PAN token or specific PAN keywords)
+    const hasPanFormat = /\b[A-Z]{5}[0-9]{4}[A-Z]\b/.test(upperText) || /\b[A-Z]{5}[0-9]{4}[A-Z]\b/.test(normText);
+    const hasPanKeywords = upperText.includes("INCOME TAX") || upperText.includes("PERMANENT ACCOUNT") || upperText.includes("INCOMETAX");
+    const isPanDoc = hasPanFormat || hasPanKeywords;
+
+    // Strict Aadhar card detection (12-digit grouped pattern or Aadhar-specific keywords)
+    const hasAadharPattern = /\b\d{4}\s*\d{4}\s*\d{4}\b/.test(normText) || /\b\d{4}\s*\d{4}\s*\d{4}\b/.test(upperText);
+    const hasAadharKeywords = upperText.includes("AADHAAR") || upperText.includes("AADHAR") || upperText.includes("MERA AADHAAR") || upperText.includes("BHARAT SARKAR") || upperText.includes("UNIQUE IDENTIFICATION");
+    const isAadharDoc = hasAadharKeywords || (hasAadharPattern && !hasPanKeywords);
+
+    if (docType === "pan") {
+      if (isAadharDoc && !isPanDoc) {
+        throw new Error("You uploaded an Aadhar Card in the PAN Card field. Please upload a valid PAN Card.");
+      }
+
+      // Extract PAN number format (10 chars, e.g. CHRPV3220P)
+      const panMatch = upperText.match(/\b[A-Z]{5}[0-9]{4}[A-Z]\b/) || normText.match(/\b[A-Z]{5}[0-9]{4}[A-Z]\b/);
+      const extractedPan = panMatch ? panMatch[0] : null;
+
+      const cleanPan = expectedNumber.trim().toUpperCase();
+      if (cleanPan.length === 10) {
+        const normPan = cleanPan.replace(/O/g, '0').replace(/[IL|]/g, '1').replace(/Z/g, '2').replace(/S/g, '5').replace(/B/g, '8');
+        if (!cleanAlphanumeric.includes(normPan) && !rawAlphanumeric.includes(cleanPan)) {
+          if (isAadharDoc) {
+            throw new Error("You uploaded an Aadhar Card in the PAN Card field. Please upload a valid PAN Card.");
+          }
+          throw new Error(`The uploaded PAN Card image does not match the entered PAN number (${cleanPan}). Please check the image or the entered number.`);
+        }
+      }
+
+      return { extractedNumber: extractedPan };
+    }
+
+    if (docType === "aadhar") {
+      if (isPanDoc && !isAadharDoc) {
+        throw new Error("You uploaded a PAN Card in the Aadhar Card field. Please upload a valid Aadhar Card.");
+      }
+
+      // Extract Aadhar number format (12 digits, e.g. 2000 4441 0542)
+      const aadharMatch = upperText.match(/\b(\d{4})[\s-]*(\d{4})[\s-]*(\d{4})\b/) || normText.match(/\b(\d{4})[\s-]*(\d{4})[\s-]*(\d{4})\b/);
+      let extractedAadhar = null;
+      if (aadharMatch) {
+        extractedAadhar = `${aadharMatch[1]} ${aadharMatch[2]} ${aadharMatch[3]}`;
+      } else {
+        const digitsOnly = cleanDigits;
+        if (digitsOnly.length === 12) {
+          extractedAadhar = `${digitsOnly.slice(0, 4)} ${digitsOnly.slice(4, 8)} ${digitsOnly.slice(8, 12)}`;
+        }
+      }
+
+      const cleanAadhar = expectedNumber.replace(/\s+/g, "");
+      if (cleanAadhar.length === 12) {
+        const normAadhar = cleanAadhar.replace(/O/g, '0').replace(/[IL|]/g, '1').replace(/Z/g, '2').replace(/S/g, '5').replace(/B/g, '8');
+        const rawDigits = upperText.replace(/[^0-9]/g, '');
+        if (!cleanDigits.includes(normAadhar) && !rawDigits.includes(cleanAadhar)) {
+          if (isPanDoc) {
+            throw new Error("You uploaded a PAN Card in the Aadhar Card field. Please upload a valid Aadhar Card.");
+          }
+          throw new Error(`The uploaded Aadhar Card image does not match the entered Aadhar number (${cleanAadhar}). Please check the image or the entered number.`);
+        }
+      }
+
+      return { extractedNumber: extractedAadhar };
+    }
+  };
 
   const handleFileUpload = async (
     e: React.ChangeEvent<HTMLInputElement>,
@@ -62,8 +145,39 @@ export function Step3Business({ onNext, onBack }: { onNext: () => void, onBack: 
       
       const objectUrl = URL.createObjectURL(file);
 
+      if (type === "front") setUploadingFront(true);
+      if (type === "back") setUploadingBack(true);
+      if (type === "business") setUploadingBusiness(true);
+
+      // Validate OCR during upload if applicable and autofill detected number
+      if (type === "business" || type === "front") {
+        try {
+          const res = await verifyDocumentOcr(
+            objectUrl,
+            type === "business" ? "pan" : "aadhar",
+            type === "business" ? panNumber : aadharNumber
+          );
+          if (res?.extractedNumber) {
+            if (type === "business") {
+              setPanNumber(res.extractedNumber);
+            } else if (type === "front") {
+              setAadharNumber(res.extractedNumber);
+            }
+          }
+        } catch (ocrErr: any) {
+          if (ocrErr.message && (
+            ocrErr.message.includes("uploaded an Aadhar Card") || 
+            ocrErr.message.includes("uploaded a PAN Card") ||
+            ocrErr.message.includes("does not match the entered")
+          )) {
+            throw ocrErr;
+          }
+          console.warn("OCR Warning on upload:", ocrErr);
+        }
+      }
+
+
       if (type === "front") {
-        setUploadingFront(true);
         setLocalPreviews(prev => ({...prev, front: objectUrl}));
       }
       if (type === "back") {
@@ -119,8 +233,8 @@ export function Step3Business({ onNext, onBack }: { onNext: () => void, onBack: 
         return;
       }
     } else {
-      if (!fullName.trim() || !panNumber.trim() || !aadharNumber.trim() || !address.trim() || !idProofFront || !idProofBack) {
-        setError("Please fill in all required fields and upload both sides of ID Proof.");
+      if (!fullName.trim() || !panNumber.trim() || !aadharNumber.trim() || !address.trim() || !idProofFront || !idProofBack || !businessProof) {
+        setError("Please fill in all required fields and upload PAN Card and both sides of Aadhar Card.");
         return;
       }
       if (!panRegex.test(panNumber.trim().toUpperCase())) {
@@ -133,7 +247,28 @@ export function Step3Business({ onNext, onBack }: { onNext: () => void, onBack: 
         setError("Please enter a valid 12-digit Aadhar number.");
         return;
       }
+
+      // Re-verify OCR on form submit to ensure entered numbers match uploaded documents
+      setIsVerifyingDoc(true);
+      try {
+        const panImgSrc = localPreviews.business || getPreviewUrl(businessProof);
+        if (panImgSrc) {
+          await verifyDocumentOcr(panImgSrc, "pan", panNumber);
+        }
+
+        const aadharImgSrc = localPreviews.front || getPreviewUrl(idProofFront);
+        if (aadharImgSrc) {
+          await verifyDocumentOcr(aadharImgSrc, "aadhar", aadharNumber);
+        }
+      } catch (ocrErr: any) {
+        setError(ocrErr.message || "Document verification failed. Please check your uploaded images and numbers.");
+        setIsVerifyingDoc(false);
+        return;
+      } finally {
+        setIsVerifyingDoc(false);
+      }
     }
+
 
     setIsLoading(true);
     try {
@@ -146,7 +281,7 @@ export function Step3Business({ onNext, onBack }: { onNext: () => void, onBack: 
           onboardingStep: 3,
           idProofFront: bizType === "individual" ? idProofFront : null,
           idProofBack: bizType === "individual" ? idProofBack : null,
-          businessProof: bizType === "company" ? businessProof : null
+          businessProof: businessProof
         };
 
         if (bizType === "company") {
@@ -167,7 +302,7 @@ export function Step3Business({ onNext, onBack }: { onNext: () => void, onBack: 
           updateData
         );
         
-        await checkAuth(); // Refresh profile in store
+        await refreshProfile(); // Refresh profile in store
       }
       
       onNext();
@@ -196,7 +331,9 @@ export function Step3Business({ onNext, onBack }: { onNext: () => void, onBack: 
     >
       <motion.div variants={slideUp} className="mb-8">
         <h1 className="text-3xl md:text-4xl font-black text-[#1F2E4A] mb-3 font-['Poppins',sans-serif]">Tell us about your business</h1>
-        <p className="text-slate-500 font-medium">This information helps us verify your identity and ensures smooth payouts.</p>
+        <p className="text-slate-500 font-medium text-lg">
+          Please provide your business and tax details to verify your identity.
+        </p>
       </motion.div>
 
       <motion.div variants={slideUp} className="space-y-6">
@@ -380,30 +517,45 @@ export function Step3Business({ onNext, onBack }: { onNext: () => void, onBack: 
               />
             </div>
 
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <label className="text-xs font-bold text-slate-700 uppercase tracking-wide">Upload ID Proof</label>
-                <div className="flex bg-slate-100 p-1 rounded-lg">
-                  <button
-                    onClick={() => setIdType("pan")}
-                    className={cn(
-                      "px-4 py-1.5 rounded-md text-xs font-bold transition-all",
-                      idType === "pan" ? "bg-white text-[#1F2E4A] shadow-sm" : "text-slate-500 hover:text-slate-700"
-                    )}
-                  >
-                    PAN Card
-                  </button>
-                  <button
-                    onClick={() => setIdType("aadhar")}
-                    className={cn(
-                      "px-4 py-1.5 rounded-md text-xs font-bold transition-all",
-                      idType === "aadhar" ? "bg-white text-[#1F2E4A] shadow-sm" : "text-slate-500 hover:text-slate-700"
-                    )}
-                  >
-                    Aadhar Card
-                  </button>
-                </div>
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-slate-700 uppercase tracking-wide">Upload PAN Card</label>
+              <div 
+                onClick={() => businessInputRef.current?.click()}
+                className={cn(
+                  "border-2 border-dashed rounded-2xl p-6 text-center transition-all cursor-pointer group relative overflow-hidden h-32 flex flex-col justify-center",
+                  businessProof ? "border-green-300 bg-green-50" : "border-slate-300 hover:bg-slate-50"
+                )}
+              >
+                <input type="file" className="hidden" ref={businessInputRef} onChange={(e) => handleFileUpload(e, "business")} accept=".jpg,.jpeg,.png" />
+                
+                {businessProof && !uploadingBusiness ? (
+                  <div className="absolute inset-0">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={localPreviews.business || getPreviewUrl(businessProof) || ""} alt="PAN Card" className="w-full h-full object-cover opacity-60 group-hover:opacity-30 transition-opacity" />
+                    <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      <CheckCircle2 className="w-8 h-8 text-green-600 mb-2 drop-shadow-md" />
+                      <span className="text-green-700 text-xs font-bold bg-white/90 px-3 py-1 rounded-full shadow-sm">Change</span>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <div className={cn(
+                      "w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3 transition-transform relative z-10",
+                      "bg-blue-50 text-blue-500 group-hover:scale-110"
+                    )}>
+                      {uploadingBusiness ? <Loader2 className="w-6 h-6 animate-spin" /> : <UploadCloud className="w-6 h-6" />}
+                    </div>
+                    <p className="text-xs font-bold text-slate-700 mb-1 relative z-10">
+                      {uploadingBusiness ? "Uploading..." : "Front Side"}
+                    </p>
+                    {!uploadingBusiness && <p className="text-[10px] text-slate-500 relative z-10">Max 5MB</p>}
+                  </>
+                )}
               </div>
+            </div>
+
+            <div className="space-y-4 mt-6">
+              <label className="text-xs font-bold text-slate-700 uppercase tracking-wide">Upload Aadhar Card</label>
 
               <div className="grid grid-cols-2 gap-4">
                 <div 
@@ -413,7 +565,7 @@ export function Step3Business({ onNext, onBack }: { onNext: () => void, onBack: 
                     idProofFront ? "border-green-300 bg-green-50" : "border-slate-300 hover:bg-slate-50"
                   )}
                 >
-                  <input type="file" className="hidden" ref={frontInputRef} onChange={(e) => handleFileUpload(e, "front")} accept=".pdf,.jpg,.png" />
+                  <input type="file" className="hidden" ref={frontInputRef} onChange={(e) => handleFileUpload(e, "front")} accept=".jpg,.jpeg,.png" />
                   
                   {idProofFront && !uploadingFront ? (
                     <div className="absolute inset-0">
@@ -447,7 +599,7 @@ export function Step3Business({ onNext, onBack }: { onNext: () => void, onBack: 
                     idProofBack ? "border-green-300 bg-green-50" : "border-slate-300 hover:bg-slate-50"
                   )}
                 >
-                  <input type="file" className="hidden" ref={backInputRef} onChange={(e) => handleFileUpload(e, "back")} accept=".pdf,.jpg,.png" />
+                  <input type="file" className="hidden" ref={backInputRef} onChange={(e) => handleFileUpload(e, "back")} accept=".jpg,.jpeg,.png" />
                   
                   {idProofBack && !uploadingBack ? (
                     <div className="absolute inset-0">
@@ -478,22 +630,22 @@ export function Step3Business({ onNext, onBack }: { onNext: () => void, onBack: 
           </>
         )}
 
+        {isVerifyingDoc && (
+          <div className="mt-4 p-4 rounded-xl bg-blue-50 border border-blue-200 text-blue-700 flex items-center gap-3 text-sm font-semibold">
+            <Loader2 className="w-5 h-5 animate-spin text-blue-600 shrink-0" />
+            <span>Scanning uploaded PAN and Aadhar documents to verify your details...</span>
+          </div>
+        )}
       </motion.div>
 
       <motion.div variants={slideUp} className="mt-10 flex items-center justify-between">
-        <Button onClick={onBack} variant="ghost" className="text-slate-500 font-bold hover:bg-slate-100 rounded-full px-6">
+        <Button onClick={onBack} variant="ghost" className="text-slate-500 font-bold hover:bg-slate-100 rounded-full px-6" disabled={isLoading || isVerifyingDoc}>
           <ArrowLeft className="mr-2 w-4 h-4" /> Back
         </Button>
-        <Button 
-          onClick={handleNext} 
-          disabled={isLoading}
-          className="bg-[#1F2E4A] hover:bg-[#151E2D] text-white rounded-full px-8 h-12 font-bold shadow-lg shadow-[#1F2E4A]/20 transition-all disabled:opacity-70"
-        >
-          {isLoading ? (
-            <><Loader2 className="mr-2 w-4 h-4 animate-spin" /> Saving...</>
-          ) : (
-            <>Continue to Property <ArrowRight className="ml-2 w-4 h-4" /></>
-          )}
+        <Button onClick={handleNext} disabled={isLoading || isVerifyingDoc} className="h-12 px-8 rounded-full bg-slate-900 hover:bg-slate-800 text-white font-semibold transition-all">
+          {isLoading || isVerifyingDoc ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+          {isVerifyingDoc ? "Verifying Documents..." : isLoading ? "Saving..." : "Continue to Properties"}
+          {!(isLoading || isVerifyingDoc) && <ArrowRight className="w-4 h-4 ml-2" />}
         </Button>
       </motion.div>
     </motion.div>

@@ -39,6 +39,7 @@ export interface VendorData {
   revenue: string;
   status: string;
   joined: string;
+  allow24PercentGst?: boolean;
 }
 
 export interface VendorsKPI {
@@ -61,6 +62,7 @@ export default function VendorsClient({ vendors: initialVendors, kpi }: VendorsC
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedVendor, setSelectedVendor] = useState<VendorData | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [isUpdatingGst, setIsUpdatingGst] = useState(false);
   
   const [isGstModalOpen, setIsGstModalOpen] = useState(false);
   const [selectedGstVendor, setSelectedGstVendor] = useState<VendorData | null>(null);
@@ -345,6 +347,35 @@ export default function VendorsClient({ vendors: initialVendors, kpi }: VendorsC
     }
   };
 
+  const handleUpdateGstAccess = async (vendorId: string, allowGst: boolean) => {
+    try {
+      setIsUpdatingGst(true);
+      const res = await fetch(`/api/vendors/${vendorId}/allow-24-gst`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ allow24PercentGst: allowGst })
+      });
+      
+      if (!res.ok) {
+        throw new Error("Failed to update GST access");
+      }
+      
+      setVendors(prev => prev.map(v => 
+        v.id === vendorId ? { ...v, allow24PercentGst: allowGst } : v
+      ));
+
+      if (selectedVendor && selectedVendor.id === vendorId) {
+        setSelectedVendor({ ...selectedVendor, allow24PercentGst: allowGst });
+      }
+      
+    } catch (error) {
+      console.error(error);
+      alert("Error updating GST access");
+    } finally {
+      setIsUpdatingGst(false);
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     const s = status.toLowerCase();
     if (s === 'active' || s === 'approved') return { variant: 'default' as const, classes: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' };
@@ -556,13 +587,6 @@ export default function VendorsClient({ vendors: initialVendors, kpi }: VendorsC
                               </DropdownMenuItem>
                             )}
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem 
-                              className="text-indigo-600 focus:text-indigo-600 cursor-pointer rounded-md"
-                              onClick={() => handleOpenGstModal(vendor)}
-                            >
-                              <FileText className="mr-2 h-4 w-4" /> Send 24% GST Invoice
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
                             <DropdownMenuItem className="text-red-600 focus:text-red-600 cursor-pointer rounded-md">
                               <Trash2 className="mr-2 h-4 w-4" /> Delete Vendor
                             </DropdownMenuItem>
@@ -644,6 +668,22 @@ export default function VendorsClient({ vendors: initialVendors, kpi }: VendorsC
                     </SelectContent>
                   </Select>
                   {isUpdating && <p className="text-xs text-muted-foreground animate-pulse">Updating status...</p>}
+                </div>
+                
+                <div className="flex items-center justify-between mt-4 p-3 border rounded-xl bg-muted/10">
+                  <div className="space-y-0.5">
+                    <h4 className="text-sm font-medium">Allow 24% GST Invoice</h4>
+                    <p className="text-xs text-muted-foreground">Enable to allow this vendor to generate withdrawal invoices with 24% GST instead of standard 18%.</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {isUpdatingGst && <span className="text-[10px] text-muted-foreground animate-pulse">Saving...</span>}
+                    <Checkbox 
+                      checked={!!selectedVendor.allow24PercentGst}
+                      onCheckedChange={(checked) => handleUpdateGstAccess(selectedVendor.id, checked === true)}
+                      disabled={isUpdatingGst}
+                      className="h-5 w-5"
+                    />
+                  </div>
                 </div>
               </div>
             </>

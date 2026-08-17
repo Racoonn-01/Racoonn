@@ -17,11 +17,10 @@ import { Step7Amenities } from "@/components/onboarding/Step7Amenities";
 import { Step8Banking } from "@/components/onboarding/Step8Banking";
 import { Step9KYC } from "@/components/onboarding/Step9KYC";
 import { Step10Review } from "@/components/onboarding/Step10Review";
-import { ApprovalPending } from "@/components/onboarding/ApprovalPending";
 
 export default function OnboardingPage() {
   const router = useRouter();
-  const { profile, user } = useAuthStore();
+  const { profile, user, checkAuth } = useAuthStore();
   
   // Use profile's onboardingStep if available, otherwise default to 0
   const [step, setStep] = useState(profile?.onboardingStep || 0);
@@ -55,9 +54,23 @@ export default function OnboardingPage() {
   const nextStep = () => setStep((s) => Math.min(s + 1, 12));
   const prevStep = () => setStep((s) => Math.max(s - 1, 0));
 
-  // If we are on the Welcome Screen (0) or Approval Screen (11), they are full screen.
   if (step === 0) return <WelcomeScreen onNext={nextStep} />;
-  if (step === 11) return <ApprovalPending />;
+
+  const handleCompleteOnboarding = async () => {
+    if (user) {
+      try {
+        await databases.updateDocument(
+          appwriteConfig.databaseId,
+          appwriteConfig.vendorCollectionId,
+          user.$id,
+          { onboardingStep: 10 }
+        );
+        await checkAuth(); // AuthGuard will automatically redirect to pending-approval
+      } catch (e) {
+        console.error("Failed to complete onboarding", e);
+      }
+    }
+  };
 
   const renderStepContent = () => {
     switch (step) {
@@ -70,7 +83,7 @@ export default function OnboardingPage() {
       case 7: return <Step7Amenities onNext={nextStep} onBack={prevStep} />;
       case 8: return <Step8Banking onNext={nextStep} onBack={prevStep} />;
       case 9: return <Step9KYC onNext={nextStep} onBack={prevStep} />;
-      case 10: return <Step10Review onSubmit={() => router.push('/vendor/dashboard')} onBack={prevStep} />;
+      case 10: return <Step10Review onSubmit={handleCompleteOnboarding} onBack={prevStep} />;
       default: return null;
     }
   };

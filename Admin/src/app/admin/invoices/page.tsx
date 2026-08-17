@@ -273,6 +273,8 @@ export default function AdminWithdrawalManagementPage() {
     doc.setFontSize(10);
     doc.setTextColor(100, 100, 100);
     doc.text("Withdrawal Request Invoice", 14, 30);
+    doc.setFontSize(9);
+    doc.text("HSN Code for Hotel rent: 9963", 14, 36);
     
     doc.setFontSize(12);
     doc.setTextColor(0, 0, 0);
@@ -1355,6 +1357,7 @@ export default function AdminWithdrawalManagementPage() {
                   <p className="text-xs text-gray-500 font-medium">Racoonn Hospitality Technologies Private Limited</p>
                   <p className="text-xs text-gray-500">Devbhoomi Uttarakhand, India</p>
                   <p className="text-xs text-gray-500">GSTIN: 05AAACR9999P1Z8 · support@racoonn.com</p>
+                  <p className="text-xs font-bold text-gray-700 mt-0.5">HSN Code for Hotel rent: 9963</p>
                 </div>
 
                 <div className="text-right">

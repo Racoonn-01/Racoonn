@@ -12,9 +12,6 @@ import {
   TextInput,
   Share,
   TouchableWithoutFeedback,
-  ImageBackground,
-  Linking,
-  ActivityIndicator,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -27,7 +24,6 @@ import {
   CheckCircle2,
   BedDouble,
   Coffee,
-  Sparkles,
   Info,
   ArrowLeft,
   Share2,
@@ -37,7 +33,6 @@ import {
   Calendar,
   Users,
   Plus,
-  Navigation,
   Minus,
   ChevronDown,
 } from 'lucide-react-native';
@@ -162,24 +157,7 @@ const DEFAULT_AMENITIES = [
   'Mountain View Balcony',
 ];
 
-const INITIAL_REVIEWS = [
-  {
-    id: 'rev-1',
-    userName: 'Aarav Sharma',
-    date: 'July 2026',
-    rating: 5,
-    category: 'View & Hospitality',
-    text: 'Spectacular stay! The mountain views from the balcony were breathtaking and the staff made us feel like royalty throughout our stay.',
-  },
-  {
-    id: 'rev-2',
-    userName: 'Priya Malhotra',
-    date: 'June 2026',
-    rating: 5,
-    category: 'Cleanliness & Food',
-    text: 'Super clean rooms, incredible buffet breakfast, and crystal clear swimming pool. 100% recommended for family vacations in Uttarakhand!',
-  },
-];
+
 
 const REVIEW_FILTERS = ['All', 'View', 'Hospitality', 'Cleanliness', 'Amenities', 'Food'];
 
@@ -651,7 +629,7 @@ export default function PropertyDetailScreen() {
                     <Text style={styles.roomCapacity}>{room.capacity}</Text>
 
                     <View style={styles.inclusionsList}>
-                      {room.inclusions.map((inc, i) => (
+                      {room.inclusions.map((inc: string, i: number) => (
                         <View key={i} style={styles.inclusionItem}>
                           <CheckCircle2 color={Colors.brand.coral} size={13} style={{ marginRight: 6 }} />
                           <Text style={styles.inclusionText}>{inc}</Text>

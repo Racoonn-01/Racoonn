@@ -23,7 +23,6 @@ import {
 import { useRouter } from 'expo-router';
 import {
   ChevronLeft,
-  Search,
   Star,
   Heart,
   MapPin,
@@ -253,6 +252,7 @@ function DraggablePriceHistogram({
   const rightThumbX = maxRatio * maxTravel;
 
   const leftPanResponder = useMemo(
+    // eslint-disable-next-line
     () =>
       PanResponder.create({
         onStartShouldSetPanResponder: () => true,
@@ -280,6 +280,7 @@ function DraggablePriceHistogram({
   );
 
   const rightPanResponder = useMemo(
+    // eslint-disable-next-line
     () =>
       PanResponder.create({
         onStartShouldSetPanResponder: () => true,
@@ -385,7 +386,7 @@ export default function SearchStaysPage() {
   // 1: Half Map (map height = 280)
   // 2: Full List (map height = 0)
   const [sheetState, setSheetState] = useState<0 | 1 | 2>(1);
-  const animatedMapHeight = useRef(new Animated.Value(280));
+  const [animatedMapHeight] = useState(() => new Animated.Value(280));
 
   const toggleExpand = (direction?: 'up' | 'down') => {
     let nextState = sheetState;
@@ -403,7 +404,7 @@ export default function SearchStaysPage() {
     if (nextState === 0) targetHeight = WINDOW_HEIGHT - 240;
     else if (nextState === 2) targetHeight = 0;
 
-    Animated.timing(animatedMapHeight.current, {
+    Animated.timing(animatedMapHeight, {
       toValue: targetHeight,
       duration: 380,
       easing: Easing.bezier(0.25, 0.1, 0.25, 1),
@@ -411,7 +412,7 @@ export default function SearchStaysPage() {
     }).start();
   };
 
-  const panResponder = useRef(
+  const [panResponder] = useState(() =>
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
       onMoveShouldSetPanResponder: (_, gestureState) => Math.abs(gestureState.dy) > 5,
@@ -569,7 +570,7 @@ export default function SearchStaysPage() {
       </View>
 
       {/* 3. Mapbox GL JS Interactive Map Container */}
-      <Animated.View style={[styles.mapArea, { height: animatedMapHeight.current }]}>
+      <Animated.View style={[styles.mapArea, { height: animatedMapHeight }]}>
         <View style={{ flex: 1, width: '100%', position: 'relative' }}>
           <WebView
             originWhitelist={['*']}
@@ -618,7 +619,7 @@ export default function SearchStaysPage() {
 
       {/* 4. Bottom Draggable Sheet Container with Realtime Appwrite Data */}
       <View style={styles.bottomSheetCard}>
-        <View {...panResponder.current.panHandlers} style={styles.sheetHandleRow}>
+        <View {...panResponder.panHandlers} style={styles.sheetHandleRow}>
           <TouchableOpacity activeOpacity={0.8} onPress={() => toggleExpand()}>
             <View style={styles.sheetHandle} />
           </TouchableOpacity>

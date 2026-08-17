@@ -156,7 +156,7 @@ export default function VendorInvoicesPage() {
       const invJson = await invRes.json();
       let fetchedInvoices: Invoice[] = [];
       if (invJson.success && Array.isArray(invJson.invoices)) {
-        fetchedInvoices = invJson.invoices;
+        fetchedInvoices = invJson.invoices.filter((inv: any) => inv.vendorId === user?.$id);
         setInvoices(fetchedInvoices);
       }
 
@@ -177,16 +177,26 @@ export default function VendorInvoicesPage() {
 
       // 2. Fetch Real-time Appwrite Bookings, Guests, Payments
       try {
+        if (!user?.$id) return;
+        const propertiesRes = await databases.listDocuments(
+          appwriteConfig.databaseId,
+          appwriteConfig.propertyCollectionId || "Properties",
+          [Query.equal("vendorId", user.$id)]
+        );
+        const vendorPropertyIds = propertiesRes.documents.map((p: any) => p.$id);
+
         const [bookingsRes, guestsRes, paymentsRes] = await Promise.all([
           databases.listDocuments(appwriteConfig.databaseId, "bookings", [Query.orderDesc("$createdAt")]),
           databases.listDocuments(appwriteConfig.databaseId, "booking_guests"),
           databases.listDocuments(appwriteConfig.databaseId, "booking_payments"),
         ]);
 
+        const vendorBookings = bookingsRes.documents.filter(b => vendorPropertyIds.includes(b.hotelId));
+
         const now = new Date();
         const mappedBookings: BookingItem[] = [];
 
-        bookingsRes.documents.forEach((b: any) => {
+        vendorBookings.forEach((b: any) => {
           const guest = guestsRes.documents.find((g: any) => g.bookingId === b.$id);
           const payment = paymentsRes.documents.find((p: any) => p.bookingId === b.$id);
 

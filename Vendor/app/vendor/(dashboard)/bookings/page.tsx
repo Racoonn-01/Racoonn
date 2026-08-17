@@ -10,8 +10,10 @@ import { motion, AnimatePresence } from "framer-motion";
 import { databases, appwriteConfig } from "@/lib/appwrite/client";
 import { Query } from "appwrite";
 import { calculateCancellationRefund } from "@/lib/cancellation";
+import { useAuthStore } from "@/store/authStore";
 
 export default function BookingsPage() {
+  const { user } = useAuthStore();
   const [selectedBooking, setSelectedBooking] = useState<any>(null);
   const [bookings, setBookings] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -25,6 +27,22 @@ export default function BookingsPage() {
     async function fetchBookings() {
       try {
         setIsLoading(true);
+        if (!user?.$id) return;
+
+        // Fetch vendor's properties first
+        const propertiesRes = await databases.listDocuments(
+          appwriteConfig.databaseId,
+          appwriteConfig.propertyCollectionId || "Properties",
+          [Query.equal("vendorId", user.$id)]
+        );
+        const vendorPropertyIds = propertiesRes.documents.map((p: any) => p.$id);
+
+        if (vendorPropertyIds.length === 0) {
+          setBookings([]);
+          setIsLoading(false);
+          return;
+        }
+
         // Fetch all 3 collections
         const [bookingsRes, guestsRes, paymentsRes] = await Promise.all([
           databases.listDocuments(appwriteConfig.databaseId, 'bookings', [Query.orderDesc('$createdAt')]),
@@ -32,7 +50,9 @@ export default function BookingsPage() {
           databases.listDocuments(appwriteConfig.databaseId, 'booking_payments')
         ]);
 
-        const mappedBookings = bookingsRes.documents.map(booking => {
+        const vendorBookings = bookingsRes.documents.filter(b => vendorPropertyIds.includes(b.hotelId));
+
+        const mappedBookings = vendorBookings.map(booking => {
           const guest = guestsRes.documents.find(g => g.bookingId === booking.$id);
           const payment = paymentsRes.documents.find(p => p.bookingId === booking.$id);
 

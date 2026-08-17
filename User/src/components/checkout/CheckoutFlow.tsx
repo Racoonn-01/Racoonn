@@ -8,8 +8,7 @@ import { AddonSelector, DEFAULT_ADDONS } from "@/components/checkout/AddonSelect
 import { CheckCircle, Loader2 } from "lucide-react";
 import Script from "next/script";
 import { checkAvailability } from "@/lib/appwrite/availability";
-import { getProperty } from "@/lib/appwrite/api";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { calculateRoomGst } from "@/lib/gst";
 
 export function CheckoutFlow() {
@@ -106,7 +105,21 @@ export function CheckoutFlow() {
     try {
       const razorpayKey = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
       const hasRealRazorpayKey = razorpayKey && razorpayKey.startsWith("rzp_") && !razorpayKey.includes("dummy");
-      const hasRazorpayScript = typeof (window as any).Razorpay !== "undefined";
+      
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      let hasRazorpayScript = typeof (window as any).Razorpay !== "undefined";
+      if (hasRealRazorpayKey && !hasRazorpayScript) {
+        // Dynamically load script if it was too lazy
+        await new Promise((resolve) => {
+          const script = document.createElement('script');
+          script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+          script.onload = resolve;
+          script.onerror = resolve;
+          document.body.appendChild(script);
+        });
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        hasRazorpayScript = typeof (window as any).Razorpay !== "undefined";
+      }
 
       if (!hasRealRazorpayKey || !hasRazorpayScript) {
         // Direct seamless booking processing when real Razorpay keys are not configured
@@ -150,7 +163,7 @@ export function CheckoutFlow() {
       }
 
       const order = await res.json();
-      if (!order || !order.id || order.id.startsWith("order_")) {
+      if (!order || !order.id || order.id.startsWith("mock_")) {
         await submitBooking({
           hotelId,
           hotelName,
@@ -173,7 +186,7 @@ export function CheckoutFlow() {
         name: "Racoonn",
         description: `Booking at ${hotelName}`,
         order_id: order.id,
-        handler: async function (_response: unknown) {
+        handler: async function () {
           try {
             await submitBooking({
               hotelId,

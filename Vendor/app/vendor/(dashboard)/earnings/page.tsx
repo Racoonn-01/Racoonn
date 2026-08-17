@@ -36,13 +36,18 @@ export default function EarningsPage() {
       if (!user) return;
       try {
         // Fetch bookings
+        const propertiesRes = await databases.listDocuments(
+          appwriteConfig.databaseId,
+          appwriteConfig.propertyCollectionId || "Properties",
+          [Query.equal("vendorId", user.$id)]
+        );
+        const vendorPropertyIds = propertiesRes.documents.map((p: any) => p.$id);
+
         const bookingsRes = await databases.listDocuments(
           appwriteConfig.databaseId,
           "bookings"
         );
-        // Assuming we filter by vendor locally or if properties are needed
-        // Since dashboard fetches all bookings, we'll do the same to match its logic
-        const allBookings = bookingsRes.documents;
+        const allBookings = bookingsRes.documents.filter(b => vendorPropertyIds.includes(b.hotelId));
         
         // Fetch payments
         const paymentsRes = await databases.listDocuments(

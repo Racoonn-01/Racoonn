@@ -177,6 +177,31 @@ export default function AvailabilityPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ overrides: updated })
       });
+
+      // Channel Manager Sync
+      if (selectedRoom?.$id && user?.$id) {
+        const roomUpdates = Object.entries(updated)
+          .filter(([key]) => key.startsWith(selectedRoom.$id))
+          .map(([key, val]: [string, any]) => ({
+             date: key.split('_')[1],
+             price: val.price || selectedRoom.price,
+             availableCount: val.available,
+             isBlocked: val.blocked || false
+          }));
+
+        if (roomUpdates.length > 0) {
+           fetch("/api/channel-manager/sync", {
+             method: "POST",
+             headers: { "Content-Type": "application/json" },
+             body: JSON.stringify({
+               vendorId: user.$id,
+               roomId: selectedRoom.$id,
+               updates: roomUpdates
+             })
+           }).catch(console.error); // Fire and forget
+        }
+      }
+
       if (typeof window !== "undefined" && "BroadcastChannel" in window) {
         const bc = new BroadcastChannel("racoonn_availability_channel");
         bc.postMessage({ type: "AVAILABILITY_UPDATED", overrides: updated });

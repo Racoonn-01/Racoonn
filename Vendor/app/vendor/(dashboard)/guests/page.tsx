@@ -30,11 +30,28 @@ export default function GuestsPage() {
     async function fetchGuestsData() {
       try {
         setIsLoading(true);
+        if (!user?.$id) return;
+
+        const propertiesRes = await databases.listDocuments(
+          appwriteConfig.databaseId,
+          appwriteConfig.propertyCollectionId || "Properties",
+          [Query.equal("vendorId", user.$id)]
+        );
+        const vendorPropertyIds = propertiesRes.documents.map((p: any) => p.$id);
+
+        if (vendorPropertyIds.length === 0) {
+          setGuests([]);
+          setIsLoading(false);
+          return;
+        }
+
         // Fetch all bookings and guest records from Appwrite in real-time
         const [bookingsRes, guestsRes] = await Promise.all([
           databases.listDocuments(appwriteConfig.databaseId, 'bookings', [Query.orderDesc('$createdAt')]),
           databases.listDocuments(appwriteConfig.databaseId, 'booking_guests')
         ]);
+
+        const vendorBookings = bookingsRes.documents.filter(b => vendorPropertyIds.includes(b.hotelId));
 
         // Map and aggregate unique guest profiles from real-time database documents
         const guestMap = new Map<string, {
@@ -49,7 +66,8 @@ export default function GuestsPage() {
 
         // 1. Aggregate explicit booking_guests records
         guestsRes.documents.forEach(gDoc => {
-          const booking = bookingsRes.documents.find(b => b.$id === gDoc.bookingId);
+          const booking = vendorBookings.find(b => b.$id === gDoc.bookingId);
+          if (!booking) return;
           const fullName = `${gDoc.firstName || ''} ${gDoc.lastName || ''}`.trim() || 'Guest User';
           const email = gDoc.email || 'N/A';
           const phone = gDoc.phone || 'N/A';
@@ -78,7 +96,7 @@ export default function GuestsPage() {
         });
 
         // 2. Aggregate bookings documents that do not have a separate booking_guests document
-        bookingsRes.documents.forEach((b: any) => {
+        vendorBookings.forEach((b: any) => {
           const matchingGuest = guestsRes.documents.find(g => g.bookingId === b.$id);
           if (!matchingGuest) {
             const email = b.guestEmail || b.email || 'N/A';

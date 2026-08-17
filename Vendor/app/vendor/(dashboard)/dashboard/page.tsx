@@ -5,7 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Building2, CalendarCheck, IndianRupee, Percent, Star, Clock, ArrowUpRight, ArrowDownRight, MoreHorizontal, CalendarIcon } from "lucide-react";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
-import { databases, appwriteConfig } from "@/lib/appwrite/client";
+import { databases, appwriteConfig, client } from "@/lib/appwrite/client";
 import { Query } from "appwrite";
 import { useAuthStore } from "@/store/authStore";
 import Link from "next/link";
@@ -164,13 +164,14 @@ export default function DashboardOverview() {
           [Query.equal("vendorId", user.$id)]
         );
         setPropertyCount(propsRes.total || propsRes.documents.length);
+        const vendorPropertyIds = propsRes.documents.map((p: any) => p.$id);
 
         // Fetch bookings
         const bookingsRes = await databases.listDocuments(
           appwriteConfig.databaseId,
           "bookings"
         );
-        const bookings = bookingsRes.documents.filter((b: any) => isWithinTimeframe(b.$createdAt, timeframe));
+        const bookings = bookingsRes.documents.filter((b: any) => vendorPropertyIds.includes(b.hotelId) && isWithinTimeframe(b.$createdAt, timeframe));
         setTotalBookings(bookings.length);
 
         // Fetch payments
@@ -257,10 +258,24 @@ export default function DashboardOverview() {
         setChartData(newChartData);
 
       } catch (error) {
-        console.error("Error fetching dashboard data:", error);
+        console.error("Dashboard fetch error:", error);
       }
     };
+
     fetchDashboardData();
+
+    // Subscribe to realtime updates for bookings
+    const unsubscribe = client.subscribe(
+      `databases.${appwriteConfig.databaseId}.collections.bookings.documents`,
+      (response) => {
+        // When a booking is created, updated, or deleted, re-fetch the data instantly
+        fetchDashboardData();
+      }
+    );
+
+    return () => {
+      unsubscribe();
+    };
   }, [user, timeframe]);
 
   // Update stats array dynamically based on fetched data

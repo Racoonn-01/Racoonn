@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
 
     // Fallback mock order response if credentials missing or API fails
     const mockOrder = {
-      id: `order_${Date.now()}`,
+      id: `mock_${Date.now()}`,
       entity: "order",
       amount: Math.round(amount * 100),
       amount_paid: 0,

@@ -28,8 +28,9 @@ export async function POST(req: Request) {
                pass: process.env.SMTP_PASS,
             }
          });
-         
-         const logoPath = path.join(process.cwd(), 'public', 'Racoonn-Logo-02.png');
+         const protocol = req.headers.get('x-forwarded-proto') || (req.headers.get('host')?.includes('localhost') ? 'http' : 'https');
+         const host = req.headers.get('host');
+         const logoUrl = `${protocol}://${host}/Racoonn-Logo-02.png`;
 
          await transporter.sendMail({
             from: `"Racoonn Partner Program" <${process.env.SMTP_USER}>`,
@@ -40,7 +41,7 @@ export async function POST(req: Request) {
                <div style="font-family: Arial, sans-serif; background-color: #F4F0EA; padding: 40px 20px; color: #1F2E4A;">
                   <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
                      <div style="text-align: center; padding: 30px 20px; border-bottom: 1px solid #e2e8f0;">
-                        <img src="cid:racoonnlogo" alt="Racoonn Logo" style="max-width: 200px; height: auto;" />
+                        <img src="${logoUrl}" alt="Racoonn Logo" style="max-width: 200px; height: auto;" />
                      </div>
                      <div style="padding: 40px 30px;">
                         <h2 style="margin-top: 0; color: #1F2E4A; font-size: 24px; font-weight: 600;">Verification Code</h2>
@@ -61,16 +62,10 @@ export async function POST(req: Request) {
                         <p style="color: #ffffff; font-size: 12px; margin: 0;">&copy; ${new Date().getFullYear()} Racoonn. All rights reserved.</p>
                      </div>
                   </div>
-               </div>
-            `,
-            attachments: [
-               {
-                  filename: 'Racoonn-Logo-02.png',
-                  path: logoPath,
-                  cid: 'racoonnlogo'
-               }
-            ]
-         });
+                   </div>
+                </div>
+             `
+          });
       } else {
          otp = "123456"; // Fixed OTP for mobile testing to avoid terminal checking
          console.log(`[FAKE SMS] To: ${identifier}, OTP: ${otp}`);

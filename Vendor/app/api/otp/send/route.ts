@@ -13,10 +13,8 @@ export async function POST(req: Request) {
       );
     }
 
-    const workerUrl = process.env.NEXT_PUBLIC_CLOUDFLARE_WORKER_URL || process.env.CLOUDFLARE_WORKER_URL;
-    if (!workerUrl) {
-      // Fallback local response if worker URL not configured
-      let otp: string;
+    // Use native Nodemailer logic instead of proxying to avoid 429 errors from external workers
+    let otp: string;
       if (method === 'email') {
          otp = Math.floor(100000 + Math.random() * 900000).toString();
          const transporter = nodemailer.createTransport({
@@ -82,22 +80,7 @@ export async function POST(req: Request) {
          path: '/'
       });
 
-      return res;
-    }
-
-    const response = await fetch(`${workerUrl.replace(/\/$/, '')}/api/otp/send`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ method, identifier })
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      return NextResponse.json(data, { status: response.status });
-    }
-
-    return NextResponse.json({ success: true, message: `OTP sent successfully to ${identifier}` });
+    return res;
   } catch (error) {
     console.error('Error proxying OTP send:', error);
     return NextResponse.json(

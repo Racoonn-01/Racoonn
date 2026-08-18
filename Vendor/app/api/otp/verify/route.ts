@@ -12,10 +12,8 @@ export async function POST(req: Request) {
       );
     }
 
-    const workerUrl = process.env.NEXT_PUBLIC_CLOUDFLARE_WORKER_URL || process.env.CLOUDFLARE_WORKER_URL;
-    if (!workerUrl) {
-      // Fallback local verification if worker URL not configured
-      const cookieStore = await cookies();
+    // Use native verification logic using Next.js cookies
+    const cookieStore = await cookies();
       const otpCookie = cookieStore.get('racoonn_otp');
       
       if (!otpCookie) {
@@ -37,22 +35,7 @@ export async function POST(req: Request) {
       // Clear cookie
       res.cookies.set('racoonn_otp', '', { maxAge: 0, path: '/' });
       
-      return res;
-    }
-
-    const response = await fetch(`${workerUrl.replace(/\/$/, '')}/api/otp/verify`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ identifier, code })
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      return NextResponse.json(data, { status: response.status });
-    }
-
-    return NextResponse.json({ success: true, message: 'Verified successfully' });
+    return res;
   } catch (error) {
     console.error('Error proxying OTP verify:', error);
     return NextResponse.json(

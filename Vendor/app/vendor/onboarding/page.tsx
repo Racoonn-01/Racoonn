@@ -65,6 +65,18 @@ export default function OnboardingPage() {
           user.$id,
           { onboardingStep: 10 }
         );
+        
+        // Trigger verification email
+        try {
+          await fetch('/api/vendor/onboarding-email', {
+             method: 'POST',
+             headers: { 'Content-Type': 'application/json' },
+             body: JSON.stringify({ email: user.email, name: profile?.businessName || profile?.firstName || user.name })
+          });
+        } catch (emailError) {
+          console.error("Failed to send onboarding email", emailError);
+        }
+
         await checkAuth(); // AuthGuard will automatically redirect to pending-approval
       } catch (e) {
         console.error("Failed to complete onboarding", e);

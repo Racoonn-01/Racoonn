@@ -55,17 +55,36 @@ export function Step2Verification({ onNext, onBack }: { onNext: () => void, onBa
     setIsLoading(true);
     
     try {
-      const identifier = method === "email" ? email : phone;
-      const res = await fetch("/api/otp/send", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ method, identifier })
-      });
-      
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || "Failed to send code");
+      if (method === "email") {
+        const res = await fetch("/api/otp/send", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ method, identifier: email })
+        });
+        
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.error || "Failed to send code");
+        }
+      } else if (method === "mobile") {
+        if (!user) throw new Error("User session not found");
+        
+        // 1. Sync Phone to Appwrite User Account
+        const syncRes = await fetch("/api/vendor/sync-phone", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId: user.$id, phone: phone })
+        });
+        const syncData = await syncRes.json();
+        if (!syncRes.ok) {
+          throw new Error(syncData.error || "Failed to sync phone with authentication");
+        }
+        
+        // 2. Dispatch the real SMS OTP using Appwrite Client SDK
+        const { account } = await import("@/lib/appwrite/client");
+        await account.createPhoneVerification();
       }
+
       
       setCodeSentTo(method);
       setCountdown(60);
@@ -100,37 +119,50 @@ export function Step2Verification({ onNext, onBack }: { onNext: () => void, onBa
     setIsLoading(true);
 
     try {
-      const identifier = method === "email" ? email : phone;
-      const res = await fetch("/api/otp/verify", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ identifier, code })
-      });
-      
-      const data = await res.json();
-      
-      if (!res.ok) {
-        setAttempts(prev => prev + 1);
-        setErrorMsg(data.error || "Invalid or expired verification code. Please try again.");
-      } else {
-        // Save verification status to Appwrite
-        if (user) {
-          try {
-            await databases.updateDocument(
-              appwriteConfig.databaseId,
-              appwriteConfig.vendorCollectionId,
-              user.$id,
-              method === "email" ? { isEmailVerified: true } : { isPhoneVerified: true }
-            );
-          } catch (dbError) {
-            console.error("Failed to update verification status in Appwrite", dbError);
-          }
-        }
+      if (method === "email") {
+        const res = await fetch("/api/otp/verify", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ identifier: email, code })
+        });
         
-        setSuccessMsg(method === "email" ? "Email verified successfully" : "Mobile number verified successfully");
-        setVerifiedMethod(method);
-        setCodeSentTo(null);
+        const data = await res.json();
+        
+        if (!res.ok) {
+          setAttempts(prev => prev + 1);
+          setErrorMsg(data.error || "Invalid or expired verification code. Please try again.");
+          return;
+        }
+      } else if (method === "mobile") {
+        if (!user) throw new Error("User session not found");
+        const { account } = await import("@/lib/appwrite/client");
+        try {
+          await account.updatePhoneVerification(user.$id, code);
+        } catch (appwriteErr: any) {
+          setAttempts(prev => prev + 1);
+          setErrorMsg(appwriteErr.message || "Invalid or expired OTP code.");
+          return;
+        }
       }
+
+      // If we reach here, verification was successful
+      // Save verification status to Appwrite
+      if (user) {
+        try {
+          await databases.updateDocument(
+            appwriteConfig.databaseId,
+            appwriteConfig.vendorCollectionId,
+            user.$id,
+            method === "email" ? { isEmailVerified: true } : { isPhoneVerified: true }
+          );
+        } catch (dbError) {
+          console.error("Failed to update verification status in Appwrite", dbError);
+        }
+      }
+        
+      setSuccessMsg(method === "email" ? "Email verified successfully" : "Mobile number verified successfully");
+      setVerifiedMethod(method);
+      setCodeSentTo(null);
     } catch {
       setAttempts(prev => prev + 1);
       setErrorMsg("Error verifying OTP. Please try again.");

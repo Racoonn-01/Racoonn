@@ -23,8 +23,12 @@ export async function POST(req: Request) {
       }
       
       const payload = Buffer.from(otpCookie.value, 'base64').toString('ascii');
-      const [savedIdentifier, savedOtp] = payload.split(':');
+      const [savedIdentifier, savedOtp, expiresAt] = payload.split(':');
       
+      if (expiresAt && Date.now() > parseInt(expiresAt, 10)) {
+         return NextResponse.json({ error: 'OTP expired' }, { status: 400 });
+      }
+
       if (savedIdentifier !== identifier || savedOtp !== code) {
          return NextResponse.json({ error: 'Invalid OTP' }, { status: 400 });
       }

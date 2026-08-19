@@ -15,7 +15,6 @@ import { Step5Rooms } from "@/components/onboarding/Step5Rooms";
 import { Step6Media } from "@/components/onboarding/Step6Media";
 import { Step7Amenities } from "@/components/onboarding/Step7Amenities";
 import { Step8Banking } from "@/components/onboarding/Step8Banking";
-import { Step9KYC } from "@/components/onboarding/Step9KYC";
 import { Step10Review } from "@/components/onboarding/Step10Review";
 
 export default function OnboardingPage() {
@@ -51,7 +50,7 @@ export default function OnboardingPage() {
     }
   }, [profile?.onboardingStep, hasSyncedInitialStep]);
 
-  const nextStep = () => setStep((s) => Math.min(s + 1, 12));
+  const nextStep = () => setStep((s) => Math.min(s + 1, 10));
   const prevStep = () => setStep((s) => Math.max(s - 1, 0));
 
   if (step === 0) return <WelcomeScreen onNext={nextStep} />;
@@ -63,7 +62,7 @@ export default function OnboardingPage() {
           appwriteConfig.databaseId,
           appwriteConfig.vendorCollectionId,
           user.$id,
-          { onboardingStep: 10 }
+          { onboardingStep: 9 }
         );
         
         // Trigger verification email
@@ -94,8 +93,7 @@ export default function OnboardingPage() {
       case 6: return <Step6Media onNext={nextStep} onBack={prevStep} />;
       case 7: return <Step7Amenities onNext={nextStep} onBack={prevStep} />;
       case 8: return <Step8Banking onNext={nextStep} onBack={prevStep} />;
-      case 9: return <Step9KYC onNext={nextStep} onBack={prevStep} />;
-      case 10: return <Step10Review onSubmit={handleCompleteOnboarding} onBack={prevStep} />;
+      case 9: return <Step10Review onSubmit={handleCompleteOnboarding} onBack={prevStep} />;
       default: return null;
     }
   };

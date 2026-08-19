@@ -18,7 +18,6 @@ export function Step10Review({ onSubmit, onBack }: { onSubmit: () => void, onBac
     { name: "Room Setup", status: "1 Room Added", complete: true },
     { name: "Media Gallery", status: "4 Photos", complete: false, warning: true },
     { name: "Bank Details", status: "Verified", complete: true },
-    { name: "KYC Documents", status: "Pending Review", complete: true },
   ];
 
   return (

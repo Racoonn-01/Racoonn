@@ -15,12 +15,11 @@ const STEPS = [
   { id: 6, name: "Media Upload" },
   { id: 7, name: "Amenities" },
   { id: 8, name: "Banking" },
-  { id: 9, name: "KYC Check" },
-  { id: 10, name: "Review" },
+  { id: 9, name: "Review" },
 ];
 
 export function ProgressSidebar({ currentStep }: { currentStep: number }) {
-  const progressPercent = Math.min((currentStep / 10) * 100, 100);
+  const progressPercent = Math.min((currentStep / 9) * 100, 100);
 
   return (
     <div className="h-full flex flex-col p-8">

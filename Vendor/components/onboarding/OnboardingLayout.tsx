@@ -6,8 +6,8 @@ import Link from "next/link";
 import Image from "next/image";
 
 export function OnboardingLayout({ children, currentStep }: { children: React.ReactNode, currentStep: number }) {
-  // Mobile Sticky Progress (0 to 100 based on steps 1-10)
-  const progressPercent = Math.min((currentStep / 10) * 100, 100);
+  // Mobile Sticky Progress (0 to 100 based on steps 1-9)
+  const progressPercent = Math.min((currentStep / 9) * 100, 100);
 
   return (
     <div className="min-h-screen flex flex-col lg:flex-row bg-[#FDFBF7] font-['Inter',_sans-serif]">
@@ -18,7 +18,7 @@ export function OnboardingLayout({ children, currentStep }: { children: React.Re
           <Link href="/">
             <Image src="/racoonn-logo.png" alt="Racoonn" width={100} height={30} className="h-6 w-auto" />
           </Link>
-          <span className="text-sm font-bold text-slate-500">Step {currentStep} of 10</span>
+          <span className="text-sm font-bold text-slate-500">Step {currentStep} of 9</span>
         </div>
         <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
           <motion.div 

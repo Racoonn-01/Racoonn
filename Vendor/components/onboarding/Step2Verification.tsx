@@ -145,6 +145,8 @@ export function Step2Verification({ onNext, onBack }: { onNext: () => void, onBa
         }
       }
 
+
+      
       // If we reach here, verification was successful
       // Save verification status to Appwrite
       if (user) {

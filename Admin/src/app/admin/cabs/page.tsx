@@ -218,10 +218,7 @@ export default function CabsPage() {
                       <Label className="text-left font-semibold sm:w-28 shrink-0 text-slate-800">Location</Label>
                       <Input placeholder="e.g. Mumbai" className="flex-1" value={newCabData.location} onChange={e => setNewCabData({...newCabData, location: e.target.value})} />
                     </div>
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
-                      <Label className="text-left font-semibold sm:w-28 shrink-0 text-slate-800">DL</Label>
-                      <Input placeholder="e.g. DL12345" className="flex-1" value={newCabData.dlNumber} onChange={e => setNewCabData({...newCabData, dlNumber: e.target.value})} />
-                    </div>
+
                     <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
                       <Label className="text-left font-semibold sm:w-28 shrink-0 text-slate-800">Cab Number</Label>
                       <Input placeholder="e.g. MH 01 AB 1234" className="flex-1" value={newCabData.cabNumber} onChange={e => setNewCabData({...newCabData, cabNumber: e.target.value})} />

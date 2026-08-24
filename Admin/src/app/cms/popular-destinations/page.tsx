@@ -312,7 +312,7 @@ export default function PopularDestinationsPage() {
         <div className="border-2 border-dashed border-gray-200 rounded-3xl p-12 text-center bg-gray-50">
           <h3 className="text-lg font-bold text-gray-700">No Popular Destinations Uploaded</h3>
           <p className="text-sm text-gray-500 mt-1 mb-4">
-            Click "Add Destination" above to upload custom destinations for your website frontend.
+            Click &quot;Add Destination&quot; above to upload custom destinations for your website frontend.
           </p>
           <Button onClick={() => setIsAddDialogOpen(true)} className="bg-rose-600 hover:bg-rose-700 text-white rounded-xl shadow">
             Add Destination

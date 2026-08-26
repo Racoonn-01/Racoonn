@@ -174,7 +174,7 @@ export default function PackagesPage() {
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [formStep, setFormStep] = useState(1)
   const [formData, setFormData] = useState<Package>(emptyForm)
-  const [availableProperties, setAvailableProperties] = useState<any[]>([])
+  const [availableProperties, setAvailableProperties] = useState<{ id: string; title: string; location?: string; city?: string; image?: string; price?: number }[]>([])
   const [isLoadingProperties, setIsLoadingProperties] = useState(false)
   const [propertySearch, setPropertySearch] = useState('')
   const [activitySearch, setActivitySearch] = useState('')
@@ -195,10 +195,12 @@ export default function PackagesPage() {
   };
 
   useEffect(() => {
-    fetchAvailableProperties();
+    setTimeout(() => {
+      fetchAvailableProperties();
+    }, 0);
   }, []);
 
-  const toggleSelectProperty = (prop: any) => {
+  const toggleSelectProperty = (prop: { id: string; title: string; location?: string; city?: string; image?: string; price?: number }) => {
     setFormData(prev => {
       const currentList = prev.hotelOptions || [];
       const exists = currentList.some(h => h.id === prop.id || h.title === prop.title);
@@ -258,7 +260,7 @@ export default function PackagesPage() {
   const fetchPackages = async () => {
     try {
       setLoading(true);
-      const res = await fetch("/api/cms/packages");
+      const res = await fetch(`/api/cms/packages?t=${Date.now()}`, { cache: 'no-store' });
       const json = await res.json();
       if (json.success && Array.isArray(json.packages)) {
         setPackages(json.packages);
@@ -271,7 +273,9 @@ export default function PackagesPage() {
   };
 
   useEffect(() => {
-    fetchPackages();
+    setTimeout(() => {
+      fetchPackages();
+    }, 0);
 
     const handleLocalUpdate = () => fetchPackages();
     window.addEventListener("cms_packages_updated", handleLocalUpdate);
@@ -520,74 +524,7 @@ export default function PackagesPage() {
     }))
   }
 
-  // Hotel Options Handlers
-  const addHotelOption = () => {
-    setFormData(prev => ({
-      ...prev,
-      hotelOptions: [
-        ...(prev.hotelOptions || []),
-        {
-          id: Date.now().toString(),
-          title: "",
-          description: "",
-          image: "https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=600&auto=format&fit=crop",
-          tags: ["AC Rooms", "Breakfast Included"],
-          pricePerNight: 3500,
-          isDefault: (prev.hotelOptions || []).length === 0
-        }
-      ]
-    }))
-  }
 
-  const updateHotelOption = (id: string, field: keyof HotelOption, value: any) => {
-    setFormData(prev => ({
-      ...prev,
-      hotelOptions: (prev.hotelOptions || []).map(h => 
-        h.id === id ? { ...h, [field]: value } : h
-      )
-    }))
-  }
-
-  const removeHotelOption = (id: string) => {
-    setFormData(prev => ({
-      ...prev,
-      hotelOptions: (prev.hotelOptions || []).filter(h => h.id !== id)
-    }))
-  }
-
-  // Activity Options Handlers
-  const addActivityOption = () => {
-    setFormData(prev => ({
-      ...prev,
-      activityOptions: [
-        ...(prev.activityOptions || []),
-        {
-          id: Date.now().toString(),
-          title: "",
-          description: "",
-          image: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=600&auto=format&fit=crop",
-          pricePerPerson: 0,
-          priceLabel: "Included in Package"
-        }
-      ]
-    }))
-  }
-
-  const updateActivityOption = (id: string, field: keyof ActivityOption, value: any) => {
-    setFormData(prev => ({
-      ...prev,
-      activityOptions: (prev.activityOptions || []).map(a => 
-        a.id === id ? { ...a, [field]: value } : a
-      )
-    }))
-  }
-
-  const removeActivityOption = (id: string) => {
-    setFormData(prev => ({
-      ...prev,
-      activityOptions: (prev.activityOptions || []).filter(a => a.id !== id)
-    }))
-  }
 
   // Views
   if (isFormOpen) {

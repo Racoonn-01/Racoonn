@@ -59,7 +59,7 @@ export default function PopularStaysCMSPage() {
     async function fetchProperties() {
       setIsLoadingProps(true);
       try {
-        const res = await fetch("/api/cms/properties");
+        const res = await fetch(`/api/cms/properties?t=${Date.now()}`, { cache: 'no-store' });
         const json = await res.json();
         if (json.success && Array.isArray(json.properties)) {
           setAvailableProperties(json.properties);
@@ -77,7 +77,7 @@ export default function PopularStaysCMSPage() {
   useEffect(() => {
     async function loadCMSSections() {
       try {
-        const res = await fetch("/api/cms/popular-stays");
+        const res = await fetch(`/api/cms/popular-stays?t=${Date.now()}`, { cache: 'no-store' });
         const json = await res.json();
         if (json.success && Array.isArray(json.sections)) {
           setSections(json.sections);
@@ -294,7 +294,7 @@ export default function PopularStaysCMSPage() {
             <Zap className="mx-auto text-gray-400 mb-3" size={36} />
             <h3 className="text-lg font-bold text-gray-700">No Popular Stays Sections Uploaded</h3>
             <p className="text-sm text-gray-500 mt-1 mb-4">
-              Click "Add New Section" above to upload custom popular stay sections for your website homepage.
+              Click &quot;Add New Section&quot; above to upload custom popular stay sections for your website homepage.
             </p>
             <Button
               onClick={handleOpenAdd}

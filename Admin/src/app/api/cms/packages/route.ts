@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server";
 import fs from "fs";
 import { appwriteServer } from "@/lib/appwrite/server";
@@ -28,7 +29,7 @@ export async function GET() {
     );
     const packages = doc.details ? JSON.parse(doc.details) : [];
     return NextResponse.json({ success: true, packages });
-  } catch (err) {
+  } catch {
     return NextResponse.json({ success: true, packages: [] });
   }
 }
@@ -54,8 +55,8 @@ export async function POST(request: Request) {
         DOC_ID,
         { details: jsonStr }
       );
-    } catch (err: any) {
-      if (err.code === 404) {
+    } catch (err: unknown) {
+      if (err && typeof err === 'object' && 'code' in err && err.code === 404) {
         try {
           await appwriteServer.databases.createDocument(
             DATABASE_ID,
@@ -74,8 +75,8 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json({ success: true, packages });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("Error saving CMS packages:", err);
-    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+    return NextResponse.json({ success: false, error: err instanceof Error ? err.message : String(err) }, { status: 500 });
   }
 }

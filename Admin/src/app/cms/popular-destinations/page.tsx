@@ -44,7 +44,7 @@ export default function PopularDestinationsPage() {
     async function loadDestinations() {
       setIsLoading(true);
       try {
-        const res = await fetch("/api/cms/popular-destinations");
+        const res = await fetch(`/api/cms/popular-destinations?t=${Date.now()}`, { cache: 'no-store' });
         const json = await res.json();
         if (json.success && Array.isArray(json.destinations)) {
           setDestinations(json.destinations);

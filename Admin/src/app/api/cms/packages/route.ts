@@ -56,7 +56,8 @@ export async function POST(request: Request) {
         { details: jsonStr }
       );
     } catch (err: unknown) {
-      if (err && typeof err === 'object' && 'code' in err && err.code === 404) {
+      const error = err as { code?: number };
+      if (error?.code === 404) {
         try {
           await appwriteServer.databases.createDocument(
             DATABASE_ID,
@@ -70,7 +71,10 @@ export async function POST(request: Request) {
           );
         } catch (createErr) {
           console.warn("Appwrite DB doc create warning:", createErr);
+          throw createErr;
         }
+      } else {
+        throw err;
       }
     }
 

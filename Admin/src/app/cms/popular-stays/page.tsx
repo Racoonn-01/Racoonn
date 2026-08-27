@@ -92,8 +92,20 @@ export default function PopularStaysCMSPage() {
 
   // Save to Appwrite DB & localStorage & Broadcast
   const saveSections = async (newSections: PopularStaySection[]) => {
+    const previousSections = sections;
     setSections(newSections);
     try {
+      const res = await fetch("/api/cms/popular-stays", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sections: newSections }),
+      });
+      
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "Failed to save to database");
+      }
+
       localStorage.setItem(STORAGE_KEY, JSON.stringify(newSections));
       window.dispatchEvent(new Event("cms_popular_stays_updated"));
 
@@ -102,14 +114,11 @@ export default function PopularStaysCMSPage() {
         bc.postMessage({ type: "POPULAR_STAYS_UPDATED", data: newSections });
         bc.close();
       }
-
-      await fetch("/api/cms/popular-stays", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sections: newSections }),
-      });
-    } catch (err) {
-      console.error("Failed to save CMS sections:", err);
+    } catch (err: unknown) {
+      const error = err as Error;
+      console.error("Failed to save sections:", error);
+      alert("Failed to save stays sections: " + (error.message || "Unknown error"));
+      setSections(previousSections); // Rollback
     }
   };
 

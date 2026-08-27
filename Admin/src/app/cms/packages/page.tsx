@@ -6,6 +6,8 @@ import {
   IndianRupee, ChevronLeft, ChevronRight, X, Check,
   Building, Loader2, Search
 } from "lucide-react"
+import { storage } from "@/lib/appwrite/client";
+import { ID } from "appwrite";
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -301,21 +303,31 @@ export default function PackagesPage() {
   }, []);
 
   const savePackagesToServer = async (newList: Package[]) => {
+    const previousList = packages;
     setPackages(newList);
     try {
-      await fetch("/api/cms/packages", {
+      const res = await fetch("/api/cms/packages", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ packages: newList }),
       });
+      
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "Failed to save to database");
+      }
+
       window.dispatchEvent(new Event("cms_packages_updated"));
       if (typeof window !== "undefined" && "BroadcastChannel" in window) {
         const bc = new BroadcastChannel("racoonn_cms_channel");
         bc.postMessage({ type: "PACKAGES_UPDATED", data: newList });
         bc.close();
       }
-    } catch (err) {
-      console.error("Error saving packages:", err);
+    } catch (err: unknown) {
+      const error = err as Error;
+      console.error("Error saving packages:", error);
+      alert("Failed to save packages: " + (error.message || "Unknown error"));
+      setPackages(previousList); // Rollback on failure
     }
   };
 
@@ -395,7 +407,7 @@ export default function PackagesPage() {
   }
 
   // Image Handlers
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || [])
     if (files.length === 0) return
 
@@ -403,16 +415,22 @@ export default function PackagesPage() {
       return alert("You can only have up to 6 images total.")
     }
 
-    files.forEach(file => {
-      const reader = new FileReader()
-      reader.onloadend = () => {
+    const BUCKET_ID = "6a3e398000280b2b3d20";
+    const PROJECT_ID = "6a3bce6900381359c3ce";
+
+    for (const file of files) {
+      try {
+        const uploadedFile = await storage.createFile(BUCKET_ID, ID.unique(), file);
+        const url = `https://sgp.cloud.appwrite.io/v1/storage/buckets/${BUCKET_ID}/files/${uploadedFile.$id}/view?project=${PROJECT_ID}`;
         setFormData(prev => ({
           ...prev,
-          images: [...prev.images, reader.result as string]
+          images: [...prev.images, url]
         }))
+      } catch (error) {
+        console.error("Image upload failed", error);
+        alert("Failed to upload image. Please try again.");
       }
-      reader.readAsDataURL(file)
-    })
+    }
   }
 
   const removeImage = (index: number) => {
@@ -777,7 +795,7 @@ export default function PackagesPage() {
                   <p className="col-span-full py-8 text-center text-xs text-slate-500">No properties available in database.</p>
                 ) : (
                   availableProperties
-                    .filter(p => p.title.toLowerCase().includes(propertySearch.toLowerCase()) || p.location.toLowerCase().includes(propertySearch.toLowerCase()))
+                    .filter(p => p.title?.toLowerCase().includes(propertySearch.toLowerCase()) || p.location?.toLowerCase().includes(propertySearch.toLowerCase()))
                     .map((prop) => {
                       const isSelected = (formData.hotelOptions || []).some(h => h.id === prop.id || h.title === prop.title);
                       return (
@@ -791,7 +809,7 @@ export default function PackagesPage() {
                           }`}
                         >
                           <div className="relative w-10 h-10 rounded-lg overflow-hidden shrink-0 bg-slate-200">
-                            <Image src={prop.image} alt={prop.title} fill className="object-cover" />
+                            <Image src={prop.image || '/placeholder.png'} alt={prop.title} fill className="object-cover" />
                           </div>
                           <div className="flex-1 min-w-0">
                             <h4 className="text-xs font-bold text-slate-900 truncate">{prop.title}</h4>

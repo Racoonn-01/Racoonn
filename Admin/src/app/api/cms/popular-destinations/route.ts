@@ -28,7 +28,7 @@ export async function GET() {
     );
     const destinations = doc.details ? JSON.parse(doc.details) : [];
     return NextResponse.json({ success: true, destinations });
-  } catch (err) {
+  } catch {
     return NextResponse.json({ success: true, destinations: [] });
   }
 }
@@ -52,8 +52,9 @@ export async function POST(request: Request) {
         DOC_ID,
         { details: jsonStr }
       );
-    } catch (err: any) {
-      if (err.code === 404) {
+    } catch (err: unknown) {
+      const error = err as { code?: number };
+      if (error?.code === 404) {
         try {
           await appwriteServer.databases.createDocument(
             DATABASE_ID,
@@ -67,13 +68,17 @@ export async function POST(request: Request) {
           );
         } catch (createErr) {
           console.warn("Appwrite DB doc create warning:", createErr);
+          throw createErr;
         }
+      } else {
+        throw err;
       }
     }
 
     return NextResponse.json({ success: true, destinations });
-  } catch (err: any) {
-    console.error("Error saving CMS popular destinations:", err);
-    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+  } catch (err: unknown) {
+    const error = err as Error;
+    console.error("Error saving CMS popular destinations:", error);
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }

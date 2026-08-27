@@ -61,8 +61,20 @@ export default function PopularDestinationsPage() {
 
   // Save destinations to DB & Broadcast
   const saveDestinations = async (newDestinations: PopularDestination[]) => {
+    const previousDestinations = destinations;
     setDestinations(newDestinations);
     try {
+      const res = await fetch("/api/cms/popular-destinations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ destinations: newDestinations }),
+      });
+      
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "Failed to save to database");
+      }
+
       localStorage.setItem(STORAGE_KEY, JSON.stringify(newDestinations));
       window.dispatchEvent(new Event("cms_popular_destinations_updated"));
 
@@ -71,14 +83,11 @@ export default function PopularDestinationsPage() {
         bc.postMessage({ type: "POPULAR_DESTINATIONS_UPDATED", data: newDestinations });
         bc.close();
       }
-
-      await fetch("/api/cms/popular-destinations", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ destinations: newDestinations }),
-      });
-    } catch (err) {
-      console.error("Failed to save CMS destinations:", err);
+    } catch (err: unknown) {
+      const error = err as Error;
+      console.error("Failed to save CMS destinations:", error);
+      alert("Failed to save destinations: " + (error.message || "Unknown error"));
+      setDestinations(previousDestinations); // Rollback
     }
   };
 

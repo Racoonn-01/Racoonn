@@ -31,7 +31,7 @@ export default function Navbar() {
     checkAuth();
   }, [checkAuth]);
 
-  const isAuthPage = ['/signin', '/signup', '/forgot-password'].includes(pathname);
+  const isAuthPage = ['/signin', '/signup', '/forgot-password', '/developers'].includes(pathname);
   const isCheckoutPage = pathname.startsWith('/checkout');
   if (isAuthPage || isCheckoutPage) return null;
 
@@ -164,15 +164,24 @@ export default function Navbar() {
                   List your property
                 </Link>
                 {isAuthenticated ? (
-                  <button
-                    onClick={() => {
-                      logout();
-                      setIsSidebarOpen(false);
-                    }}
-                    className="block w-full text-center bg-gray-200 hover:bg-gray-300 text-brand-navy px-7 py-4 rounded-xl font-bold transition-all shadow-sm"
-                  >
-                    Sign Out
-                  </button>
+                  <>
+                    <Link
+                      href="/profile"
+                      onClick={() => setIsSidebarOpen(false)}
+                      className="block w-full text-center bg-brand-navy hover:bg-brand-coral text-white px-7 py-4 rounded-xl font-bold transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5 transform-gpu mb-4"
+                    >
+                      My Account
+                    </Link>
+                    <button
+                      onClick={() => {
+                        logout();
+                        setIsSidebarOpen(false);
+                      }}
+                      className="block w-full text-center bg-gray-200 hover:bg-gray-300 text-brand-navy px-7 py-4 rounded-xl font-bold transition-all shadow-sm"
+                    >
+                      Sign Out
+                    </button>
+                  </>
                 ) : (
                   <button
                     onClick={() => {

@@ -69,7 +69,7 @@ export default function ProfilePage() {
               className="flex lg:flex-col overflow-x-auto lg:overflow-visible gap-2 lg:gap-0 lg:space-y-1 bg-white p-2 lg:p-4 rounded-full lg:rounded-3xl shadow-sm border border-gray-100 snap-x"
               style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
             >
-              {['personal', 'bookings', 'saved', 'payments'].map((section) => (
+              {['personal', 'bookings', 'wishlist', 'payments'].map((section) => (
                 <button
                   key={section}
                   onClick={() => setActiveSection(section)}
@@ -97,7 +97,7 @@ export default function ProfilePage() {
               >
                 {activeSection === 'personal' && <PersonalInformationForm profile={userData as unknown as UserProfile | null} />}
                 {activeSection === 'bookings' && <BookingsSection />}
-                {activeSection === 'saved' && <SavedHotelsGrid />}
+                {activeSection === 'wishlist' && <SavedHotelsGrid />}
                 {activeSection === 'payments' && <PaymentMethods />}
               </motion.div>
             </AnimatePresence>

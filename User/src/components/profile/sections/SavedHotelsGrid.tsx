@@ -51,7 +51,7 @@ export default function SavedHotelsGrid() {
           <p className="text-gray-500">Hotels you have favorited for future trips.</p>
         </div>
         <span className="px-4 py-1.5 bg-brand-coral/10 text-brand-coral font-bold rounded-full text-sm">
-          {savedHotelsList.length} Saved
+          {savedHotelsList.length} Wishlist
         </span>
       </div>
 

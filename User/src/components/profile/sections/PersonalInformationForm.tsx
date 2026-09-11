@@ -3,6 +3,7 @@ import { UserProfile, useAuthStore } from '@/store/authStore';
 import { authService } from '@/lib/appwrite/auth';
 import { CheckCircle2, Loader2, ChevronDown } from 'lucide-react';
 import { SearchableSelect } from '@/components/ui/searchable-select';
+import { CountryCodeSelect } from '@/components/ui/country-code-select';
 import { Country, State, City } from 'country-state-city';
 
 // Reusable wrapper for the MakeMyTrip style floating label inputs
@@ -30,6 +31,10 @@ export default function PersonalInformationForm({ profile }: { profile: UserProf
   };
   const getMappedState = (stateCode?: string) => stateCode ? (legacyStateMap[stateCode] || stateCode) : '';
 
+  const initialPhoneMatch = (profile?.phone || '').match(/^(\+\d{1,4})\s?(.*)$/);
+  const initialCountryCode = initialPhoneMatch ? initialPhoneMatch[1] : '+1';
+  const initialPhoneNumber = initialPhoneMatch ? initialPhoneMatch[2] : (profile?.phone || '');
+
   const [formData, setFormData] = useState({
     firstName: initialFirstName,
     lastName: initialLastName,
@@ -41,7 +46,8 @@ export default function PersonalInformationForm({ profile }: { profile: UserProf
     anniversaryDay: profile?.anniversary?.split('-')[1] || '',
     city: profile?.nationality ? (profile?.city || '') : '',
     state: profile?.nationality ? getMappedState(profile?.state) : '',
-    phone: profile?.phone || '',
+    countryCode: initialCountryCode,
+    phoneNumber: initialPhoneNumber,
     email: profile?.email || '',
     // Document Fields
     passportNo: profile?.passportNo || '',
@@ -64,7 +70,8 @@ export default function PersonalInformationForm({ profile }: { profile: UserProf
           anniversaryDay: profile.anniversary?.split('-')[1] || '',
           city: profile.nationality ? (profile.city || '') : '',
           state: profile.nationality ? getMappedState(profile.state) : '',
-          phone: profile.phone || '',
+          countryCode: (profile.phone || '').match(/^(\+\d{1,4})\s?(.*)$/)?.[1] || '+1',
+          phoneNumber: (profile.phone || '').match(/^(\+\d{1,4})\s?(.*)$/)?.[2] || (profile.phone || ''),
           email: profile.email || '',
           passportNo: profile.passportNo || '',
           passportExpiry: profile.passportExpiry || '',
@@ -99,7 +106,7 @@ export default function PersonalInformationForm({ profile }: { profile: UserProf
       const payload = {
         name: updatedName,
         email: formData.email,
-        phone: formData.phone,
+        phone: formData.phoneNumber ? `${formData.countryCode} ${formData.phoneNumber}`.trim() : '',
         bio: profile.bio, // Keep existing fields untouched
         dob: formData.dob,
         gender: formData.gender,
@@ -335,17 +342,29 @@ export default function PersonalInformationForm({ profile }: { profile: UserProf
                   Mobile Number
                 </label>
                 {isEditingPhone ? (
-                  <input 
-                    type="tel"
-                    name="phone"
-                    value={formData.phone}
-                    onChange={handleChange}
-                    autoFocus
-                    className="w-full font-bold text-[15px] bg-transparent outline-none text-brand-navy"
-                    placeholder="+1 (Add Number)"
-                  />
+                  <div className="flex items-center gap-2">
+                    <CountryCodeSelect
+                      value={formData.countryCode}
+                      onChange={(val) => {
+                        setFormData(prev => ({ ...prev, countryCode: val }));
+                        setSaveStatus('idle');
+                      }}
+                      className="max-w-[120px] shrink-0"
+                    />
+                    <input 
+                      type="tel"
+                      name="phoneNumber"
+                      value={formData.phoneNumber}
+                      onChange={handleChange}
+                      autoFocus
+                      className="w-full font-bold text-[15px] bg-transparent outline-none text-brand-navy"
+                      placeholder="Add Number"
+                    />
+                  </div>
                 ) : (
-                  <p className="font-bold text-[15px]">{formData.phone || '+1 (Add Number)'}</p>
+                  <p className="font-bold text-[15px]">
+                    {formData.phoneNumber ? `${formData.countryCode} ${formData.phoneNumber}` : '+1 (Add Number)'}
+                  </p>
                 )}
               </div>
               <button 

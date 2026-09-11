@@ -23,7 +23,7 @@ const SocialIcon = ({ type, size = 18 }: { type: string; size?: number }) => {
 
 export default function Footer() {
   const pathname = usePathname();
-  const isAuthPage = ['/signin', '/signup', '/forgot-password', '/search'].includes(pathname);
+  const isAuthPage = ['/signin', '/signup', '/forgot-password', '/search', '/developers'].includes(pathname);
   const isCheckoutPage = pathname.startsWith('/checkout');
   
   if (isAuthPage || isCheckoutPage) return null;
@@ -87,12 +87,20 @@ export default function Footer() {
                 { name: 'Activities', path: '/activities' },
                 { name: 'Tour Packages', path: '/tours' },
                 { name: 'Destinations', path: '/destinations' },
+                { name: 'API Docs', path: '/developers' },
               ].map((link, index) => (
                 <li key={index}>
-                  <Link href={link.path} className="text-brand-sky/70 hover:text-brand-coral transition-colors flex items-center gap-3 group">
-                    <span className="w-2 h-2 rounded-full border border-brand-coral/50 group-hover:bg-brand-coral transition-all"></span>
-                    {link.name}
-                  </Link>
+                  {link.path.startsWith('http') ? (
+                    <a href={link.path} target="_blank" rel="noopener noreferrer" className="text-brand-sky/70 hover:text-brand-coral transition-colors flex items-center gap-3 group">
+                      <span className="w-2 h-2 rounded-full border border-brand-coral/50 group-hover:bg-brand-coral transition-all"></span>
+                      {link.name}
+                    </a>
+                  ) : (
+                    <Link href={link.path} className="text-brand-sky/70 hover:text-brand-coral transition-colors flex items-center gap-3 group">
+                      <span className="w-2 h-2 rounded-full border border-brand-coral/50 group-hover:bg-brand-coral transition-all"></span>
+                      {link.name}
+                    </Link>
+                  )}
                 </li>
               ))}
             </ul>

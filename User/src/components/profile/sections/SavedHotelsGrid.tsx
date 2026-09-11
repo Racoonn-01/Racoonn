@@ -1,5 +1,6 @@
 import { Heart, Star, MapPin, Loader2 } from 'lucide-react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { useAuthStore } from '@/store/authStore';
 import { Hotel, mockHotels } from '@/data/mockHotels';
 import { isActiveProperty } from '@/lib/utils';
@@ -100,18 +101,18 @@ export default function SavedHotelsGrid() {
                   {hotel.name}
                 </h3>
                 
-                <p className="text-gray-500 text-sm flex items-center gap-1 mb-4">
-                  <MapPin size={14} /> {hotel.location}
-                </p>
+                <div className="text-gray-500 text-sm flex items-start gap-1.5 mb-4">
+                  <MapPin size={14} className="shrink-0 mt-0.5" /> 
+                  <span className="line-clamp-2">{hotel.location}</span>
+                </div>
                 
-                <div className="mt-auto flex items-center justify-between pt-4 border-t border-gray-50">
-                  <div>
-                    <p className="text-xs text-gray-400 font-bold uppercase tracking-wider mb-0.5">Starting from</p>
-                    <p className="font-bold text-lg text-brand-navy">${hotel.price}<span className="text-sm text-gray-400 font-medium">/night</span></p>
-                  </div>
-                  <button className="px-5 py-2.5 bg-brand-coral text-white font-bold rounded-xl text-sm hover:-translate-y-0.5 hover:shadow-md transition-all">
+                <div className="mt-auto pt-4 border-t border-gray-50">
+                  <Link 
+                    href={`/property/${hotel.id}`}
+                    className="flex items-center justify-center w-full py-3 bg-brand-coral text-white font-bold rounded-xl text-[15px] hover:-translate-y-0.5 hover:shadow-md transition-all"
+                  >
                     Book Now
-                  </button>
+                  </Link>
                 </div>
               </div>
             </div>

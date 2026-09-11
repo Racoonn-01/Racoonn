@@ -19,7 +19,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     if (isLoading || isInitializing) return;
 
     if (!isAuthenticated) {
-      if (pathname !== "/" && pathname !== "/vendor/reset-password") {
+      if (pathname !== "/" && pathname !== "/vendor/reset-password" && pathname !== "/developers") {
         router.push("/");
       }
       return;

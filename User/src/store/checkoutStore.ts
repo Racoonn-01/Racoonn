@@ -45,6 +45,7 @@ export interface VendorOffer {
   discount?: number;
   bookingStartDate?: string;
   bookingEndDate?: string;
+  assignedUserEmail?: string;
   [key: string]: unknown;
 }
 
@@ -231,6 +232,14 @@ export const useCheckoutStore = create<CheckoutState>((set, get) => ({
           }
           if (matched.bookingStartDate && matched.bookingStartDate > todayStr) {
             return { success: false, message: 'This coupon code is not active yet.' };
+          }
+
+          // Targeted customer validation
+          if (matched.assignedUserEmail) {
+            const currentUserEmail = useAuthStore.getState().profile?.email;
+            if (!currentUserEmail || currentUserEmail.trim().toLowerCase() !== String(matched.assignedUserEmail).trim().toLowerCase()) {
+              return { success: false, message: 'This coupon code is valid only for a specific customer.' };
+            }
           }
 
           // Target property validation

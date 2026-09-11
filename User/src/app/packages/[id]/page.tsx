@@ -543,15 +543,12 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
             </div>
           </div>
 
-          <div className="flex items-center justify-between pb-6 border-b border-gray-200">
-              <div>
-                <h2 className="text-[22px] font-bold text-gray-900 mb-1">Entire tour package organized by Racoonn</h2>
-                <p className="text-[15px] text-gray-600">{pkg.features}</p>
-              </div>
-              <div className="w-12 h-12 rounded-full overflow-hidden relative shrink-0 border border-gray-200">
-                <Image src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=200&auto=format&fit=crop" alt="Host" fill className="object-cover" />
-              </div>
+          <div className="pb-6 border-b border-gray-200">
+            <div>
+              <h2 className="text-[22px] font-bold text-gray-900 mb-1">Entire tour package organized by Racoonn</h2>
+              <p className="text-[15px] text-gray-600">{pkg.features}</p>
             </div>
+          </div>
 
             {/* Tabs Navigation */}
             <div className="flex items-center overflow-x-auto hide-scrollbar gap-2 md:gap-4 py-6 border-b border-gray-200 sticky top-0 bg-white z-10">

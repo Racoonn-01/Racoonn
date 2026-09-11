@@ -5,6 +5,12 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
+  --color-brand-coral: #E86A70;
+  --color-brand-navy: #1F2E4A;
+  --color-brand-sky: #DCE8F5;
+  --color-brand-sand: #F4F0EA;
+  --color-brand-soft-coral: #F8D6D8;
+  --color-brand-charcoal: #333333;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-inter);

@@ -29,7 +29,8 @@ export default function NewMarketingOfferPage() {
     minOrderValue: 500,
     validUntil: '',
     status: 'Active',
-    description: ''
+    description: '',
+    assignedUserEmail: ''
   });
 
   useEffect(() => {
@@ -81,22 +82,28 @@ export default function NewMarketingOfferPage() {
       const imageUrl = `https://sgp.cloud.appwrite.io/v1/storage/buckets/${BUCKET_ID}/files/${uploadedFile.$id}/view?project=${appwriteConfig.projectId}`;
 
       // Create database document
+      const docData: any = {
+          name: formData.name,
+          code: formData.code.toUpperCase(),
+          type: formData.type,
+          discountType: formData.discountType,
+          discountValue: formData.discountValue,
+          minOrderValue: formData.minOrderValue,
+          status: formData.status,
+          validUntil: formData.validUntil || undefined,
+          description: formData.description,
+          image: imageUrl
+      };
+
+      if (formData.assignedUserEmail && formData.assignedUserEmail.trim() !== '') {
+          docData.assignedUserEmail = formData.assignedUserEmail.trim();
+      }
+
       await databases.createDocument(
         DATABASE_ID,
         COLLECTION_ID,
         ID.unique(),
-        {
-            name: formData.name,
-            code: formData.code.toUpperCase(),
-            type: formData.type,
-            discountType: formData.discountType,
-            discountValue: formData.discountValue,
-            minOrderValue: formData.minOrderValue,
-            status: formData.status,
-            validUntil: formData.validUntil || undefined,
-            description: formData.description,
-            image: imageUrl
-        }
+        docData
       );
       
       router.push('/admin/marketing');
@@ -233,6 +240,22 @@ export default function NewMarketingOfferPage() {
             <div className="space-y-2">
               <Label htmlFor="validUntil">Valid Until Date</Label>
               <Input id="validUntil" name="validUntil" type="date" required value={formData.validUntil} onChange={handleChange} className="h-11 rounded-xl" />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-6">
+            <div className="space-y-2">
+              <Label htmlFor="assignedUserEmail">Assigned Customer Email (Optional)</Label>
+              <Input 
+                id="assignedUserEmail" 
+                name="assignedUserEmail" 
+                type="email" 
+                value={formData.assignedUserEmail} 
+                onChange={handleChange} 
+                placeholder="Limit this coupon to a specific customer's email" 
+                className="h-11 rounded-xl" 
+              />
+              <p className="text-xs text-gray-500">If set, only this customer can apply the coupon code.</p>
             </div>
           </div>
 

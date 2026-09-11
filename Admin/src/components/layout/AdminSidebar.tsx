@@ -64,6 +64,8 @@ const financialItems: NavItem[] = [
 ]
 
 const operationsItems: NavItem[] = [
+  { title: "Partner API Keys", url: "/admin/integrations/api-keys", icon: ShieldCheck, key: "PartnerAPI" },
+  { title: "Webhooks", url: "/admin/integrations/webhooks", icon: LifeBuoy, key: "Webhooks" },
   { title: "Reviews", url: "/admin/reviews", icon: MessageSquare, key: "Reviews" },
   { title: "Support", url: "/admin/support", icon: LifeBuoy, key: "Support" },
   { title: "Marketing", url: "/admin/marketing", icon: Megaphone, key: "Marketing" },

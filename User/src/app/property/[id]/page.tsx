@@ -106,7 +106,11 @@ export default async function PropertyDetails({ params }: { params: Promise<{ id
           if (roomsRes.documents && roomsRes.documents.length > 0) {
             rooms = roomsRes.documents.map(room => {
               const roomImages = room.photos && room.photos.length > 0 
-                ? room.photos.map((fileId: string) => `https://sgp.cloud.appwrite.io/v1/storage/buckets/${roomBucketId}/files/${fileId}/view?project=${project}`)
+                ? room.photos.map((fileId: string) => 
+                    fileId.startsWith('http') 
+                      ? fileId 
+                      : `https://sgp.cloud.appwrite.io/v1/storage/buckets/${roomBucketId}/files/${fileId}/view?project=${project}`
+                  )
                 : ['https://images.unsplash.com/photo-1542314831-c6a4d14d837e?q=80&w=800&auto=format&fit=crop'];
               
               return {
@@ -217,7 +221,7 @@ export default async function PropertyDetails({ params }: { params: Promise<{ id
 
           {/* About This Hotel Section */}
           <div id="about" className="scroll-mt-24 border-t border-gray-200 pt-12">
-            <div className="flex justify-between items-center pb-6">
+            <div className="pb-6">
               <div>
                 <h2 className="text-[24px] font-semibold text-brand-navy mb-2">About the hotel</h2>
                 <div className="flex flex-wrap gap-4 text-[14px] font-medium text-gray-600">
@@ -225,9 +229,6 @@ export default async function PropertyDetails({ params }: { params: Promise<{ id
                   <span className="flex items-center gap-1"><Waves size={16} /> Swimming Pool</span>
                   <span className="flex items-center gap-1"><Car size={16} /> Free parking</span>
                 </div>
-              </div>
-              <div className="hidden lg:block w-16 h-16 rounded-full bg-gray-100 overflow-hidden relative border border-gray-200">
-                <Image src="https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=100&auto=format&fit=crop" alt="Host" fill className="object-cover" />
               </div>
             </div>
 

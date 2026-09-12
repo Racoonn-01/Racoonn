@@ -63,7 +63,7 @@ export function CheckoutFlow() {
   const dynamicAddonsTotal = selectedAddons.reduce((sum, addonId) => {
     const addon = displayAddons.find(a => (a.id === addonId || a.$id === addonId));
     const basePrice = addon?.price || 0;
-    const isPerPerson = addon?.description?.toLowerCase().includes('per person');
+    const isPerPerson = typeof addon?.description === 'string' && addon.description.toLowerCase().includes('per person');
     const finalPrice = isPerPerson ? basePrice * adults : basePrice;
     return sum + finalPrice;
   }, 0);

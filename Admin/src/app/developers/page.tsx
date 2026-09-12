@@ -48,7 +48,7 @@ export default function DevelopersPage() {
       }
       setCopiedKey(id);
       setTimeout(() => setCopiedKey(null), 2000);
-    } catch {
+    } catch (e) {
       console.error(e);
     }
   };

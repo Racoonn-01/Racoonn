@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Menu, X, User } from 'lucide-react';
+import { Menu, X, User, Home, Building, Package, Tag, Compass, HelpCircle, Heart } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
@@ -12,11 +12,11 @@ import AuthModal from '@/components/auth/AuthModal';
 import { useAuthStore } from '@/store/authStore';
 
 const navLinks = [
-  { name: 'Stays', href: '/search' },
-  { name: 'Packages', href: '/packages' },
-  { name: 'Offers', href: '/search?type=offers' },
-  { name: 'Activities', href: '/activities' },
-  { name: 'Help', href: '/help' },
+  { name: 'Stays', href: '/search', icon: Building },
+  { name: 'Packages', href: '/packages', icon: Package },
+  { name: 'Offers', href: '/offers', icon: Tag },
+  { name: 'Activities', href: '/activities', icon: Compass },
+  { name: 'Help', href: '/help', icon: HelpCircle },
 ];
 
 export default function Navbar() {
@@ -135,7 +135,8 @@ export default function Navbar() {
                   onClick={() => setIsSidebarOpen(false)}
                   className="group flex items-center gap-4 py-4 border-b border-gray-50"
                 >
-                  <span className="text-2xl font-semibold text-brand-navy group-hover:text-brand-coral group-hover:translate-x-2 transition-all duration-300">
+                  <Home className="w-5 h-5 text-brand-navy/70 group-hover:text-brand-coral transition-colors" />
+                  <span className="text-base font-semibold text-brand-navy group-hover:text-brand-coral group-hover:translate-x-2 transition-all duration-300">
                     Home
                   </span>
                 </Link>
@@ -146,11 +147,24 @@ export default function Navbar() {
                     onClick={() => setIsSidebarOpen(false)}
                     className="group flex items-center gap-4 py-4 border-b border-gray-50"
                   >
-                    <span className="text-2xl font-semibold text-brand-navy group-hover:text-brand-coral group-hover:translate-x-2 transition-all duration-300">
+                    <link.icon className="w-5 h-5 text-brand-navy/70 group-hover:text-brand-coral transition-colors" />
+                    <span className="text-base font-semibold text-brand-navy group-hover:text-brand-coral group-hover:translate-x-2 transition-all duration-300">
                       {link.name}
                     </span>
                   </Link>
                 ))}
+                {isAuthenticated && (
+                  <Link
+                    href="/wishlist"
+                    onClick={() => setIsSidebarOpen(false)}
+                    className="group flex items-center gap-4 py-4 border-b border-gray-50"
+                  >
+                    <Heart className="w-5 h-5 text-brand-navy/70 group-hover:text-brand-coral transition-colors" />
+                    <span className="text-base font-semibold text-brand-navy group-hover:text-brand-coral group-hover:translate-x-2 transition-all duration-300">
+                      Wishlist
+                    </span>
+                  </Link>
+                )}
               </div>
 
               {/* Footer Actions */}

@@ -89,7 +89,6 @@ export default async function CheckoutPage({ searchParams }: { searchParams: Pro
               price={price}
               nights={nights}
               rooms={rooms}
-              discount={discount}
             />
           </Suspense>
         </div>

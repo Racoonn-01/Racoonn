@@ -14,7 +14,7 @@ export function isActiveProperty(property: { status?: string; name?: string; tit
   // If no status is explicitly set, default to showing it to maintain backwards compatibility
   if (!property.status) return true;
   const status = property.status.toLowerCase();
-  return status === 'active' || status === 'published';
+  return status === 'active' || status === 'published' || status === 'approved';
 }
 
 export function parseLocationGeo(rawLocation?: string): { cleanLocation: string; lat?: number; lng?: number } {

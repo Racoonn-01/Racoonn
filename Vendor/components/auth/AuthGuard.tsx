@@ -39,8 +39,8 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
                 router.push("/vendor/onboarding");
              }
           } else {
-             if (pathname !== "/vendor/pending-approval") {
-                router.push("/vendor/pending-approval");
+             if (pathname === "/" || pathname.startsWith("/vendor/onboarding") || pathname === "/vendor/pending-approval" || pathname === "/vendor/rejected") {
+                router.push("/vendor/dashboard");
              }
           }
        } else if (status === "rejected") {
@@ -54,7 +54,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   if (isLoading || isInitializing) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-slate-50/50">
-        <Loader2 className="h-8 w-8 animate-spin text-[#E86A70]" />
+        <Loader2 className="h-8 w-8 animate-spin text-[brand-coral]" />
       </div>
     );
   }

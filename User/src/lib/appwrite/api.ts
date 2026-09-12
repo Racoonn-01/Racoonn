@@ -11,7 +11,11 @@ export async function getProperties() {
       PROPERTY_COLLECTION_ID,
       [Query.orderDesc('$createdAt'), Query.limit(100)]
     );
-    return response.documents;
+    // Only show approved or active properties in the User Portal
+    return response.documents.filter((p: Record<string, unknown>) => {
+      const status = typeof p.status === 'string' ? p.status.toLowerCase() : '';
+      return status === 'approved' || status === 'active';
+    });
   } catch (error) {
     console.error('Error fetching properties from Appwrite:', error);
     return [];

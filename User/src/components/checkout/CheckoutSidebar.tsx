@@ -6,22 +6,19 @@ import { TrustBadges } from "@/components/checkout/TrustBadges";
 import { CancellationPolicy } from "@/components/checkout/CancellationPolicy";
 
 import { useSearchParams } from "next/navigation";
-import { getProperty } from "@/lib/appwrite/api";
-import { useEffect, useState } from "react";
+
 import { DEFAULT_ADDONS } from "@/components/checkout/AddonSelector";
 
 import { calculateRoomGst } from "@/lib/gst";
 
 export function CheckoutSidebar({
   nights = 3,
-  rooms = 1,
-  discount = 2000
+  rooms = 1
 }: {
   roomName?: string;
   price?: number;
   nights?: number;
   rooms?: number;
-  discount?: number;
 }) {
   const currentStep = useCheckoutStore((state) => state.currentStep);
   const selectedRoomName = useCheckoutStore((state) => state.selectedRoomName);
@@ -36,9 +33,13 @@ export function CheckoutSidebar({
 
   const displayAddons = propertyAddons === null ? [] : (propertyAddons.length > 0 ? propertyAddons : DEFAULT_ADDONS);
 
+  const numGuests = Number(searchParams.get('guests')) || 2;
   const dynamicAddonsTotal = selectedAddons.reduce((sum, addonId) => {
     const addon = displayAddons.find(a => (a.id === addonId || a.$id === addonId));
-    return sum + (addon?.price || 0);
+    const basePrice = addon?.price || 0;
+    const isPerPerson = typeof addon?.description === 'string' && addon.description.toLowerCase().includes('per person');
+    const finalPrice = isPerPerson ? basePrice * numGuests : basePrice;
+    return sum + finalPrice;
   }, 0);
   const clientRoomName = searchParams.get('roomName');
   const clientPrice = searchParams.get('price');

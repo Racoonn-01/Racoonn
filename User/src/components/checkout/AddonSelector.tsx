@@ -21,6 +21,7 @@ export const DEFAULT_ADDONS: AddonType[] = [
 
 interface AddonSelectorProps {
   addons: AddonType[];
+  guests?: number;
 }
 
 function getIconForTitle(title: string) {
@@ -35,7 +36,7 @@ function getIconForTitle(title: string) {
   return Zap; // Default fallback icon
 }
 
-export function AddonSelector({ addons }: AddonSelectorProps) {
+export function AddonSelector({ addons, guests = 1 }: AddonSelectorProps) {
   const selected = useCheckoutStore(state => state.selectedAddons);
   const toggle = useCheckoutStore(state => state.toggleAddon);
 
@@ -52,6 +53,8 @@ export function AddonSelector({ addons }: AddonSelectorProps) {
           const addonTitle = addon.title || addon.name || "Add-on Service";
           const isSelected = selected.includes(addonId);
           const Icon = getIconForTitle(addonTitle);
+          const isPerPerson = addon.description?.toLowerCase().includes('per person');
+          const displayPrice = isPerPerson ? (addon.price || 0) * guests : (addon.price || 0);
           
           return (
             <motion.div

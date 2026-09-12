@@ -33,11 +33,8 @@ export function calculateHotelGST(
   let gstPercentage = 0;
   let gstType: 'Exempt' | 'Without ITC' | 'With ITC' = 'Exempt';
 
-  if (sanitizedRate <= 1000) {
-    gstPercentage = 0;
-    gstType = 'Exempt';
-  } else if (sanitizedRate <= 7500) {
-    gstPercentage = 5;
+  if (sanitizedRate <= 7500) {
+    gstPercentage = 12;
     gstType = 'Without ITC';
   } else {
     gstPercentage = 18;

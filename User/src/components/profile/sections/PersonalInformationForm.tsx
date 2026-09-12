@@ -349,7 +349,7 @@ export default function PersonalInformationForm({ profile }: { profile: UserProf
                         setFormData(prev => ({ ...prev, countryCode: val }));
                         setSaveStatus('idle');
                       }}
-                      className="max-w-[120px] shrink-0"
+                      className="max-w-30 shrink-0"
                     />
                     <input 
                       type="tel"

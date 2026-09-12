@@ -335,10 +335,13 @@ export const useCheckoutStore = create<CheckoutState>((set, get) => ({
       
       // Calculate dynamic addons
       const propAddons = get().propertyAddons || [];
-      const addons = get().selectedAddons.reduce((sum: number, addonId: string) => {
+      const addonsList = get().selectedAddons.map((addonId: string) => {
         const addon = propAddons.find((a: PropertyAddon) => (a.id || a.$id) === addonId);
-        return sum + (addon?.price || 0);
-      }, 0);
+        const isPerPerson = addon?.description?.toLowerCase().includes('per person');
+        const addonPrice = (addon?.price || 0) * (isPerPerson ? (bookingData.adults || 1) : 1);
+        return { name: addon?.name || "Add-on", price: addonPrice };
+      });
+      const addons = addonsList.reduce((sum: number, item: any) => sum + item.price, 0);
 
       const perNightPrice = bookingData.price || 3500;
       const nightsCount = bookingData.nights || 1;
@@ -425,7 +428,7 @@ export const useCheckoutStore = create<CheckoutState>((set, get) => ({
 
       // 4. Send Confirmation Email
       try {
-        await fetch('/api/email/booking-confirmation', {
+        const emailResponse = await fetch('/api/email/booking-confirmation', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -441,9 +444,19 @@ export const useCheckoutStore = create<CheckoutState>((set, get) => ({
             email: guestDetails.email,
             firstName: guestDetails.firstName,
             lastName: guestDetails.lastName,
-            bookingId: bookingId.substring(0, 8).toUpperCase()
+            bookingId: bookingId.substring(0, 8).toUpperCase(),
+            addonsList: addonsList,
+            gstRate: gstRate,
+            gstAmount: gstAmount
           })
         });
+        
+        if (!emailResponse.ok) {
+          const errorData = await emailResponse.json().catch(() => ({}));
+          console.error("Email API failed:", emailResponse.status, errorData);
+        } else {
+          console.log("Confirmation email sent successfully!");
+        }
       } catch (emailError) {
         console.error("Failed to send confirmation email:", emailError);
         // Silently fail if email is not sent, booking is already successful

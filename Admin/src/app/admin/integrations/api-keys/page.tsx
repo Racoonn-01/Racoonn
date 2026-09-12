@@ -383,7 +383,7 @@ export default function ApiKeysPage() {
 
       {/* Creation Modal */}
       <Dialog open={createModalOpen} onOpenChange={setCreateModalOpen}>
-        <DialogContent className="sm:max-w-[550px]">
+        <DialogContent className="sm:max-w-137.5">
           <form onSubmit={handleCreate}>
             <DialogHeader>
               <DialogTitle className="text-xl">Create Partner API Key</DialogTitle>
@@ -497,7 +497,7 @@ export default function ApiKeysPage() {
 
       {/* One-Time Secret Reveal Modal */}
       <Dialog open={!!createdKeyData} onOpenChange={() => setCreatedKeyData(null)}>
-        <DialogContent className="sm:max-w-[550px]">
+        <DialogContent className="sm:max-w-137.5">
           <DialogHeader>
             <div className="flex items-center gap-2 text-emerald-600 mb-1">
               <CheckCircle2 className="h-5 w-5" />

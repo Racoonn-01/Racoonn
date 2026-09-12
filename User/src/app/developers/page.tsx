@@ -46,40 +46,40 @@ export default function DevelopersPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#F4F0EA]/30 text-[#333333] font-sans selection:bg-[#E86A70] selection:text-white flex flex-col relative overflow-x-clip">
+    <div className="min-h-screen bg-brand-sand/30 text-brand-charcoal font-sans selection:bg-brand-coral selection:text-white flex flex-col relative overflow-x-clip">
       
       {/* Decorative Gradients */}
-      <div className="fixed top-[-10%] left-[-10%] w-[40vw] h-[40vw] bg-[#E86A70]/5 rounded-full blur-[100px] pointer-events-none"></div>
-      <div className="fixed bottom-[-10%] right-[-10%] w-[40vw] h-[40vw] bg-[#1F2E4A]/5 rounded-full blur-[120px] pointer-events-none"></div>
+      <div className="fixed top-[-10%] left-[-10%] w-[40vw] h-[40vw] bg-brand-coral/5 rounded-full blur-[100px] pointer-events-none"></div>
+      <div className="fixed bottom-[-10%] right-[-10%] w-[40vw] h-[40vw] bg-brand-navy/5 rounded-full blur-[120px] pointer-events-none"></div>
 
       {/* Top Navigation */}
-      <header className="sticky top-0 z-50 border-b border-[#1F2E4A]/5 bg-white/80 backdrop-blur-xl shadow-sm transition-all duration-300">
-        <div className="max-w-7xl mx-auto px-6 h-[72px] flex items-center justify-between">
+      <header className="sticky top-0 z-50 border-b border-brand-navy/5 bg-white/80 backdrop-blur-xl shadow-sm transition-all duration-300">
+        <div className="max-w-7xl mx-auto px-6 h-18 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Link href="/" className="flex items-center gap-3 group">
               <Image 
                 src={RacoonnLogo} 
                 alt="Racoonn Logo" 
-                className="w-10 h-10 object-contain group-hover:scale-105 group-hover:rotate-3 transition-all duration-300 shadow-lg shadow-[#E86A70]/20 rounded-2xl" 
+                className="w-10 h-10 object-contain group-hover:scale-105 group-hover:rotate-3 transition-all duration-300 shadow-lg shadow-brand-coral/20 rounded-2xl" 
               />
-              <span className="font-extrabold text-xl tracking-tight text-[#1F2E4A] flex items-center gap-1.5">
-                Racoonn <span className="text-[#E86A70]/80 font-medium">Developers</span>
+              <span className="font-extrabold text-xl tracking-tight text-brand-navy flex items-center gap-1.5">
+                Racoonn <span className="text-brand-coral/80 font-medium">Developers</span>
               </span>
             </Link>
-            <Badge variant="outline" className="hidden sm:inline-flex text-[#E86A70] border-[#E86A70]/20 bg-[#E86A70]/5 text-[11px] font-mono px-2.5 py-0.5 rounded-full uppercase tracking-widest font-bold">
+            <Badge variant="outline" className="hidden sm:inline-flex text-brand-coral border-brand-coral/20 bg-brand-coral/5 text-[11px] font-mono px-2.5 py-0.5 rounded-full uppercase tracking-widest font-bold">
               v1.0.0
             </Badge>
           </div>
 
           <div className="flex items-center gap-3">
-            <div className="hidden md:flex items-center gap-2 bg-white/50 border border-[#1F2E4A]/10 rounded-full px-4 py-1.5 text-xs text-[#1F2E4A] font-medium shadow-inner">
+            <div className="hidden md:flex items-center gap-2 bg-white/50 border border-brand-navy/10 rounded-full px-4 py-1.5 text-xs text-brand-navy font-medium shadow-inner">
               <span className="h-2 w-2 rounded-full bg-[#10b981] shadow-[0_0_8px_#10b981] animate-pulse"></span>
-              <span>API Live: <code className="text-[#E86A70] font-bold bg-[#E86A70]/10 px-1.5 py-0.5 rounded-md">api.racoonn.com/v1</code></span>
+              <span>API Live: <code className="text-brand-coral font-bold bg-brand-coral/10 px-1.5 py-0.5 rounded-md">api.racoonn.com/v1</code></span>
             </div>
             
             <a 
               href="http://localhost:3000/vendor/settings" 
-              className="flex items-center gap-2 bg-[#E86A70] hover:bg-[#d95d63] text-white px-5 py-2 rounded-full text-sm font-bold transition-all shadow-lg shadow-[#E86A70]/20 hover:shadow-xl hover:shadow-[#E86A70]/30 hover:-translate-y-0.5 group"
+              className="flex items-center gap-2 bg-brand-coral hover:bg-[#d95d63] text-white px-5 py-2 rounded-full text-sm font-bold transition-all shadow-lg shadow-brand-coral/20 hover:shadow-xl hover:shadow-brand-coral/30 hover:-translate-y-0.5 group"
             >
               <KeyRound className="h-4 w-4 group-hover:rotate-12 transition-transform" />
               Generate API Key
@@ -93,9 +93,9 @@ export default function DevelopersPage() {
         
         {/* Left Sticky Sidebar */}
         <aside className="lg:col-span-3 hidden lg:block">
-          <div className="sticky top-[104px] space-y-6">
-            <div className="p-4 bg-white/80 backdrop-blur-md rounded-[24px] border border-white shadow-xl shadow-[#1F2E4A]/5">
-              <p className="text-[11px] font-bold uppercase tracking-widest text-[#1F2E4A]/50 px-3 py-2 mb-2">Documentation</p>
+          <div className="sticky top-26 space-y-6">
+            <div className="p-4 bg-white/80 backdrop-blur-md rounded-3xl border border-white shadow-xl shadow-brand-navy/5">
+              <p className="text-[11px] font-bold uppercase tracking-widest text-brand-navy/50 px-3 py-2 mb-2">Documentation</p>
               <nav className="space-y-1.5">
                 {navSections.map((sec) => {
                   const Icon = sec.icon;
@@ -113,17 +113,17 @@ export default function DevelopersPage() {
                       }}
                       className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-[13px] font-semibold transition-all duration-300 group ${
                         isActive
-                          ? "bg-gradient-to-r from-[#E86A70]/10 to-transparent text-[#E86A70] border border-[#E86A70]/20 shadow-sm"
-                          : "text-[#1F2E4A]/70 hover:text-[#1F2E4A] hover:bg-white border border-transparent hover:border-[#1F2E4A]/5 hover:shadow-sm"
+                          ? "bg-linear-to-r from-brand-coral/10 to-transparent text-brand-coral border border-brand-coral/20 shadow-sm"
+                          : "text-brand-navy/70 hover:text-brand-navy hover:bg-white border border-transparent hover:border-brand-navy/5 hover:shadow-sm"
                       }`}
                     >
                       <div className="flex items-center gap-3">
-                        <div className={`p-1.5 rounded-lg transition-colors ${isActive ? 'bg-[#E86A70]/20' : 'bg-transparent group-hover:bg-[#F4F0EA]'}`}>
-                          <Icon className={`h-4 w-4 ${isActive ? "text-[#E86A70]" : "text-[#1F2E4A]/50 group-hover:text-[#1F2E4A]/80"}`} />
+                        <div className={`p-1.5 rounded-lg transition-colors ${isActive ? 'bg-brand-coral/20' : 'bg-transparent group-hover:bg-brand-sand'}`}>
+                          <Icon className={`h-4 w-4 ${isActive ? "text-brand-coral" : "text-brand-navy/50 group-hover:text-brand-navy/80"}`} />
                         </div>
                         <span>{sec.label}</span>
                       </div>
-                      {isActive && <ChevronRight className="h-4 w-4 text-[#E86A70] animate-in slide-in-from-left-2" />}
+                      {isActive && <ChevronRight className="h-4 w-4 text-brand-coral animate-in slide-in-from-left-2" />}
                     </button>
                   );
                 })}
@@ -131,7 +131,7 @@ export default function DevelopersPage() {
             </div>
 
             {/* Quick Status Box */}
-            <div className="p-5 rounded-[24px] bg-gradient-to-br from-[#1F2E4A] to-[#2a3c5d] border border-[#1F2E4A] shadow-2xl text-white relative overflow-hidden group">
+            <div className="p-5 rounded-3xl bg-linear-to-br from-brand-navy to-[#2a3c5d] border border-brand-navy shadow-2xl text-white relative overflow-hidden group">
               <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform duration-500">
                 <Shield size={64} />
               </div>
@@ -142,7 +142,7 @@ export default function DevelopersPage() {
                     <Check className="h-3 w-3" /> SHA-256
                   </span>
                 </div>
-                <p className="text-[12px] text-[#DCE8F5]/80 leading-relaxed font-medium">
+                <p className="text-[12px] text-brand-sky/80 leading-relaxed font-medium">
                   Keys are securely hashed in our integration vault. Never stored in plaintext.
                 </p>
               </div>
@@ -156,13 +156,13 @@ export default function DevelopersPage() {
           {/* Section: Overview */}
           <section id="overview" className="space-y-8 scroll-mt-32">
             <div className="space-y-4">
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#E86A70]/10 border border-[#E86A70]/20 text-[#E86A70] text-xs font-bold shadow-sm animate-in fade-in slide-in-from-bottom-2">
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-brand-coral/10 border border-brand-coral/20 text-brand-coral text-xs font-bold shadow-sm animate-in fade-in slide-in-from-bottom-2">
                 <Activity className="h-3.5 w-3.5" /> Direct PMS Sync
               </div>
-              <h1 className="text-4xl sm:text-5xl font-heading font-black tracking-tight text-[#1F2E4A]">
-                Partner API <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#E86A70] to-amber-500">Documentation</span>
+              <h1 className="text-4xl sm:text-5xl font-heading font-black tracking-tight text-brand-navy">
+                Partner API <span className="text-transparent bg-clip-text bg-linear-to-r from-brand-coral to-amber-500">Documentation</span>
               </h1>
-              <p className="text-[#1F2E4A]/70 text-base sm:text-lg leading-relaxed max-w-3xl font-medium">
+              <p className="text-brand-navy/70 text-base sm:text-lg leading-relaxed max-w-3xl font-medium">
                 Integrate with Racoonn to sync room availability, push dynamic pricing, fetch reservations, and receive webhook notifications in real-time. Designed for certified Property Management Systems (PMS) and Channel Managers.
               </p>
             </div>
@@ -170,16 +170,16 @@ export default function DevelopersPage() {
             {/* High-level Feature Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
               {[
-                { icon: KeyRound, title: "Bearer Token Auth", desc: "Cryptographically secure API keys issued per partner integration.", color: "text-[#E86A70]", bg: "bg-[#E86A70]/10", border: "border-[#E86A70]/20" },
+                { icon: KeyRound, title: "Bearer Token Auth", desc: "Cryptographically secure API keys issued per partner integration.", color: "text-brand-coral", bg: "bg-brand-coral/10", border: "border-brand-coral/20" },
                 { icon: Zap, title: "Guaranteed Idempotency", desc: "Mandatory Idempotency-Key on bookings prevents duplicate reservations.", color: "text-[#3b82f6]", bg: "bg-[#3b82f6]/10", border: "border-[#3b82f6]/20" },
                 { icon: BellRing, title: "HMAC-Signed Webhooks", desc: "Outbound events signed with HMAC SHA-256 for authentic real-time sync.", color: "text-[#10b981]", bg: "bg-[#10b981]/10", border: "border-[#10b981]/20" }
               ].map((feature, i) => (
-                <div key={i} className="p-6 rounded-[24px] bg-white/80 backdrop-blur-xl border border-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] hover:-translate-y-1 transition-all duration-300 group">
+                <div key={i} className="p-6 rounded-3xl bg-white/80 backdrop-blur-xl border border-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] hover:-translate-y-1 transition-all duration-300 group">
                   <div className={`w-12 h-12 rounded-2xl ${feature.bg} flex items-center justify-center font-bold mb-4 border ${feature.border} group-hover:scale-110 transition-transform duration-300`}>
                     <feature.icon className={`h-5 w-5 ${feature.color}`} />
                   </div>
-                  <h3 className="font-bold text-[#1F2E4A] text-[15px] mb-2">{feature.title}</h3>
-                  <p className="text-[13px] text-[#1F2E4A]/60 leading-relaxed font-medium">
+                  <h3 className="font-bold text-brand-navy text-[15px] mb-2">{feature.title}</h3>
+                  <p className="text-[13px] text-brand-navy/60 leading-relaxed font-medium">
                     {feature.desc}
                   </p>
                 </div>
@@ -191,11 +191,11 @@ export default function DevelopersPage() {
           {(() => {
             const Section = ({ id, tag, title, desc, children }: any) => (
               <section id={id} className="space-y-6 scroll-mt-32 pt-8 relative">
-                <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-[#1F2E4A]/10 to-transparent"></div>
+                <div className="absolute top-0 left-0 w-full h-px bg-linear-to-r from-transparent via-brand-navy/10 to-transparent"></div>
                 <div className="space-y-2">
-                  <span className="text-[11px] font-bold text-[#E86A70] uppercase tracking-widest font-mono">{tag}</span>
-                  <h2 className="text-3xl font-heading font-black text-[#1F2E4A] tracking-tight">{title}</h2>
-                  <p className="text-sm sm:text-base text-[#1F2E4A]/70 font-medium max-w-3xl leading-relaxed">{desc}</p>
+                  <span className="text-[11px] font-bold text-brand-coral uppercase tracking-widest font-mono">{tag}</span>
+                  <h2 className="text-3xl font-heading font-black text-brand-navy tracking-tight">{title}</h2>
+                  <p className="text-sm sm:text-base text-brand-navy/70 font-medium max-w-3xl leading-relaxed">{desc}</p>
                 </div>
                 {children}
               </section>
@@ -234,7 +234,7 @@ export default function DevelopersPage() {
                 {/* Section: Authentication */}
                 <Section 
                   id="authentication" tag="Security" title="Authentication" 
-                  desc={<>All requests to the Partner API must include your partner key in the HTTP <code className="bg-[#1F2E4A]/5 text-[#E86A70] px-1.5 py-0.5 rounded-md font-bold">Authorization</code> header using the standard Bearer scheme.</>}
+                  desc={<>All requests to the Partner API must include your partner key in the HTTP <code className="bg-brand-navy/5 text-brand-coral px-1.5 py-0.5 rounded-md font-bold">Authorization</code> header using the standard Bearer scheme.</>}
                 >
                   <CodeBlock 
                     title="Authorization Header"
@@ -246,23 +246,23 @@ export default function DevelopersPage() {
                 {/* Section: Rate Limits */}
                 <Section 
                   id="rate-limits" tag="Throttling" title="Rate Limits & Quotas" 
-                  desc={<>Rate limiting protects inventory consistency. Exceeded quotas return HTTP <code className="bg-[#1F2E4A]/5 text-[#E86A70] px-1.5 py-0.5 rounded-md font-bold">429 Too Many Requests</code> with a <code className="bg-[#1F2E4A]/5 text-[#E86A70] px-1.5 py-0.5 rounded-md font-bold">Retry-After</code> response header.</>}
+                  desc={<>Rate limiting protects inventory consistency. Exceeded quotas return HTTP <code className="bg-brand-navy/5 text-brand-coral px-1.5 py-0.5 rounded-md font-bold">429 Too Many Requests</code> with a <code className="bg-brand-navy/5 text-brand-coral px-1.5 py-0.5 rounded-md font-bold">Retry-After</code> response header.</>}
                 >
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 text-sm">
-                    <div className="p-5 rounded-[20px] bg-white border border-[#1F2E4A]/5 shadow-lg shadow-[#1F2E4A]/5 space-y-2 hover:-translate-y-1 transition-transform">
-                      <div className="flex items-center justify-between font-bold text-[#1F2E4A]">
+                    <div className="p-5 rounded-[20px] bg-white border border-brand-navy/5 shadow-lg shadow-brand-navy/5 space-y-2 hover:-translate-y-1 transition-transform">
+                      <div className="flex items-center justify-between font-bold text-brand-navy">
                         <span>Production Environment</span>
                         <Badge variant="secondary" className="bg-[#10b981]/10 text-[#10b981] border-[#10b981]/20 text-[10px] uppercase tracking-widest font-bold">Live</Badge>
                       </div>
-                      <p className="text-[#1F2E4A]/60 font-medium"><strong>1,000 requests</strong> per minute per partner key.</p>
+                      <p className="text-brand-navy/60 font-medium"><strong>1,000 requests</strong> per minute per partner key.</p>
                     </div>
 
-                    <div className="p-5 rounded-[20px] bg-white border border-[#1F2E4A]/5 shadow-lg shadow-[#1F2E4A]/5 space-y-2 hover:-translate-y-1 transition-transform">
-                      <div className="flex items-center justify-between font-bold text-[#1F2E4A]">
+                    <div className="p-5 rounded-[20px] bg-white border border-brand-navy/5 shadow-lg shadow-brand-navy/5 space-y-2 hover:-translate-y-1 transition-transform">
+                      <div className="flex items-center justify-between font-bold text-brand-navy">
                         <span>Sandbox Environment</span>
                         <Badge variant="secondary" className="bg-[#8b5cf6]/10 text-[#8b5cf6] border-[#8b5cf6]/20 text-[10px] uppercase tracking-widest font-bold">Test</Badge>
                       </div>
-                      <p className="text-[#1F2E4A]/60 font-medium"><strong>100 requests</strong> per minute per test key.</p>
+                      <p className="text-brand-navy/60 font-medium"><strong>100 requests</strong> per minute per test key.</p>
                     </div>
                   </div>
                 </Section>
@@ -272,17 +272,17 @@ export default function DevelopersPage() {
                   id="properties" tag="Endpoints" title="Properties & Rooms" 
                   desc={<>Retrieve list of assigned properties and their rooms/units.</>}
                 >
-                  <div className="rounded-[24px] border border-[#1F2E4A]/5 bg-white/80 backdrop-blur-xl overflow-hidden space-y-6 p-6 shadow-xl shadow-[#1F2E4A]/5">
+                  <div className="rounded-3xl border border-brand-navy/5 bg-white/80 backdrop-blur-xl overflow-hidden space-y-6 p-6 shadow-xl shadow-brand-navy/5">
                     <div className="flex flex-wrap items-center justify-between gap-4">
                       <div className="flex items-center gap-3">
                         <span className="bg-[#10b981]/10 text-[#10b981] border border-[#10b981]/20 font-mono text-xs px-3 py-1.5 rounded-lg font-black tracking-widest">GET</span>
-                        <span className="font-mono text-[15px] font-bold text-[#1F2E4A]">/api/v1/properties</span>
+                        <span className="font-mono text-[15px] font-bold text-brand-navy">/api/v1/properties</span>
                       </div>
-                      <Badge variant="outline" className="text-[#1F2E4A]/50 border-[#1F2E4A]/10 bg-[#1F2E4A]/5 text-[10px] font-bold">Scope: properties:read</Badge>
+                      <Badge variant="outline" className="text-brand-navy/50 border-brand-navy/10 bg-brand-navy/5 text-[10px] font-bold">Scope: properties:read</Badge>
                     </div>
 
-                    <p className="text-[13px] font-medium text-[#1F2E4A]/70">
-                      Returns paginated property listings. Query parameters: <code className="bg-[#1F2E4A]/5 text-[#E86A70] font-bold px-1.5 py-0.5 rounded">page</code> (default: 1), <code className="bg-[#1F2E4A]/5 text-[#E86A70] font-bold px-1.5 py-0.5 rounded">limit</code> (default: 50, max: 100).
+                    <p className="text-[13px] font-medium text-brand-navy/70">
+                      Returns paginated property listings. Query parameters: <code className="bg-brand-navy/5 text-brand-coral font-bold px-1.5 py-0.5 rounded">page</code> (default: 1), <code className="bg-brand-navy/5 text-brand-coral font-bold px-1.5 py-0.5 rounded">limit</code> (default: 50, max: 100).
                     </p>
 
                     <CodeBlock 
@@ -297,17 +297,17 @@ export default function DevelopersPage() {
                   id="availability" tag="Inventory" title="Availability API" 
                   desc={<>Read and update room count availability and date blockage in real-time.</>}
                 >
-                  <div className="rounded-[24px] border border-[#1F2E4A]/5 bg-white/80 backdrop-blur-xl overflow-hidden space-y-6 p-6 shadow-xl shadow-[#1F2E4A]/5">
+                  <div className="rounded-3xl border border-brand-navy/5 bg-white/80 backdrop-blur-xl overflow-hidden space-y-6 p-6 shadow-xl shadow-brand-navy/5">
                     <div className="flex flex-wrap items-center justify-between gap-4">
                       <div className="flex items-center gap-3">
                         <span className="bg-[#3b82f6]/10 text-[#3b82f6] border border-[#3b82f6]/20 font-mono text-xs px-3 py-1.5 rounded-lg font-black tracking-widest">PUT</span>
-                        <span className="font-mono text-[15px] font-bold text-[#1F2E4A]">/api/v1/availability</span>
+                        <span className="font-mono text-[15px] font-bold text-brand-navy">/api/v1/availability</span>
                       </div>
-                      <Badge variant="outline" className="text-[#1F2E4A]/50 border-[#1F2E4A]/10 bg-[#1F2E4A]/5 text-[10px] font-bold">Scope: availability:write</Badge>
+                      <Badge variant="outline" className="text-brand-navy/50 border-brand-navy/10 bg-brand-navy/5 text-[10px] font-bold">Scope: availability:write</Badge>
                     </div>
 
-                    <p className="text-[13px] font-medium text-[#1F2E4A]/70">
-                      Update single date room count and block status. Dispatches <code className="bg-[#1F2E4A]/5 text-[#E86A70] font-bold px-1.5 py-0.5 rounded">availability.updated</code> event to webhooks.
+                    <p className="text-[13px] font-medium text-brand-navy/70">
+                      Update single date room count and block status. Dispatches <code className="bg-brand-navy/5 text-brand-coral font-bold px-1.5 py-0.5 rounded">availability.updated</code> event to webhooks.
                     </p>
 
                     <CodeBlock 
@@ -330,13 +330,13 @@ export default function DevelopersPage() {
                   id="rates" tag="Pricing" title="Rates & Pricing API" 
                   desc={<>Push updated nightly room pricing from your PMS rate manager.</>}
                 >
-                  <div className="rounded-[24px] border border-[#1F2E4A]/5 bg-white/80 backdrop-blur-xl overflow-hidden space-y-6 p-6 shadow-xl shadow-[#1F2E4A]/5">
+                  <div className="rounded-3xl border border-brand-navy/5 bg-white/80 backdrop-blur-xl overflow-hidden space-y-6 p-6 shadow-xl shadow-brand-navy/5">
                     <div className="flex flex-wrap items-center justify-between gap-4">
                       <div className="flex items-center gap-3">
                         <span className="bg-[#3b82f6]/10 text-[#3b82f6] border border-[#3b82f6]/20 font-mono text-xs px-3 py-1.5 rounded-lg font-black tracking-widest">PUT</span>
-                        <span className="font-mono text-[15px] font-bold text-[#1F2E4A]">/api/v1/rates</span>
+                        <span className="font-mono text-[15px] font-bold text-brand-navy">/api/v1/rates</span>
                       </div>
-                      <Badge variant="outline" className="text-[#1F2E4A]/50 border-[#1F2E4A]/10 bg-[#1F2E4A]/5 text-[10px] font-bold">Scope: rates:write</Badge>
+                      <Badge variant="outline" className="text-brand-navy/50 border-brand-navy/10 bg-brand-navy/5 text-[10px] font-bold">Scope: rates:write</Badge>
                     </div>
 
                     <CodeBlock 
@@ -359,13 +359,13 @@ export default function DevelopersPage() {
                   id="reservations" tag="Bookings" title="Reservations & Conflict Guard" 
                   desc={<>Create external reservations with automatic idempotency protection and atomic inventory deductions.</>}
                 >
-                  <div className="rounded-[24px] border border-[#1F2E4A]/5 bg-white/80 backdrop-blur-xl overflow-hidden space-y-6 p-6 shadow-xl shadow-[#1F2E4A]/5">
+                  <div className="rounded-3xl border border-brand-navy/5 bg-white/80 backdrop-blur-xl overflow-hidden space-y-6 p-6 shadow-xl shadow-brand-navy/5">
                     <div className="flex flex-wrap items-center justify-between gap-4">
                       <div className="flex items-center gap-3">
                         <span className="bg-[#f59e0b]/10 text-[#f59e0b] border border-[#f59e0b]/20 font-mono text-xs px-3 py-1.5 rounded-lg font-black tracking-widest">POST</span>
-                        <span className="font-mono text-[15px] font-bold text-[#1F2E4A]">/api/v1/reservations</span>
+                        <span className="font-mono text-[15px] font-bold text-brand-navy">/api/v1/reservations</span>
                       </div>
-                      <Badge variant="outline" className="text-[#1F2E4A]/50 border-[#1F2E4A]/10 bg-[#1F2E4A]/5 text-[10px] font-bold">Scope: reservations:create</Badge>
+                      <Badge variant="outline" className="text-brand-navy/50 border-brand-navy/10 bg-brand-navy/5 text-[10px] font-bold">Scope: reservations:create</Badge>
                     </div>
 
                     <div className="p-4 bg-amber-50 border border-amber-200/60 rounded-2xl text-xs text-amber-900 space-y-2 shadow-sm">
@@ -406,11 +406,11 @@ export default function DevelopersPage() {
                   id="webhooks" tag="Events" title="Outbound Webhooks & HMAC Signatures" 
                   desc={<>Receive instant push notifications when Racoonn bookings are created, updated, or cancelled by guests.</>}
                 >
-                  <div className="rounded-[24px] border border-[#1F2E4A]/5 bg-white/80 backdrop-blur-xl overflow-hidden space-y-6 p-6 shadow-xl shadow-[#1F2E4A]/5">
+                  <div className="rounded-3xl border border-brand-navy/5 bg-white/80 backdrop-blur-xl overflow-hidden space-y-6 p-6 shadow-xl shadow-brand-navy/5">
                     <div className="space-y-2">
-                      <h4 className="text-sm font-bold text-[#1F2E4A]">Verifying Webhook Signatures</h4>
-                      <p className="text-[13px] text-[#1F2E4A]/70 leading-relaxed font-medium">
-                        Every webhook request sent by Racoonn includes the <code className="bg-[#1F2E4A]/5 text-[#E86A70] font-bold px-1.5 py-0.5 rounded">X-Racoonn-Signature</code> header. Verify the signature by computing the HMAC SHA-256 of the raw payload string using your secret:
+                      <h4 className="text-sm font-bold text-brand-navy">Verifying Webhook Signatures</h4>
+                      <p className="text-[13px] text-brand-navy/70 leading-relaxed font-medium">
+                        Every webhook request sent by Racoonn includes the <code className="bg-brand-navy/5 text-brand-coral font-bold px-1.5 py-0.5 rounded">X-Racoonn-Signature</code> header. Verify the signature by computing the HMAC SHA-256 of the raw payload string using your secret:
                       </p>
                     </div>
 
@@ -420,13 +420,13 @@ export default function DevelopersPage() {
                     />
 
                     <div className="pt-2">
-                      <span className="text-xs font-bold text-[#1F2E4A] uppercase tracking-widest">Supported Event Types:</span>
+                      <span className="text-xs font-bold text-brand-navy uppercase tracking-widest">Supported Event Types:</span>
                       <div className="flex flex-wrap gap-2 mt-3">
                         {[
                           "reservation.created", "reservation.updated", "reservation.cancelled",
                           "availability.updated", "rate.updated", "property.updated", "room.updated",
                         ].map((evt) => (
-                          <span key={evt} className="text-[11px] font-mono font-bold bg-[#1F2E4A]/5 border border-[#1F2E4A]/10 text-[#E86A70] px-2.5 py-1 rounded-lg">
+                          <span key={evt} className="text-[11px] font-mono font-bold bg-brand-navy/5 border border-brand-navy/10 text-brand-coral px-2.5 py-1 rounded-lg">
                             {evt}
                           </span>
                         ))}

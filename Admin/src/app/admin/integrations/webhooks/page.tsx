@@ -126,7 +126,7 @@ export default function WebhooksPage() {
               <CardTitle className="text-base font-semibold">Recent Deliveries</CardTitle>
               <CardDescription className="text-xs">Outbound webhook dispatch audit trail.</CardDescription>
             </CardHeader>
-            <CardContent className="p-0 divide-y divide-border/40 max-h-[500px] overflow-y-auto">
+            <CardContent className="p-0 divide-y divide-border/40 max-h-125 overflow-y-auto">
               {deliveries.length === 0 ? (
                 <div className="p-6 text-center text-xs text-muted-foreground">No recent delivery attempts.</div>
               ) : (

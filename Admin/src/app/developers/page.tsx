@@ -48,7 +48,7 @@ export default function DevelopersPage() {
       }
       setCopiedKey(id);
       setTimeout(() => setCopiedKey(null), 2000);
-    } catch (e) {
+    } catch {
       console.error(e);
     }
   };
@@ -72,7 +72,7 @@ export default function DevelopersPage() {
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Link href="/admin/dashboard" className="flex items-center gap-2 group">
-              <span className="h-8 w-8 rounded-xl bg-gradient-to-tr from-rose-600 to-amber-500 flex items-center justify-center text-white font-black text-lg shadow-lg shadow-rose-500/20 group-hover:scale-105 transition-transform">
+              <span className="h-8 w-8 rounded-xl bg-linear-to-tr from-rose-600 to-amber-500 flex items-center justify-center text-white font-black text-lg shadow-lg shadow-rose-500/20 group-hover:scale-105 transition-transform">
                 R
               </span>
               <span className="font-extrabold text-lg tracking-tight text-white">
@@ -91,7 +91,7 @@ export default function DevelopersPage() {
             </div>
 
             <Link href="/admin/integrations/api-keys">
-              <Button size="sm" className="bg-gradient-to-r from-rose-500 to-rose-600 hover:from-rose-600 hover:to-rose-700 text-white shadow-md shadow-rose-500/25 rounded-xl text-xs gap-1.5 h-8">
+              <Button size="sm" className="bg-linear-to-r from-rose-500 to-rose-600 hover:from-rose-600 hover:to-rose-700 text-white shadow-md shadow-rose-500/25 rounded-xl text-xs gap-1.5 h-8">
                 <KeyRound className="h-3.5 w-3.5" />
                 Manage API Keys
               </Button>
@@ -137,7 +137,7 @@ export default function DevelopersPage() {
             </div>
 
             {/* Quick Status Box */}
-            <div className="p-4 rounded-2xl bg-gradient-to-b from-slate-900/80 to-slate-950 border border-slate-800/80 space-y-2">
+            <div className="p-4 rounded-2xl bg-linear-to-b from-slate-900/80 to-slate-950 border border-slate-800/80 space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-semibold text-slate-300">Partner Security</span>
                 <span className="flex items-center gap-1 text-[10px] text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">

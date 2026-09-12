@@ -684,7 +684,7 @@ export default function SettingsPage() {
             <Button variant="outline" className="h-11 px-6 rounded-xl border-slate-200" onClick={() => setIsApiKeyDialogOpen(false)}>
               Done
             </Button>
-            <Button onClick={handleDownloadKeys} className="h-11 px-6 rounded-xl bg-[#1F2E4A] hover:bg-[#2a3c5d] text-white flex items-center gap-2 shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all">
+            <Button onClick={handleDownloadKeys} className="h-11 px-6 rounded-xl bg-brand-navy hover:bg-[#2a3c5d] text-white flex items-center gap-2 shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all">
               <Download className="w-4 h-4" /> Download keys as CSV
             </Button>
           </DialogFooter>

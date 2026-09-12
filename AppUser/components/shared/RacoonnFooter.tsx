@@ -114,7 +114,7 @@ export default function RacoonnFooter() {
             <View style={{ flex: 1 }}>
               <Text style={styles.contactLabel}>Location</Text>
               <Text style={styles.contactValue}>
-                123 Travel Avenue, Suite 400{'\n'}New York, NY 10012
+                B-81, Rose Villa, Samiah Lake City, Rudrapur,{'\n'}Kichha, Udham Singh Nagar - 263153, Uttarakhand
               </Text>
             </View>
           </View>

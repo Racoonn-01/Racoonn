@@ -62,7 +62,7 @@ export default function OnboardingPage() {
           appwriteConfig.databaseId,
           appwriteConfig.vendorCollectionId,
           user.$id,
-          { onboardingStep: 9 }
+          { onboardingStep: 10 }
         );
         
         // Trigger verification email

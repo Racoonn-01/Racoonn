@@ -25,14 +25,10 @@ export function calculateRoomGst(pricePerNight: number, nights: number = 1, room
   let gstStatus = "GST @ 5%";
   let itcNote = "GST @ 5% (Input Tax Credit Not Allowed)";
 
-  if (cleanPrice < 1000) {
-    gstRate = 0;
-    gstStatus = "GST Exempt (0%)";
-    itcNote = "Booking is exempt from GST as tariff is below ₹1,000/night";
-  } else if (cleanPrice <= 7500) {
-    gstRate = 5;
-    gstStatus = "GST @ 5%";
-    itcNote = "GST @ 5% (Input Tax Credit Not Allowed)";
+  if (cleanPrice <= 7500) {
+    gstRate = 12;
+    gstStatus = "GST @ 12%";
+    itcNote = "GST @ 12% (Input Tax Credit Not Allowed)";
   } else {
     gstRate = 18;
     gstStatus = "GST @ 18%";

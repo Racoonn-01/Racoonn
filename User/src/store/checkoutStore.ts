@@ -337,7 +337,7 @@ export const useCheckoutStore = create<CheckoutState>((set, get) => ({
       const propAddons = get().propertyAddons || [];
       const addonsList = get().selectedAddons.map((addonId: string) => {
         const addon = propAddons.find((a: PropertyAddon) => (a.id || a.$id) === addonId);
-        const isPerPerson = addon?.description?.toLowerCase().includes('per person');
+        const isPerPerson = typeof addon?.description === 'string' && addon.description.toLowerCase().includes('per person');
         const addonPrice = (addon?.price || 0) * (isPerPerson ? (bookingData.adults || 1) : 1);
         return { name: addon?.name || "Add-on", price: addonPrice };
       });

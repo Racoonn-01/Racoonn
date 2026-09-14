@@ -207,17 +207,25 @@ export default async function PropertyViewPage({ params }: { params: Promise<{ i
                 <div className="divide-y">
                   {roomsList.map((room) => (
                     <div key={room.$id} className="p-6 flex flex-col sm:flex-row gap-6 hover:bg-muted/30 transition-colors">
-                      <div className="w-full sm:w-48 h-32 bg-muted rounded-xl overflow-hidden shrink-0 relative flex items-center justify-center">
-                        {room.photos && room.photos.length > 0 && getImageUrl(room.photos[0]) ? (
-                          <SafeImage 
-                            src={getImageUrl(room.photos[0]) as string} 
-                            alt={room.roomName || "Room"} 
-                            className="w-full h-full object-cover absolute inset-0"
-                            fallbackIconClassName="h-8 w-8 text-muted-foreground opacity-30"
-                            fallbackContainerClassName="w-full h-full hidden items-center justify-center absolute inset-0"
-                          />
+                      <div className="w-full sm:w-64 shrink-0 flex gap-3 overflow-x-auto snap-x pb-2" style={{ scrollbarWidth: 'thin' }}>
+                        {room.photos && room.photos.length > 0 ? (
+                          room.photos.map((photo: string, index: number) => {
+                             const url = getImageUrl(photo);
+                             if (!url) return null;
+                             return (
+                               <div key={index} className="w-48 h-32 bg-muted rounded-xl overflow-hidden shrink-0 relative flex items-center justify-center snap-center">
+                                 <SafeImage 
+                                   src={url} 
+                                   alt={`${room.roomName || "Room"} ${index + 1}`} 
+                                   className="w-full h-full object-cover absolute inset-0 hover:scale-105 transition-transform duration-300"
+                                   fallbackIconClassName="h-8 w-8 text-muted-foreground opacity-30"
+                                   fallbackContainerClassName="w-full h-full hidden items-center justify-center absolute inset-0 bg-muted"
+                                 />
+                               </div>
+                             );
+                          })
                         ) : (
-                          <div className="w-full h-full flex items-center justify-center">
+                          <div className="w-48 h-32 bg-muted rounded-xl overflow-hidden shrink-0 relative flex items-center justify-center">
                             <ImageIcon className="h-8 w-8 text-muted-foreground opacity-30" />
                           </div>
                         )}

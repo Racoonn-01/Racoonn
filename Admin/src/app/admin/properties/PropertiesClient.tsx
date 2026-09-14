@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Search, MapPin, BedDouble, Image as ImageIcon, Star, Filter, TrendingUp, Building2, Eye, PenLine } from "lucide-react"
+import { SafeImage } from "@/components/ui/safe-image"
 
 export interface PropertyData {
   id: string;
@@ -144,8 +145,13 @@ export default function PropertiesClient({ properties, kpi }: PropertiesClientPr
             <Card key={property.id} className="overflow-hidden bg-card/60 backdrop-blur-md border-muted/30 shadow-sm hover:shadow-xl transition-all duration-300 group flex flex-col">
               <div className="h-48 bg-muted relative flex items-center justify-center overflow-hidden">
                 {property.imageUrl ? (
-                  /* eslint-disable-next-line @next/next/no-img-element */
-                  <img src={property.imageUrl} alt={property.name} className="absolute inset-0 w-full h-full object-cover" />
+                  <SafeImage 
+                    src={property.imageUrl} 
+                    alt={property.name} 
+                    className="absolute inset-0 w-full h-full object-cover"
+                    fallbackIconClassName="h-12 w-12 text-muted-foreground opacity-30"
+                    fallbackContainerClassName="absolute inset-0 hidden items-center justify-center"
+                  />
                 ) : (
                   <ImageIcon className="h-12 w-12 text-muted-foreground opacity-30" />
                 )}

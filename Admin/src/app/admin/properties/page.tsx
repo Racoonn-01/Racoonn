@@ -4,6 +4,23 @@ import PropertiesClient, { PropertyData, PropertiesKPI } from "./PropertiesClien
 
 const DATABASE_ID = process.env.APPWRITE_DATABASE_ID || process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID || "6a3cec630035d63ea963";
 const VENDOR_COLLECTION = "6a3e0fd9da7df0d38588";
+const PROJECT_ID = process.env.APPWRITE_PROJECT_ID || process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID || "6a3bce6900381359c3ce";
+const BUCKET_ID = process.env.NEXT_PUBLIC_APPWRITE_VENDOR_DOCUMENTS_BUCKET_ID || "6a3e398000280b2b3d20";
+
+function getImageUrl(fileIdOrUrl: string) {
+  if (!fileIdOrUrl || typeof fileIdOrUrl !== 'string' || fileIdOrUrl.trim() === '') return undefined;
+  
+  let url = fileIdOrUrl;
+  if (!url.startsWith('http')) {
+    url = `https://sgp.cloud.appwrite.io/v1/storage/buckets/${BUCKET_ID}/files/${fileIdOrUrl}/preview?project=${PROJECT_ID}`;
+  }
+  
+  if (url.includes('/view')) {
+    url = url.replace('/view', '/preview');
+  }
+  
+  return url;
+}
 
 export default async function PropertiesPage() {
   let properties: PropertyData[] | null = null;
@@ -89,7 +106,7 @@ export default async function PropertiesPage() {
         rating: rating,
         status: status,
         rooms: propertyRoomsMap[p.$id] || 0,
-        imageUrl: p.imageUrl || (p.photos && p.photos.length > 0 ? p.photos[0] : undefined)
+        imageUrl: getImageUrl(p.imageUrl || (p.photos && p.photos.length > 0 ? p.photos[0] : undefined))
       };
     });
 

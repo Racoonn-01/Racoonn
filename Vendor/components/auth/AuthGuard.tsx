@@ -29,7 +29,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
        const status = profile.status?.toLowerCase();
        const onboardingCompleted = profile.onboardingStep !== undefined && profile.onboardingStep >= 10;
 
-       if (status === "approved") {
+       if (status === "approved" || status === "active" || status === "published") {
           if (pathname === "/" || pathname.startsWith("/vendor/onboarding") || pathname === "/vendor/pending-approval" || pathname === "/vendor/rejected") {
              router.push("/vendor/dashboard");
           }

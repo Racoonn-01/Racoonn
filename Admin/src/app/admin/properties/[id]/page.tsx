@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, MapPin, BedDouble, Star, Image as ImageIcon, Building2, Calendar, User, Clock, ShieldCheck, Users, Maximize } from "lucide-react";
+import { SafeImage } from "@/components/ui/safe-image";
 import PhotosGallery from "./PhotosGallery";
 
 const DATABASE_ID = process.env.APPWRITE_DATABASE_ID || "6a3cec630035d63ea963";
@@ -14,8 +15,18 @@ const BUCKET_ID = "6a3e398000280b2b3d20";
 
 function getImageUrl(fileIdOrUrl: string) {
   if (!fileIdOrUrl || typeof fileIdOrUrl !== 'string' || fileIdOrUrl.trim() === '') return null;
-  if (fileIdOrUrl.startsWith('http')) return fileIdOrUrl;
-  return `https://sgp.cloud.appwrite.io/v1/storage/buckets/${BUCKET_ID}/files/${fileIdOrUrl}/view?project=${PROJECT_ID}`;
+  
+  let url = fileIdOrUrl;
+  if (!url.startsWith('http')) {
+    url = `https://sgp.cloud.appwrite.io/v1/storage/buckets/${BUCKET_ID}/files/${fileIdOrUrl}/preview?project=${PROJECT_ID}`;
+  }
+  
+  // Replace /view with /preview so that videos return a valid image thumbnail
+  if (url.includes('/view')) {
+    url = url.replace('/view', '/preview');
+  }
+  
+  return url;
 }
 
 export default async function PropertyViewPage({ params }: { params: Promise<{ id: string }> }) {
@@ -107,12 +118,17 @@ export default async function PropertyViewPage({ params }: { params: Promise<{ i
           <Card className="overflow-hidden shadow-sm">
             <div className="h-80 bg-muted relative flex items-center justify-center">
               {imageUrl ? (
-                /* eslint-disable-next-line @next/next/no-img-element */
-                <img src={imageUrl} alt={property.propertyName || "Property"} className="absolute inset-0 w-full h-full object-cover" />
+                <SafeImage 
+                  src={imageUrl} 
+                  alt={property.propertyName || "Property"} 
+                  className="absolute inset-0 w-full h-full object-cover"
+                  fallbackIconClassName="h-20 w-20 text-muted-foreground opacity-30"
+                  fallbackContainerClassName="absolute inset-0 hidden items-center justify-center"
+                />
               ) : (
                 <ImageIcon className="h-20 w-20 text-muted-foreground opacity-30" />
               )}
-              <div className="absolute inset-0 bg-linear-to-t from-black/80 via-transparent to-transparent opacity-80" />
+              <div className="absolute inset-0 bg-linear-to-t from-black/80 via-transparent to-transparent opacity-80 pointer-events-none" />
               <Badge 
                 className={`absolute top-4 right-4 px-3 py-1.5 rounded-full text-sm font-bold uppercase tracking-wider shadow-sm backdrop-blur-md ${
                   status.toLowerCase() === 'active' || status.toLowerCase() === 'approved' ? 'bg-emerald-500/90 text-white' : 
@@ -191,10 +207,15 @@ export default async function PropertyViewPage({ params }: { params: Promise<{ i
                 <div className="divide-y">
                   {roomsList.map((room) => (
                     <div key={room.$id} className="p-6 flex flex-col sm:flex-row gap-6 hover:bg-muted/30 transition-colors">
-                      <div className="w-full sm:w-48 h-32 bg-muted rounded-xl overflow-hidden shrink-0 relative">
+                      <div className="w-full sm:w-48 h-32 bg-muted rounded-xl overflow-hidden shrink-0 relative flex items-center justify-center">
                         {room.photos && room.photos.length > 0 && getImageUrl(room.photos[0]) ? (
-                          /* eslint-disable-next-line @next/next/no-img-element */
-                          <img src={getImageUrl(room.photos[0]) as string} alt={room.roomName || "Room"} className="w-full h-full object-cover" />
+                          <SafeImage 
+                            src={getImageUrl(room.photos[0]) as string} 
+                            alt={room.roomName || "Room"} 
+                            className="w-full h-full object-cover absolute inset-0"
+                            fallbackIconClassName="h-8 w-8 text-muted-foreground opacity-30"
+                            fallbackContainerClassName="w-full h-full hidden items-center justify-center absolute inset-0"
+                          />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center">
                             <ImageIcon className="h-8 w-8 text-muted-foreground opacity-30" />

@@ -29,8 +29,10 @@ export default function OnboardingPage() {
     // Also save to localStorage as a super fast fallback
     localStorage.setItem("racoonn_onboarding_step", step.toString());
     
-    // Only update Appwrite if the step is actually changing and we have a user
-    if (user && profile && step !== profile.onboardingStep) {
+    // Only update Appwrite if the local step is strictly greater than the profile's step, 
+    // OR if we are just starting and the profile hasn't caught up. 
+    // This prevents overwriting the step back to 9 when handleCompleteOnboarding sets it to 10.
+    if (user && profile && step > (profile.onboardingStep || 0)) {
       databases.updateDocument(
         appwriteConfig.databaseId,
         appwriteConfig.vendorCollectionId,
@@ -94,6 +96,13 @@ export default function OnboardingPage() {
       case 7: return <Step7Amenities onNext={nextStep} onBack={prevStep} />;
       case 8: return <Step8Banking onNext={nextStep} onBack={prevStep} />;
       case 9: return <Step10Review onSubmit={handleCompleteOnboarding} onBack={prevStep} />;
+      case 10: return (
+        <div className="flex flex-col items-center justify-center h-full min-h-[400px]">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#E86A70] mb-4"></div>
+          <h2 className="text-xl font-bold text-slate-800">Redirecting to Dashboard...</h2>
+          <p className="text-slate-500 mt-2">Your application has been submitted.</p>
+        </div>
+      );
       default: return null;
     }
   };

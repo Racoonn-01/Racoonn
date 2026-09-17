@@ -63,15 +63,17 @@ export default function PricePopover({
     return Math.round(((value - absoluteMin) / (absoluteMax - absoluteMin)) * 100) || 0;
   };
 
+  const minGap = Math.max(500, Math.floor((absoluteMax - absoluteMin) / 100));
+
   const handleMinSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = Math.min(Number(e.target.value), maxPrice - 1000);
+    const val = Math.min(Number(e.target.value), maxPrice - minGap);
     setMinPrice(val);
     setMinInputVal(String(val));
     setActiveThumb("min");
   };
 
   const handleMaxSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = Math.max(Number(e.target.value), minPrice + 1000);
+    const val = Math.max(Number(e.target.value), minPrice + minGap);
     setMaxPrice(val);
     setMaxInputVal(String(val));
     setActiveThumb("max");
@@ -81,7 +83,7 @@ export default function PricePopover({
     const valStr = e.target.value;
     setMinInputVal(valStr);
     const num = Number(valStr);
-    if (!isNaN(num) && num >= absoluteMin && num <= maxPrice - 500) {
+    if (!isNaN(num) && num >= absoluteMin && num <= maxPrice - minGap) {
       setMinPrice(num);
     }
   };
@@ -91,8 +93,8 @@ export default function PricePopover({
     if (isNaN(num) || num < absoluteMin) {
       setMinPrice(absoluteMin);
       setMinInputVal(String(absoluteMin));
-    } else if (num > maxPrice - 500) {
-      const clamped = Math.max(absoluteMin, maxPrice - 500);
+    } else if (num > maxPrice - minGap) {
+      const clamped = Math.max(absoluteMin, maxPrice - minGap);
       setMinPrice(clamped);
       setMinInputVal(String(clamped));
     }
@@ -102,7 +104,7 @@ export default function PricePopover({
     const valStr = e.target.value;
     setMaxInputVal(valStr);
     const num = Number(valStr);
-    if (!isNaN(num) && num >= minPrice + 500 && num <= absoluteMax) {
+    if (!isNaN(num) && num >= minPrice + minGap && num <= absoluteMax) {
       setMaxPrice(num);
     }
   };
@@ -112,8 +114,8 @@ export default function PricePopover({
     if (isNaN(num) || num > absoluteMax) {
       setMaxPrice(absoluteMax);
       setMaxInputVal(String(absoluteMax));
-    } else if (num < minPrice + 500) {
-      const clamped = Math.min(absoluteMax, minPrice + 500);
+    } else if (num < minPrice + minGap) {
+      const clamped = Math.min(absoluteMax, minPrice + minGap);
       setMaxPrice(clamped);
       setMaxInputVal(String(clamped));
     }
@@ -222,7 +224,7 @@ export default function PricePopover({
                       type="range"
                       min={absoluteMin}
                       max={absoluteMax}
-                      step={Math.max(500, Math.floor((absoluteMax - absoluteMin) / 100))}
+                      step={minGap}
                       value={minPrice}
                       onChange={handleMinSliderChange}
                       onMouseDown={() => setActiveThumb("min")}
@@ -237,7 +239,7 @@ export default function PricePopover({
                       type="range"
                       min={absoluteMin}
                       max={absoluteMax}
-                      step={Math.max(500, Math.floor((absoluteMax - absoluteMin) / 100))}
+                      step={minGap}
                       value={maxPrice}
                       onChange={handleMaxSliderChange}
                       onMouseDown={() => setActiveThumb("max")}

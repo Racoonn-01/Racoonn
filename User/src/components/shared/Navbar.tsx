@@ -52,7 +52,7 @@ export default function Navbar() {
           {/* CTA Button */}
           <div className="hidden lg:flex items-center gap-5">
             <Link
-              href="http://localhost:3001"
+              href={process.env.NEXT_PUBLIC_VENDOR_URL || "http://localhost:3002"}
               className="text-[15px] font-bold text-brand-navy hover:text-brand-coral transition-colors"
             >
               List your property
@@ -171,7 +171,7 @@ export default function Navbar() {
               <div className="p-8 bg-gray-50/50 space-y-4">
                 <p className="text-xs font-bold text-gray-400 uppercase tracking-widest text-center mb-4">Partner with us</p>
                 <Link
-                  href="http://localhost:3001"
+                  href={process.env.NEXT_PUBLIC_VENDOR_URL || "http://localhost:3002"}
                   onClick={() => setIsSidebarOpen(false)}
                   className="block w-full text-center text-[15px] font-bold text-brand-navy hover:text-brand-coral border-2 border-brand-navy/10 hover:border-brand-coral rounded-xl transition-all py-3.5"
                 >

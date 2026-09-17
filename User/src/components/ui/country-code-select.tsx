@@ -58,7 +58,7 @@ export function CountryCodeSelect({
       </div>
 
       {isOpen && (
-        <div className="absolute top-full left-0 w-64 mt-1 bg-white border border-gray-200 rounded-lg shadow-xl z-[100] max-h-60 flex flex-col overflow-hidden">
+        <div className="absolute top-full left-0 w-64 mt-1 bg-white border border-gray-200 rounded-lg shadow-xl z-100 max-h-60 flex flex-col overflow-hidden">
           <div className="p-2 border-b border-gray-100 flex items-center shrink-0 sticky top-0 bg-white">
             <Search size={14} className="text-gray-400 mr-2" />
             <input

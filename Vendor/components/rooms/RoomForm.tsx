@@ -38,7 +38,10 @@ export function RoomForm({ roomId }: RoomFormProps) {
     name: "",
     type: "Standard",
     beds: "",
-    occupancy: "",
+    standardCapacity: "2",
+    maximumCapacity: "4",
+    extraPersonCharge: "0",
+    extraBedAvailable: false,
     size: "",
     price: "",
     discountPrice: "",
@@ -48,6 +51,7 @@ export function RoomForm({ roomId }: RoomFormProps) {
     mealPlan: "Room Only",
     cancellation: "Non-refundable",
     description: "",
+    totalRooms: "1",
   };
 
   const [formData, setFormData] = useState(defaultFormData);
@@ -78,7 +82,10 @@ export function RoomForm({ roomId }: RoomFormProps) {
             name: roomRes.name || "",
             type: roomRes.type || "Standard",
             beds: roomRes.beds || "",
-            occupancy: roomRes.occupancy?.toString() || "",
+            standardCapacity: roomRes.standardCapacity?.toString() || roomRes.occupancy?.toString() || "2",
+            maximumCapacity: roomRes.maximumCapacity?.toString() || "4",
+            extraPersonCharge: roomRes.extraPersonCharge?.toString() || "0",
+            extraBedAvailable: roomRes.extraBedAvailable ?? false,
             size: roomRes.size?.toString() || "",
             price: roomRes.price?.toString() || "",
             discountPrice: "", 
@@ -88,6 +95,7 @@ export function RoomForm({ roomId }: RoomFormProps) {
             mealPlan: "Room Only", 
             cancellation: "Non-refundable", 
             description: roomRes.description || "",
+            totalRooms: roomRes.totalRooms?.toString() || "1",
           });
           setSelectedImages(roomRes.photos || []);
           setSelectedAmenities(roomRes.amenities || []);
@@ -140,6 +148,11 @@ export function RoomForm({ roomId }: RoomFormProps) {
       toast.error("Please fill in all required fields (Name, Price, Property).");
       return;
     }
+    
+    if (parseInt(formData.maximumCapacity) < parseInt(formData.standardCapacity)) {
+      toast.error("Maximum capacity cannot be less than standard capacity.");
+      return;
+    }
 
     setIsSaving(true);
     try {
@@ -160,7 +173,11 @@ export function RoomForm({ roomId }: RoomFormProps) {
         name: formData.name,
         type: formData.type,
         beds: formData.beds,
-        occupancy: parseInt(formData.occupancy) || 2,
+        occupancy: parseInt(formData.standardCapacity) || 2,
+        standardCapacity: parseInt(formData.standardCapacity) || 2,
+        maximumCapacity: parseInt(formData.maximumCapacity) || 4,
+        extraPersonCharge: parseFloat(formData.extraPersonCharge) || 0,
+        extraBedAvailable: formData.extraBedAvailable,
         size: parseInt(formData.size) || 0,
         price: parseFloat(formData.price) || 0,
         discountPrice: parseFloat(formData.discountPrice) || 0,
@@ -170,6 +187,7 @@ export function RoomForm({ roomId }: RoomFormProps) {
         mealPlan: formData.mealPlan,
         cancellation: formData.cancellation,
         description: formData.description,
+        totalRooms: parseInt(formData.totalRooms) || 1,
         amenities: selectedAmenities,
         photos: finalPhotos,
       };
@@ -263,42 +281,37 @@ export function RoomForm({ roomId }: RoomFormProps) {
             />
           </div>
           
-          <div className="grid sm:grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <Label htmlFor="room-type" className="text-[12px] font-semibold text-slate-700 uppercase tracking-wide">Room Type</Label>
-              <select 
-                id="room-type" 
-                value={formData.type}
-                onChange={(e) => setFormData({...formData, type: e.target.value})}
-                className="flex h-12 w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 appearance-none"
-              >
-                <option value="Standard">Standard</option>
-                <option value="Deluxe">Deluxe</option>
-                <option value="Suite">Suite</option>
-                <option value="Villa">Villa</option>
-              </select>
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="bed-type" className="text-[12px] font-semibold text-slate-700 uppercase tracking-wide">Bed Configuration</Label>
-              <Input 
-                id="bed-type" 
-                value={formData.beds}
-                onChange={(e) => setFormData({...formData, beds: e.target.value})}
-                placeholder="e.g. 1 extra-large double bed" 
-                className="h-12 rounded-xl bg-slate-50/50 border-slate-200 focus-visible:ring-primary/20" 
-              />
-            </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="room-type" className="text-[12px] font-semibold text-slate-700 uppercase tracking-wide">Room Type</Label>
+            <Input 
+              id="room-type" 
+              value={formData.type}
+              onChange={(e) => setFormData({...formData, type: e.target.value})}
+              placeholder="e.g. Standard, Deluxe, Villa" 
+              className="h-12 rounded-xl bg-slate-50/50 border-slate-200 focus-visible:ring-primary/20" 
+            />
           </div>
 
           <div className="grid sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <Label htmlFor="capacity" className="text-[12px] font-semibold text-slate-700 uppercase tracking-wide">Capacity (Guests)</Label>
+              <Label htmlFor="standardCapacity" className="text-[12px] font-semibold text-slate-700 uppercase tracking-wide">Standard Guest Capacity *</Label>
               <Input 
-                id="capacity" 
+                id="standardCapacity" 
                 type="number" 
-                value={formData.occupancy}
-                onChange={(e) => setFormData({...formData, occupancy: e.target.value})}
+                value={formData.standardCapacity}
+                onChange={(e) => setFormData({...formData, standardCapacity: e.target.value})}
                 placeholder="e.g. 2" min={1} 
+                className="h-12 rounded-xl bg-slate-50/50 border-slate-200 focus-visible:ring-primary/20" 
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="maximumCapacity" className="text-[12px] font-semibold text-slate-700 uppercase tracking-wide">Maximum Guest Capacity *</Label>
+              <Input 
+                id="maximumCapacity" 
+                type="number" 
+                value={formData.maximumCapacity}
+                onChange={(e) => setFormData({...formData, maximumCapacity: e.target.value})}
+                placeholder="e.g. 4" min={1} 
                 className="h-12 rounded-xl bg-slate-50/50 border-slate-200 focus-visible:ring-primary/20" 
               />
             </div>
@@ -313,96 +326,114 @@ export function RoomForm({ roomId }: RoomFormProps) {
                 className="h-12 rounded-xl bg-slate-50/50 border-slate-200 focus-visible:ring-primary/20" 
               />
             </div>
-          </div>
-
-          <div className="grid sm:grid-cols-3 gap-4 bg-slate-50/70 p-5 rounded-2xl border border-slate-100">
             <div className="space-y-1.5">
-              <Label htmlFor="price" className="text-[12px] font-semibold text-slate-700 uppercase tracking-wide">Base Price / Night (₹) *</Label>
+              <Label htmlFor="totalRooms" className="text-[12px] font-semibold text-slate-700 uppercase tracking-wide">Number of Rooms</Label>
               <Input 
-                id="price" 
+                id="totalRooms" 
                 type="number" 
-                value={formData.price}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  const p = parseFloat(val) || 0;
-                  let autoRate = "5";
-                  if (p <= 1000) autoRate = "0";
-                  else if (p <= 7500) autoRate = "5";
-                  else autoRate = "18";
-
-                  setFormData(prev => ({
-                    ...prev,
-                    price: val,
-                    gstRate: autoRate,
-                    gstCategory: `GST_${autoRate}`
-                  }));
-                }}
-                placeholder="e.g. 5000" min={0} 
-                className="h-12 rounded-xl bg-white border-slate-200 focus-visible:ring-primary/20" 
+                value={formData.totalRooms || ""}
+                onChange={(e) => setFormData({...formData, totalRooms: e.target.value})}
+                placeholder="e.g. 1" min={1} 
+                className="h-12 rounded-xl bg-slate-50/50 border-slate-200 focus-visible:ring-primary/20" 
               />
             </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="gst-slab" className="text-[12px] font-semibold text-slate-700 uppercase tracking-wide">GST Slab (%) *</Label>
-              <select 
-                id="gst-slab" 
-                value={formData.gstRate}
-                onChange={(e) => setFormData({...formData, gstRate: e.target.value, gstCategory: `GST_${e.target.value}`})}
-                className="flex h-12 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 appearance-none font-medium"
-              >
-                <option value="0">0% (Below ₹1,000 - Exempt)</option>
-                <option value="5">5% (₹1,001 to ₹7,500 - No ITC)</option>
-                <option value="18">18% (Above ₹7,500 - With ITC)</option>
-              </select>
-              <p className="text-[10px] text-slate-500 mt-1 font-medium">
-                {formData.gstRate === "0" && "• Below ₹1,000/night: Exempt from GST"}
-                {formData.gstRate === "5" && "• ₹1,001 to ₹7,500/night: 5% GST (No ITC)"}
-                {formData.gstRate === "18" && "• Above ₹7,500/night: 18% GST (With ITC)"}
-              </p>
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-[12px] font-semibold text-slate-700 uppercase tracking-wide">Guest Tax Preview</Label>
-              <div className="h-12 rounded-xl bg-emerald-50 border border-emerald-200/80 px-4 flex items-center justify-between text-xs font-bold text-emerald-900">
-                <span>Guest Pays / Night:</span>
-                <span className="text-base text-emerald-700">
-                  ₹{(() => {
-                    const bp = parseFloat(formData.price) || 0;
-                    const gr = parseFloat(formData.gstRate) || 0;
-                    return (bp + (bp * gr) / 100).toLocaleString('en-IN', { minimumFractionDigits: 2 });
-                  })()}
-                </span>
-              </div>
-            </div>
           </div>
 
-          <div className="grid sm:grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <Label htmlFor="meal-plan" className="text-[12px] font-semibold text-slate-700 uppercase tracking-wide">Meal Plan</Label>
-              <select 
-                id="meal-plan" 
-                value={formData.mealPlan}
-                onChange={(e) => setFormData({...formData, mealPlan: e.target.value})}
-                className="flex h-12 w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 appearance-none"
-              >
-                <option value="Room Only">Room Only</option>
-                <option value="Breakfast included">Breakfast included</option>
-                <option value="Breakfast & Dinner">Breakfast & Dinner</option>
-                <option value="All Inclusive">All Inclusive</option>
-              </select>
+          <div className="grid sm:grid-cols-1 gap-4 bg-slate-50/70 p-5 rounded-2xl border border-slate-100">
+            <div className="grid sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="price" className="text-[12px] font-semibold text-slate-700 uppercase tracking-wide">Base Price / Night (₹) *</Label>
+                <Input 
+                  id="price" 
+                  type="number" 
+                  value={formData.price}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    const p = parseFloat(val) || 0;
+                    let autoRate = "5";
+                    if (p <= 1000) autoRate = "0";
+                    else if (p <= 7500) autoRate = "5";
+                    else autoRate = "18";
+
+                    setFormData(prev => ({
+                      ...prev,
+                      price: val,
+                      gstRate: autoRate,
+                      gstCategory: `GST_${autoRate}`
+                    }));
+                  }}
+                  placeholder="e.g. 5000" min={0} 
+                  className="h-12 rounded-xl bg-white border-slate-200 focus-visible:ring-primary/20" 
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="extraPersonCharge" className="text-[12px] font-semibold text-slate-700 uppercase tracking-wide">Extra Person Charge (₹) *</Label>
+                <Input 
+                  id="extraPersonCharge" 
+                  type="number" 
+                  value={formData.extraPersonCharge}
+                  onChange={(e) => setFormData({...formData, extraPersonCharge: e.target.value})}
+                  placeholder="e.g. 500" min={0} 
+                  className="h-12 rounded-xl bg-white border-slate-200 focus-visible:ring-primary/20" 
+                />
+              </div>
             </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="cancellation" className="text-[12px] font-semibold text-slate-700 uppercase tracking-wide">Cancellation Policy</Label>
-              <select 
-                id="cancellation" 
-                value={formData.cancellation}
-                onChange={(e) => setFormData({...formData, cancellation: e.target.value})}
-                className="flex h-12 w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 appearance-none"
-              >
-                <option value="Non-refundable">Non-refundable</option>
-                <option value="Free cancellation">Free cancellation</option>
-              </select>
+            
+            <div className="flex items-center gap-3 mt-2">
+              <input 
+                type="checkbox"
+                id="extraBedAvailable"
+                checked={formData.extraBedAvailable}
+                onChange={(e) => setFormData({...formData, extraBedAvailable: e.target.checked})}
+                className="w-5 h-5 rounded text-primary border-slate-300 focus:ring-primary/20"
+              />
+              <Label htmlFor="extraBedAvailable" className="text-[13px] font-medium text-slate-700 cursor-pointer">Extra Bed Available</Label>
             </div>
+
+            {/* Pricing Preview */}
+            {(() => {
+              const std = parseInt(formData.standardCapacity) || 0;
+              const max = parseInt(formData.maximumCapacity) || 0;
+              const bp = parseFloat(formData.price) || 0;
+              const epc = parseFloat(formData.extraPersonCharge) || 0;
+              
+              if (std > 0 && max > 0 && max >= std) {
+                return (
+                  <div className="mt-4 p-4 bg-white rounded-xl border border-slate-200">
+                    <h4 className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Pricing Preview</h4>
+                    <div className="space-y-1">
+                      <div className="flex justify-between text-sm text-slate-600">
+                        <span>1{std > 1 ? ` - ${std}` : ""} Guests</span>
+                        <span className="font-semibold text-slate-800">₹{bp}</span>
+                      </div>
+                      {std === max ? (
+                        <div className="text-[11px] text-slate-500 italic mt-2">(No extra occupancy possible beyond maximum capacity)</div>
+                      ) : (
+                        Array.from({ length: max - std }).map((_, i) => {
+                          const guests = std + i + 1;
+                          const total = bp + (epc * (i + 1));
+                          return (
+                            <div key={guests} className="flex justify-between text-sm text-slate-600 border-t border-slate-50 pt-1 mt-1">
+                              <span>{guests} Guests</span>
+                              <span className="font-semibold text-slate-800">₹{total}</span>
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+                  </div>
+                );
+              } else if (max < std) {
+                return (
+                  <div className="mt-4 p-3 bg-red-50 text-red-600 text-[13px] rounded-xl border border-red-100 font-medium">
+                    Maximum capacity cannot be less than standard capacity.
+                  </div>
+                );
+              }
+              return null;
+            })()}
           </div>
-          
+
           <div className="space-y-3 pt-6 border-t border-slate-100">
             <div className="flex justify-between items-center">
               <Label className="text-[12px] font-semibold text-slate-700 uppercase tracking-wide">Room Amenities</Label>

@@ -131,7 +131,7 @@ export async function assignEmployeeRole(data: {
       email: cleanEmail,
       role: data.role,
       password: data.password || "Pass@12345",
-      allowedTabs: data.allowedTabs || ["Dashboard", "Bookings", "Properties", "Revenue"],
+      allowedTabs: data.allowedTabs || ["Bookings", "Properties", "Revenue"],
       status: "Pending Verification",
       assignedAt: new Date().toISOString().split("T")[0],
       verificationToken: token
@@ -184,7 +184,7 @@ export async function verifyEmployeeTokenAndLogin(email: string, token: string) 
         email: cleanEmail || "employee@racoonn.com",
         role: "Support Moderator",
         password: "••••••••",
-        allowedTabs: ["Dashboard", "Bookings", "Support"],
+        allowedTabs: ["Bookings", "Support"],
         status: "Active",
         assignedAt: new Date().toISOString().split("T")[0]
       };
@@ -199,7 +199,7 @@ export async function verifyEmployeeTokenAndLogin(email: string, token: string) 
       email: staff.email,
       name: staff.name,
       role: staff.role,
-      allowedTabs: staff.allowedTabs || ["Dashboard", "Bookings"],
+      allowedTabs: staff.allowedTabs || ["Bookings"],
       isLoggedIn: true,
       loggedInAt: new Date().toISOString()
     };

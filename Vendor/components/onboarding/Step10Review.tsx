@@ -29,7 +29,7 @@ export function Step10Review({ onSubmit, onBack }: { onSubmit: () => void, onBac
       className="flex flex-col h-full max-w-xl mx-auto w-full pt-4"
     >
       <motion.div variants={slideUp} className="mb-6">
-        <h1 className="text-3xl md:text-4xl font-black text-[#1F2E4A] mb-3 font-['Poppins',sans-serif]">Review & Submit</h1>
+        <h1 className="text-3xl md:text-4xl font-black text-brand-navy mb-3 font-['Poppins',sans-serif]">Review & Submit</h1>
         <p className="text-slate-500 font-medium">You're almost there! Review your application details before submitting for final approval.</p>
       </motion.div>
 
@@ -74,7 +74,7 @@ export function Step10Review({ onSubmit, onBack }: { onSubmit: () => void, onBac
         <Button onClick={onBack} variant="ghost" className="text-slate-500 font-bold hover:bg-slate-100 rounded-full px-6">
           <ArrowLeft className="mr-2 w-4 h-4" /> Back
         </Button>
-        <Button onClick={onSubmit} className="bg-[#E86A70] hover:bg-[#d65d60] text-white rounded-full px-10 h-14 text-lg font-bold shadow-[0_0_30px_rgba(232,106,112,0.3)] hover:scale-105 transition-all">
+        <Button onClick={onSubmit} className="bg-brand-coral hover:bg-[#d65d60] text-white rounded-full px-10 h-14 text-lg font-bold shadow-[0_0_30px_rgba(232,106,112,0.3)] hover:scale-105 transition-all">
           Submit For Approval
         </Button>
       </motion.div>

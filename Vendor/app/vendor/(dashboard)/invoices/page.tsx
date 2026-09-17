@@ -1156,8 +1156,11 @@ export default function VendorInvoicesPage() {
                   <div className="relative w-40 h-12 mb-2">
                     <Image src="/racoonn-logo-text.png" alt="Racoonn Logo" fill className="object-contain object-left" unoptimized />
                   </div>
-                  <p className="text-xs text-gray-500 font-medium">Racoonn Hospitality Technologies Private Limited</p>
-                  <p className="text-xs text-gray-500">Devbhoomi Uttarakhand, India</p>
+                  <p className="text-xs text-gray-500 font-medium">CIELE TRAVELS PRIVATE LIMITED</p>
+                  <p className="text-xs text-gray-500">
+                    B-81, Rose Villa, Samiah Lake City, Rudrapur,<br />
+                    Kichha, Udham Singh Nagar - 263153, Uttarakhand
+                  </p>
                   <p className="text-xs text-gray-500">support@racoonn.com</p>
                   <p className="text-xs font-bold text-gray-700 mt-0.5">HSN Code for Hotel rent: 9963</p>
                 </div>
@@ -1191,9 +1194,12 @@ export default function VendorInvoicesPage() {
                   <h4 className="font-bold text-gray-400 uppercase tracking-wider mb-1">
                     {selectedInvoice.type === "withdrawal" ? "Billed To (Platform Admin)" : "Issued By (Platform Admin)"}
                   </h4>
-                  <p className="text-sm font-bold text-gray-900">Racoonn Hospitality Technologies</p>
+                  <p className="text-sm font-bold text-gray-900">CIELE TRAVELS PRIVATE LIMITED</p>
                   <p className="text-gray-600 mt-0.5">Admin Finance Team</p>
-                  <p className="text-gray-600">Devbhoomi Uttarakhand, India</p>
+                  <p className="text-gray-600">
+                    B-81, Rose Villa, Samiah Lake City, Rudrapur,<br />
+                    Kichha, Udham Singh Nagar - 263153, Uttarakhand
+                  </p>
                   <p className="text-gray-600">Email: admin@racoonn.com</p>
                   <div className="mt-3">
                     <span className="font-bold text-gray-500 uppercase tracking-wider text-[10px] block mb-1">Status</span>

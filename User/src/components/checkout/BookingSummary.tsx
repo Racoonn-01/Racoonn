@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { Star, MapPin, Calendar, Users, BedDouble, Tag, X } from "lucide-react";
+import { MapPin, Calendar, Users, BedDouble, Tag, X } from "lucide-react";
 import Image from "next/image";
 import { useCheckoutStore } from "@/store/checkoutStore";
 
@@ -18,7 +18,10 @@ export function BookingSummary({
   gstRate = 5,
   taxes = 2400,
   addons = 1500,
-  discount = 0 
+  discount = 0,
+  roomImage,
+  baseRoomAmount = 0,
+  extraGuestAmount = 0
 }: {
   roomName?: string;
   pricePerNight?: number;
@@ -34,9 +37,12 @@ export function BookingSummary({
   taxes?: number;
   addons?: number;
   discount?: number;
+  roomImage?: string;
+  baseRoomAmount?: number;
+  extraGuestAmount?: number;
 }) {
   const isPackage = roomName.startsWith('Package:') || roomName.toLowerCase().includes('package');
-  const roomPrice = isPackage ? pricePerNight : pricePerNight * nights * rooms;
+  const roomPrice = isPackage ? pricePerNight : baseRoomAmount + extraGuestAmount;
   const computedGst = Math.round((roomPrice * gstRate) / 100);
   const actualTaxes = taxes > 0 ? taxes : computedGst;
   const total = roomPrice + actualTaxes + addons - discount;
@@ -60,25 +66,20 @@ export function BookingSummary({
     <div className="bg-white rounded-xl shadow-sm border border-brand-sky overflow-hidden">
       <div className="p-6 pb-4 border-b border-brand-sky">
         <h2 className="text-xl font-poppins font-bold text-brand-navy mb-4">Booking Summary</h2>
-        <div className="flex gap-4">
-          <div className="w-24 h-24 rounded-lg overflow-hidden relative shrink-0 bg-gray-100">
+        <div className="flex gap-4 items-center">
+          <div className="w-24 h-24 rounded-lg overflow-hidden relative shrink-0 bg-gray-100 shadow-sm border border-gray-200">
             <Image 
-              src={hotelImage} 
-              alt={hotelName}
+              src={roomImage || hotelImage} 
+              alt={roomName}
               fill
               className="object-cover"
             />
           </div>
           <div className="flex-1">
-            <div className="flex items-center gap-1 mb-1">
-              {[1, 2, 3, 4, 5].map((i) => (
-                <Star key={i} className="w-3.5 h-3.5 fill-brand-coral text-brand-coral" />
-              ))}
-            </div>
-            <h3 className="font-bold text-brand-navy text-lg leading-tight mb-1">{hotelName}</h3>
-            <div className="flex items-start text-sm text-gray-500 gap-1">
-              <MapPin className="w-4 h-4 shrink-0 text-brand-coral mt-0.5" />
-              <span>{hotelLocation}</span>
+            <h3 className="font-bold text-brand-navy text-lg leading-tight mb-1.5">{roomName}</h3>
+            <div className="flex items-start text-sm text-gray-500 gap-1.5">
+              <MapPin className="w-4 h-4 shrink-0 text-brand-coral" />
+              <span className="font-medium">{hotelName}</span>
             </div>
           </div>
         </div>
@@ -102,7 +103,7 @@ export function BookingSummary({
       <div className="p-6 py-4 space-y-3 text-sm border-b border-brand-sky">
         <div className="flex justify-between items-center">
           <span className="text-gray-500 flex items-center gap-2"><Users className="w-4 h-4 text-brand-coral" /> Guests</span>
-          <span className="font-medium text-brand-navy">{guests} Guests</span>
+          <span className="font-medium text-brand-navy">{guests}</span>
         </div>
         <div className="flex justify-between items-center">
           <span className="text-gray-500 flex items-center gap-2"><BedDouble className="w-4 h-4 text-brand-coral" /> Room</span>
@@ -155,10 +156,16 @@ export function BookingSummary({
         <div className="space-y-2 mb-4 text-sm">
           <div className="flex justify-between">
             <span className="text-gray-600">
-              {isPackage ? 'Package Price (Stays + Food + Activities)' : `Room Charge (₹${pricePerNight.toLocaleString('en-IN')} × ${nights} Nights)`}
+              {isPackage ? 'Package Price (Stays + Food + Activities)' : `Room Charge (₹${pricePerNight.toLocaleString('en-IN')} × ${rooms > 1 ? `${rooms} Rooms × ` : ''}${nights} Nights)`}
             </span>
-            <span className="font-medium text-brand-navy">₹{roomPrice.toLocaleString('en-IN')}</span>
+            <span className="font-medium text-brand-navy">₹{isPackage ? roomPrice.toLocaleString('en-IN') : baseRoomAmount.toLocaleString('en-IN')}</span>
           </div>
+          {!isPackage && extraGuestAmount > 0 && (
+            <div className="flex justify-between text-brand-coral">
+              <span className="text-gray-600">Extra Bed Charges</span>
+              <span className="font-medium">₹{extraGuestAmount.toLocaleString('en-IN')}</span>
+            </div>
+          )}
           <div className="flex justify-between">
             <span className="text-gray-600">Add-On Services</span>
             <span className="font-medium text-brand-navy">₹{addons.toLocaleString('en-IN')}</span>

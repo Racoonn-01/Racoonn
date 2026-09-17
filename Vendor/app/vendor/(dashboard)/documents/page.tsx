@@ -465,7 +465,7 @@ export default function DocumentsPage() {
                     <div className="flex items-center gap-3 shrink-0">
                       {isUploading ? (
                         <Button disabled size="sm" className="h-10 px-5 rounded-xl bg-slate-100 text-slate-600 font-bold gap-2">
-                          <Loader2 className="w-4 h-4 animate-spin text-[#E86A70]" /> Uploading...
+                          <Loader2 className="w-4 h-4 animate-spin text-brand-coral" /> Uploading...
                         </Button>
                       ) : doc.fileName ? (
                         <>
@@ -494,7 +494,7 @@ export default function DocumentsPage() {
                         <Button 
                           onClick={() => handleTriggerUpload(doc.id)}
                           size="sm" 
-                          className="h-10 px-6 rounded-xl bg-[#E86A70] hover:bg-[#E86A70]/90 text-white font-bold shadow-md shadow-[#E86A70]/20 transition-all hover:-translate-y-0.5 cursor-pointer gap-2"
+                          className="h-10 px-6 rounded-xl bg-brand-coral hover:bg-brand-coral/90 text-white font-bold shadow-md shadow-brand-coral/20 transition-all hover:-translate-y-0.5 cursor-pointer gap-2"
                         >
                           <UploadCloud className="w-4 h-4" /> Upload
                         </Button>
@@ -576,7 +576,7 @@ export default function DocumentsPage() {
               </div>
             ) : (
               <div className="h-full w-full flex flex-col items-center justify-center text-slate-400 p-8 text-center">
-                <div className="h-20 w-20 rounded-full bg-white flex items-center justify-center mb-4 shadow-sm border border-slate-200 text-[#E86A70]">
+                <div className="h-20 w-20 rounded-full bg-white flex items-center justify-center mb-4 shadow-sm border border-slate-200 text-brand-coral">
                   <FileText className="h-9 w-9" />
                 </div>
                 <h3 className="text-base font-bold text-secondary mb-1">Document Verified</h3>

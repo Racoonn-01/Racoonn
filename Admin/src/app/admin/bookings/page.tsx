@@ -1,15 +1,22 @@
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
+import { motion, AnimatePresence } from "framer-motion"
+import * as XLSX from "xlsx"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
   Dialog,
   DialogContent,
 } from "@/components/ui/dialog"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Calendar as CustomCalendar } from "@/components/ui/calendar"
+import { format } from "date-fns"
+import { DateRange } from "react-day-picker"
 import {
   Search,
   Eye,
@@ -59,6 +66,7 @@ export type BookingData = {
 
 export default function BookingsPage() {
   const [activeTab, setActiveTab] = useState("all")
+  const [timeFilter, setTimeFilter] = useState("Today")
   const [bookings, setBookings] = useState<BookingData[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
@@ -66,6 +74,11 @@ export default function BookingsPage() {
   // Modal State for Booking Details Popup
   const [selectedBooking, setSelectedBooking] = useState<BookingData | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
+
+  // Export Data State
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false)
+  const [dateRange, setDateRange] = useState<DateRange | undefined>()
+  const [exportError, setExportError] = useState("")
 
   useEffect(() => {
     async function loadBookings() {
@@ -81,13 +94,41 @@ export default function BookingsPage() {
     loadBookings()
   }, [])
 
+  const timeFilteredBookings = useMemo(() => {
+    if (timeFilter === "Lifetime") return bookings;
+
+    const now = new Date();
+    const todayStr = now.toISOString().split('T')[0];
+
+    return bookings.filter(b => {
+      const bookedDate = new Date(b.bookedAt);
+      
+      if (timeFilter === "Today") {
+        return b.bookedAt === todayStr;
+      }
+      if (timeFilter === "Weekly") {
+        const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        return bookedDate >= oneWeekAgo;
+      }
+      if (timeFilter === "Monthly") {
+        const oneMonthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        return bookedDate >= oneMonthAgo;
+      }
+      if (timeFilter === "Yearly") {
+        const oneYearAgo = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
+        return bookedDate >= oneYearAgo;
+      }
+      return true;
+    });
+  }, [bookings, timeFilter]);
+
   const stats = useMemo(() => {
     let totalRevenue = 0;
     let confirmed = 0;
     let pending = 0;
     let cancelled = 0;
     
-    bookings.forEach(b => {
+    timeFilteredBookings.forEach(b => {
       if (b.status === 'confirmed' || b.status === 'completed') {
         const numStr = b.amount.replace(/[^0-9]/g, '');
         totalRevenue += parseInt(numStr, 10) || 0;
@@ -100,9 +141,9 @@ export default function BookingsPage() {
     });
 
     return { totalRevenue, confirmed, pending, cancelled };
-  }, [bookings])
+  }, [timeFilteredBookings])
 
-  const filteredBookings = bookings.filter(b => {
+  const filteredBookings = timeFilteredBookings.filter(b => {
     const matchesSearch = 
       b.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
       b.customer.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -125,6 +166,49 @@ export default function BookingsPage() {
     return cleaned === "None" ? "" : cleaned;
   }
 
+  const handleExportExcel = () => {
+    if (!dateRange?.from || !dateRange?.to) {
+      setExportError("Please select both a start and end date.");
+      return;
+    }
+
+    const start = new Date(dateRange.from);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(dateRange.to);
+    end.setHours(23, 59, 59, 999);
+
+    const exportData = bookings.filter(b => {
+      const bDate = new Date(b.bookedAt);
+      return bDate >= start && bDate <= end;
+    });
+
+    if (exportData.length === 0) {
+      setExportError("You don't have any bookings on these dates.");
+      return;
+    }
+
+    setExportError("");
+
+    const ws = XLSX.utils.json_to_sheet(exportData.map(b => ({
+      "Booking ID": b.id,
+      "Customer": b.customer,
+      "Email": b.guestEmail,
+      "Phone": b.guestPhone,
+      "Property": b.property,
+      "Location": b.hotelLocation,
+      "Amount": b.amount,
+      "Status": b.status,
+      "Check In": b.checkIn,
+      "Check Out": b.checkOut,
+      "Booked At": b.bookedAt
+    })));
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Bookings");
+    XLSX.writeFile(wb, `Racoonn_Bookings_${format(start, "yyyy-MM-dd")}_to_${format(end, "yyyy-MM-dd")}.xlsx`);
+    setIsExportModalOpen(false);
+  }
+
   return (
     <div className="space-y-8 pb-8">
       {/* Header Section */}
@@ -133,9 +217,54 @@ export default function BookingsPage() {
           <h2 className="text-3xl font-black tracking-tight text-foreground">Booking Management</h2>
           <p className="text-muted-foreground mt-1 text-lg">Track and manage all reservations across your platform.</p>
         </div>
-        <Button className="h-11 px-6 rounded-full shadow-lg hover:shadow-xl transition-all border-primary/20 bg-background text-foreground hover:bg-muted" variant="outline">
-          <Download className="mr-2 h-5 w-5" /> Export Data
-        </Button>
+        <Popover open={isExportModalOpen} onOpenChange={setIsExportModalOpen}>
+          <PopoverTrigger render={
+            <Button 
+              className="h-11 px-6 rounded-full shadow-lg hover:shadow-xl transition-all border-primary/20 bg-background text-foreground hover:bg-muted" 
+              variant="outline"
+            />
+          }>
+            <Download className="mr-2 h-5 w-5" /> Export Data
+          </PopoverTrigger>
+          <PopoverContent align="end" className="w-auto p-4 space-y-4">
+            <div className="flex flex-col space-y-1.5">
+              <h3 className="font-semibold text-lg leading-none tracking-tight">Export Bookings</h3>
+              <p className="text-sm text-muted-foreground">Select a date range to export.</p>
+            </div>
+            
+            <div className="rounded-md border bg-card">
+              <CustomCalendar
+                initialFocus
+                mode="range"
+                defaultMonth={dateRange?.from}
+                selected={dateRange}
+                onSelect={(range) => {
+                  setDateRange(range);
+                  setExportError("");
+                }}
+                numberOfMonths={2}
+              />
+            </div>
+
+            <AnimatePresence>
+              {exportError && (
+                <motion.p 
+                  initial={{ opacity: 0, y: -5, height: 0 }}
+                  animate={{ opacity: 1, y: 0, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="text-sm font-medium text-destructive mt-1"
+                >
+                  {exportError}
+                </motion.p>
+              )}
+            </AnimatePresence>
+
+            <div className="flex justify-end gap-2 pt-2 border-t mt-2">
+              <Button variant="ghost" onClick={() => setIsExportModalOpen(false)}>Cancel</Button>
+              <Button onClick={handleExportExcel} className="bg-primary text-primary-foreground">Download Excel</Button>
+            </div>
+          </PopoverContent>
+        </Popover>
       </div>
 
       {/* KPI Cards */}
@@ -145,7 +274,7 @@ export default function BookingsPage() {
             <div className="flex justify-between items-start">
               <div className="space-y-2">
                 <p className="text-sm font-medium text-muted-foreground">Total Revenue</p>
-                <p className="text-3xl font-bold">₹{(stats.totalRevenue / 1000).toFixed(1)}k</p>
+                <p className="text-3xl font-bold">₹{stats.totalRevenue.toLocaleString("en-IN")}</p>
               </div>
               <div className="p-3 bg-emerald-500/10 rounded-xl">
                 <DollarSign className="h-5 w-5 text-emerald-500" />
@@ -241,9 +370,20 @@ export default function BookingsPage() {
                 </button>
               ))}
             </div>
-            <Button variant="outline" size="sm" className="h-9 rounded-full border-muted-foreground/20">
-              <Filter className="mr-2 h-4 w-4" /> Filters
-            </Button>
+            
+            <Select value={timeFilter} onValueChange={(val) => val && setTimeFilter(val)}>
+              <SelectTrigger className="h-9 rounded-full border-muted-foreground/20 w-32.5 bg-background">
+                <Filter className="mr-2 h-4 w-4 text-muted-foreground" />
+                <SelectValue placeholder="Filter by time" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Today">Today</SelectItem>
+                <SelectItem value="Weekly">Weekly</SelectItem>
+                <SelectItem value="Monthly">Monthly</SelectItem>
+                <SelectItem value="Yearly">Yearly</SelectItem>
+                <SelectItem value="Lifetime">Lifetime</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
@@ -275,70 +415,76 @@ export default function BookingsPage() {
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredBookings.map((booking, index) => {
-                  const checkInDate = new Date(booking.checkIn);
-                  const checkOutDate = new Date(booking.checkOut);
-                  const datesStr = `${checkInDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric'})} - ${checkOutDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric'})}`;
-                  
-                  return (
-                    <TableRow 
-                      key={`${booking.id}-${index}`} 
-                      onClick={() => handleOpenDetails(booking)}
-                      className="group cursor-pointer hover:bg-muted/30 transition-colors"
-                    >
-                      <TableCell className="py-4">
-                        <span className="font-bold text-foreground bg-muted px-2.5 py-1 rounded-md">{booking.id}</span>
-                        <div className="text-xs text-muted-foreground mt-1.5">Booked: {booking.bookedAt}</div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex flex-col gap-1">
-                          <span className="font-semibold text-foreground">{booking.customer}</span>
-                          <span className="text-sm text-muted-foreground truncate max-w-50">{booking.property}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2 text-sm text-foreground bg-muted/30 w-fit px-3 py-1.5 rounded-lg border border-muted/50">
-                          <Calendar className="h-4 w-4 text-primary" />
-                          {datesStr}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <span className="font-semibold text-foreground text-base">{booking.amount}</span>
-                      </TableCell>
-                      <TableCell>
-                        <Badge 
-                          variant={
-                            booking.status === 'confirmed' ? 'default' : 
-                            booking.status === 'completed' ? 'secondary' : 
-                            booking.status === 'cancelled' ? 'destructive' : 'outline'
-                          }
-                          className={`
-                            px-2.5 py-0.5 rounded-full text-xs font-semibold uppercase tracking-wider
-                            ${booking.status === 'confirmed' && 'bg-blue-500/10 text-blue-600 hover:bg-blue-500/20 border-blue-500/20'}
-                            ${booking.status === 'completed' && 'bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 border-emerald-500/20'}
-                            ${booking.status === 'cancelled' && 'bg-red-500/10 text-red-600 hover:bg-red-500/20 border-red-500/20'}
-                            ${booking.status === 'pending' && 'bg-amber-500/10 text-amber-600 hover:bg-amber-500/20 border-amber-500/20'}
-                          `}
-                        >
-                          {booking.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleOpenDetails(booking);
-                          }}
-                          variant="ghost" 
-                          size="sm" 
-                          className="bg-primary/10 text-primary hover:bg-primary hover:text-white rounded-full px-4 font-semibold shadow-2xs transition-all"
-                        >
-                          <Eye className="mr-1.5 h-4 w-4" /> View Details
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })
+                <AnimatePresence mode="sync">
+                  {filteredBookings.map((booking) => {
+                    const checkInDate = new Date(booking.checkIn);
+                    const checkOutDate = new Date(booking.checkOut);
+                    const datesStr = `${checkInDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric'})} - ${checkOutDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric'})}`;
+                    
+                    return (
+                      <motion.tr 
+                        key={booking.realId}
+                        initial={{ opacity: 0, y: 5 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, transition: { duration: 0.15 } }}
+                        transition={{ duration: 0.2, ease: "easeOut" }}
+                        onClick={() => handleOpenDetails(booking)}
+                        className="group cursor-pointer border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted"
+                      >
+                        <TableCell className="py-4">
+                          <span className="font-bold text-foreground bg-muted px-2.5 py-1 rounded-md">{booking.id}</span>
+                          <div className="text-xs text-muted-foreground mt-1.5">Booked: {booking.bookedAt}</div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex flex-col gap-1">
+                            <span className="font-semibold text-foreground">{booking.customer}</span>
+                            <span className="text-sm text-muted-foreground truncate max-w-50">{booking.property}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2 text-sm text-foreground bg-muted/30 w-fit px-3 py-1.5 rounded-lg border border-muted/50">
+                            <Calendar className="h-4 w-4 text-primary" />
+                            {datesStr}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <span className="font-semibold text-foreground text-base">{booking.amount}</span>
+                        </TableCell>
+                        <TableCell>
+                          <Badge 
+                            variant={
+                              booking.status === 'confirmed' ? 'default' : 
+                              booking.status === 'completed' ? 'secondary' : 
+                              booking.status === 'cancelled' ? 'destructive' : 'outline'
+                            }
+                            className={`
+                              px-2.5 py-0.5 rounded-full text-xs font-semibold uppercase tracking-wider
+                              ${booking.status === 'confirmed' && 'bg-blue-500/10 text-blue-600 hover:bg-blue-500/20 border-blue-500/20'}
+                              ${booking.status === 'completed' && 'bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 border-emerald-500/20'}
+                              ${booking.status === 'cancelled' && 'bg-red-500/10 text-red-600 hover:bg-red-500/20 border-red-500/20'}
+                              ${booking.status === 'pending' && 'bg-amber-500/10 text-amber-600 hover:bg-amber-500/20 border-amber-500/20'}
+                            `}
+                          >
+                            {booking.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleOpenDetails(booking);
+                            }}
+                            variant="ghost" 
+                            size="sm" 
+                            className="bg-primary/10 text-primary hover:bg-primary hover:text-white rounded-full px-4 font-semibold shadow-2xs transition-all"
+                          >
+                            <Eye className="mr-1.5 h-4 w-4" /> View Details
+                          </Button>
+                        </TableCell>
+                      </motion.tr>
+                    );
+                  })}
+                </AnimatePresence>
               )}
             </TableBody>
           </Table>

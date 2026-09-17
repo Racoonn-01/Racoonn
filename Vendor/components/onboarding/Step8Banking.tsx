@@ -208,7 +208,7 @@ export function Step8Banking({ onNext, onBack }: { onNext: () => void, onBack: (
       className="flex flex-col h-full max-w-xl mx-auto w-full pt-8"
     >
       <motion.div variants={slideUp} className="mb-8">
-        <h1 className="text-3xl md:text-4xl font-black text-[#1F2E4A] mb-3 font-['Poppins',sans-serif]">Receive your payouts</h1>
+        <h1 className="text-3xl md:text-4xl font-black text-brand-navy mb-3 font-['Poppins',sans-serif]">Receive your payouts</h1>
         <p className="text-slate-500 font-medium">Add the bank account where you want to receive your earnings. This must match your business name.</p>
       </motion.div>
 
@@ -230,7 +230,7 @@ export function Step8Banking({ onNext, onBack }: { onNext: () => void, onBack: (
             className={cn(
               "flex-1 py-3 px-4 rounded-xl border-2 font-bold text-sm transition-all",
               payoutMethod === "bank" 
-                ? "border-[#1F2E4A] bg-[#1F2E4A] text-white shadow-md shadow-[#1F2E4A]/20" 
+                ? "border-brand-navy bg-brand-navy text-white shadow-md shadow-brand-navy/20" 
                 : "border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:bg-slate-50"
             )}
           >
@@ -241,7 +241,7 @@ export function Step8Banking({ onNext, onBack }: { onNext: () => void, onBack: (
             className={cn(
               "flex-1 py-3 px-4 rounded-xl border-2 font-bold text-sm transition-all",
               payoutMethod === "upi" 
-                ? "border-[#1F2E4A] bg-[#1F2E4A] text-white shadow-md shadow-[#1F2E4A]/20" 
+                ? "border-brand-navy bg-brand-navy text-white shadow-md shadow-brand-navy/20" 
                 : "border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:bg-slate-50"
             )}
           >
@@ -256,7 +256,7 @@ export function Step8Banking({ onNext, onBack }: { onNext: () => void, onBack: (
               <Input 
                 value={accountHolder}
                 onChange={(e) => setAccountHolder(e.target.value)}
-                className="h-12 rounded-xl border-slate-200 bg-white focus:ring-2 focus:ring-[#E86A70]/20 focus:border-[#E86A70] transition-all font-bold" 
+                className="h-12 rounded-xl border-slate-200 bg-white focus:ring-2 focus:ring-brand-coral/20 focus:border-brand-coral transition-all font-bold" 
                 placeholder="Racoonn Hospitality Pvt Ltd" 
               />
             </div>
@@ -268,7 +268,7 @@ export function Step8Banking({ onNext, onBack }: { onNext: () => void, onBack: (
                 <Input 
                   value={accountNumber}
                   onChange={(e) => setAccountNumber(e.target.value)}
-                  className="h-12 pl-10 rounded-xl border-slate-200 bg-white focus:ring-2 focus:ring-[#E86A70]/20 focus:border-[#E86A70] transition-all font-bold tracking-widest" 
+                  className="h-12 pl-10 rounded-xl border-slate-200 bg-white focus:ring-2 focus:ring-brand-coral/20 focus:border-brand-coral transition-all font-bold tracking-widest" 
                   placeholder="•••• •••• •••• 1234" 
                 />
               </div>
@@ -280,14 +280,14 @@ export function Step8Banking({ onNext, onBack }: { onNext: () => void, onBack: (
                 <Input 
                   value={ifsc}
                   onChange={(e) => setIfsc(e.target.value)}
-                  className="h-12 rounded-xl border-slate-200 bg-white focus:ring-2 focus:ring-[#E86A70]/20 focus:border-[#E86A70] transition-all font-bold uppercase" 
+                  className="h-12 rounded-xl border-slate-200 bg-white focus:ring-2 focus:ring-brand-coral/20 focus:border-brand-coral transition-all font-bold uppercase" 
                   placeholder="HDFC0001234" 
                 />
               </div>
               <div className="space-y-2">
                 <label className="text-xs font-bold text-slate-700 uppercase tracking-wide">Bank Name</label>
                 <Select value={bankName} onValueChange={(val) => val && setBankName(val)}>
-                  <SelectTrigger className="h-12 rounded-xl border-slate-200 bg-white focus:ring-2 focus:ring-[#E86A70]/20 focus:border-[#E86A70] transition-all font-bold">
+                  <SelectTrigger className="h-12 rounded-xl border-slate-200 bg-white focus:ring-2 focus:ring-brand-coral/20 focus:border-brand-coral transition-all font-bold">
                     <SelectValue placeholder="Select bank" />
                   </SelectTrigger>
                   <SelectContent className="max-h-75" alignItemWithTrigger={false}>
@@ -331,7 +331,7 @@ export function Step8Banking({ onNext, onBack }: { onNext: () => void, onBack: (
                   <label className="text-xs font-bold text-slate-700 uppercase tracking-wide flex items-center gap-2">
                     <Building className="w-3 h-3" /> Specific Bank Name
                   </label>
-                  <Input className="h-12 rounded-xl border-slate-200 bg-white focus:ring-2 focus:ring-[#E86A70]/20 focus:border-[#E86A70] transition-all font-bold" placeholder="e.g. Saraswat Bank" />
+                  <Input className="h-12 rounded-xl border-slate-200 bg-white focus:ring-2 focus:ring-brand-coral/20 focus:border-brand-coral transition-all font-bold" placeholder="e.g. Saraswat Bank" />
                 </div>
               )}
             </div>
@@ -371,7 +371,7 @@ export function Step8Banking({ onNext, onBack }: { onNext: () => void, onBack: (
               <Input 
                 value={upiId}
                 onChange={(e) => setUpiId(e.target.value)}
-                className="h-12 rounded-xl border-slate-200 bg-white focus:ring-2 focus:ring-[#E86A70]/20 focus:border-[#E86A70] transition-all font-bold" 
+                className="h-12 rounded-xl border-slate-200 bg-white focus:ring-2 focus:ring-brand-coral/20 focus:border-brand-coral transition-all font-bold" 
                 placeholder="yourbusiness@okaxis" 
               />
               <p className="text-xs text-slate-500 font-medium pt-1">Enter your business UPI ID. Payouts are transferred instantly.</p>
@@ -385,7 +385,7 @@ export function Step8Banking({ onNext, onBack }: { onNext: () => void, onBack: (
         <Button onClick={handleBackClick} variant="ghost" className="text-slate-500 font-bold hover:bg-slate-100 rounded-full px-6">
           <ArrowLeft className="mr-2 w-4 h-4" /> Back
         </Button>
-        <Button onClick={handleNextClick} className="bg-[#1F2E4A] hover:bg-[#151E2D] text-white rounded-full px-8 h-12 font-bold shadow-lg shadow-[#1F2E4A]/20 transition-all">
+        <Button onClick={handleNextClick} className="bg-brand-navy hover:bg-[#151E2D] text-white rounded-full px-8 h-12 font-bold shadow-lg shadow-brand-navy/20 transition-all">
           KYC & Review <ArrowRight className="ml-2 w-4 h-4" />
         </Button>
       </motion.div>

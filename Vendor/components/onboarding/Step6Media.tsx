@@ -113,21 +113,21 @@ export function Step6Media({ onNext, onBack }: { onNext: () => void, onBack: () 
       className="flex flex-col h-full max-w-xl mx-auto w-full pt-8"
     >
       <motion.div variants={slideUp} className="mb-8">
-        <h1 className="text-3xl md:text-4xl font-black text-[#1F2E4A] mb-3 font-['Poppins',sans-serif]">Showcase your property</h1>
+        <h1 className="text-3xl md:text-4xl font-black text-brand-navy mb-3 font-['Poppins',sans-serif]">Showcase your property</h1>
         <p className="text-slate-500 font-medium">Great photos are the #1 reason guests book. Upload high-quality images of your rooms, amenities, and exterior.</p>
       </motion.div>
 
       <motion.div variants={slideUp} className="space-y-6">
         
         {/* Drag and Drop Zone */}
-        <div className="border-2 border-dashed border-[#E86A70]/50 bg-[#E86A70]/5 rounded-3xl p-10 text-center hover:bg-[#E86A70]/10 transition-colors cursor-pointer group relative overflow-hidden">
+        <div className="border-2 border-dashed border-brand-coral/50 bg-brand-coral/5 rounded-3xl p-10 text-center hover:bg-brand-coral/10 transition-colors cursor-pointer group relative overflow-hidden">
           <input type="file" multiple accept="image/*" onChange={handlePhotoUpload} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
-          <div className="absolute top-0 right-0 w-32 h-32 bg-[#E86A70]/20 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2" />
+          <div className="absolute top-0 right-0 w-32 h-32 bg-brand-coral/20 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2" />
           
-          <div className="w-20 h-20 bg-white shadow-xl shadow-rose-500/10 text-[#E86A70] rounded-full flex items-center justify-center mx-auto mb-6 group-hover:-translate-y-2 transition-transform duration-300">
+          <div className="w-20 h-20 bg-white shadow-xl shadow-rose-500/10 text-brand-coral rounded-full flex items-center justify-center mx-auto mb-6 group-hover:-translate-y-2 transition-transform duration-300">
             <UploadCloud className="w-10 h-10" />
           </div>
-          <h3 className="text-xl font-bold text-[#1F2E4A] mb-2">Drag & Drop Photos Here</h3>
+          <h3 className="text-xl font-bold text-brand-navy mb-2">Drag & Drop Photos Here</h3>
           <p className="text-sm font-medium text-slate-500 mb-6">or browse your device</p>
           
           <div className="flex justify-center gap-4 text-xs font-bold text-slate-400">
@@ -180,7 +180,7 @@ export function Step6Media({ onNext, onBack }: { onNext: () => void, onBack: () 
         <Button onClick={onBack} variant="ghost" className="text-slate-500 font-bold hover:bg-slate-100 rounded-full px-6">
           <ArrowLeft className="mr-2 w-4 h-4" /> Back
         </Button>
-        <Button onClick={onNext} disabled={uploading} className="bg-[#1F2E4A] hover:bg-[#151E2D] text-white rounded-full px-8 h-12 font-bold shadow-lg shadow-[#1F2E4A]/20 transition-all">
+        <Button onClick={onNext} disabled={uploading} className="bg-brand-navy hover:bg-[#151E2D] text-white rounded-full px-8 h-12 font-bold shadow-lg shadow-brand-navy/20 transition-all">
           {uploading ? (
             <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Uploading...</>
           ) : (

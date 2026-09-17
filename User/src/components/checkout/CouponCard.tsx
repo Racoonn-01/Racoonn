@@ -15,8 +15,8 @@ export function CouponCard() {
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-[#DCE8F5] p-6 md:p-8">
-      <h2 className="text-xl font-poppins font-bold text-[#1F2E4A] mb-4 flex items-center gap-2">
-        <Tag className="w-5 h-5 text-[#E86A70]" /> Have a Promo Code?
+      <h2 className="text-xl font-poppins font-bold text-brand-navy mb-4 flex items-center gap-2">
+        <Tag className="w-5 h-5 text-brand-coral" /> Have a Promo Code?
       </h2>
 
       <div className="flex flex-col sm:flex-row gap-3">
@@ -29,7 +29,7 @@ export function CouponCard() {
               setCode(e.target.value.toUpperCase());
               if (applied) setApplied(false);
             }}
-            className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#E86A70] focus:border-[#E86A70] outline-none transition-all uppercase font-medium placeholder:font-normal placeholder:normal-case" 
+            className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-brand-coral focus:border-brand-coral outline-none transition-all uppercase font-medium placeholder:font-normal placeholder:normal-case" 
           />
         </div>
         <button 
@@ -38,7 +38,7 @@ export function CouponCard() {
           className={`px-6 py-3 rounded-lg font-medium transition-all ${
             applied 
               ? "bg-green-500 text-white cursor-default" 
-              : "bg-[#1F2E4A] hover:bg-[#1F2E4A]/90 text-white"
+              : "bg-brand-navy hover:bg-brand-navy/90 text-white"
           }`}
         >
           {applied ? "Applied" : "Apply"}

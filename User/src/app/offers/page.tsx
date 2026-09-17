@@ -86,7 +86,7 @@ export default function SpecialOffersPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-10">
             {offers.map((offer) => (
-              <div key={offer.$id} className="bg-white rounded-[24px] overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 group flex flex-col sm:flex-row">
+              <div key={offer.$id} className="bg-white rounded-3xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 group flex flex-col sm:flex-row">
                 {/* Image Section */}
                 <div className="relative w-full sm:w-2/5 h-64 sm:h-auto overflow-hidden bg-gray-100 shrink-0">
                   {offer.image && (

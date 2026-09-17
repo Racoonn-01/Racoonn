@@ -106,7 +106,7 @@ export function Step7Amenities({ onNext, onBack }: { onNext: () => void, onBack:
       className="flex flex-col h-full max-w-xl mx-auto w-full pt-8"
     >
       <motion.div variants={slideUp} className="mb-8">
-        <h1 className="text-3xl md:text-4xl font-black text-[#1F2E4A] mb-3 font-['Poppins',sans-serif]">What amenities do you offer?</h1>
+        <h1 className="text-3xl md:text-4xl font-black text-brand-navy mb-3 font-['Poppins',sans-serif]">What amenities do you offer?</h1>
         <p className="text-slate-500 font-medium">Select the amenities available at your property and define your house rules.</p>
       </motion.div>
 
@@ -124,12 +124,12 @@ export function Step7Amenities({ onNext, onBack }: { onNext: () => void, onBack:
                   className={cn(
                     "flex flex-col items-center justify-center p-4 rounded-2xl border-2 transition-all duration-300 gap-2",
                     isSelected 
-                      ? "border-[#E86A70] bg-[#E86A70]/5 shadow-sm" 
+                      ? "border-brand-coral bg-brand-coral/5 shadow-sm" 
                       : "border-slate-100 bg-white hover:border-slate-200"
                   )}
                 >
-                  <amenity.icon className={cn("w-6 h-6", isSelected ? "text-[#E86A70]" : "text-slate-400")} />
-                  <span className={cn("text-xs font-bold text-center", isSelected ? "text-[#1F2E4A]" : "text-slate-500")}>
+                  <amenity.icon className={cn("w-6 h-6", isSelected ? "text-brand-coral" : "text-slate-400")} />
+                  <span className={cn("text-xs font-bold text-center", isSelected ? "text-brand-navy" : "text-slate-500")}>
                     {amenity.name}
                   </span>
                 </button>
@@ -147,7 +147,7 @@ export function Step7Amenities({ onNext, onBack }: { onNext: () => void, onBack:
               <select 
                 value={checkIn}
                 onChange={(e) => setCheckIn(e.target.value)}
-                className="w-full h-12 rounded-xl border border-slate-200 bg-white px-4 font-bold text-slate-700 outline-none focus:border-[#E86A70]"
+                className="w-full h-12 rounded-xl border border-slate-200 bg-white px-4 font-bold text-slate-700 outline-none focus:border-brand-coral"
               >
                 <option>12:00 PM</option>
                 <option>1:00 PM</option>
@@ -160,7 +160,7 @@ export function Step7Amenities({ onNext, onBack }: { onNext: () => void, onBack:
               <select 
                 value={checkOut}
                 onChange={(e) => setCheckOut(e.target.value)}
-                className="w-full h-12 rounded-xl border border-slate-200 bg-white px-4 font-bold text-slate-700 outline-none focus:border-[#E86A70]"
+                className="w-full h-12 rounded-xl border border-slate-200 bg-white px-4 font-bold text-slate-700 outline-none focus:border-brand-coral"
               >
                 <option>10:00 AM</option>
                 <option>11:00 AM</option>
@@ -174,7 +174,7 @@ export function Step7Amenities({ onNext, onBack }: { onNext: () => void, onBack:
             <select 
               value={cancellationPolicy}
               onChange={(e) => setCancellationPolicy(e.target.value)}
-              className="w-full h-12 rounded-xl border border-slate-200 bg-white px-4 font-bold text-slate-700 outline-none focus:border-[#E86A70]"
+              className="w-full h-12 rounded-xl border border-slate-200 bg-white px-4 font-bold text-slate-700 outline-none focus:border-brand-coral"
             >
               <option>Flexible (Full refund 1 day prior)</option>
               <option>Moderate (Full refund 5 days prior)</option>
@@ -190,7 +190,7 @@ export function Step7Amenities({ onNext, onBack }: { onNext: () => void, onBack:
         <Button onClick={handleBackClick} variant="ghost" className="text-slate-500 font-bold hover:bg-slate-100 rounded-full px-6">
           <ArrowLeft className="mr-2 w-4 h-4" /> Back
         </Button>
-        <Button disabled={isLoading} onClick={handleNextClick} className="bg-[#1F2E4A] hover:bg-[#151E2D] text-white rounded-full px-8 h-12 font-bold shadow-lg shadow-[#1F2E4A]/20 transition-all">
+        <Button disabled={isLoading} onClick={handleNextClick} className="bg-brand-navy hover:bg-[#151E2D] text-white rounded-full px-8 h-12 font-bold shadow-lg shadow-brand-navy/20 transition-all">
           {isLoading ? "Saving..." : <>Bank Details <ArrowRight className="ml-2 w-4 h-4" /></>}
         </Button>
       </motion.div>

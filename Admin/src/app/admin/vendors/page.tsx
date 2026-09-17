@@ -89,7 +89,8 @@ export default async function VendorsPage() {
         properties: vendorPropertiesMap[vendor.$id] || 0,
         revenue: formatCurrency(vendorRevenueMap[vendor.$id] || 0),
         status: vendor.status || "Pending",
-        joined: vendor.$createdAt
+        joined: vendor.$createdAt,
+        allow24PercentGst: vendor.allow24PercentGst || false
       };
     });
 

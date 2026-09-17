@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, Mail, Phone, ExternalLink, Users, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { databases, appwriteConfig } from "@/lib/appwrite/client";
@@ -24,6 +25,7 @@ export default function GuestsPage() {
   const { user } = useAuthStore();
   const [guests, setGuests] = useState<GuestProfile[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [dateFilter, setDateFilter] = useState("Lifetime");
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -154,12 +156,32 @@ export default function GuestsPage() {
   }, [user]);
 
   const filteredGuests = useMemo(() => {
-    return guests.filter(g => 
-      g.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      g.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      g.phone.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-  }, [guests, searchQuery]);
+    return guests.filter(g => {
+      const matchesSearch = 
+        g.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        g.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        g.phone.toLowerCase().includes(searchQuery.toLowerCase());
+        
+      if (!matchesSearch) return false;
+      
+      const lastVisitDate = new Date(g.lastVisit);
+      const now = new Date();
+      
+      if (dateFilter === "Today") {
+        return lastVisitDate.toDateString() === now.toDateString();
+      } else if (dateFilter === "Weekly") {
+        const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        return lastVisitDate >= weekAgo;
+      } else if (dateFilter === "Monthly") {
+        const monthAgo = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
+        return lastVisitDate >= monthAgo;
+      } else if (dateFilter === "Yearly") {
+        const yearAgo = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
+        return lastVisitDate >= yearAgo;
+      }
+      return true;
+    });
+  }, [guests, searchQuery, dateFilter]);
 
   return (
     <div className="space-y-6">
@@ -171,7 +193,7 @@ export default function GuestsPage() {
       </div>
 
       <Card className="border-0 shadow-sm ring-1 ring-slate-100 rounded-xl bg-white overflow-hidden">
-        <div className="p-4 border-b border-slate-100 flex items-center bg-slate-50/50">
+        <div className="p-4 border-b border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4 bg-slate-50/50">
           <div className="relative w-full max-w-sm">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
             <Input 
@@ -181,11 +203,25 @@ export default function GuestsPage() {
               className="pl-9 bg-white border-slate-200 text-sm font-medium"
             />
           </div>
+          <div className="w-full sm:w-48">
+            <Select value={dateFilter} onValueChange={(val: string | null) => setDateFilter(val || "Lifetime")}>
+              <SelectTrigger className="bg-white border-slate-200 text-sm font-medium">
+                <SelectValue placeholder="Filter by date" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Today">Today</SelectItem>
+                <SelectItem value="Weekly">Weekly</SelectItem>
+                <SelectItem value="Monthly">Monthly</SelectItem>
+                <SelectItem value="Yearly">Yearly</SelectItem>
+                <SelectItem value="Lifetime">Lifetime</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
         <CardContent className="p-0 overflow-x-auto">
           {isLoading ? (
             <div className="flex items-center justify-center p-16">
-              <Loader2 className="w-8 h-8 animate-spin text-[#E86A70]" />
+              <Loader2 className="w-8 h-8 animate-spin text-brand-coral" />
             </div>
           ) : (
             <table className="w-full text-left border-collapse">

@@ -35,9 +35,9 @@ export function DashboardPreviewSection() {
                     initial={{ height: 0 }}
                     whileInView={{ height: `${h}%` }}
                     transition={{ duration: 1, delay: 0.5 + (i * 0.1), ease: "easeOut" }}
-                    className="flex-1 bg-gradient-to-t from-[#E86A70]/80 to-[#E86A70] rounded-t-md relative group cursor-pointer"
+                    className="flex-1 bg-gradient-to-t from-brand-coral/80 to-brand-coral rounded-t-md relative group cursor-pointer"
                   >
-                    <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-[#1F2E4A] text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+                    <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-brand-navy text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
                       ${h * 120}
                     </div>
                   </motion.div>

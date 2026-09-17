@@ -45,7 +45,7 @@ const AuthModal = ({ children }: { children: React.ReactElement }) => {
                 <input 
                   type="text" 
                   placeholder="Jane" 
-                  className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50/50 focus:bg-white focus:outline-none focus:border-[#E86A70] focus:ring-4 focus:ring-[#E86A70]/10 transition-all text-[15px]"
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50/50 focus:bg-white focus:outline-none focus:border-brand-coral focus:ring-4 focus:ring-brand-coral/10 transition-all text-[15px]"
                 />
               </div>
               <div className="space-y-1.5">
@@ -53,7 +53,7 @@ const AuthModal = ({ children }: { children: React.ReactElement }) => {
                 <input 
                   type="text" 
                   placeholder="Smith" 
-                  className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50/50 focus:bg-white focus:outline-none focus:border-[#E86A70] focus:ring-4 focus:ring-[#E86A70]/10 transition-all text-[15px]"
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50/50 focus:bg-white focus:outline-none focus:border-brand-coral focus:ring-4 focus:ring-brand-coral/10 transition-all text-[15px]"
                 />
               </div>
             </div>
@@ -64,7 +64,7 @@ const AuthModal = ({ children }: { children: React.ReactElement }) => {
             <input 
               type="email" 
               placeholder="host@example.com" 
-              className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50/50 focus:bg-white focus:outline-none focus:border-[#E86A70] focus:ring-4 focus:ring-[#E86A70]/10 transition-all text-[15px]"
+              className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50/50 focus:bg-white focus:outline-none focus:border-brand-coral focus:ring-4 focus:ring-brand-coral/10 transition-all text-[15px]"
             />
           </div>
           
@@ -73,7 +73,7 @@ const AuthModal = ({ children }: { children: React.ReactElement }) => {
               <div className="flex items-center justify-between">
                 <label className="block text-[12px] font-semibold text-slate-700 uppercase tracking-wide">Password</label>
                 {view === 'signin' && (
-                  <button type="button" onClick={() => setView('forgot')} className="text-[12px] font-bold text-[#E86A70] hover:text-rose-500 transition-colors">
+                  <button type="button" onClick={() => setView('forgot')} className="text-[12px] font-bold text-brand-coral hover:text-rose-500 transition-colors">
                     Forgot password?
                   </button>
                 )}
@@ -81,7 +81,7 @@ const AuthModal = ({ children }: { children: React.ReactElement }) => {
               <input 
                 type="password" 
                 placeholder="••••••••" 
-                className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50/50 focus:bg-white focus:outline-none focus:border-[#E86A70] focus:ring-4 focus:ring-[#E86A70]/10 transition-all text-[15px] tracking-widest"
+                className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50/50 focus:bg-white focus:outline-none focus:border-brand-coral focus:ring-4 focus:ring-brand-coral/10 transition-all text-[15px] tracking-widest"
               />
             </div>
           )}
@@ -124,7 +124,7 @@ const AuthModal = ({ children }: { children: React.ReactElement }) => {
           ) : view === 'signup' ? (
             <p className="text-slate-500">
               Already have an account?{' '}
-              <button onClick={() => setView('signin')} className="text-secondary font-bold hover:text-[#E86A70] transition-colors underline-offset-4 hover:underline">
+              <button onClick={() => setView('signin')} className="text-secondary font-bold hover:text-brand-coral transition-colors underline-offset-4 hover:underline">
                 Sign in
               </button>
             </p>
@@ -225,7 +225,7 @@ export function LandingNavbar() {
           ))}
           <div className="flex flex-col gap-3 mt-2">
             <AuthModal>
-              <Button className="w-full bg-[#E86A70] hover:bg-[#E86A70]/90 text-white font-bold rounded-xl" onClick={() => setMobileMenuOpen(false)}>
+              <Button className="w-full bg-brand-coral hover:bg-brand-coral/90 text-white font-bold rounded-xl" onClick={() => setMobileMenuOpen(false)}>
                 Sign in
               </Button>
             </AuthModal>

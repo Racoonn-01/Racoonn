@@ -218,7 +218,6 @@ export default function SupportPage() {
           <h2 className="text-3xl font-bold tracking-tight">Support Center</h2>
           <p className="text-muted-foreground mt-1">Manage customer and vendor support tickets and queries.</p>
         </div>
-        <Button>Create Ticket</Button>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">

@@ -40,19 +40,6 @@ export default function HelpPage() {
             Search our knowledge base or browse categories below to find the answers you need for a seamless travel experience.
           </p>
           
-          <div className="max-w-3xl mx-auto relative group">
-            <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
-              <Search className="text-brand-navy/50 w-6 h-6" />
-            </div>
-            <input 
-              type="text" 
-              placeholder="Search for articles, questions, or topics..." 
-              className="w-full pl-14 pr-6 py-5 rounded-2xl text-lg bg-white border-2 border-transparent focus:border-brand-coral focus:outline-none focus:ring-4 focus:ring-brand-coral/20 transition-all shadow-xl"
-            />
-            <button className="absolute inset-y-2 right-2 bg-brand-coral hover:bg-[#d95d63] text-white px-8 rounded-xl font-semibold transition-colors">
-              Search
-            </button>
-          </div>
         </div>
       </section>
 

@@ -7,7 +7,8 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { MessageSquare, Star, AlertTriangle, CheckCircle2, Loader2, Calendar, Filter } from "lucide-react"
+import { Input } from "@/components/ui/input"
+import { MessageSquare, Star, AlertTriangle, CheckCircle2, Loader2, Calendar, Filter, Search } from "lucide-react"
 import { getAllReviews } from "./actions"
 
 export type ReviewData = {
@@ -26,8 +27,8 @@ export default function ReviewsPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [selectedReview, setSelectedReview] = useState<ReviewData | null>(null)
   
-  const [propertyFilter, setPropertyFilter] = useState<string>("all")
   const [ratingFilter, setRatingFilter] = useState<string>("all")
+  const [searchQuery, setSearchQuery] = useState("")
 
   useEffect(() => {
     async function loadReviews() {
@@ -59,17 +60,13 @@ export default function ReviewsPage() {
     return { totalReviews, averageRating, flagged, autoApproved };
   }, [reviews])
 
-  const uniqueProperties = useMemo(() => {
-    return [...new Set(reviews.map(r => r.property))].sort();
-  }, [reviews])
-
   const filteredReviews = useMemo(() => {
     return reviews.filter(review => {
-      const matchProperty = propertyFilter === "all" || review.property === propertyFilter;
       const matchRating = ratingFilter === "all" || review.rating.toString() === ratingFilter;
-      return matchProperty && matchRating;
+      const matchSearch = review.property.toLowerCase().includes(searchQuery.toLowerCase());
+      return matchRating && matchSearch;
     })
-  }, [reviews, propertyFilter, ratingFilter])
+  }, [reviews, ratingFilter, searchQuery])
 
   return (
     <div className="space-y-6">
@@ -127,19 +124,15 @@ export default function ReviewsPage() {
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Recent Reviews</CardTitle>
           <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <Filter className="h-4 w-4 text-muted-foreground" />
-              <Select value={propertyFilter} onValueChange={(val) => setPropertyFilter(val ?? "all")}>
-                <SelectTrigger className="w-45">
-                  <SelectValue placeholder="All Properties" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Properties</SelectItem>
-                  {uniqueProperties.map(prop => (
-                    <SelectItem key={prop} value={prop}>{prop}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div className="relative w-64">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="search"
+                placeholder="Search by property..."
+                className="pl-9 h-9 w-full rounded-md border-input bg-background"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
             </div>
             <div className="flex items-center gap-2">
               <Select value={ratingFilter} onValueChange={(val) => setRatingFilter(val ?? "all")}>

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Share, Heart } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
+import AuthModal from '@/components/auth/AuthModal';
 
 interface PropertyHeaderActionsProps {
   propertyId: string;
@@ -12,6 +13,7 @@ interface PropertyHeaderActionsProps {
 export default function PropertyHeaderActions({ propertyId, propertyTitle }: PropertyHeaderActionsProps) {
   const { profile, toggleSavedHotel, isAuthenticated } = useAuthStore();
   const [isSharing, setIsSharing] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
   const isSaved = profile?.savedHotels?.includes(propertyId) || false;
 
@@ -43,30 +45,38 @@ export default function PropertyHeaderActions({ propertyId, propertyTitle }: Pro
 
   const handleSave = () => {
     if (!isAuthenticated) {
-      alert("Please sign in to save properties.");
+      setIsAuthModalOpen(true);
       return;
     }
     toggleSavedHotel(propertyId);
   };
 
   return (
-    <div className="flex items-center gap-4 text-[14px] md:text-[15px] font-medium">
-      <button 
-        onClick={handleShare}
-        className="flex items-center gap-2 hover:bg-gray-100 px-3 py-2 rounded-lg transition-colors"
-      >
-        <Share size={16} /> <span className="underline underline-offset-4">Share</span>
-      </button>
-      <button 
-        onClick={handleSave}
-        className="flex items-center gap-2 hover:bg-gray-100 px-3 py-2 rounded-lg transition-colors"
-      >
-        <Heart 
-          size={16} 
-          className={isSaved ? "fill-brand-coral text-brand-coral" : ""} 
-        /> 
-        <span className="underline underline-offset-4">{isSaved ? 'Saved' : 'Save'}</span>
-      </button>
-    </div>
+    <>
+      <div className="flex items-center gap-4 text-[14px] md:text-[15px] font-medium">
+        <button 
+          onClick={handleShare}
+          className="flex items-center gap-2 hover:bg-gray-100 px-3 py-2 rounded-lg transition-colors"
+        >
+          <Share size={16} /> <span className="underline underline-offset-4">Share</span>
+        </button>
+        <button 
+          onClick={handleSave}
+          className="flex items-center gap-2 hover:bg-gray-100 px-3 py-2 rounded-lg transition-colors"
+        >
+          <Heart 
+            size={16} 
+            className={isSaved ? "fill-brand-coral text-brand-coral" : ""} 
+          /> 
+          <span className="underline underline-offset-4">{isSaved ? 'Saved' : 'Save'}</span>
+        </button>
+      </div>
+
+      <AuthModal 
+        isOpen={isAuthModalOpen} 
+        onClose={() => setIsAuthModalOpen(false)} 
+        initialView="signin" 
+      />
+    </>
   );
 }

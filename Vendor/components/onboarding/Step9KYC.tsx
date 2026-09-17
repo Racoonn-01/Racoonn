@@ -12,12 +12,12 @@ import { ID } from "appwrite";
 const DocUploader = ({ title, desc, docKey, isUploaded, isUploading, onFileSelect }: { title: string, desc: string, docKey: any, isUploaded: boolean, isUploading: boolean, onFileSelect: (k: any, file: File) => void }) => (
   <div className={cn(
     "p-5 rounded-2xl border-2 transition-all duration-300 flex items-center justify-between group",
-    isUploaded ? "border-emerald-500 bg-emerald-50" : "border-slate-200 bg-white hover:border-[#E86A70]/30"
+    isUploaded ? "border-emerald-500 bg-emerald-50" : "border-slate-200 bg-white hover:border-brand-coral/30"
   )}>
     <div className="flex items-start gap-4">
       <div className={cn(
         "w-12 h-12 rounded-full flex items-center justify-center shrink-0 transition-colors",
-        isUploaded ? "bg-emerald-100 text-emerald-600" : "bg-slate-100 text-slate-500 group-hover:bg-[#E86A70]/10 group-hover:text-[#E86A70]"
+        isUploaded ? "bg-emerald-100 text-emerald-600" : "bg-slate-100 text-slate-500 group-hover:bg-brand-coral/10 group-hover:text-brand-coral"
       )}>
         {isUploading ? <Loader2 className="w-6 h-6 animate-spin" /> : isUploaded ? <CheckCircle2 className="w-6 h-6" /> : <Upload className="w-6 h-6" />}
       </div>
@@ -40,7 +40,7 @@ const DocUploader = ({ title, desc, docKey, isUploaded, isUploading, onFileSelec
           }}
         />
         <div className={cn("h-9 px-4 inline-flex items-center justify-center rounded-md text-xs font-bold border border-slate-200 shadow-sm transition-colors",
-          isUploading ? "bg-slate-100 text-slate-400 cursor-not-allowed" : "bg-white hover:border-[#E86A70] hover:text-[#E86A70] hover:bg-slate-50")}>
+          isUploading ? "bg-slate-100 text-slate-400 cursor-not-allowed" : "bg-white hover:border-brand-coral hover:text-brand-coral hover:bg-slate-50")}>
           {isUploading ? "Uploading..." : "Upload"}
         </div>
       </label>
@@ -92,12 +92,8 @@ export function Step9KYC({ onNext, onBack }: { onNext: () => void, onBack: () =>
       }
 
       if (!uploadedFileUrl) {
-         // Fallback Data URL
-         const reader = new FileReader();
-         uploadedFileUrl = await new Promise((resolve) => {
-           reader.onloadend = () => resolve(reader.result as string);
-           reader.readAsDataURL(file);
-         });
+         // Fallback to blob URL to prevent massive Base64 strings in cookies (which cause HTTP 431 errors)
+         uploadedFileUrl = URL.createObjectURL(file);
       }
 
       setDocs(prev => ({
@@ -228,7 +224,7 @@ export function Step9KYC({ onNext, onBack }: { onNext: () => void, onBack: () =>
       className="flex flex-col h-full max-w-xl mx-auto w-full pt-8"
     >
       <motion.div variants={slideUp} className="mb-8">
-        <h1 className="text-3xl md:text-4xl font-black text-[#1F2E4A] mb-3 font-['Poppins',sans-serif]">KYC Verification</h1>
+        <h1 className="text-3xl md:text-4xl font-black text-brand-navy mb-3 font-['Poppins',sans-serif]">KYC Verification</h1>
         <p className="text-slate-500 font-medium">To comply with government regulations, we need to verify the property owner and business details.</p>
       </motion.div>
 
@@ -274,7 +270,7 @@ export function Step9KYC({ onNext, onBack }: { onNext: () => void, onBack: () =>
         <Button onClick={handleBackClick} variant="ghost" disabled={isLoading} className="text-slate-500 font-bold hover:bg-slate-100 rounded-full px-6">
           <ArrowLeft className="mr-2 w-4 h-4" /> Back
         </Button>
-        <Button onClick={handleNextClick} disabled={isLoading} className="bg-[#E86A70] hover:bg-[#D55A60] text-white rounded-full px-8 h-12 font-bold shadow-lg shadow-[#E86A70]/20 transition-all">
+        <Button onClick={handleNextClick} disabled={isLoading} className="bg-brand-coral hover:bg-[#D55A60] text-white rounded-full px-8 h-12 font-bold shadow-lg shadow-brand-coral/20 transition-all">
           {isLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
           Review & Submit <ArrowRight className="ml-2 w-4 h-4" />
         </Button>

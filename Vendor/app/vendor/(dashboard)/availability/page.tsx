@@ -288,7 +288,7 @@ export default function AvailabilityPage() {
 
   // Bulk Update Form Handler
   const handleApplyBulkUpdate = async () => {
-    if (!selectedRoomId) {
+    if (!selectedRoomId || selectedRoomId === "none") {
       toast.error("Please select a room type.");
       return;
     }
@@ -316,52 +316,56 @@ export default function AvailabilityPage() {
       const parsedAvail = availableRooms !== "" ? parseInt(availableRooms) : undefined;
 
       const updated = { ...overrides };
-      if (!updated[selectedRoomId]) {
-        updated[selectedRoomId] = {};
-      }
-
+      const roomsToUpdate = selectedRoomId === "all" ? filteredRooms.map(r => r.$id) : [selectedRoomId];
       let count = 0;
-      const curr = new Date(startDate + "T00:00:00");
-      const end = new Date(endDate + "T00:00:00");
 
-      while (curr <= end) {
-        const dayName = DAY_INDEX_MAP[curr.getDay()];
-        if (selectedDays.includes(dayName)) {
-          const y = curr.getFullYear();
-          const m = String(curr.getMonth() + 1).padStart(2, '0');
-          const d = String(curr.getDate()).padStart(2, '0');
-          const key = `${y}-${m}-${d}`;
-
-          const prevOverride = updated[selectedRoomId][key] || {};
-          updated[selectedRoomId][key] = {
-            price: parsedPrice !== undefined ? parsedPrice : prevOverride.price,
-            available: parsedAvail !== undefined ? parsedAvail : prevOverride.available,
-          };
-          count++;
+      for (const roomId of roomsToUpdate) {
+        if (!updated[roomId]) {
+          updated[roomId] = {};
         }
-        curr.setDate(curr.getDate() + 1);
-      }
 
-      // Also update base room price in Appwrite database if new price is provided
-      if (parsedPrice !== undefined) {
-        try {
-          await databases.updateDocument(
-            appwriteConfig.databaseId,
-            appwriteConfig.roomCollectionId,
-            selectedRoomId,
-            { price: parsedPrice }
-          );
-          // Update local state room object
-          setRooms(prev => prev.map(r => r.$id === selectedRoomId ? { ...r, price: parsedPrice } : r));
-        } catch (dbErr) {
-          console.warn("Could not update base room price document in Appwrite:", dbErr);
+        const curr = new Date(startDate + "T00:00:00");
+        const end = new Date(endDate + "T00:00:00");
+
+        while (curr <= end) {
+          const dayName = DAY_INDEX_MAP[curr.getDay()];
+          if (selectedDays.includes(dayName)) {
+            const y = curr.getFullYear();
+            const m = String(curr.getMonth() + 1).padStart(2, '0');
+            const d = String(curr.getDate()).padStart(2, '0');
+            const key = `${y}-${m}-${d}`;
+
+            const prevOverride = updated[roomId][key] || {};
+            updated[roomId][key] = {
+              price: parsedPrice !== undefined ? parsedPrice : prevOverride.price,
+              available: parsedAvail !== undefined ? parsedAvail : prevOverride.available,
+            };
+            if (roomId === roomsToUpdate[0]) count++; // count days based on first room to avoid huge numbers
+          }
+          curr.setDate(curr.getDate() + 1);
+        }
+
+        // Also update base room price in Appwrite database if new price is provided
+        if (parsedPrice !== undefined) {
+          try {
+            await databases.updateDocument(
+              appwriteConfig.databaseId,
+              appwriteConfig.roomCollectionId,
+              roomId,
+              { price: parsedPrice }
+            );
+            // Update local state room object
+            setRooms(prev => prev.map(r => r.$id === roomId ? { ...r, price: parsedPrice } : r));
+          } catch (dbErr) {
+            console.warn(`Could not update base room price for ${roomId} in Appwrite:`, dbErr);
+          }
         }
       }
 
       saveOverridesToStorage(updated);
 
       toast.success(`Successfully applied updates for ${count} date(s)!`, {
-        description: `Updated rates & availability for ${selectedRoom?.name || 'Selected Room'}.`
+        description: `Updated rates & availability for ${roomsToUpdate.length} room(s).`
       });
 
       // Automatically focus Calendar view so vendor can review
@@ -478,19 +482,19 @@ export default function AvailabilityPage() {
           <TabsList className="bg-white border border-slate-200 p-1 rounded-2xl w-full flex-wrap sm:flex-nowrap sm:w-auto sm:inline-flex gap-1 shadow-sm mb-6 h-auto">
             <TabsTrigger 
               value="calendar" 
-              className="data-[state=active]:bg-[#E86A70] data-[state=active]:text-white data-[state=active]:shadow-md text-slate-500 rounded-xl py-3 px-6 flex items-center gap-2.5 font-bold transition-all hover:text-slate-800 data-[state=active]:hover:text-white cursor-pointer"
+              className="data-[state=active]:bg-brand-coral data-[state=active]:text-white data-[state=active]:shadow-md text-slate-500 rounded-xl py-3 px-6 flex items-center gap-2.5 font-bold transition-all hover:text-slate-800 data-[state=active]:hover:text-white cursor-pointer"
             >
               <CalendarDays className="w-5 h-5" /> Calendar View
             </TabsTrigger>
             <TabsTrigger 
               value="bulk" 
-              className="data-[state=active]:bg-[#E86A70] data-[state=active]:text-white data-[state=active]:shadow-md text-slate-500 rounded-xl py-3 px-6 flex items-center gap-2.5 font-bold transition-all hover:text-slate-800 data-[state=active]:hover:text-white cursor-pointer"
+              className="data-[state=active]:bg-brand-coral data-[state=active]:text-white data-[state=active]:shadow-md text-slate-500 rounded-xl py-3 px-6 flex items-center gap-2.5 font-bold transition-all hover:text-slate-800 data-[state=active]:hover:text-white cursor-pointer"
             >
               <RefreshCw className="w-5 h-5" /> Bulk Update
             </TabsTrigger>
             <TabsTrigger 
               value="offers" 
-              className="data-[state=active]:bg-[#E86A70] data-[state=active]:text-white data-[state=active]:shadow-md text-slate-500 rounded-xl py-3 px-6 flex items-center gap-2.5 font-bold transition-all hover:text-slate-800 data-[state=active]:hover:text-white cursor-pointer"
+              className="data-[state=active]:bg-brand-coral data-[state=active]:text-white data-[state=active]:shadow-md text-slate-500 rounded-xl py-3 px-6 flex items-center gap-2.5 font-bold transition-all hover:text-slate-800 data-[state=active]:hover:text-white cursor-pointer"
             >
               <Percent className="w-5 h-5" /> Special Offers
             </TabsTrigger>
@@ -511,7 +515,7 @@ export default function AvailabilityPage() {
                           setSelectedRoomId(propRooms[0].$id);
                         }
                       }}>
-                        <SelectTrigger className="w-full sm:w-56 h-12 rounded-2xl bg-white border-slate-200 font-bold text-slate-700 shadow-sm hover:border-slate-300 transition-colors focus:ring-2 focus:ring-[#E86A70]/20 focus:border-[#E86A70]">
+                        <SelectTrigger className="w-full sm:w-56 h-12 rounded-2xl bg-white border-slate-200 font-bold text-slate-700 shadow-sm hover:border-slate-300 transition-colors focus:ring-2 focus:ring-brand-coral/20 focus:border-brand-coral">
                           <SelectValue placeholder="Select Property">
                             {properties.find(p => p.$id === selectedPropertyId)?.propertyName || properties.find(p => p.$id === selectedPropertyId)?.name || properties.find(p => p.$id === selectedPropertyId)?.title || properties[0]?.propertyName || "Grand Ocean Resort & Spa"}
                           </SelectValue>
@@ -524,7 +528,7 @@ export default function AvailabilityPage() {
                       </Select>
 
                       <Select value={selectedRoomId} onValueChange={(val) => setSelectedRoomId(val || filteredRooms[0]?.$id || "")}>
-                        <SelectTrigger className="w-full sm:w-56 h-12 rounded-2xl bg-white border-slate-200 font-bold text-slate-700 shadow-sm hover:border-slate-300 transition-colors focus:ring-2 focus:ring-[#E86A70]/20 focus:border-[#E86A70]">
+                        <SelectTrigger className="w-full sm:w-56 h-12 rounded-2xl bg-white border-slate-200 font-bold text-slate-700 shadow-sm hover:border-slate-300 transition-colors focus:ring-2 focus:ring-brand-coral/20 focus:border-brand-coral">
                           <SelectValue placeholder="Select Room">
                             {rooms.find(r => r.$id === selectedRoomId)?.name || filteredRooms[0]?.name || "Deluxe Ocean View Suite"}
                           </SelectValue>
@@ -573,11 +577,11 @@ export default function AvailabilityPage() {
                           day.isPast 
                             ? 'bg-slate-100/50 opacity-40 cursor-not-allowed pointer-events-none' 
                             : day.isWeekend ? 'bg-slate-50/80 cursor-pointer hover:bg-slate-100/50 hover:shadow-inner' : 'bg-white cursor-pointer hover:bg-slate-100/50 hover:shadow-inner'
-                        } ${day.isOverridden && !day.isPast ? 'ring-2 ring-inset ring-[#E86A70]/30 bg-rose-50/20' : ''}`}
+                        } ${day.isOverridden && !day.isPast ? 'ring-2 ring-inset ring-brand-coral/30 bg-rose-50/20' : ''}`}
                       >
                         <div className="flex justify-between items-start mb-3">
                           <span className={`text-sm font-bold w-8 h-8 flex items-center justify-center rounded-full transition-colors ${
-                            day.isToday ? 'bg-[#E86A70] text-white shadow-md shadow-[#E86A70]/30' : day.isPast ? 'text-slate-400' : 'text-slate-600 group-hover:text-secondary group-hover:bg-slate-200'
+                            day.isToday ? 'bg-brand-coral text-white shadow-md shadow-brand-coral/30' : day.isPast ? 'text-slate-400' : 'text-slate-600 group-hover:text-secondary group-hover:bg-slate-200'
                           }`}>
                             {day.day}
                           </span>
@@ -586,7 +590,7 @@ export default function AvailabilityPage() {
                               <span className="text-[10px] font-bold text-slate-400">Past</span>
                             )}
                             {day.isOverridden && !day.isPast && (
-                              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-[#E86A70] text-white shadow-xs" title="Custom Rate Applied">
+                              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-brand-coral text-white shadow-xs" title="Custom Rate Applied">
                                 Custom
                               </span>
                             )}
@@ -629,7 +633,7 @@ export default function AvailabilityPage() {
                         setSelectedPropertyId(propId);
                         setSelectedRoomId("");
                       }}>
-                        <SelectTrigger className="h-12 rounded-2xl border-slate-200 bg-slate-50/50 shadow-sm font-semibold hover:border-slate-300 hover:bg-slate-50 transition-colors focus:ring-2 focus:ring-[#E86A70]/20 focus:border-[#E86A70]">
+                        <SelectTrigger className="h-12 rounded-2xl border-slate-200 bg-slate-50/50 shadow-sm font-semibold hover:border-slate-300 hover:bg-slate-50 transition-colors focus:ring-2 focus:ring-brand-coral/20 focus:border-brand-coral">
                           <SelectValue placeholder="Select Property">
                             {selectedPropertyId === "all" ? "Select Property" : (properties.find(p => p.$id === selectedPropertyId)?.propertyName || properties.find(p => p.$id === selectedPropertyId)?.name || properties.find(p => p.$id === selectedPropertyId)?.title || "Select Property")}
                           </SelectValue>
@@ -646,13 +650,14 @@ export default function AvailabilityPage() {
                     <div className="space-y-3">
                       <Label className="text-sm font-bold text-slate-700 uppercase tracking-wider">Room Type</Label>
                       <Select value={selectedRoomId} onValueChange={(val) => setSelectedRoomId(val === "none" ? "" : (val || ""))}>
-                        <SelectTrigger className="h-12 rounded-2xl border-slate-200 bg-slate-50/50 shadow-sm font-semibold hover:border-slate-300 hover:bg-slate-50 transition-colors focus:ring-2 focus:ring-[#E86A70]/20 focus:border-[#E86A70]">
+                        <SelectTrigger className="h-12 rounded-2xl border-slate-200 bg-slate-50/50 shadow-sm font-semibold hover:border-slate-300 hover:bg-slate-50 transition-colors focus:ring-2 focus:ring-brand-coral/20 focus:border-brand-coral">
                           <SelectValue placeholder="Select Room">
-                            {rooms.find(r => r.$id === selectedRoomId)?.name || "Select Room"}
+                            {selectedRoomId === "all" ? "All Rooms" : (rooms.find(r => r.$id === selectedRoomId)?.name || "Select Room")}
                           </SelectValue>
                         </SelectTrigger>
                         <SelectContent className="rounded-2xl shadow-lg border-slate-100">
                           <SelectItem value="none" className="font-medium cursor-pointer rounded-xl mx-1 my-0.5">Select Room</SelectItem>
+                          <SelectItem value="all" className="font-medium cursor-pointer rounded-xl mx-1 my-0.5 font-bold text-brand-coral">All Rooms</SelectItem>
                           {filteredRooms.map(room => (
                             <SelectItem key={room.$id} value={room.$id} className="font-medium cursor-pointer rounded-xl mx-1 my-0.5">{room.name}</SelectItem>
                           ))}
@@ -666,7 +671,7 @@ export default function AvailabilityPage() {
                           type="date" 
                           value={startDate}
                           onChange={(e) => setStartDate(e.target.value)}
-                          className="h-12 rounded-2xl border-slate-200 bg-slate-50/50 shadow-sm font-medium hover:border-slate-300 transition-colors focus-visible:ring-[#E86A70]/20 focus-visible:border-[#E86A70]" 
+                          className="h-12 rounded-2xl border-slate-200 bg-slate-50/50 shadow-sm font-medium hover:border-slate-300 transition-colors focus-visible:ring-brand-coral/20 focus-visible:border-brand-coral" 
                         />
                       </div>
                       <div className="space-y-3">
@@ -675,7 +680,7 @@ export default function AvailabilityPage() {
                           type="date" 
                           value={endDate}
                           onChange={(e) => setEndDate(e.target.value)}
-                          className="h-12 rounded-2xl border-slate-200 bg-slate-50/50 shadow-sm font-medium hover:border-slate-300 transition-colors focus-visible:ring-[#E86A70]/20 focus-visible:border-[#E86A70]" 
+                          className="h-12 rounded-2xl border-slate-200 bg-slate-50/50 shadow-sm font-medium hover:border-slate-300 transition-colors focus-visible:ring-brand-coral/20 focus-visible:border-brand-coral" 
                         />
                       </div>
                     </div>
@@ -693,7 +698,7 @@ export default function AvailabilityPage() {
                           placeholder="Enter new rate" 
                           value={newPrice}
                           onChange={(e) => setNewPrice(e.target.value)}
-                          className="h-12 pl-11 rounded-2xl border-slate-200 bg-slate-50/50 shadow-sm font-bold text-lg hover:border-slate-300 transition-colors focus-visible:ring-[#E86A70]/20 focus-visible:border-[#E86A70]" 
+                          className="h-12 pl-11 rounded-2xl border-slate-200 bg-slate-50/50 shadow-sm font-bold text-lg hover:border-slate-300 transition-colors focus-visible:ring-brand-coral/20 focus-visible:border-brand-coral" 
                         />
                       </div>
                     </div>
@@ -706,7 +711,7 @@ export default function AvailabilityPage() {
                           placeholder="Number of rooms" 
                           value={availableRooms}
                           onChange={(e) => setAvailableRooms(e.target.value)}
-                          className="h-12 pl-11 rounded-2xl border-slate-200 bg-slate-50/50 shadow-sm font-bold text-lg hover:border-slate-300 transition-colors focus-visible:ring-[#E86A70]/20 focus-visible:border-[#E86A70]" 
+                          className="h-12 pl-11 rounded-2xl border-slate-200 bg-slate-50/50 shadow-sm font-bold text-lg hover:border-slate-300 transition-colors focus-visible:ring-brand-coral/20 focus-visible:border-brand-coral" 
                         />
                       </div>
                     </div>
@@ -725,8 +730,8 @@ export default function AvailabilityPage() {
                             variant="outline" 
                             className={`h-10 px-5 rounded-xl font-bold transition-all ${
                               isSelected 
-                                ? 'bg-[#E86A70] text-white border-[#E86A70] shadow-md shadow-[#E86A70]/20 hover:bg-[#E86A70]/90 hover:text-white' 
-                                : 'bg-white text-slate-500 border-slate-200 hover:border-[#E86A70] hover:text-[#E86A70] hover:bg-[#E86A70]/5 shadow-sm'
+                                ? 'bg-brand-coral text-white border-brand-coral shadow-md shadow-brand-coral/20 hover:bg-brand-coral/90 hover:text-white' 
+                                : 'bg-white text-slate-500 border-slate-200 hover:border-brand-coral hover:text-brand-coral hover:bg-brand-coral/5 shadow-sm'
                             }`}
                           >
                             {day}
@@ -740,7 +745,7 @@ export default function AvailabilityPage() {
                     <Button 
                       disabled={isApplyingBulk}
                       onClick={handleApplyBulkUpdate}
-                      className="h-12 px-8 rounded-2xl bg-[#E86A70] hover:bg-[#E86A70]/90 text-white font-bold shadow-lg shadow-[#E86A70]/30 transition-all hover:-translate-y-0.5 gap-2 text-base cursor-pointer"
+                      className="h-12 px-8 rounded-2xl bg-brand-coral hover:bg-brand-coral/90 text-white font-bold shadow-lg shadow-brand-coral/30 transition-all hover:-translate-y-0.5 gap-2 text-base cursor-pointer"
                     >
                       {isApplyingBulk ? (
                         <>
@@ -770,7 +775,7 @@ export default function AvailabilityPage() {
         <DialogContent className="sm:max-w-md rounded-3xl p-6">
           <DialogHeader>
             <DialogTitle className="font-heading font-black text-xl text-secondary flex items-center gap-2">
-              <Edit2 className="w-5 h-5 text-[#E86A70]" />
+              <Edit2 className="w-5 h-5 text-brand-coral" />
               Update Date: {editingDate?.dateKey}
             </DialogTitle>
             <DialogDescription className="text-slate-500 text-sm">
@@ -830,7 +835,7 @@ export default function AvailabilityPage() {
               <Button 
                 type="button" 
                 onClick={handleSaveDayEdit}
-                className="rounded-xl bg-[#E86A70] hover:bg-[#E86A70]/90 text-white font-bold px-5"
+                className="rounded-xl bg-brand-coral hover:bg-brand-coral/90 text-white font-bold px-5"
               >
                 Save
               </Button>
@@ -844,7 +849,7 @@ export default function AvailabilityPage() {
         <DialogContent className="sm:max-w-md rounded-3xl p-6">
           <DialogHeader>
             <DialogTitle className="font-heading font-black text-xl text-secondary flex items-center gap-2">
-              <Zap className="w-5 h-5 text-[#E86A70]" />
+              <Zap className="w-5 h-5 text-brand-coral" />
               Create Special Offer
             </DialogTitle>
             <DialogDescription className="text-slate-500 text-sm">
@@ -923,7 +928,7 @@ export default function AvailabilityPage() {
             <Button 
               type="button" 
               onClick={handleCreateOffer}
-              className="rounded-xl bg-[#E86A70] hover:bg-[#E86A70]/90 text-white font-bold px-6"
+              className="rounded-xl bg-brand-coral hover:bg-brand-coral/90 text-white font-bold px-6"
             >
               Create Promotion
             </Button>

@@ -513,7 +513,7 @@ export function SpecialOffersModule({ rooms = [], properties = [] }: SpecialOffe
         <CardHeader className="bg-linear-to-b from-slate-50 to-white border-b border-slate-100 pb-5 pt-7 px-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <CardTitle className="font-heading text-2xl font-black text-secondary flex items-center gap-2">
-              <Percent className="w-6 h-6 text-[#E86A70]" /> Special Offers & Promotions
+              <Percent className="w-6 h-6 text-brand-coral" /> Special Offers & Promotions
             </CardTitle>
             <CardDescription className="text-slate-500 font-medium mt-1">
               Create campaigns, promo codes, and stay discounts to maximize occupancy.
@@ -523,7 +523,7 @@ export function SpecialOffersModule({ rooms = [], properties = [] }: SpecialOffe
           <div className="flex items-center gap-3">
             <Button 
               onClick={() => handleOpenCreate()}
-              className="bg-[#E86A70] hover:bg-[#E86A70]/90 text-white rounded-2xl h-12 px-6 font-bold shadow-lg shadow-[#E86A70]/30 transition-all hover:-translate-y-0.5 cursor-pointer flex items-center gap-2"
+              className="bg-brand-coral hover:bg-brand-coral/90 text-white rounded-2xl h-12 px-6 font-bold shadow-lg shadow-brand-coral/30 transition-all hover:-translate-y-0.5 cursor-pointer flex items-center gap-2"
             >
               <Plus className="w-5 h-5" /> Create Offer
             </Button>
@@ -603,7 +603,7 @@ export function SpecialOffersModule({ rooms = [], properties = [] }: SpecialOffe
           {/* 3. OFFERS LIST / TABLE */}
           {filteredOffers.length === 0 ? (
             <div className="p-12 rounded-3xl border-2 border-dashed border-slate-200 bg-slate-50/50 text-center space-y-6">
-              <div className="w-16 h-16 rounded-full bg-white shadow-sm ring-1 ring-slate-100 text-[#E86A70] mx-auto flex items-center justify-center">
+              <div className="w-16 h-16 rounded-full bg-white shadow-sm ring-1 ring-slate-100 text-brand-coral mx-auto flex items-center justify-center">
                 <Percent className="w-8 h-8" />
               </div>
               <div className="max-w-md mx-auto">
@@ -615,11 +615,11 @@ export function SpecialOffersModule({ rooms = [], properties = [] }: SpecialOffe
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 max-w-3xl mx-auto pt-4 text-left">
                 <button 
                   onClick={() => handleOpenCreate({ name: "Early Bird 15% OFF", type: "early_bird", discountType: "percentage", discountValue: 15, description: "Book 14 days in advance to get 15% discount." })}
-                  className="p-4 rounded-2xl bg-white border border-slate-200 hover:border-[#E86A70] shadow-sm transition-all hover:-translate-y-1 cursor-pointer group"
+                  className="p-4 rounded-2xl bg-white border border-slate-200 hover:border-brand-coral shadow-sm transition-all hover:-translate-y-1 cursor-pointer group"
                 >
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-xs font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-md">⚡ Advance</span>
-                    <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-[#E86A70]" />
+                    <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-brand-coral" />
                   </div>
                   <h5 className="font-bold text-sm text-secondary">Early Bird 15%</h5>
                   <p className="text-xs text-slate-400 mt-1">Boost advance bookings</p>
@@ -627,11 +627,11 @@ export function SpecialOffersModule({ rooms = [], properties = [] }: SpecialOffe
 
                 <button 
                   onClick={() => handleOpenCreate({ name: "Flat ₹1,000 Coupon", type: "coupon", code: "SAVE1000", discountType: "flat", discountValue: 1000, description: "Use promo code SAVE1000 for instant ₹1,000 discount." })}
-                  className="p-4 rounded-2xl bg-white border border-slate-200 hover:border-[#E86A70] shadow-sm transition-all hover:-translate-y-1 cursor-pointer group"
+                  className="p-4 rounded-2xl bg-white border border-slate-200 hover:border-brand-coral shadow-sm transition-all hover:-translate-y-1 cursor-pointer group"
                 >
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-xs font-bold text-violet-600 bg-violet-50 px-2 py-0.5 rounded-md">🎟️ Promo Code</span>
-                    <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-[#E86A70]" />
+                    <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-brand-coral" />
                   </div>
                   <h5 className="font-bold text-sm text-secondary">₹1,000 Coupon</h5>
                   <p className="text-xs text-slate-400 mt-1">Exclusive promo code</p>
@@ -639,11 +639,11 @@ export function SpecialOffersModule({ rooms = [], properties = [] }: SpecialOffe
 
                 <button 
                   onClick={() => handleOpenCreate({ name: "Stay 3 Pay 2 Weekend", type: "stay_x_pay_y", discountType: "stay_x_pay_y", description: "Book 3 nights, get 1 night completely free!" })}
-                  className="p-4 rounded-2xl bg-white border border-slate-200 hover:border-[#E86A70] shadow-sm transition-all hover:-translate-y-1 cursor-pointer group"
+                  className="p-4 rounded-2xl bg-white border border-slate-200 hover:border-brand-coral shadow-sm transition-all hover:-translate-y-1 cursor-pointer group"
                 >
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-xs font-bold text-sky-600 bg-sky-50 px-2 py-0.5 rounded-md">🌙 Stay X Pay Y</span>
-                    <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-[#E86A70]" />
+                    <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-brand-coral" />
                   </div>
                   <h5 className="font-bold text-sm text-secondary">Stay 3 Pay 2</h5>
                   <p className="text-xs text-slate-400 mt-1">Increase stay length</p>
@@ -651,11 +651,11 @@ export function SpecialOffersModule({ rooms = [], properties = [] }: SpecialOffe
 
                 <button 
                   onClick={() => handleOpenCreate({ name: "Festival Season Special 20%", type: "festival", code: "FESTIVE20", discountType: "percentage", discountValue: 20, description: "Special holiday season promotion." })}
-                  className="p-4 rounded-2xl bg-white border border-slate-200 hover:border-[#E86A70] shadow-sm transition-all hover:-translate-y-1 cursor-pointer group"
+                  className="p-4 rounded-2xl bg-white border border-slate-200 hover:border-brand-coral shadow-sm transition-all hover:-translate-y-1 cursor-pointer group"
                 >
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-xs font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded-md">🪔 Holiday</span>
-                    <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-[#E86A70]" />
+                    <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-brand-coral" />
                   </div>
                   <h5 className="font-bold text-sm text-secondary">Festival 20% OFF</h5>
                   <p className="text-xs text-slate-400 mt-1">Holiday season offer</p>
@@ -831,7 +831,7 @@ export function SpecialOffersModule({ rooms = [], properties = [] }: SpecialOffe
                             <span className="text-xs text-slate-500 font-medium">Promo Code:</span>
                             <button 
                               onClick={() => handleCopyCode(offer.code!)}
-                              className="font-mono text-xs font-bold text-slate-800 flex items-center gap-1 hover:text-[#E86A70] cursor-pointer"
+                              className="font-mono text-xs font-bold text-slate-800 flex items-center gap-1 hover:text-brand-coral cursor-pointer"
                             >
                               {offer.code} <Copy className="w-3.5 h-3.5 text-slate-400" />
                             </button>
@@ -904,7 +904,7 @@ export function SpecialOffersModule({ rooms = [], properties = [] }: SpecialOffe
         <DialogContent className="sm:max-w-2xl rounded-3xl p-6 max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="font-heading font-black text-2xl text-secondary flex items-center gap-2">
-              <Zap className="w-6 h-6 text-[#E86A70]" />
+              <Zap className="w-6 h-6 text-brand-coral" />
               {editingOffer ? "Edit Special Offer" : "Create Special Offer"}
             </DialogTitle>
             <DialogDescription className="text-slate-500 text-sm">
@@ -1095,7 +1095,7 @@ export function SpecialOffersModule({ rooms = [], properties = [] }: SpecialOffe
                           else setFormApplicableDays([...formApplicableDays, day]);
                         }}
                         className={`h-9 px-4 rounded-xl text-xs font-bold transition-all ${
-                          isSel ? "bg-[#E86A70] text-white border-[#E86A70]" : "bg-white text-slate-600 border-slate-200"
+                          isSel ? "bg-brand-coral text-white border-brand-coral" : "bg-white text-slate-600 border-slate-200"
                         }`}
                       >
                         {day}
@@ -1117,7 +1117,7 @@ export function SpecialOffersModule({ rooms = [], properties = [] }: SpecialOffe
 
           <DialogFooter className="flex justify-end gap-3 pt-4 border-t border-slate-100">
             <Button variant="ghost" onClick={() => setIsDialogOpen(false)} className="rounded-xl font-medium">Cancel</Button>
-            <Button onClick={handleSaveOffer} className="rounded-xl bg-[#E86A70] hover:bg-[#E86A70]/90 text-white font-bold px-7">
+            <Button onClick={handleSaveOffer} className="rounded-xl bg-brand-coral hover:bg-brand-coral/90 text-white font-bold px-7">
               {editingOffer ? "Update Offer" : "Publish Offer"}
             </Button>
           </DialogFooter>

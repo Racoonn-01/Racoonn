@@ -21,14 +21,14 @@ export function WhyBookWithUs() {
 
   return (
     <div className="py-6">
-      <h3 className="text-lg font-bold text-[#1F2E4A] mb-4">Why Book with Racoonn</h3>
+      <h3 className="text-lg font-bold text-brand-navy mb-4">Why Book with Racoonn</h3>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {features.map((feature, i) => (
           <div key={i} className="bg-white p-4 rounded-xl border border-[#DCE8F5] shadow-sm flex flex-col items-center text-center">
             <div className="w-10 h-10 rounded-full bg-[#F8D6D8] flex items-center justify-center mb-3">
-              <feature.icon className="w-5 h-5 text-[#E86A70]" />
+              <feature.icon className="w-5 h-5 text-brand-coral" />
             </div>
-            <h4 className="font-bold text-[#1F2E4A] text-sm mb-1">{feature.title}</h4>
+            <h4 className="font-bold text-brand-navy text-sm mb-1">{feature.title}</h4>
             <p className="text-xs text-gray-500 leading-relaxed">{feature.description}</p>
           </div>
         ))}

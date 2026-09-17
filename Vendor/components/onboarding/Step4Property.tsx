@@ -299,7 +299,7 @@ export function Step4Property({ onNext, onBack }: { onNext: () => void, onBack: 
       className="flex flex-col h-full max-w-xl mx-auto w-full pt-8"
     >
       <motion.div variants={slideUp} className="mb-8">
-        <h1 className="text-3xl md:text-4xl font-black text-[#1F2E4A] mb-3 font-['Poppins',sans-serif]">Add your property</h1>
+        <h1 className="text-3xl md:text-4xl font-black text-brand-navy mb-3 font-['Poppins',sans-serif]">Add your property</h1>
         <p className="text-slate-500 font-medium">Let's create your listing profile. Travelers will see these details when searching for places to stay.</p>
       </motion.div>
 
@@ -316,7 +316,7 @@ export function Step4Property({ onNext, onBack }: { onNext: () => void, onBack: 
           <Input 
             value={propertyName}
             onChange={(e) => setPropertyName(e.target.value)}
-            className="h-12 rounded-xl border-slate-200 bg-white focus:ring-2 focus:ring-[#E86A70]/20 focus:border-[#E86A70] transition-all font-medium text-lg" 
+            className="h-12 rounded-xl border-slate-200 bg-white focus:ring-2 focus:ring-brand-coral/20 focus:border-brand-coral transition-all font-medium text-lg" 
             placeholder="e.g. The Grand Racoonn Resort" 
           />
         </div>
@@ -324,7 +324,7 @@ export function Step4Property({ onNext, onBack }: { onNext: () => void, onBack: 
         <div className="space-y-2">
           <label className="text-xs font-bold text-slate-700 uppercase tracking-wide">Property Type</label>
           <Select value={selectedType} onValueChange={(val) => { if (val) setSelectedType(val); }}>
-            <SelectTrigger className="w-full h-12! rounded-xl border-slate-200 bg-white px-4 focus:ring-2 focus:ring-[#E86A70]/20 focus:border-[#E86A70] transition-all font-medium text-slate-700">
+            <SelectTrigger className="w-full h-12! rounded-xl border-slate-200 bg-white px-4 focus:ring-2 focus:ring-brand-coral/20 focus:border-brand-coral transition-all font-medium text-slate-700">
               <SelectValue placeholder="Select a property type" />
             </SelectTrigger>
             <SelectContent alignItemWithTrigger={false} className="max-h-100 w-[80vw] sm:w-150 p-2">
@@ -368,8 +368,8 @@ export function Step4Property({ onNext, onBack }: { onNext: () => void, onBack: 
               className="w-full h-full"
             ></iframe>
             <div className="absolute top-4 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-              <div className="bg-[#1F2E4A]/90 backdrop-blur-sm px-4 py-2 rounded-full shadow-lg flex items-center gap-2 font-bold text-sm text-white">
-                <MapPin className="w-4 h-4 text-[#E86A70]" /> Interactive Map Enabled
+              <div className="bg-brand-navy/90 backdrop-blur-sm px-4 py-2 rounded-full shadow-lg flex items-center gap-2 font-bold text-sm text-white">
+                <MapPin className="w-4 h-4 text-brand-coral" /> Interactive Map Enabled
               </div>
             </div>
           </div>
@@ -379,7 +379,7 @@ export function Step4Property({ onNext, onBack }: { onNext: () => void, onBack: 
           <div className="space-y-2">
             <label className="text-xs font-bold text-slate-700 uppercase tracking-wide">State</label>
             <Select value={propertyState} onValueChange={(val) => { if (val) { setPropertyState(val); setCity(STATE_CITY_MAP[val]?.[0] || ""); } }}>
-              <SelectTrigger className="w-full h-12! rounded-xl border-slate-200 bg-white px-4 focus:ring-2 focus:ring-[#E86A70]/20 focus:border-[#E86A70] transition-all font-medium text-slate-700">
+              <SelectTrigger className="w-full h-12! rounded-xl border-slate-200 bg-white px-4 focus:ring-2 focus:ring-brand-coral/20 focus:border-brand-coral transition-all font-medium text-slate-700">
                 <SelectValue placeholder="Select a state" />
               </SelectTrigger>
               <SelectContent>
@@ -397,7 +397,7 @@ export function Step4Property({ onNext, onBack }: { onNext: () => void, onBack: 
               value={city}
               onChange={(e) => setCity(e.target.value)}
               list="city-suggestions"
-              className="h-12 rounded-xl border-slate-200 bg-white focus:ring-2 focus:ring-[#E86A70]/20 focus:border-[#E86A70] transition-all font-medium" 
+              className="h-12 rounded-xl border-slate-200 bg-white focus:ring-2 focus:ring-brand-coral/20 focus:border-brand-coral transition-all font-medium" 
               placeholder="e.g. Mumbai" 
             />
             <datalist id="city-suggestions">
@@ -413,7 +413,7 @@ export function Step4Property({ onNext, onBack }: { onNext: () => void, onBack: 
           <textarea 
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            className="w-full p-4 rounded-xl border border-slate-200 bg-white focus:ring-2 focus:ring-[#E86A70]/20 focus:border-[#E86A70] transition-all font-medium resize-none min-h-30 outline-none" 
+            className="w-full p-4 rounded-xl border border-slate-200 bg-white focus:ring-2 focus:ring-brand-coral/20 focus:border-brand-coral transition-all font-medium resize-none min-h-30 outline-none" 
             placeholder="Describe what makes your property unique. Highlight nearby attractions, atmosphere, and special features..."
           />
         </div>
@@ -424,7 +424,7 @@ export function Step4Property({ onNext, onBack }: { onNext: () => void, onBack: 
         <Button onClick={handleBackClick} variant="ghost" className="text-slate-500 font-bold hover:bg-slate-100 rounded-full px-6">
           <ArrowLeft className="mr-2 w-4 h-4" /> Back
         </Button>
-        <Button onClick={handleNextSubmit} disabled={isLoading} className="bg-[#1F2E4A] hover:bg-[#151E2D] text-white rounded-full px-8 h-12 font-bold shadow-lg shadow-[#1F2E4A]/20 transition-all">
+        <Button onClick={handleNextSubmit} disabled={isLoading} className="bg-brand-navy hover:bg-[#151E2D] text-white rounded-full px-8 h-12 font-bold shadow-lg shadow-brand-navy/20 transition-all">
           {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Continue Setup <ArrowRight className="ml-2 w-4 h-4" /></>}
         </Button>
       </motion.div>

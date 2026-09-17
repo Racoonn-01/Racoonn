@@ -193,10 +193,10 @@ export function Step5Rooms({ onNext, onBack }: { onNext: () => void, onBack: () 
     >
       <motion.div variants={slideUp} className="mb-8 flex justify-between items-end">
         <div>
-          <h1 className="text-3xl md:text-4xl font-black text-[#1F2E4A] mb-3 font-['Poppins',sans-serif]">Add your rooms</h1>
+          <h1 className="text-3xl md:text-4xl font-black text-brand-navy mb-3 font-['Poppins',sans-serif]">Add your rooms</h1>
           <p className="text-slate-500 font-medium">Create room categories, set base prices, and define occupancy.</p>
         </div>
-        <Button onClick={addRoom} variant="outline" className="font-bold rounded-full border-[#E86A70] text-[#E86A70] hover:bg-[#E86A70]/10">
+        <Button onClick={addRoom} variant="outline" className="font-bold rounded-full border-brand-coral text-brand-coral hover:bg-brand-coral/10">
           <Plus className="w-4 h-4 mr-2" /> Add Room
         </Button>
       </motion.div>
@@ -218,7 +218,7 @@ export function Step5Rooms({ onNext, onBack }: { onNext: () => void, onBack: () 
             <div className="space-y-4">
               <div className="space-y-1.5">
                 <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Room Name</label>
-                <Input value={room.name} onChange={(e) => updateRoom(room.id, "name", e.target.value)} className="h-10 border-transparent bg-slate-50 focus:bg-white text-lg font-bold text-slate-800 focus:ring-2 focus:ring-[#E86A70]/20 focus:border-[#E86A70] rounded-xl" />
+                <Input value={room.name} onChange={(e) => updateRoom(room.id, "name", e.target.value)} className="h-10 border-transparent bg-slate-50 focus:bg-white text-lg font-bold text-slate-800 focus:ring-2 focus:ring-brand-coral/20 focus:border-brand-coral rounded-xl" />
               </div>
 
               <div className="grid grid-cols-3 gap-4 pt-2 border-t border-slate-100">
@@ -248,16 +248,16 @@ export function Step5Rooms({ onNext, onBack }: { onNext: () => void, onBack: () 
                         <img src={photo} alt="Room" className="w-full h-full object-cover" />
                       </div>
                     ))}
-                    <div className="relative w-24 h-24 rounded-xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center text-slate-500 hover:bg-slate-50 hover:border-[#E86A70]/50 transition-colors cursor-pointer shrink-0 group/upload">
+                    <div className="relative w-24 h-24 rounded-xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center text-slate-500 hover:bg-slate-50 hover:border-brand-coral/50 transition-colors cursor-pointer shrink-0 group/upload">
                       <input type="file" multiple accept="image/*" onChange={(e) => handlePhotoUpload(e, room.id)} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
-                      <Plus className="w-6 h-6 text-slate-400 group-hover/upload:text-[#E86A70] transition-colors" />
+                      <Plus className="w-6 h-6 text-slate-400 group-hover/upload:text-brand-coral transition-colors" />
                     </div>
                   </div>
                 ) : (
-                  <div className="border-2 border-dashed border-slate-200 rounded-xl p-6 flex flex-col items-center justify-center text-slate-500 hover:bg-slate-50 hover:border-[#E86A70]/50 transition-colors cursor-pointer relative group/upload">
+                  <div className="border-2 border-dashed border-slate-200 rounded-xl p-6 flex flex-col items-center justify-center text-slate-500 hover:bg-slate-50 hover:border-brand-coral/50 transition-colors cursor-pointer relative group/upload">
                     <input type="file" multiple accept="image/*" onChange={(e) => handlePhotoUpload(e, room.id)} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
-                    <div className="w-10 h-10 rounded-full bg-slate-100 group-hover/upload:bg-[#E86A70]/10 flex items-center justify-center mb-3 transition-colors">
-                      <UploadCloud className="w-5 h-5 text-slate-400 group-hover/upload:text-[#E86A70] transition-colors" />
+                    <div className="w-10 h-10 rounded-full bg-slate-100 group-hover/upload:bg-brand-coral/10 flex items-center justify-center mb-3 transition-colors">
+                      <UploadCloud className="w-5 h-5 text-slate-400 group-hover/upload:text-brand-coral transition-colors" />
                     </div>
                     <span className="text-sm font-bold text-slate-700">Upload Photos</span>
                     <span className="text-xs text-slate-400 mt-1">Drag & drop or click to browse</span>
@@ -273,7 +273,7 @@ export function Step5Rooms({ onNext, onBack }: { onNext: () => void, onBack: () 
         <Button onClick={handleBack} variant="ghost" className="text-slate-500 font-bold hover:bg-slate-100 rounded-full px-6" disabled={isLoading}>
           <ArrowLeft className="mr-2 w-4 h-4" /> Back
         </Button>
-        <Button onClick={handleNext} disabled={isLoading} className="bg-[#1F2E4A] hover:bg-[#151E2D] text-white rounded-full px-8 h-12 font-bold shadow-lg shadow-[#1F2E4A]/20 transition-all">
+        <Button onClick={handleNext} disabled={isLoading} className="bg-brand-navy hover:bg-[#151E2D] text-white rounded-full px-8 h-12 font-bold shadow-lg shadow-brand-navy/20 transition-all">
           {isLoading ? <><Loader2 className="mr-2 w-4 h-4 animate-spin" /> Saving...</> : <>Upload Photos <ArrowRight className="ml-2 w-4 h-4" /></>}
         </Button>
       </motion.div>

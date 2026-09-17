@@ -213,6 +213,7 @@ export default function Footer() {
                 <li><Link href="/contact" className="hover:text-brand-coral hover:translate-x-1 inline-block transition-transform">Contact Support</Link></li>
                 <li><Link href="/terms" className="hover:text-brand-coral hover:translate-x-1 inline-block transition-transform">Terms of Service</Link></li>
                 <li><Link href="/privacy" className="hover:text-brand-coral hover:translate-x-1 inline-block transition-transform">Privacy Policy</Link></li>
+                <li><Link href="/developers" className="hover:text-brand-coral hover:translate-x-1 inline-block transition-transform">API Documentation</Link></li>
               </ul>
             </div>
             

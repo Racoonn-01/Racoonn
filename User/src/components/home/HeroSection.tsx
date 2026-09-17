@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -55,6 +55,7 @@ export default function HeroSection() {
   const [chatQuery, setChatQuery] = useState('');
   const [isRecording, setIsRecording] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const destinationInputRef = useRef<HTMLInputElement>(null);
 
   const handleAiSearch = (queryStr: string = chatQuery) => {
     if (!queryStr.trim()) return;
@@ -331,13 +332,17 @@ export default function HeroSection() {
                 >
 
               {/* Destination Row */}
-              <div className="flex items-center gap-4 border border-gray-200 rounded-2xl px-5 py-4 hover:border-brand-coral/40 transition-colors cursor-text group">
+              <div 
+                className="flex items-center gap-4 border border-gray-200 rounded-2xl px-5 py-4 hover:border-brand-coral/40 transition-colors cursor-text group"
+                onClick={() => destinationInputRef.current?.focus()}
+              >
                 <MapPin size={22} className="text-brand-charcoal/40 group-hover:text-brand-coral transition-colors shrink-0" />
                 <div className="w-full relative">
                   <h4 className="font-semibold text-brand-navy text-[15px]">
                     {activeTab === 'activities' ? 'What do you want to do?' : 'Where are you going?'}
                   </h4>
                   <input 
+                    ref={destinationInputRef}
                     type="text" 
                     value={destination}
                     onChange={(e) => {

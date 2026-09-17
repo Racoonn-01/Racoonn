@@ -45,9 +45,9 @@ export default function BookingsPage() {
 
         // Fetch all 3 collections
         const [bookingsRes, guestsRes, paymentsRes] = await Promise.all([
-          databases.listDocuments(appwriteConfig.databaseId, 'bookings', [Query.orderDesc('$createdAt')]),
-          databases.listDocuments(appwriteConfig.databaseId, 'booking_guests'),
-          databases.listDocuments(appwriteConfig.databaseId, 'booking_payments')
+          databases.listDocuments(appwriteConfig.databaseId, 'bookings', [Query.orderDesc('$createdAt'), Query.limit(1000)]),
+          databases.listDocuments(appwriteConfig.databaseId, 'booking_guests', [Query.limit(1000)]),
+          databases.listDocuments(appwriteConfig.databaseId, 'booking_payments', [Query.limit(1000)])
         ]);
 
         const vendorBookings = bookingsRes.documents.filter(b => vendorPropertyIds.includes(b.hotelId));
@@ -62,51 +62,46 @@ export default function BookingsPage() {
             databases.updateDocument(appwriteConfig.databaseId, 'bookings', booking.$id, { status: 'Completed' }).catch(console.error);
           }
 
-          let totalPaidNum = payment ? Number(payment.totalAmount) : 0;
-          let baseRoomNum = payment ? Number(payment.roomPrice) : 0;
-          let gstAmountNum = payment ? Number(payment.taxes) : 0;
+          let totalPaidNum = payment ? Number(payment.totalAmount) : (booking.totalAmount ? Number(booking.totalAmount) : (booking.priceAfterTax ? Number(booking.priceAfterTax) : 0));
+          let baseRoomNum = payment ? Number(payment.roomPrice) : (booking.priceBeforeTax ? Number(booking.priceBeforeTax) : 0);
+          let gstAmountNum = payment ? Number(payment.taxes) : (booking.gstAmount ? Number(booking.gstAmount) : 0);
+          let addonsNum = payment ? Number(payment.serviceFees) : (booking.addons ? Number(booking.addons) : 0);
+          let discountNum = payment ? Number(payment.discount) : (booking.discount ? Number(booking.discount) : 0);
 
           const nights = booking.nights || 1;
 
           if (!baseRoomNum && totalPaidNum) {
-            const approxNightPrice = totalPaidNum / nights;
             let deducedRate = 5;
-            if (approxNightPrice <= 1050) deducedRate = 0;
-            else if (approxNightPrice <= 7875) deducedRate = 5;
+            if (totalPaidNum <= 1000) deducedRate = 0;
+            else if (totalPaidNum <= 7875) deducedRate = 5;
             else deducedRate = 18;
 
             baseRoomNum = Math.round((totalPaidNum / (1 + deducedRate / 100)) * 100) / 100;
             gstAmountNum = Math.round((totalPaidNum - baseRoomNum) * 100) / 100;
           } else if (baseRoomNum && !totalPaidNum) {
-            const pricePerNight = baseRoomNum / nights;
             let deducedRate = 5;
-            if (pricePerNight <= 1000) deducedRate = 0;
-            else if (pricePerNight <= 7500) deducedRate = 5;
+            if (baseRoomNum <= 1000) deducedRate = 0;
+            else if (baseRoomNum <= 7500) deducedRate = 5;
             else deducedRate = 18;
 
             gstAmountNum = Math.round((baseRoomNum * (deducedRate / 100)) * 100) / 100;
             totalPaidNum = baseRoomNum + gstAmountNum;
           } else if (!baseRoomNum && !totalPaidNum) {
-            baseRoomNum = 5000;
-            gstAmountNum = 250;
-            totalPaidNum = 5250;
+            baseRoomNum = 0;
+            gstAmountNum = 0;
+            totalPaidNum = 0;
           }
 
-          const pricePerNight = baseRoomNum / nights;
-          let effectiveGstRate = booking.gstRate;
+          let effectiveGstRate = booking.gstPercentage ?? booking.gstRate;
           if (effectiveGstRate === undefined || effectiveGstRate === null) {
-            if (pricePerNight <= 1000) effectiveGstRate = 0;
-            else if (pricePerNight <= 7500) effectiveGstRate = 5;
+            if (baseRoomNum <= 1000) effectiveGstRate = 0;
+            else if (baseRoomNum <= 7500) effectiveGstRate = 5;
             else effectiveGstRate = 18;
           }
 
-          // Enforce exact statutory GST calculation
-          if (effectiveGstRate === 0) {
-            gstAmountNum = 0;
-            totalPaidNum = baseRoomNum;
-          } else {
-            gstAmountNum = Math.round((baseRoomNum * (effectiveGstRate / 100)) * 100) / 100;
-            totalPaidNum = Math.round((baseRoomNum + gstAmountNum) * 100) / 100;
+          // Ensure totalPaidNum includes all components if we fell back to booking fields
+          if (!payment && !booking.totalAmount) {
+            totalPaidNum = baseRoomNum + gstAmountNum + addonsNum - discountNum;
           }
 
           return {
@@ -120,6 +115,8 @@ export default function BookingsPage() {
             amount: `₹${totalPaidNum.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`,
             baseAmount: baseRoomNum,
             gstAmount: gstAmountNum,
+            addons: addonsNum,
+            discount: discountNum,
             totalPaid: totalPaidNum,
             gstRate: effectiveGstRate,
             nights: nights,
@@ -129,7 +126,7 @@ export default function BookingsPage() {
             guests: booking.adults || 1,
             nationality: guest?.country || 'N/A',
             specialRequests: guest?.specialRequests || '',
-            paymentMethod: booking.paymentStatus || 'Card',
+            paymentMethod: booking.paymentMethod || 'Online (UPI / Cards)',
             refundEligible: booking.refundEligible,
             refundPercentage: booking.refundPercentage,
             refundAmount: booking.refundAmount,
@@ -147,7 +144,7 @@ export default function BookingsPage() {
       }
     }
     fetchBookings();
-  }, []);
+  }, [user?.$id]);
 
   return (
     <div className="space-y-6 relative">
@@ -469,7 +466,9 @@ export default function BookingsPage() {
                   const baseRoomAmount = selectedBooking.baseAmount || parseFloat((selectedBooking.amount || "0").replace(/[^0-9.-]+/g, "")) || 0;
                   const gstRate = selectedBooking.gstRate ?? 5;
                   const gstAmount = selectedBooking.gstAmount ?? Math.round((baseRoomAmount * (gstRate / 100)) * 100) / 100;
-                  const totalPaid = selectedBooking.totalPaid ?? (baseRoomAmount + gstAmount);
+                  const addonsNum = selectedBooking.addons || 0;
+                  const discountNum = selectedBooking.discount || 0;
+                  const totalPaid = selectedBooking.totalPaid ?? (baseRoomAmount + gstAmount + addonsNum - discountNum);
 
                   return (
                     <div>
@@ -479,6 +478,18 @@ export default function BookingsPage() {
                           <span>Room charges</span>
                           <span>₹{baseRoomAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                         </div>
+                        {addonsNum > 0 && (
+                          <div className="flex justify-between items-center text-sm font-medium text-slate-600">
+                            <span>Service Add-ons</span>
+                            <span>₹{addonsNum.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                          </div>
+                        )}
+                        {discountNum > 0 && (
+                          <div className="flex justify-between items-center text-sm font-medium text-green-600">
+                            <span>Discount</span>
+                            <span>-₹{discountNum.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                          </div>
+                        )}
                         <div className="flex justify-between items-center text-sm font-medium text-slate-600">
                           <span>Taxes & GST ({gstRate === 0 ? '0% - Exempt' : `${gstRate}%`})</span>
                           <span>₹{gstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
@@ -489,7 +500,7 @@ export default function BookingsPage() {
                         <div className="h-px bg-slate-100 my-2"></div>
                         <div className="flex justify-between items-center text-base font-black text-secondary">
                           <span>Total Paid</span>
-                          <span className="text-[#E86A70]">₹{totalPaid.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                          <span className="text-brand-coral">₹{totalPaid.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                         </div>
                       </div>
                     </div>
@@ -514,51 +525,7 @@ export default function BookingsPage() {
                     setIsCancelModalOpen(true);
                   };
 
-                  const handleConfirmCancel = async () => {
-                    if (!selectedBooking || !cancellationSummary) return;
-                    try {
-                      setIsCancelling(true);
-                      const now = new Date().toISOString();
-                      const updatePayload = {
-                        status: cancellationSummary.bookingStatus,
-                        cancellationRequestedAt: now,
-                        cancelledAt: now,
-                        refundEligible: cancellationSummary.refundPercentage > 0,
-                        refundPercentage: cancellationSummary.refundPercentage,
-                        refundAmount: cancellationSummary.refundAmount,
-                        cancellationReason: cancellationSummary.reason,
-                        refundStatus: cancellationSummary.refundStatus,
-                        cancelledBy: 'vendor',
-                      };
 
-                      await databases.updateDocument(
-                        appwriteConfig.databaseId,
-                        'bookings',
-                        selectedBooking.docId || selectedBooking.id,
-                        updatePayload
-                      );
-
-                      setSelectedBooking((prev: any) => ({
-                        ...prev,
-                        ...updatePayload,
-                      }));
-
-                      setBookings((prevBookings) =>
-                        prevBookings.map((b) =>
-                          b.id === selectedBooking.id
-                            ? { ...b, ...updatePayload }
-                            : b
-                        )
-                      );
-
-                      setIsCancelModalOpen(false);
-                    } catch (err) {
-                      console.error("Failed to cancel booking:", err);
-                      alert("Error executing cancellation. Please try again.");
-                    } finally {
-                      setIsCancelling(false);
-                    }
-                  };
 
                   const isAlreadyCancelled = selectedBooking.status?.toLowerCase().includes('cancel') || selectedBooking.status === 'No Show' || selectedBooking.status === 'Completed';
 
@@ -566,7 +533,7 @@ export default function BookingsPage() {
                     <div className="space-y-3 pt-4 pb-6 print:hidden print-hidden">
                       <Button 
                         onClick={handleMessageGuest}
-                        className="w-full bg-[#E86A70] hover:bg-[#E86A70]/90 text-white font-bold h-12 rounded-xl shadow-lg shadow-[#E86A70]/20 gap-2 cursor-pointer transition-all hover:scale-[1.01]"
+                        className="w-full bg-brand-coral hover:bg-brand-coral/90 text-white font-bold h-12 rounded-xl shadow-lg shadow-brand-coral/20 gap-2 cursor-pointer transition-all hover:scale-[1.01]"
                       >
                         <MessageSquare className="w-5 h-5" />
                         Message Guest
@@ -751,26 +718,17 @@ export default function BookingsPage() {
               {/* Modal Header Bar (Hidden on print) */}
               <div className="px-6 py-4 bg-slate-900 text-white flex justify-between items-center shrink-0 border-b border-slate-800 print:hidden">
                 <div className="flex items-center gap-3">
-                  <div className="relative h-8 w-32 bg-white/10 rounded-lg p-1 flex items-center justify-center border border-white/10">
-                    <Image
-                      src="/racoonn-logo-text.png"
-                      alt="Racoonn Logo"
-                      fill
-                      className="object-contain p-0.5"
-                      unoptimized
-                    />
-                  </div>
                   {/* Toggle Tabs for Vendor Portal */}
-                  <div className="flex bg-slate-800 p-1 rounded-xl border border-slate-700 ml-2">
+                  <div className="flex bg-slate-800 p-1 rounded-xl border border-slate-700">
                     <button
                       onClick={() => setActiveInvoiceTab("guest")}
-                      className={`px-3 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer ${activeInvoiceTab === "guest" ? "bg-[#E86A70] text-white shadow-sm" : "text-slate-400 hover:text-white"}`}
+                      className={`px-3 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer ${activeInvoiceTab === "guest" ? "bg-brand-coral text-white shadow-sm" : "text-slate-400 hover:text-white"}`}
                     >
                       Guest Tax Invoice
                     </button>
                     <button
                       onClick={() => setActiveInvoiceTab("settlement")}
-                      className={`px-3 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer ${activeInvoiceTab === "settlement" ? "bg-[#E86A70] text-white shadow-sm" : "text-slate-400 hover:text-white"}`}
+                      className={`px-3 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer ${activeInvoiceTab === "settlement" ? "bg-brand-coral text-white shadow-sm" : "text-slate-400 hover:text-white"}`}
                     >
                       Vendor Settlement Statement
                     </button>
@@ -785,17 +743,25 @@ export default function BookingsPage() {
               </div>
 
               {/* Printable Invoice Document Body */}
-              <div className="printable-invoice p-6 sm:p-10 overflow-y-auto space-y-6 text-slate-800 font-sans print:overflow-visible print:p-0">
+              <div className="printable-invoice flex-1 min-h-0 p-6 sm:p-10 overflow-y-auto space-y-6 text-slate-800 font-sans print:overflow-visible print:p-0">
                 
+                <AnimatePresence mode="wait">
                 {activeInvoiceTab === "settlement" ? (
                   /* Vendor Settlement Statement Body */
-                  <div className="space-y-6">
+                  <motion.div
+                    key="settlement"
+                    initial={{ opacity: 0, y: 15 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -15 }}
+                    transition={{ duration: 0.25, ease: "easeInOut" }}
+                    className="space-y-6"
+                  >
                     <div className="flex flex-col sm:flex-row justify-between items-start gap-4 pb-6 border-b border-slate-100">
                       <div>
                         <span className="inline-block px-3.5 py-1 rounded-md text-xs font-black uppercase tracking-wider bg-slate-900 text-white shadow-xs mb-2">
                           VENDOR SETTLEMENT STATEMENT
                         </span>
-                        <h3 className="text-2xl font-black text-[#1F2E4A]">SETT-{selectedBooking.id}</h3>
+                        <h3 className="text-2xl font-black text-brand-navy">SETT-{selectedBooking.id}</h3>
                         <p className="text-xs text-slate-500 mt-1">Property: <span className="font-bold text-slate-800">{selectedBooking.property}</span></p>
                       </div>
                       <div className="text-left sm:text-right text-xs text-slate-500 space-y-1">
@@ -807,13 +773,11 @@ export default function BookingsPage() {
 
                     {(() => {
                       const roomAmountNum = parseFloat((selectedBooking.amount || "0").replace(/[^0-9.-]+/g, "")) || 0;
-                      const nights = selectedBooking.nights || 1;
-                      const pricePerNight = roomAmountNum / nights;
                       
                       let gstRate = selectedBooking.gstRate;
                       if (gstRate === undefined || gstRate === null) {
-                        if (pricePerNight <= 1000) gstRate = 0;
-                        else if (pricePerNight <= 7500) gstRate = 5;
+                        if (roomAmountNum <= 1000) gstRate = 0;
+                        else if (roomAmountNum <= 7500) gstRate = 5;
                         else gstRate = 18;
                       }
 
@@ -868,9 +832,15 @@ export default function BookingsPage() {
                         </div>
                       );
                     })()}
-                  </div>
+                  </motion.div>
                 ) : (
-                  <>
+                  <motion.div
+                    key="guest"
+                    initial={{ opacity: 0, y: 15 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -15 }}
+                    transition={{ duration: 0.25, ease: "easeInOut" }}
+                  >
                 {/* Top Header Section */}
                 <div className="flex flex-col sm:flex-row justify-between items-start gap-6 pb-6 border-b border-slate-100">
                   {/* Left: Company Branding */}
@@ -884,29 +854,29 @@ export default function BookingsPage() {
                         unoptimized
                       />
                     </div>
-                    <h4 className="text-sm font-bold text-slate-900">Racoonn Hospitality Pvt. Ltd.</h4>
+                    <h4 className="text-sm font-bold text-slate-900">CIELE TRAVELS PRIVATE LIMITED</h4>
                     <p className="text-xs text-slate-500 leading-relaxed">
-                      123, 4th Floor, Tech Park One,<br />
-                      Sector 62, Noida, Uttar Pradesh - 201309, India
+                      B-81, Rose Villa, Samiah Lake City, Rudrapur,<br />
+                      Kichha, Udham Singh Nagar - 263153, Uttarakhand
                     </p>
                     <p className="text-xs text-slate-500 font-medium">
                       support@racoonn.com &nbsp;•&nbsp; +91 120 456 7890
                     </p>
                     <p className="text-xs font-bold text-slate-700 pt-0.5">
-                      GSTIN: 09AABCR1234A1Z5 &nbsp;•&nbsp; HSN Code for Hotel rent: 9963
+                      GSTIN: 05AAOCC0859Q1Z0 &nbsp;•&nbsp; HSN Code for Hotel rent: 9963
                     </p>
                   </div>
 
                   {/* Right: Invoice Details & Badge */}
                   <div className="text-left sm:text-right space-y-2">
                     <div className="sm:flex sm:justify-end">
-                      <span className="inline-block px-3.5 py-1 rounded-md text-xs font-black uppercase tracking-wider bg-[#E86A70] text-white shadow-xs">
+                      <span className="inline-block px-3.5 py-1 rounded-md text-xs font-black uppercase tracking-wider bg-brand-coral text-white shadow-xs">
                         TAX INVOICE
                       </span>
                     </div>
                     <div>
                       <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">INVOICE NUMBER</span>
-                      <h3 className="text-2xl font-black text-[#1F2E4A] tracking-tight">INV-{selectedBooking.id}</h3>
+                      <h3 className="text-2xl font-black text-brand-navy tracking-tight">INV-{selectedBooking.id}</h3>
                     </div>
                     <div className="text-xs font-medium text-slate-600 space-y-1 pt-1">
                       <div className="flex justify-start sm:justify-end gap-3">
@@ -937,12 +907,12 @@ export default function BookingsPage() {
                   {/* Col 1: Billed To */}
                   <div className="space-y-2 pr-2">
                     <div className="flex items-center gap-2 mb-3">
-                      <div className="h-7 w-7 rounded-full bg-rose-50 flex items-center justify-center text-[#E86A70]">
+                      <div className="h-7 w-7 rounded-full bg-rose-50 flex items-center justify-center text-brand-coral">
                         <User className="w-3.5 h-3.5" />
                       </div>
                       <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">BILLED TO (GUEST)</span>
                     </div>
-                    <h4 className="text-base font-bold text-[#1F2E4A]">{selectedBooking.guest || 'Valued Guest'}</h4>
+                    <h4 className="text-base font-bold text-brand-navy">{selectedBooking.guest || 'Valued Guest'}</h4>
                     <p className="text-xs text-slate-600 break-all">{selectedBooking.email || 'guest@racoonn.com'}</p>
                     <p className="text-xs text-slate-600 font-medium">{selectedBooking.phone || '+91 98765 43210'}</p>
                     <p className="text-xs text-slate-500 leading-relaxed pt-1">
@@ -953,23 +923,23 @@ export default function BookingsPage() {
                   {/* Col 2: Reservation & Property */}
                   <div className="space-y-2 md:pl-6 pr-2 pt-4 md:pt-0">
                     <div className="flex items-center gap-2 mb-3">
-                      <div className="h-7 w-7 rounded-full bg-rose-50 flex items-center justify-center text-[#E86A70]">
+                      <div className="h-7 w-7 rounded-full bg-rose-50 flex items-center justify-center text-brand-coral">
                         <Building className="w-3.5 h-3.5" />
                       </div>
                       <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">RESERVATION & PROPERTY</span>
                     </div>
-                    <h4 className="text-base font-bold text-[#1F2E4A]">{selectedBooking.property}</h4>
+                    <h4 className="text-base font-bold text-brand-navy">{selectedBooking.property}</h4>
                     <p className="text-xs text-slate-600 leading-relaxed">
                       {selectedBooking.hotelLocation || 'India'}
                     </p>
                     <p className="text-xs text-slate-600 font-medium">+91 120 456 7890</p>
-                    <p className="text-xs font-bold text-slate-700 pt-1">GSTIN: 09AABCR1234A1Z5</p>
+                    <p className="text-xs font-bold text-slate-700 pt-1">GSTIN: 05AAOCC0859Q1Z0</p>
                   </div>
 
                   {/* Col 3: Dates & Stay Details */}
                   <div className="space-y-1.5 md:pl-6 pt-4 md:pt-0 text-xs">
                     <div className="flex items-center gap-2 mb-3">
-                      <div className="h-7 w-7 rounded-full bg-rose-50 flex items-center justify-center text-[#E86A70]">
+                      <div className="h-7 w-7 rounded-full bg-rose-50 flex items-center justify-center text-brand-coral">
                         <Calendar className="w-3.5 h-3.5" />
                       </div>
                       <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">STAY & BOOKING INFO</span>
@@ -1055,7 +1025,7 @@ export default function BookingsPage() {
                               </div>
                               <div className="p-3 bg-slate-50 grid grid-cols-2 font-bold text-slate-900">
                                 <span>Total Amount Paid by Guest</span>
-                                <span className="text-right text-[#E86A70]">₹{totalPaidNum.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                                <span className="text-right text-brand-coral">₹{totalPaidNum.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                               </div>
                             </div>
 
@@ -1164,7 +1134,7 @@ export default function BookingsPage() {
                             <span className="h-6 w-6 rounded-full bg-slate-200 text-slate-700 font-bold flex items-center justify-center text-xs">1</span>
                             <div>
                               <p className="font-bold text-slate-900">{selectedBooking.guest || 'Primary Guest'}</p>
-                              <p className="text-[10px] text-[#E86A70] font-semibold">Primary Guest</p>
+                              <p className="text-[10px] text-brand-coral font-semibold">Primary Guest</p>
                             </div>
                           </div>
                           <span className="text-slate-500 font-medium">Adult</span>
@@ -1222,9 +1192,9 @@ export default function BookingsPage() {
                 </div>
 
                 {/* Dark Footer Banner */}
-                <div className="bg-[#1F2E4A] rounded-2xl px-5 py-3.5 text-white flex flex-col sm:flex-row items-center justify-between gap-3 text-xs shadow-xs">
+                <div className="bg-brand-navy rounded-2xl px-5 py-3.5 text-white flex flex-col sm:flex-row items-center justify-between gap-3 text-xs shadow-xs">
                   <div className="flex items-center gap-3 shrink-0">
-                    <div className="h-7 w-7 rounded-full bg-white/10 flex items-center justify-center text-[#E86A70] shrink-0">
+                    <div className="h-7 w-7 rounded-full bg-white/10 flex items-center justify-center text-brand-coral shrink-0">
                       <Headphones className="w-3.5 h-3.5" />
                     </div>
                     <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
@@ -1236,26 +1206,29 @@ export default function BookingsPage() {
                   </div>
                   <div className="flex items-center gap-2.5 sm:text-right shrink-0">
                     <span className="text-slate-300 text-[11px] whitespace-nowrap">Thank you for booking with Racoonn!</span>
-                    <div className="h-6 w-6 rounded-full bg-[#E86A70] flex items-center justify-center text-white shrink-0 font-bold text-xs">
+                    <div className="h-6 w-6 rounded-full bg-brand-coral flex items-center justify-center text-white shrink-0 font-bold text-xs">
                       R
                     </div>
                   </div>
                 </div>
-                </>
+                  </motion.div>
                 )}
+                </AnimatePresence>
 
               </div>
 
               {/* Modal Footer (Hidden on print) */}
-              <div className="p-5 bg-slate-50 border-t border-slate-100 flex items-center justify-between gap-3 shrink-0 print:hidden">
-                <Button
-                  onClick={() => window.print()}
-                  variant="outline"
-                  className="font-bold rounded-xl h-11 border-slate-200 text-slate-700 hover:bg-slate-100 gap-2 cursor-pointer"
-                >
-                  <Printer className="w-4 h-4" />
-                  Print / Save PDF
-                </Button>
+              <div className={`p-5 bg-slate-50 border-t border-slate-100 flex items-center gap-3 shrink-0 print:hidden ${activeInvoiceTab === "settlement" ? "justify-end" : "justify-between"}`}>
+                {activeInvoiceTab !== "settlement" && (
+                  <Button
+                    onClick={() => window.print()}
+                    variant="outline"
+                    className="font-bold rounded-xl h-11 border-slate-200 text-slate-700 hover:bg-slate-100 gap-2 cursor-pointer"
+                  >
+                    <Printer className="w-4 h-4" />
+                    Print / Save PDF
+                  </Button>
+                )}
                 
                 <Button
                   onClick={() => setIsInvoiceOpen(false)}

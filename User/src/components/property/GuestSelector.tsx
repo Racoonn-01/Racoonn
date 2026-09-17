@@ -11,8 +11,8 @@ export default function GuestSelector() {
     rooms, setRooms, 
     adults, setAdults, 
     children, setChildren, 
-    infants, setInfants, 
-    pets, setPets 
+    infants, setInfants,
+    pets
   } = usePropertyFilterStore();
   
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -73,8 +73,11 @@ export default function GuestSelector() {
                   </button>
                   <span className="w-4 text-center font-medium text-[15px]">{adults}</span>
                   <button 
-                    onClick={() => setAdults(adults + 1)}
-                    disabled={(adults + children) >= rooms * 4}
+                    onClick={() => {
+                      const newAdults = adults + 1;
+                      if (adults + children < 30) setAdults(newAdults);
+                    }}
+                    disabled={adults + children >= 30}
                     className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center text-gray-600 hover:border-gray-800 hover:text-gray-800 transition-colors disabled:opacity-30 disabled:hover:border-gray-300 disabled:cursor-not-allowed"
                   >
                     <Plus size={14} />
@@ -98,8 +101,11 @@ export default function GuestSelector() {
                   </button>
                   <span className="w-4 text-center font-medium text-[15px]">{children}</span>
                   <button 
-                    onClick={() => setChildren(children + 1)}
-                    disabled={(adults + children) >= rooms * 4}
+                    onClick={() => {
+                      const newChildren = children + 1;
+                      if (adults + children < 30) setChildren(newChildren);
+                    }}
+                    disabled={adults + children >= 30}
                     className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center text-gray-600 hover:border-gray-800 hover:text-gray-800 transition-colors disabled:opacity-30 disabled:hover:border-gray-300 disabled:cursor-not-allowed"
                   >
                     <Plus size={14} />
@@ -123,63 +129,30 @@ export default function GuestSelector() {
                   </button>
                   <span className="w-4 text-center font-medium text-[15px]">{infants}</span>
                   <button 
-                    onClick={() => setInfants(infants + 1)}
-                    className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center text-gray-600 hover:border-gray-800 hover:text-gray-800 transition-colors"
-                  >
-                    <Plus size={14} />
-                  </button>
-                </div>
-              </div>
-
-              {/* Pets */}
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-semibold text-[15px] text-brand-navy">Pets</p>
-                  <p className="text-[13px] text-gray-500 underline cursor-pointer">Bringing a service animal?</p>
-                </div>
-                <div className="flex items-center gap-3">
-                  <button 
-                    onClick={() => setPets(Math.max(0, pets - 1))}
-                    disabled={pets <= 0}
+                    onClick={() => {
+                      if (infants < 10) setInfants(infants + 1);
+                    }}
+                    disabled={infants >= 10}
                     className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center text-gray-600 hover:border-gray-800 hover:text-gray-800 transition-colors disabled:opacity-30 disabled:hover:border-gray-300 disabled:cursor-not-allowed"
                   >
-                    <Minus size={14} />
-                  </button>
-                  <span className="w-4 text-center font-medium text-[15px]">{pets}</span>
-                  <button 
-                    onClick={() => setPets(pets + 1)}
-                    className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center text-gray-600 hover:border-gray-800 hover:text-gray-800 transition-colors"
-                  >
                     <Plus size={14} />
                   </button>
                 </div>
               </div>
 
-              <div className="pt-2 border-t border-gray-200"></div>
+
 
               {/* Rooms */}
               <div className="flex items-center justify-between">
                 <div>
                   <p className="font-semibold text-[15px] text-brand-navy">Rooms</p>
-                  <p className="text-[12px] text-gray-500">Max 4 guests per room</p>
+                  <p className="text-[12px] text-gray-500">Number of rooms</p>
                 </div>
                 <div className="flex items-center gap-3">
                   <button 
                     onClick={() => {
                       const newRooms = Math.max(1, rooms - 1);
                       setRooms(newRooms);
-                      const maxAllowed = newRooms * 4;
-                      const currentGuests = adults + children;
-                      if (currentGuests > maxAllowed) {
-                        let newChildren = children;
-                        let newAdults = adults;
-                        while (newAdults + newChildren > maxAllowed) {
-                          if (newChildren > 0) newChildren--;
-                          else newAdults--;
-                        }
-                        setChildren(newChildren);
-                        setAdults(newAdults);
-                      }
                     }}
                     disabled={rooms <= 1}
                     className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center text-gray-600 hover:border-gray-800 hover:text-gray-800 transition-colors disabled:opacity-30 disabled:hover:border-gray-300 disabled:cursor-not-allowed"
@@ -188,8 +161,11 @@ export default function GuestSelector() {
                   </button>
                   <span className="w-4 text-center font-medium text-[15px]">{rooms}</span>
                   <button 
-                    onClick={() => setRooms(rooms + 1)}
-                    className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center text-gray-600 hover:border-gray-800 hover:text-gray-800 transition-colors"
+                    onClick={() => {
+                      if (rooms < 30) setRooms(rooms + 1);
+                    }}
+                    disabled={rooms >= 30}
+                    className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center text-gray-600 hover:border-gray-800 hover:text-gray-800 transition-colors disabled:opacity-30 disabled:hover:border-gray-300 disabled:cursor-not-allowed"
                   >
                     <Plus size={14} />
                   </button>

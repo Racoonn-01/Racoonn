@@ -30,18 +30,22 @@ export function calculateHotelGST(
   const sanitizedNights = Math.max(1, Number(nights) || 1);
   const sanitizedRooms = Math.max(1, Number(rooms) || 1);
 
+  const subtotal = Math.round(sanitizedRate * sanitizedRooms * sanitizedNights);
+
   let gstPercentage = 0;
   let gstType: 'Exempt' | 'Without ITC' | 'With ITC' = 'Exempt';
 
-  if (sanitizedRate <= 7500) {
-    gstPercentage = 12;
+  if (subtotal <= 1000) {
+    gstPercentage = 0;
+    gstType = 'Exempt';
+  } else if (subtotal <= 7500) {
+    gstPercentage = 5;
     gstType = 'Without ITC';
   } else {
     gstPercentage = 18;
     gstType = 'With ITC';
   }
 
-  const subtotal = Math.round(sanitizedRate * sanitizedRooms * sanitizedNights);
   const gstAmount = Math.round((subtotal * gstPercentage) / 100);
   const grandTotal = subtotal + gstAmount;
 

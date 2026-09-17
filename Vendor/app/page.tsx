@@ -60,7 +60,7 @@ export default function AuthPage() {
 
 
   return (
-    <div className="min-h-screen bg-slate-50 flex overflow-hidden selection:bg-[#E86A70] selection:text-white font-sans">
+    <div className="min-h-screen bg-slate-50 flex overflow-hidden selection:bg-brand-coral selection:text-white font-sans">
       {/* Left Column: Auth Form */}
       <div className="w-full lg:w-[45%] xl:w-[40%] flex flex-col justify-center relative z-10 px-8 sm:px-16 py-12 bg-white shadow-[30px_0_60px_-15px_rgba(0,0,0,0.05)] overflow-y-auto">
         <div className="absolute top-8 left-8 sm:left-12">
@@ -72,7 +72,7 @@ export default function AuthPage() {
             {isForgotPassword ? (
               <>
                 <h1 className="text-4xl font-black text-slate-900 mb-4 tracking-tight font-heading">
-                  Reset <span className="text-[#E86A70]">password</span>
+                  Reset <span className="text-brand-coral">password</span>
                 </h1>
                 <p className="text-slate-500 font-medium text-[1.05rem] leading-relaxed">
                   {resetSent ? "We've sent a recovery link to your email." : "Enter your email address and we'll send you a link to reset your password."}
@@ -81,7 +81,7 @@ export default function AuthPage() {
             ) : (
               <>
                 <h1 className="text-4xl font-black text-slate-900 mb-4 tracking-tight font-heading">
-                  Welcome to <span className="text-[#E86A70]">Racoonn</span>
+                  Welcome to <span className="text-brand-coral">Racoonn</span>
                 </h1>
                 <p className="text-slate-500 font-medium text-[1.05rem] leading-relaxed">
                   Log in to manage your bookings, or create an account to list your property.
@@ -119,9 +119,9 @@ export default function AuthPage() {
                       <div className="space-y-2">
                         <Label htmlFor="resetEmail" className="text-sm font-bold text-slate-700 ml-1">Email address</Label>
                         <div className="relative">
-                          <Input suppressHydrationWarning id="resetEmail" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="hello@example.com" required className="h-14 pl-4 pr-10 rounded-2xl border-slate-200 bg-slate-50/50 focus:bg-white focus:ring-2 focus:ring-[#E86A70]/20 focus:border-[#E86A70] transition-all shadow-sm" />
+                          <Input suppressHydrationWarning id="resetEmail" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="hello@example.com" required className="h-14 pl-4 pr-10 rounded-2xl border-slate-200 bg-slate-50/50 focus:bg-white focus:ring-2 focus:ring-brand-coral/20 focus:border-brand-coral transition-all shadow-sm" />
                         </div>
-                        <Button disabled={isLoading} type="submit" className="w-full h-14 text-white rounded-2xl text-[1.05rem] font-bold shadow-lg hover:-translate-y-0.5 transition-all mt-6 bg-[#1F2E4A] hover:bg-[#1F2E4A]/90 shadow-[#1F2E4A]/20">
+                        <Button disabled={isLoading} type="submit" className="w-full h-14 text-white rounded-2xl text-[1.05rem] font-bold shadow-lg hover:-translate-y-0.5 transition-all mt-6 bg-brand-navy hover:bg-brand-navy/90 shadow-brand-navy/20">
                           {isLoading ? "Please wait..." : "Send Reset Link"}
                         </Button>
                       </div>
@@ -137,7 +137,7 @@ export default function AuthPage() {
                     <div className="space-y-2">
                       <Label htmlFor="email" className="text-sm font-bold text-slate-700 ml-1">Email address</Label>
                       <div className="relative">
-                        <Input suppressHydrationWarning id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="hello@example.com" required className="h-14 pl-4 pr-10 rounded-2xl border-slate-200 bg-slate-50/50 focus:bg-white focus:ring-2 focus:ring-[#E86A70]/20 focus:border-[#E86A70] transition-all shadow-sm" />
+                        <Input suppressHydrationWarning id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="hello@example.com" required className="h-14 pl-4 pr-10 rounded-2xl border-slate-200 bg-slate-50/50 focus:bg-white focus:ring-2 focus:ring-brand-coral/20 focus:border-brand-coral transition-all shadow-sm" />
                       </div>
                     </div>
                     
@@ -145,11 +145,11 @@ export default function AuthPage() {
                       <div className="flex justify-between items-center ml-1 mb-1">
                         <Label htmlFor="password" className="text-sm font-bold text-slate-700">Password</Label>
                         {isSignIn && (
-                          <button type="button" onClick={() => setIsForgotPassword(true)} className="text-xs font-bold text-[#E86A70] hover:text-[#E86A70]/80 transition-colors">Forgot password?</button>
+                          <button type="button" onClick={() => setIsForgotPassword(true)} className="text-xs font-bold text-brand-coral hover:text-brand-coral/80 transition-colors">Forgot password?</button>
                         )}
                       </div>
                       <div className="relative">
-                        <Input suppressHydrationWarning id="password" type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" required className="h-14 pl-4 pr-12 rounded-2xl border-slate-200 bg-slate-50/50 focus:bg-white focus:ring-2 focus:ring-[#E86A70]/20 focus:border-[#E86A70] transition-all shadow-sm" />
+                        <Input suppressHydrationWarning id="password" type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" required className="h-14 pl-4 pr-12 rounded-2xl border-slate-200 bg-slate-50/50 focus:bg-white focus:ring-2 focus:ring-brand-coral/20 focus:border-brand-coral transition-all shadow-sm" />
                         <button
                           type="button"
                           onClick={() => setShowPassword(!showPassword)}
@@ -160,7 +160,7 @@ export default function AuthPage() {
                       </div>
                     </div>
                     
-                    <Button disabled={isLoading} type="submit" className={`w-full h-14 text-white rounded-2xl text-[1.05rem] font-bold shadow-lg hover:-translate-y-0.5 transition-all mt-6 ${isSignIn ? "bg-[#1F2E4A] hover:bg-[#1F2E4A]/90 shadow-[#1F2E4A]/20" : "bg-[#E86A70] hover:bg-[#E86A70]/90 shadow-[#E86A70]/25"}`}>
+                    <Button disabled={isLoading} type="submit" className={`w-full h-14 text-white rounded-2xl text-[1.05rem] font-bold shadow-lg hover:-translate-y-0.5 transition-all mt-6 ${isSignIn ? "bg-brand-navy hover:bg-brand-navy/90 shadow-brand-navy/20" : "bg-brand-coral hover:bg-brand-coral/90 shadow-brand-coral/25"}`}>
                       {isLoading ? "Please wait..." : (isSignIn ? "Sign In to Dashboard" : "Create Account")}
                     </Button>
                   </>
@@ -192,7 +192,7 @@ export default function AuthPage() {
               </div>
               
               <p className="mt-10 text-center text-[0.85rem] text-slate-500 font-medium px-4">
-                By continuing, you agree to Racoonn&apos;s <Link href="#" className="text-slate-900 font-bold hover:underline">Terms of Service</Link> and <Link href="#" className="text-slate-900 font-bold hover:underline">Privacy Policy</Link>.
+                By continuing, you agree to Racoonn&apos;s <a href={process.env.NEXT_PUBLIC_USER_PORTAL_URL ? `${process.env.NEXT_PUBLIC_USER_PORTAL_URL}/terms` : "http://localhost:3000/terms"} target="_blank" rel="noopener noreferrer" className="text-slate-900 font-bold hover:underline">Terms of Service</a> and <a href={process.env.NEXT_PUBLIC_USER_PORTAL_URL ? `${process.env.NEXT_PUBLIC_USER_PORTAL_URL}/privacy` : "http://localhost:3000/privacy"} target="_blank" rel="noopener noreferrer" className="text-slate-900 font-bold hover:underline">Privacy Policy</a>.
               </p>
             </>
           )}
@@ -200,7 +200,7 @@ export default function AuthPage() {
       </div>
 
       {/* Right Column: Visuals */}
-      <div className="hidden lg:flex lg:w-[55%] xl:w-[60%] relative bg-[#1F2E4A] overflow-hidden items-center justify-center p-12 lg:p-20">
+      <div className="hidden lg:flex lg:w-[55%] xl:w-[60%] relative bg-brand-navy overflow-hidden items-center justify-center p-12 lg:p-20">
         {/* Abstract background elements */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute top-[20%] left-1/2 -translate-x-1/2 w-125 h-125 bg-white/20 rounded-full blur-[100px]" />
@@ -217,7 +217,7 @@ export default function AuthPage() {
 
             <h3 className="text-5xl lg:text-6xl font-heading font-black text-white leading-[1.1] tracking-tight mb-8">
               Elevate your <br/>
-              <span className="text-transparent bg-clip-text bg-linear-to-r from-[#E86A70] to-[#FF8C73]">hospitality.</span>
+              <span className="text-transparent bg-clip-text bg-linear-to-r from-brand-coral to-[#FF8C73]">hospitality.</span>
             </h3>
             
             <p className="text-slate-300 text-lg leading-relaxed mb-12 max-w-md">
@@ -227,7 +227,7 @@ export default function AuthPage() {
             {/* Bento-style feature cards */}
             <div className="grid grid-cols-2 gap-4">
               <div className="bg-white/10 backdrop-blur-xl border border-white/10 p-6 rounded-3xl hover:bg-white/15 transition-colors shadow-2xl">
-                <div className="w-12 h-12 rounded-2xl bg-linear-to-br from-[#E86A70] to-[#FF8C73] flex items-center justify-center mb-4 shadow-lg shadow-[#E86A70]/30">
+                <div className="w-12 h-12 rounded-2xl bg-linear-to-br from-brand-coral to-[#FF8C73] flex items-center justify-center mb-4 shadow-lg shadow-brand-coral/30">
                   <Globe2 className="w-6 h-6 text-white" />
                 </div>
                 <h4 className="text-white font-bold text-lg mb-2">Global Reach</h4>
@@ -246,12 +246,12 @@ export default function AuthPage() {
             <div className="mt-14 pt-8 border-t border-white/10 flex items-center gap-6">
               <div className="flex -space-x-4">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="https://i.pravatar.cc/100?img=1" className="w-12 h-12 rounded-full border-4 border-[#1F2E4A] object-cover" alt="Partner" />
+                <img src="https://i.pravatar.cc/100?img=1" className="w-12 h-12 rounded-full border-4 border-brand-navy object-cover" alt="Partner" />
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="https://i.pravatar.cc/100?img=2" className="w-12 h-12 rounded-full border-4 border-[#1F2E4A] object-cover" alt="Partner" />
+                <img src="https://i.pravatar.cc/100?img=2" className="w-12 h-12 rounded-full border-4 border-brand-navy object-cover" alt="Partner" />
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="https://i.pravatar.cc/100?img=3" className="w-12 h-12 rounded-full border-4 border-[#1F2E4A] object-cover" alt="Partner" />
-                <div className="w-12 h-12 rounded-full border-4 border-[#1F2E4A] bg-[#E86A70] flex items-center justify-center text-white font-black text-sm z-10">
+                <img src="https://i.pravatar.cc/100?img=3" className="w-12 h-12 rounded-full border-4 border-brand-navy object-cover" alt="Partner" />
+                <div className="w-12 h-12 rounded-full border-4 border-brand-navy bg-brand-coral flex items-center justify-center text-white font-black text-sm z-10">
                   +2k
                 </div>
               </div>

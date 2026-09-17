@@ -67,7 +67,7 @@ export default function BookingsSection() {
           checkOut: new Date(String(doc.checkOut)).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }),
           rawCheckIn: String(doc.checkIn),
           guests: `${doc.adults} Adults${doc.children ? `, ${doc.children} Child` : ''}`,
-          amount: payment ? `₹${Number((payment as Record<string, unknown>).totalAmount).toLocaleString()}` : `₹${(Number(doc.nights) * 32000).toLocaleString()}`,
+          amount: payment ? `₹${Number((payment as Record<string, unknown>).totalAmount).toLocaleString()}` : `₹${(doc.priceAfterTax ? Number(doc.priceAfterTax) : (doc.totalAmount ? Number(doc.totalAmount) : (Number(doc.nights) * Number(doc.roomPricePerNight || 0)))).toLocaleString()}`,
           status: currentStatus === 'Confirmed' ? 'Upcoming' : currentStatus,
           image: String(doc.hotelImage),
         };
@@ -82,7 +82,10 @@ export default function BookingsSection() {
 
   useEffect(() => {
     // Initial fetch doesn't need to trigger loading state since it's true by default
-    fetchBookings(false).catch(console.error);
+    const load = async () => {
+      await fetchBookings(false);
+    };
+    load().catch(console.error);
   }, [fetchBookings]);
 
   const filteredBookings = bookings.filter(b => b.status === activeTab);
@@ -188,12 +191,6 @@ export default function BookingsSection() {
 
                     {/* Actions */}
                     <div className="mt-auto flex flex-wrap gap-3">
-                      <button 
-                        onClick={() => setBookingToView({ booking, mode: 'details' })}
-                        className="px-5 py-2.5 bg-brand-navy hover:bg-brand-coral text-white text-sm font-bold rounded-xl transition-colors"
-                      >
-                        View Details
-                      </button>
                       <button 
                         onClick={() => setBookingToView({ booking, mode: 'invoice' })}
                         className="px-5 py-2.5 bg-gray-50 hover:bg-gray-100 text-brand-navy text-sm font-bold rounded-xl transition-colors flex items-center gap-2"

@@ -65,7 +65,6 @@ const financialItems: NavItem[] = [
 
 const operationsItems: NavItem[] = [
   { title: "Partner API Keys", url: "/admin/integrations/api-keys", icon: ShieldCheck, key: "PartnerAPI" },
-  { title: "Webhooks", url: "/admin/integrations/webhooks", icon: LifeBuoy, key: "Webhooks" },
   { title: "Reviews", url: "/admin/reviews", icon: MessageSquare, key: "Reviews" },
   { title: "Support", url: "/admin/support", icon: LifeBuoy, key: "Support" },
   { title: "Marketing", url: "/admin/marketing", icon: Megaphone, key: "Marketing" },
@@ -73,8 +72,6 @@ const operationsItems: NavItem[] = [
 ]
 
 const systemItems: NavItem[] = [
-  { title: "Reports", url: "/admin/reports", icon: BarChart3, key: "Reports" },
-  { title: "Notifications", url: "/admin/notifications", icon: Bell, key: "Notifications" },
   { title: "Fraud Detection", url: "/admin/fraud", icon: AlertTriangle, key: "Fraud" },
   { title: "Role Management", url: "/admin/roles", icon: Shield, key: "Roles" },
   { title: "Settings", url: "/admin/settings", icon: Settings, key: "Settings" },

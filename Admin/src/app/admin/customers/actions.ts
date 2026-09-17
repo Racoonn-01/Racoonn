@@ -61,7 +61,7 @@ export async function getAllCustomers() {
           bookings: 0,
           activeBookings: 0,
           totalSpentNum: 0,
-          status: 'active',
+          status: 'active', // Default, will override below if found in Appwrite
           joined: new Date(booking.$createdAt).toISOString().split('T')[0] // Approximation
         });
       }
@@ -82,6 +82,20 @@ export async function getAllCustomers() {
       }
     });
 
+    try {
+      const usersList = await appwriteServer.users.list();
+      const appwriteUsers = new Map(usersList.users.map(u => [u.$id, u]));
+      
+      Array.from(customerMap.values()).forEach(c => {
+        if (!c.id.startsWith('guest-') && appwriteUsers.has(c.id)) {
+          const user = appwriteUsers.get(c.id);
+          c.status = user?.status ? 'active' : 'suspended';
+        }
+      });
+    } catch (err) {
+      console.warn("Could not fetch Appwrite users for status check:", err);
+    }
+
     const customers = Array.from(customerMap.values()).map(c => ({
       ...c,
       totalSpent: `₹${c.totalSpentNum.toLocaleString('en-IN', { minimumFractionDigits: 0 })}`
@@ -91,5 +105,19 @@ export async function getAllCustomers() {
   } catch (error) {
     console.error("Failed to fetch customers:", error);
     return [];
+  }
+}
+
+export async function toggleCustomerStatus(userId: string, suspend: boolean) {
+  try {
+    if (userId.startsWith('guest-')) {
+      throw new Error("Cannot suspend guest users.");
+    }
+    // In Appwrite, status true = active, false = blocked
+    await appwriteServer.users.updateStatus(userId, !suspend);
+    return { success: true };
+  } catch (error: unknown) {
+    console.error("Failed to toggle customer status:", error);
+    return { success: false, error: (error as Error).message };
   }
 }

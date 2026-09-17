@@ -1,20 +1,30 @@
 "use client"
 
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { CheckCircle2, XCircle, Search, Filter } from "lucide-react"
 import { Input } from "@/components/ui/input"
 
 export default function VerificationLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
+  const router = useRouter()
+  const searchParams = useSearchParams()
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const params = new URLSearchParams(searchParams.toString())
+    if (e.target.value) {
+      params.set('q', e.target.value)
+    } else {
+      params.delete('q')
+    }
+    router.replace(`${pathname}?${params.toString()}`)
+  }
   
   const tabs = [
     { label: "KYC Verification", value: "kyc" },
-    { label: "Business", value: "business" },
-    { label: "Property", value: "property" },
-    { label: "Bank", value: "bank" },
-    { label: "Pending (12)", value: "pending" },
+
+    { label: "Pending", value: "pending" },
     { label: "Approved", value: "approved" },
     { label: "Rejected", value: "rejected" },
   ]
@@ -27,17 +37,9 @@ export default function VerificationLayout({ children }: { children: React.React
           <h2 className="text-3xl font-black tracking-tight text-foreground">Verification Center</h2>
           <p className="text-muted-foreground mt-1 text-lg">Review and manage vendor compliance documents securely.</p>
         </div>
-        <div className="flex gap-3">
-          <Button variant="outline" className="h-11 px-6 rounded-full font-semibold border-primary/20 hover:bg-primary/5 text-primary transition-all">
-            <CheckCircle2 className="mr-2 h-4 w-4" /> Bulk Approve
-          </Button>
-          <Button variant="destructive" className="h-11 px-6 rounded-full font-semibold shadow-lg hover:shadow-xl transition-all">
-            <XCircle className="mr-2 h-4 w-4" /> Bulk Reject
-          </Button>
-        </div>
       </div>
 
-      <div className="rounded-2xl border bg-card/40 shadow-sm backdrop-blur-xl overflow-hidden p-6">
+      <div className="rounded-2xl border bg-card shadow-sm overflow-hidden p-6">
         <div className="w-full">
           {/* Custom Tabs List */}
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
@@ -64,11 +66,13 @@ export default function VerificationLayout({ children }: { children: React.React
             <div className="flex w-full sm:w-auto items-center gap-3">
               <div className="relative w-full sm:w-64">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input placeholder="Search documents..." className="w-full pl-9 bg-background border-muted-foreground/20 rounded-full h-10" />
+                <Input 
+                  placeholder="Search documents..." 
+                  className="w-full pl-9 bg-background border-muted-foreground/20 rounded-full h-10" 
+                  defaultValue={searchParams.get('q') || ''}
+                  onChange={handleSearchChange}
+                />
               </div>
-              <Button variant="outline" size="sm" className="h-10 rounded-full border-muted-foreground/20 px-4">
-                <Filter className="mr-2 h-4 w-4" /> Filter
-              </Button>
             </div>
           </div>
           

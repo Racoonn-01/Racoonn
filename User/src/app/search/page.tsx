@@ -139,6 +139,9 @@ function SearchContent() {
   // Mobile bottom-sheet drag state
   const [isListExpanded, setIsListExpanded] = useState(false);
   const dragStartY = useRef(0);
+  const [displayLimit, setDisplayLimit] = useState(10);
+  const loaderRef = useRef<HTMLDivElement>(null);
+
 
   useEffect(() => {
     async function loadProperties() {
@@ -216,23 +219,83 @@ function SearchContent() {
     }
   };
 
-  const filteredProperties = properties.filter(property => {
-    if (!isActiveProperty(property)) return false;
-
-    const urlLocation = searchParams.get('location') || searchParams.get('destination');
-    if (urlLocation && urlLocation.trim() !== '' && urlLocation.toLowerCase() !== 'anywhere') {
-      const propLocStr = `${property.location} ${property.title} ${property.subtitle}`.toLowerCase();
-      if (!propLocStr.includes(urlLocation.toLowerCase())) {
-        return false;
-      }
-    }
 
     const aiQuery = searchParams.get('ai');
-    if (aiQuery && aiQuery.trim() !== '') {
-      const aiSearchString = `${property.title} ${property.subtitle} ${property.details} ${property.location}`.toLowerCase();
-      const words = aiQuery.toLowerCase().split(' ').filter(w => w.length > 2);
-      const matchesAi = words.some(w => aiSearchString.includes(w));
-      if (!matchesAi && words.length > 0) return false;
+    const parsedAiQuery = React.useMemo(() => {
+      if (!aiQuery || aiQuery.trim() === '') return null;
+      const q = aiQuery.toLowerCase();
+      
+      // Parse Budget
+      let maxBudget = Infinity;
+      const budgetMatch = q.match(/(?:under|below|less than|max|budget|around|cheaper than|under rs|under inr|under ₹)\s*(?:rs\.?|inr|₹)?\s*(\d+(?:,\d+)?)/i);
+      if (budgetMatch) {
+        maxBudget = parseInt(budgetMatch[1].replace(/,/g, ''), 10);
+      }
+      
+      // Parse Guests
+      let minGuests = 1;
+      const guestMatch = q.match(/(?:for\s+)?(\d+)\s*(?:guests?|people|persons?|adults?)/i);
+      if (guestMatch) {
+        minGuests = parseInt(guestMatch[1], 10);
+      } else if (q.includes('couple') || q.includes('2 people') || q.includes('two people') || q.includes('two guests')) {
+        minGuests = 2;
+      } else if (q.includes('family of 4') || q.includes('4 people') || q.includes('four people')) {
+        minGuests = 4;
+      }
+      
+      // Extract property types
+      const possibleTypes = ['hotel', 'homestay', 'villa', 'resort', 'apartment', 'cabin', 'cottage', 'guest house', 'camp', 'tent'];
+      const requiredTypes = possibleTypes.filter(t => q.includes(t));
+      
+      // Extract remaining text keywords
+      const stopWords = ['best', 'top', 'cheap', 'show', 'me', 'find', 'the', 'in', 'at', 'on', 'with', 'for', 'of', 'and', 'good', 'great', 'awesome', 'under', 'below', 'less', 'than', 'max', 'budget', 'around', 'price', 'cheaper', 'rs', 'inr', 'guests', 'people', 'persons', 'adults', 'couple', 'family', 'properties', 'property', 'stays', 'stay', 'rooms', 'room'];
+      const rawWords = q.split(' ').filter(w => w.length > 2);
+      
+      const keywords = rawWords.filter(w => 
+        !stopWords.includes(w) && 
+        !w.match(/^\d+$/) && 
+        !requiredTypes.some(t => t.includes(w))
+      );
+      
+      return { maxBudget, minGuests, requiredTypes, keywords, rawWords };
+    }, [aiQuery]);
+
+    const filteredProperties = properties.filter(property => {
+      if (!isActiveProperty(property)) return false;
+
+      const urlLocation = searchParams.get('location') || searchParams.get('destination');
+      if (urlLocation && urlLocation.trim() !== '' && urlLocation.toLowerCase() !== 'anywhere') {
+        const propLocStr = `${property.location} ${property.title} ${property.subtitle}`.toLowerCase();
+        if (!propLocStr.includes(urlLocation.toLowerCase())) {
+          return false;
+        }
+      }
+
+    if (parsedAiQuery) {
+      // 1. Budget check
+      if (property.price > parsedAiQuery.maxBudget) return false;
+      
+      // 2. Guests check (assuming 1 bed = 2 guests roughly)
+      const estimatedCapacity = Math.max((property.beds || 1) * 2, (property.bedrooms || 1) * 2);
+      if (estimatedCapacity < parsedAiQuery.minGuests) return false;
+      
+      // 3. Property Type check
+      if (parsedAiQuery.requiredTypes.length > 0) {
+        const typeStr = `${property.title} ${property.subtitle} ${property.propertyType}`.toLowerCase();
+        const hasType = parsedAiQuery.requiredTypes.some(t => typeStr.includes(t));
+        if (!hasType) return false;
+      }
+      
+      // 4. Keyword check
+      const amenitiesStr = property.amenities ? (Array.isArray(property.amenities) ? property.amenities.join(' ') : property.amenities) : '';
+      const aiSearchString = `${property.title} ${property.subtitle} ${property.details} ${property.location} ${property.city} ${property.state} ${amenitiesStr}`.toLowerCase();
+      
+      const wordsToMatch = parsedAiQuery.keywords.length > 0 
+        ? parsedAiQuery.keywords 
+        : (parsedAiQuery.maxBudget === Infinity && parsedAiQuery.minGuests === 1 && parsedAiQuery.requiredTypes.length === 0 ? parsedAiQuery.rawWords : []);
+      
+      const matchesAi = wordsToMatch.every(w => aiSearchString.includes(w));
+      if (!matchesAi && wordsToMatch.length > 0) return false;
     }
 
     const searchString = `${property.title} ${property.subtitle} ${property.details} ${property.location} ${property.city} ${property.state}`.toLowerCase();
@@ -308,6 +371,23 @@ function SearchContent() {
 
     return true;
   });
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setDisplayLimit((prev) => prev + 10);
+        }
+      },
+      { rootMargin: '200px' }
+    );
+
+    if (loaderRef.current) {
+      observer.observe(loaderRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, [loading, filteredProperties.length]);
 
   return (
     <div className="flex flex-col h-[calc(100vh-92px)] overflow-hidden">
@@ -439,7 +519,7 @@ function SearchContent() {
                   </div>
                 ))
               ) : filteredProperties.length > 0 ? (
-                filteredProperties.map((property) => (
+                filteredProperties.slice(0, displayLimit).map((property) => (
                   <PropertyCard 
                     key={property.id} 
                     property={property} 
@@ -454,11 +534,11 @@ function SearchContent() {
               )}
             </div>
             
-            <div className="mt-12 mb-8 flex justify-center">
-              <button className="bg-gray-900 text-white font-bold text-[15px] px-8 py-3 rounded-xl hover:bg-gray-800 transition-colors">
-                Load more homes
-              </button>
-            </div>
+            {filteredProperties.length > displayLimit && (
+              <div ref={loaderRef} className="mt-12 mb-8 flex justify-center py-6">
+                <div className="w-8 h-8 border-4 border-gray-200 border-t-gray-900 rounded-full animate-spin"></div>
+              </div>
+            )}
           </div>
         </div>
 

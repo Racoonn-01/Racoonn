@@ -30,7 +30,7 @@ export function ProtectionSection() {
   return (
     <section id="protection" className="py-24 bg-secondary relative overflow-hidden">
       {/* Decorative Glows */}
-      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#E86A70]/10 rounded-full blur-[100px] pointer-events-none translate-x-1/3 -translate-y-1/3" />
+      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-brand-coral/10 rounded-full blur-[100px] pointer-events-none translate-x-1/3 -translate-y-1/3" />
       <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-[#DCE8F5]/5 rounded-full blur-[120px] pointer-events-none -translate-x-1/3 translate-y-1/3" />
 
       <div className="container mx-auto px-4 md:px-6 relative z-10 max-w-7xl">
@@ -44,8 +44,8 @@ export function ProtectionSection() {
               viewport={{ once: true }}
               className="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-white/5 border border-white/10 mb-8 backdrop-blur-sm relative"
             >
-              <div className="absolute inset-0 bg-[#E86A70]/20 rounded-3xl blur-md" />
-              <ShieldCheck className="w-10 h-10 text-[#E86A70] relative z-10" strokeWidth={2} />
+              <div className="absolute inset-0 bg-brand-coral/20 rounded-3xl blur-md" />
+              <ShieldCheck className="w-10 h-10 text-brand-coral relative z-10" strokeWidth={2} />
             </motion.div>
             
             <motion.h2 
@@ -55,7 +55,7 @@ export function ProtectionSection() {
               className="text-4xl md:text-5xl lg:text-6xl font-black text-white tracking-tight leading-[1.1]"
             >
               Absolute <br/>
-              <span className="text-[#E86A70]">peace of mind.</span>
+              <span className="text-brand-coral">peace of mind.</span>
             </motion.h2>
             
             <motion.p 
@@ -81,8 +81,8 @@ export function ProtectionSection() {
                   transition={{ delay: index * 0.1, duration: 0.5, type: "spring" }}
                   className="group bg-white/5 hover:bg-white/10 border border-white/10 backdrop-blur-md rounded-2xl p-6 md:p-8 flex items-start gap-6 transition-all cursor-default"
                 >
-                  <div className="w-14 h-14 rounded-xl bg-[#E86A70]/10 border border-[#E86A70]/20 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform duration-300">
-                    <item.icon className="w-7 h-7 text-[#E86A70]" strokeWidth={2} />
+                  <div className="w-14 h-14 rounded-xl bg-brand-coral/10 border border-brand-coral/20 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform duration-300">
+                    <item.icon className="w-7 h-7 text-brand-coral" strokeWidth={2} />
                   </div>
                   <div>
                     <h3 className="text-xl font-bold text-white mb-2 tracking-wide">{item.title}</h3>

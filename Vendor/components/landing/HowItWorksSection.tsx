@@ -32,7 +32,7 @@ export function HowItWorksSection() {
   ];
 
   return (
-    <section id="how-it-works" className="py-24 bg-[#1F2E4A] relative overflow-hidden">
+    <section id="how-it-works" className="py-24 bg-brand-navy relative overflow-hidden">
       <div className="absolute top-0 right-0 w-full h-full bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-primary/10 via-transparent to-transparent opacity-50" />
       
       <div className="container mx-auto px-4 md:px-6 relative z-10">
@@ -56,7 +56,7 @@ export function HowItWorksSection() {
               transition={{ delay: index * 0.2 }}
               className="relative flex flex-col items-center text-center group"
             >
-              <div className="w-24 h-24 rounded-full bg-[#1F2E4A] border-4 border-slate-800 flex items-center justify-center relative z-10 mb-8 group-hover:border-primary group-hover:scale-110 transition-all duration-300 shadow-xl">
+              <div className="w-24 h-24 rounded-full bg-brand-navy border-4 border-slate-800 flex items-center justify-center relative z-10 mb-8 group-hover:border-primary group-hover:scale-110 transition-all duration-300 shadow-xl">
                 <step.icon className="w-8 h-8 text-primary" />
                 <div className="absolute -top-3 -right-3 w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white text-xs font-bold shadow-lg">
                   {step.num}

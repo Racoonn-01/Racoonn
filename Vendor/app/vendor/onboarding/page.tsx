@@ -98,7 +98,7 @@ export default function OnboardingPage() {
       case 9: return <Step10Review onSubmit={handleCompleteOnboarding} onBack={prevStep} />;
       case 10: return (
         <div className="flex flex-col items-center justify-center h-full min-h-[400px]">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#E86A70] mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-coral mb-4"></div>
           <h2 className="text-xl font-bold text-slate-800">Redirecting to Dashboard...</h2>
           <p className="text-slate-500 mt-2">Your application has been submitted.</p>
         </div>

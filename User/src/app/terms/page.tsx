@@ -153,16 +153,12 @@ export default function TermsPage() {
                 <h2 className="text-2xl md:text-3xl font-black text-slate-900">4. Cancellations & Refunds</h2>
               </div>
               <div className="prose prose-slate prose-lg max-w-none text-slate-600 font-normal leading-relaxed">
-                <p>
-                  Cancellation and prepayment policies vary heavily depending on the property type, time of booking, and specific vendor rules. These conditions are explicitly detailed on the property listing and during the checkout flow.
-                </p>
-                <p>
-                  To cancel a booking, you must utilize the automated cancellation workflow within your Racoonn user dashboard. Refunds, if applicable, are routed back to the original payment method and typically take 5-7 business days to reflect in your statement.
-                </p>
-                <div className="bg-orange-50 border border-orange-100 p-4 rounded-xl mt-4 flex gap-3 text-orange-900 text-sm">
-                  <AlertTriangle className="shrink-0 text-orange-500" size={20} />
-                  <p><strong>Note:</strong> Service fees or platform convenience charges levied by Racoonn are strictly non-refundable under any circumstance unless a cancellation is initiated due to a system fault.</p>
-                </div>
+                <ul className="list-disc pl-5 space-y-2 mt-4 mb-6">
+                  <li>Free cancellation up to 24 hours before check-in.</li>
+                  <li>Free cancellation within 48 hours of booking, if check-in is at least 24 hours away.</li>
+                  <li>Later cancellations depend on the property’s cancellation policy.</li>
+                  <li>Contact us by email for cancellation requests.</li>
+                </ul>
               </div>
             </section>
 

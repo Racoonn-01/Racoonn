@@ -78,7 +78,7 @@ export default function DevelopersPage() {
             </div>
             
             <a 
-              href="http://localhost:3000/vendor/settings" 
+              href={process.env.NEXT_PUBLIC_VENDOR_URL ? `${process.env.NEXT_PUBLIC_VENDOR_URL}/vendor/settings` : "http://localhost:3002/vendor/settings"} 
               className="flex items-center gap-2 bg-brand-coral hover:bg-[#d95d63] text-white px-5 py-2 rounded-full text-sm font-bold transition-all shadow-lg shadow-brand-coral/20 hover:shadow-xl hover:shadow-brand-coral/30 hover:-translate-y-0.5 group"
             >
               <KeyRound className="h-4 w-4 group-hover:rotate-12 transition-transform" />

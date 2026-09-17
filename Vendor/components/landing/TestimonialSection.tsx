@@ -79,7 +79,7 @@ export function TestimonialSection() {
           {testimonials.map((test, index) => (
             <div
               key={index}
-              className="w-[350px] md:w-[450px] shrink-0 bg-white border border-slate-100 shadow-xl shadow-slate-200/40 rounded-[2rem] p-8 md:p-10 flex flex-col transition-transform duration-300 hover:-translate-y-2"
+              className="w-[350px] md:w-[450px] shrink-0 bg-white border border-slate-100 shadow-xl shadow-slate-200/40 rounded-4xl p-8 md:p-10 flex flex-col transition-transform duration-300 hover:-translate-y-2"
             >
               <div className="flex gap-1 text-amber-400 mb-6">
                 {[1, 2, 3, 4, 5].map((s) => (

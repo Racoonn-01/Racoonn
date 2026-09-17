@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useState, useRef, useEffect } from "react"
 import { Search, FileText, LogOut, User, ShieldCheck } from "lucide-react"
 import Link from "next/link"
 import { logoutAdmin } from "@/lib/auth"
@@ -20,21 +20,39 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 export function AdminNavbar() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [session, setSession] = useState<{ email?: string; name?: string; role?: string } | null>(() => {
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    }
+    
+    if (isDropdownOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isDropdownOpen]);
+
+  const [session, setSession] = useState<{ email?: string; name?: string; role?: string } | null>(null);
+
+  useEffect(() => {
     if (typeof document !== "undefined") {
       try {
         const cookies = document.cookie.split("; ");
         const sessionCookie = cookies.find(row => row.startsWith("racoonn_admin_session="));
         if (sessionCookie) {
           const val = decodeURIComponent(sessionCookie.split("=")[1]);
-          return JSON.parse(val);
+          setSession(JSON.parse(val));
         }
       } catch (e) {
         console.error("Failed to parse session cookie:", e);
       }
     }
-    return null;
-  });
+  }, []);
 
   const handleLogout = async () => {
     await logoutAdmin();
@@ -84,7 +102,7 @@ export function AdminNavbar() {
 
 
         {/* Profile Avatar & Logout Dropdown */}
-        <div className="relative">
+        <div className="relative" ref={dropdownRef}>
           <Avatar 
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
             className="h-10 w-10 border-2 border-primary/20 shadow-sm hover:ring-2 hover:ring-primary/30 transition-all cursor-pointer"

@@ -1,8 +1,9 @@
 import { create } from 'zustand';
+import { calculateRoomPricing } from '@/lib/pricing';
 import { databases } from '@/lib/appwrite/config';
 import { ID } from 'appwrite';
 import { useAuthStore } from './authStore';
-import { calculateHotelGST } from "@/lib/utils/gst";
+import { calculateRoomGst } from "@/lib/gst";
 
 const DATABASE_ID = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID!;
 
@@ -68,6 +69,10 @@ interface CheckoutState {
   hotelName: string | null;
   hotelImage: string | null;
   hotelLocation: string | null;
+  standardCapacity: number;
+  maximumCapacity: number;
+  extraPersonCharge: number;
+  extraBedAvailable: boolean;
   selectedAddons: string[];
   propertyAddons: PropertyAddon[] | null; // null means loading, [] means empty
   appliedCoupon: Coupon | null;
@@ -80,9 +85,9 @@ interface CheckoutState {
   updateGuestDetails: (details: Partial<GuestDetails>) => void;
   initTravelers: (count: number) => void;
   updateTraveler: (index: number, details: Partial<TravelerDetails>) => void;
-  setRoomDetails: (hotelId: string, roomName: string, price: number, hotelName?: string, hotelImage?: string, hotelLocation?: string) => void;
+  setRoomDetails: (hotelId: string, roomName: string, price: number, hotelName?: string, hotelImage?: string, hotelLocation?: string, stdCap?: number, maxCap?: number, epc?: number, eba?: boolean) => void;
   fetchPropertyAddons: (hotelId: string) => Promise<void>;
-  submitBooking: (bookingData: { hotelId?: string; hotelName: string; hotelLocation?: string; hotelImage?: string; price: number; nights: number; checkIn: string; checkOut: string; adults?: number; gstRate?: number; }) => Promise<void>;
+  submitBooking: (bookingData: { hotelId?: string; hotelName: string; hotelLocation?: string; hotelImage?: string; price: number; nights: number; rooms: number; roomName?: string; checkIn: string; checkOut: string; adults?: number; gstRate?: number; }) => Promise<void>;
 }
 
 export const useCheckoutStore = create<CheckoutState>((set, get) => ({
@@ -92,7 +97,7 @@ export const useCheckoutStore = create<CheckoutState>((set, get) => ({
     lastName: '',
     email: '',
     phone: '',
-    country: 'United States',
+    country: '',
     specialRequests: ''
   },
   additionalTravelers: [],
@@ -105,6 +110,10 @@ export const useCheckoutStore = create<CheckoutState>((set, get) => ({
   hotelName: null,
   hotelImage: null,
   hotelLocation: null,
+  standardCapacity: 2,
+  maximumCapacity: 4,
+  extraPersonCharge: 0,
+  extraBedAvailable: false,
   selectedAddons: [],
   propertyAddons: null,
   appliedCoupon: null,
@@ -297,13 +306,17 @@ export const useCheckoutStore = create<CheckoutState>((set, get) => ({
     }
     return { additionalTravelers: newTravelers };
   }),
-  setRoomDetails: (hotelId, roomName, price, hotelName, hotelImage, hotelLocation) => set({ 
+  setRoomDetails: (hotelId, roomName, price, hotelName, hotelImage, hotelLocation, stdCap = 2, maxCap = 4, epc = 0, eba = false) => set({ 
     selectedHotelId: hotelId,
     selectedRoomName: roomName, 
     selectedPrice: price,
     hotelName: hotelName || null,
     hotelImage: hotelImage || null,
-    hotelLocation: hotelLocation || null
+    hotelLocation: hotelLocation || null,
+    standardCapacity: stdCap,
+    maximumCapacity: maxCap,
+    extraPersonCharge: epc,
+    extraBedAvailable: eba
   }),
   fetchPropertyAddons: async (hotelId) => {
     if (!hotelId || hotelId === 'hotel-123' || hotelId === 'undefined') {
@@ -341,14 +354,32 @@ export const useCheckoutStore = create<CheckoutState>((set, get) => ({
         const addonPrice = (addon?.price || 0) * (isPerPerson ? (bookingData.adults || 1) : 1);
         return { name: addon?.name || "Add-on", price: addonPrice };
       });
-      const addons = addonsList.reduce((sum: number, item: any) => sum + item.price, 0);
+      const addons = addonsList.reduce((sum: number, item: { price: number }) => sum + item.price, 0);
 
       const perNightPrice = bookingData.price || 3500;
       const nightsCount = bookingData.nights || 1;
-      const gstCalc = calculateHotelGST(perNightPrice, nightsCount, 1);
+      const roomsCount = bookingData.rooms || 1;
+      
+      const pricingParams = {
+        basePrice: perNightPrice,
+        standardCapacity: get().standardCapacity,
+        maximumCapacity: get().maximumCapacity,
+        extraPersonCharge: get().extraPersonCharge,
+        totalGuests: Math.ceil((bookingData.adults || 2) / roomsCount),
+        numberOfNights: nightsCount
+      };
+      
+      const pricing = calculateRoomPricing(pricingParams);
 
-      const roomAmount = gstCalc.priceBeforeTax;
-      const gstRate = gstCalc.gstPercentage;
+      const totalRoomSubtotal = pricing.roomSubtotal * roomsCount;
+      const totalExtraGuestAmount = pricing.extraGuestAmount * roomsCount;
+      const totalBaseRoomAmount = pricing.baseRoomAmount * roomsCount;
+      const effectivePerNightPrice = totalRoomSubtotal / (nightsCount * roomsCount);
+
+      const gstCalc = calculateRoomGst(effectivePerNightPrice, nightsCount, roomsCount, addons);
+
+      const roomAmount = gstCalc.roomAmount;
+      const gstRate = gstCalc.gstRate;
       const gstAmount = gstCalc.gstAmount;
 
       const { appliedCoupon } = get();
@@ -361,7 +392,7 @@ export const useCheckoutStore = create<CheckoutState>((set, get) => ({
         }
       }
       
-      const totalAmount = Math.max(0, gstCalc.priceAfterTax + addons - discount);
+      const totalAmount = Math.max(0, gstCalc.totalAmount - discount);
       const platformCommissionRate = 18;
       const platformCommissionAmount = Math.round((roomAmount * (platformCommissionRate / 100)) * 100) / 100;
       const vendorSettlement = Math.round((totalAmount - platformCommissionAmount) * 100) / 100;
@@ -370,7 +401,7 @@ export const useCheckoutStore = create<CheckoutState>((set, get) => ({
       await databases.createDocument(DATABASE_ID, 'bookings', bookingId, {
         userId: user.$id,
         hotelId: bookingData.hotelId || get().selectedHotelId || 'hotel-123',
-        roomId: 'room-123',
+        roomId: bookingData.roomName || 'Unknown Room',
         checkIn: bookingData.checkIn,
         checkOut: bookingData.checkOut,
         nights: nightsCount,
@@ -380,13 +411,24 @@ export const useCheckoutStore = create<CheckoutState>((set, get) => ({
         hotelImage: bookingData.hotelImage || get().hotelImage || 'https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=1600&auto=format&fit=crop',
         hotelLocation: bookingData.hotelLocation || get().hotelLocation || 'Udaipur, Rajasthan, India',
         adults: bookingData.adults || 2,
-        roomPricePerNight: gstCalc.roomPricePerNight,
-        gstPercentage: gstCalc.gstPercentage,
+        roomPricePerNight: gstCalc.pricePerNight,
+        gstPercentage: gstCalc.gstRate,
         gstAmount: gstCalc.gstAmount,
-        gstType: gstCalc.gstType,
-        priceBeforeTax: gstCalc.priceBeforeTax,
-        priceAfterTax: gstCalc.priceAfterTax,
-        taxableAmount: gstCalc.taxableAmount,
+        gstType: gstCalc.gstStatus,
+        priceBeforeTax: gstCalc.roomAmount,
+        priceAfterTax: gstCalc.totalAmount,
+        taxableAmount: gstCalc.roomAmount + addons,
+        
+        // Dynamic Pricing Fields
+        standardCapacity: pricing.standardCapacity,
+        maximumCapacity: pricing.maximumCapacity,
+        totalGuests: bookingData.adults || 2,
+        extraGuests: pricing.extraGuests * roomsCount,
+        extraPersonCharge: pricing.extraPersonCharge,
+        baseRoomAmount: totalBaseRoomAmount,
+        extraGuestAmount: totalExtraGuestAmount,
+        pricingBreakdown: JSON.stringify(pricing.pricingBreakdown),
+        snapshotRoomConfig: JSON.stringify(pricingParams),
       });
 
       // Format additional travelers and GST metadata info

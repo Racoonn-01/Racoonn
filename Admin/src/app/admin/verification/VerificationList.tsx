@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { FileText, ExternalLink, Mail, Phone, Loader2, Inbox } from "lucide-react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Client, Databases, Query } from "appwrite"
 
 export interface ReviewDoc {
@@ -38,6 +38,8 @@ export default function VerificationList({ type }: { type?: string }) {
   const [requests, setRequests] = useState<RealtimeVendorRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const searchQuery = searchParams.get('q')?.toLowerCase() || '';
 
   // Appwrite Realtime WebSockets & Storage Sync Loader
   useEffect(() => {
@@ -172,7 +174,7 @@ export default function VerificationList({ type }: { type?: string }) {
   // LOADING STATE
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center p-16 bg-card/60 backdrop-blur-md rounded-2xl border border-muted/30">
+      <div className="flex flex-col items-center justify-center p-16 bg-card rounded-2xl border border-muted/30">
         <Loader2 className="w-8 h-8 animate-spin text-primary mb-3" />
         <p className="text-sm font-semibold text-muted-foreground">Connecting to Appwrite Realtime & loading vendor documents...</p>
       </div>
@@ -182,7 +184,7 @@ export default function VerificationList({ type }: { type?: string }) {
   // EMPTY REALTIME STATE
   if (requests.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center p-16 bg-card/60 backdrop-blur-md rounded-2xl border border-muted/30 text-center">
+      <div className="flex flex-col items-center justify-center p-16 bg-card rounded-2xl border border-muted/30 text-center">
         <div className="h-16 w-16 bg-muted rounded-full flex items-center justify-center mb-4 text-muted-foreground">
           <Inbox className="w-8 h-8" />
         </div>
@@ -194,13 +196,21 @@ export default function VerificationList({ type }: { type?: string }) {
     );
   }
 
+  // Filter requests based on search query
+  const filteredRequests = requests.filter(req => {
+    if (!searchQuery) return true;
+    return req.vendor.toLowerCase().includes(searchQuery) || 
+           req.email.toLowerCase().includes(searchQuery) ||
+           req.owner.toLowerCase().includes(searchQuery);
+  });
+
   // REALTIME LIST GRID VIEW
   return (
     <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-      {requests.map((req) => (
+      {filteredRequests.map((req) => (
         <Card 
           key={req.id} 
-          className="group bg-card/60 backdrop-blur-md border-muted/30 shadow-sm hover:shadow-md transition-all overflow-hidden flex flex-col cursor-pointer"
+          className="group bg-card border-muted/30 shadow-sm hover:shadow-md transition-all overflow-hidden flex flex-col cursor-pointer"
           onClick={() => handleNavigateToReviewPage(req.id)}
         >
           <div className={`h-2 w-full ${

@@ -22,7 +22,7 @@ export function OnboardingLayout({ children, currentStep }: { children: React.Re
         </div>
         <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
           <motion.div 
-            className="h-full bg-[#E86A70]" 
+            className="h-full bg-brand-coral" 
             initial={{ width: 0 }}
             animate={{ width: `${progressPercent}%` }}
             transition={{ ease: "easeOut", duration: 0.5 }}

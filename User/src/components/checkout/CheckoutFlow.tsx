@@ -4,12 +4,14 @@ import { useSearchParams } from "next/navigation";
 import { useCheckoutStore } from "@/store/checkoutStore";
 import { GuestDetailsForm } from "@/components/checkout/GuestDetailsForm";
 import { TravelersForm } from "@/components/checkout/TravelersForm";
+import { AdditionalRequestsForm } from "@/components/checkout/AdditionalRequestsForm";
 import { AddonSelector, DEFAULT_ADDONS } from "@/components/checkout/AddonSelector";
-import { CheckCircle, Loader2 } from "lucide-react";
+import { CheckCircle, Loader2, AlertCircle, Gem } from "lucide-react";
 import Script from "next/script";
 import { checkAvailability } from "@/lib/appwrite/availability";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { calculateRoomGst } from "@/lib/gst";
+import { calculateRoomPricing } from "@/lib/pricing";
 
 export function CheckoutFlow() {
   const currentStep = useCheckoutStore((state) => state.currentStep);
@@ -19,13 +21,15 @@ export function CheckoutFlow() {
   const guestDetails = useCheckoutStore((state) => state.guestDetails);
   const selectedAddons = useCheckoutStore((state) => state.selectedAddons);
   const appliedCoupon = useCheckoutStore((state) => state.appliedCoupon);
+  const [highlightAddonSection, setHighlightAddonSection] = useState(false);
 
   
   const isFormValid = 
     guestDetails.firstName.trim() !== '' && 
     guestDetails.lastName.trim() !== '' && 
     guestDetails.email.trim() !== '' && 
-    guestDetails.phone.trim() !== '';
+    guestDetails.phone.trim() !== '' &&
+    guestDetails.country.trim() !== '';
   
   const searchParams = useSearchParams();
   const price = Number(searchParams.get('price')) || 32000;
@@ -44,7 +48,7 @@ export function CheckoutFlow() {
   const hotelId = searchParams.get('hotelId') || useCheckoutStore.getState().selectedHotelId || 'hotel-123';
   const hotelName = searchParams.get('hotelName') || useCheckoutStore.getState().hotelName || 'The Oberoi Udaivilas';
   const hotelLocation = searchParams.get('hotelLocation') || useCheckoutStore.getState().hotelLocation || 'Udaipur, Rajasthan, India';
-  const hotelImage = searchParams.get('hotelImage') || useCheckoutStore.getState().hotelImage || 'https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=1600&auto=format&fit=crop';
+  const hotelImage = searchParams.get('roomImage') || searchParams.get('hotelImage') || useCheckoutStore.getState().hotelImage || 'https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=1600&auto=format&fit=crop';
   const adults = Number(searchParams.get('guests')) || 2;
 
   const fetchPropertyAddons = useCheckoutStore(state => state.fetchPropertyAddons);
@@ -57,7 +61,32 @@ export function CheckoutFlow() {
     }
   }, [hotelId, fetchPropertyAddons]);
 
-  const roomTotal = price * nights;
+  const rooms = Number(searchParams.get('rooms')) || 1;
+  const roomName = searchParams.get('roomName') || '';
+  const isPackage = roomName.startsWith('Package:') || roomName.toLowerCase().includes('package');
+  
+  const stdCap = Number(searchParams.get('stdCap')) || useCheckoutStore.getState().standardCapacity || 2;
+  const maxCap = Number(searchParams.get('maxCap')) || useCheckoutStore.getState().maximumCapacity || 4;
+  const epc = Number(searchParams.get('epc')) || useCheckoutStore.getState().extraPersonCharge || 0;
+  
+  let baseRoomAmount = 0;
+  let extraGuestAmount = 0;
+  
+  if (!isPackage) {
+    const guestsPerRoom = Math.ceil(adults / rooms);
+    const pricing = calculateRoomPricing({
+      basePrice: price,
+      standardCapacity: stdCap,
+      maximumCapacity: maxCap,
+      extraPersonCharge: epc,
+      totalGuests: guestsPerRoom,
+      numberOfNights: nights
+    });
+    baseRoomAmount = pricing.baseRoomAmount * rooms;
+    extraGuestAmount = pricing.extraGuestAmount * rooms;
+  }
+  
+  const roomTotal = isPackage ? price : baseRoomAmount + extraGuestAmount;
   const displayAddons = propertyAddons === null ? [] : (propertyAddons.length > 0 ? propertyAddons : DEFAULT_ADDONS);
 
   const dynamicAddonsTotal = selectedAddons.reduce((sum, addonId) => {
@@ -77,12 +106,27 @@ export function CheckoutFlow() {
     }
   }
 
-  const gstResult = calculateRoomGst(price, nights, 1, dynamicAddonsTotal);
+  const effectivePerNightPrice = roomTotal / (nights * rooms);
+  const gstResult = calculateRoomGst(effectivePerNightPrice, nights, rooms, dynamicAddonsTotal);
   const finalTaxes = gstResult.gstAmount;
   const finalTotalAmount = roomTotal + finalTaxes + dynamicAddonsTotal - dynamicDiscount;
 
-  const handleCompleteBooking = async () => {
-    // 1. Validate Availability First
+  const handleCompleteBooking = async (skipPrompt: boolean | React.MouseEvent = false) => {
+    const shouldSkipPrompt = skipPrompt === true;
+
+    // 1. Validate add-ons (if none selected, prompt)
+    if (selectedAddons.length === 0 && !highlightAddonSection && !shouldSkipPrompt && displayAddons.length > 0) {
+      setHighlightAddonSection(true);
+      setTimeout(() => {
+        const addonElement = document.getElementById("addon-section");
+        if (addonElement) {
+          addonElement.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+      }, 50);
+      return;
+    }
+
+    // 2. Validate Availability First
     useCheckoutStore.setState({ isSubmitting: true, bookingError: null });
 
     try {
@@ -133,6 +177,8 @@ export function CheckoutFlow() {
           hotelImage,
           price,
           nights,
+          rooms,
+          roomName,
           checkIn,
           checkOut,
           adults
@@ -158,6 +204,8 @@ export function CheckoutFlow() {
           hotelImage,
           price,
           nights,
+          rooms,
+          roomName,
           checkIn,
           checkOut,
           adults
@@ -174,6 +222,8 @@ export function CheckoutFlow() {
           hotelImage,
           price,
           nights,
+          rooms,
+          roomName,
           checkIn,
           checkOut,
           adults
@@ -198,6 +248,7 @@ export function CheckoutFlow() {
               hotelImage,
               price,
               nights,
+              rooms,
               checkIn,
               checkOut,
               adults
@@ -243,6 +294,7 @@ export function CheckoutFlow() {
         hotelImage,
         price,
         nights,
+        rooms,
         checkIn,
         checkOut,
         adults
@@ -256,13 +308,28 @@ export function CheckoutFlow() {
       {currentStep === 3 && (
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
           {bookingError && (
-            <div className="p-4 bg-red-50 text-red-600 rounded-xl border border-red-100 font-medium text-sm">
-              {bookingError}
+            <div className="fixed inset-0 z-100 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-300">
+              <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-300 flex flex-col items-center p-6 text-center border border-red-100">
+                <div className="w-12 h-12 bg-red-50 rounded-full flex items-center justify-center mb-4">
+                  <AlertCircle className="w-6 h-6 text-red-500" />
+                </div>
+                <h3 className="text-xl font-bold text-brand-navy mb-2">Booking Error</h3>
+                <p className="text-gray-600 text-sm mb-6">
+                  {bookingError}
+                </p>
+                <button 
+                  onClick={() => useCheckoutStore.setState({ bookingError: null })}
+                  className="w-full py-3 bg-brand-navy hover:bg-brand-navy/90 text-white rounded-xl font-bold transition-transform active:scale-[0.98] shadow-sm"
+                >
+                  Got it
+                </button>
+              </div>
             </div>
           )}
           <div className="space-y-8">
             <GuestDetailsForm />
             <TravelersForm />
+            <AdditionalRequestsForm />
             {propertyAddons === null ? (
               <div className="bg-white rounded-xl shadow-sm border border-brand-sky p-6 md:p-8 animate-pulse">
                 <div className="h-8 bg-gray-200 rounded w-1/3 mb-4"></div>
@@ -274,7 +341,22 @@ export function CheckoutFlow() {
                 </div>
               </div>
             ) : (
-              <AddonSelector addons={displayAddons} guests={adults} />
+              <div id="addon-section" className={`transition-all duration-700 rounded-2xl ${highlightAddonSection ? "ring-2 ring-brand-coral ring-offset-4 shadow-lg shadow-brand-coral/20" : ""}`}>
+                <div 
+                  className={`grid transition-[grid-template-rows,opacity,margin] duration-500 ease-in-out ${highlightAddonSection ? 'grid-rows-[1fr] opacity-100 mb-6' : 'grid-rows-[0fr] opacity-0 mb-0'}`}
+                >
+                  <div className="overflow-hidden">
+                    <div className="bg-brand-sky/20 border border-brand-sky/50 text-brand-navy px-4 py-3 rounded-xl flex items-start gap-3">
+                      <Gem className="w-4 h-4 shrink-0 mt-0.5 text-brand-coral" />
+                      <p className="text-xs md:text-sm leading-relaxed">
+                        <strong className="font-semibold block mb-0.5 text-sm">Upgrade Your Experience</strong>
+                        Add premium services below to make your stay truly memorable, or click <strong>Continue without Addons</strong> to proceed with your current selection.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <AddonSelector addons={displayAddons} guests={adults} />
+              </div>
             )}
           </div>
           <div className="hidden md:flex flex-col items-end gap-2">
@@ -286,7 +368,7 @@ export function CheckoutFlow() {
               disabled={isSubmitting || !isFormValid}
               className="bg-brand-coral hover:bg-[#d65f64] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-white font-bold text-lg py-4 px-8 rounded-xl shadow-lg shadow-brand-coral/30 transition-transform active:scale-[0.98]"
             >
-              {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : "Complete Booking"}
+              {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : (highlightAddonSection ? "Continue without Addons" : "Complete Booking")}
             </button>
           </div>
         </div>

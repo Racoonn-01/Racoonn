@@ -27,22 +27,26 @@ export function calculateRoomGst(
   const cleanRooms = Math.max(1, rooms);
   const cleanAddons = Math.max(0, addonsAmount);
 
-  let gstRate = 5;
-  let gstStatus = "GST @ 5%";
-  let itcNote = "GST @ 5% (Input Tax Credit Not Allowed)";
+  const roomAmount = cleanPrice * cleanNights * cleanRooms;
+  const taxableBase = roomAmount + cleanAddons;
 
-  if (cleanPrice <= 7500) {
-    gstRate = 12;
-    gstStatus = "GST @ 12%";
-    itcNote = "GST @ 12% (Input Tax Credit Not Allowed)";
+  let gstRate = 0;
+  let gstStatus = "GST @ 0%";
+  let itcNote = "GST Exempt";
+
+  if (taxableBase <= 1000) {
+    gstRate = 0;
+    gstStatus = "GST @ 0%";
+    itcNote = "GST Exempt";
+  } else if (taxableBase <= 7500) {
+    gstRate = 5;
+    gstStatus = "GST @ 5%";
+    itcNote = "GST @ 5% (Input Tax Credit Not Allowed)";
   } else {
     gstRate = 18;
     gstStatus = "GST @ 18%";
     itcNote = "GST @ 18% (Input Tax Credit Allowed)";
   }
-
-  const roomAmount = cleanPrice * cleanNights * cleanRooms;
-  const taxableBase = roomAmount + cleanAddons;
   const totalGstAmount = Math.round((taxableBase * (gstRate / 100)) * 100) / 100;
   const totalAmount = Math.round((taxableBase + totalGstAmount) * 100) / 100;
 

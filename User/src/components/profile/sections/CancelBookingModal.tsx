@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, AlertTriangle, Loader2 } from 'lucide-react';
 import { databases } from '@/lib/appwrite/config';
 import { toast } from 'react-hot-toast';
+import { useAuthStore } from '@/store/authStore';
 
 const DATABASE_ID = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID!;
 
@@ -15,17 +16,18 @@ interface CancelBookingModalProps {
 
 export default function CancelBookingModal({ isOpen, onClose, booking, onSuccess }: CancelBookingModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const user = useAuthStore(state => state.user);
 
   if (!isOpen || !booking) return null;
 
   // Simple cancellation logic: 
-  // If cancelled within 48 hours of check-in, charge a 20% fee. Otherwise, free.
+  // Free cancellation up to 24 hours before check-in.
   const checkInDate = new Date(booking.rawCheckIn || booking.checkIn);
   const now = new Date();
   const hoursUntilCheckIn = (checkInDate.getTime() - now.getTime()) / (1000 * 60 * 60);
   
-  const hasCancellationFee = hoursUntilCheckIn < 48 && hoursUntilCheckIn > 0;
-  const cancellationFeeAmount = hasCancellationFee ? "20% of the total booking amount" : "₹0 (Free Cancellation)";
+  const hasCancellationFee = hoursUntilCheckIn < 24;
+  const cancellationFeeAmount = hasCancellationFee ? "Depends on Property Policy" : "₹0 (Free Cancellation)";
 
   const handleCancel = async () => {
     setIsSubmitting(true);
@@ -38,6 +40,32 @@ export default function CancelBookingModal({ isOpen, onClose, booking, onSuccess
           status: 'Cancelled',
         }
       );
+      
+      // Send cancellation email
+      try {
+        await fetch('/api/email/booking-cancellation', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            hotelName: booking.hotel,
+            hotelLocation: booking.location,
+            price: parseFloat(String(booking.price || booking.totalPrice || "0").replace(/[^0-9.-]+/g, "")) || 0,
+            nights: booking.duration || 1,
+            checkIn: booking.checkIn,
+            checkOut: booking.checkOut,
+            adults: parseInt(booking.guests.split(' ')[0]) || 1,
+            email: booking.email || booking.customerEmail || user?.email || '',
+            firstName: booking.firstName || booking.customerName || user?.name || 'Guest',
+            bookingId: booking.id,
+          }),
+        });
+      } catch (emailError) {
+        console.error("Failed to send cancellation email:", emailError);
+        // We don't fail the cancellation if email fails
+      }
+
       toast.success("Booking cancelled successfully.");
       onSuccess();
       onClose();
@@ -80,9 +108,10 @@ export default function CancelBookingModal({ isOpen, onClose, booking, onSuccess
             <div className="bg-gray-50 rounded-xl p-5 border border-gray-100 mb-6">
               <h4 className="font-bold text-brand-navy mb-2 text-sm uppercase tracking-wider">Cancellation Policy</h4>
               <ul className="list-disc pl-5 text-sm text-gray-600 space-y-2 mb-4">
-                <li>Cancellations made more than 48 hours before check-in are 100% free of charge.</li>
-                <li>Cancellations made within 24 to 48 hours of check-in will incur a 20% cancellation fee.</li>
-                <li>No-shows or cancellations within 24 hours are non-refundable.</li>
+                <li>Free cancellation up to 24 hours before check-in.</li>
+                <li>Free cancellation within 48 hours of booking, if check-in is at least 24 hours away.</li>
+                <li>Later cancellations depend on the property’s cancellation policy.</li>
+                <li>Contact us by email for cancellation requests.</li>
               </ul>
               
               <div className="mt-4 p-4 rounded-lg bg-white border border-gray-200">
@@ -91,7 +120,7 @@ export default function CancelBookingModal({ isOpen, onClose, booking, onSuccess
                   {cancellationFeeAmount}
                 </p>
                 {hasCancellationFee && (
-                  <p className="text-xs text-red-400 mt-1">Because you are cancelling within 48 hours of check-in.</p>
+                  <p className="text-xs text-red-400 mt-1">Because you are cancelling within 24 hours of check-in, the property's specific penalty applies.</p>
                 )}
               </div>
             </div>

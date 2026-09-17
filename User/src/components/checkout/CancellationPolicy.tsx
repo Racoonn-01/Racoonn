@@ -1,30 +1,23 @@
-"use client";
-import { AlertCircle, Lock } from "lucide-react";
+import { AlertCircle } from "lucide-react";
 import Link from "next/link";
-import { useCheckoutStore } from "@/store/checkoutStore";
 
 export function CancellationPolicy() {
-  const { currentStep, nextStep } = useCheckoutStore();
-
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-[#DCE8F5] p-6">
-      <h3 className="font-bold text-[#1F2E4A] mb-3 flex items-center gap-2">
-        <AlertCircle className="w-5 h-5 text-[#E86A70]" /> Cancellation Policy
+    <div className="bg-white rounded-xl shadow-sm border border-[#DCE8F5] p-5">
+      <h3 className="font-bold text-brand-navy mb-3 text-base flex items-center gap-2">
+        <AlertCircle className="w-5 h-5 text-brand-coral" /> Cancellation Policy
       </h3>
-      <div className="space-y-3 text-sm">
-        <p className="text-gray-600">
-          <span className="font-bold text-green-600">Free cancellation</span> until:
-          <br />
-          <span className="font-medium text-[#1F2E4A]">10 Aug 2026, 11:59 PM (Local time)</span>
-        </p>
-        <p className="text-gray-500 text-xs leading-relaxed">
-          If you cancel after the deadline or fail to show up, you will be charged the total price of the reservation.
-        </p>
-        <button className="text-[#E86A70] font-medium text-sm hover:underline outline-none">
-          Read Full Policy
-        </button>
+      <div className="space-y-4 text-sm text-gray-700 leading-relaxed">
+        <ul className="list-disc pl-5 space-y-1.5">
+          <li>Free cancellation up to 24 hours before check-in.</li>
+          <li>Free cancellation within 48 hours of booking, if check-in is at least 24 hours away.</li>
+          <li>Later cancellations depend on the property’s cancellation policy.</li>
+          <li>Contact us by email for cancellation requests.</li>
+        </ul>
+        <Link href="/terms#cancellations" className="inline-block text-brand-coral font-medium text-sm hover:underline outline-none">
+          Read more
+        </Link>
       </div>
-
     </div>
   );
 }

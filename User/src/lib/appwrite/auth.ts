@@ -117,13 +117,28 @@ export const authService = {
   },
 
   async forgotPassword(email: string) {
-    return await account.createRecovery(
-      email,
-      `${window.location.origin}/reset-password`
-    );
+    const res = await fetch('/api/auth/forgot-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email })
+    });
+    if (!res.ok) {
+      const data = await res.json();
+      throw new Error(data.error || 'Failed to send reset email');
+    }
+    return await res.json();
   },
 
   async resetPassword(userId: string, secret: string, password: string) {
-    return await account.updateRecovery(userId, secret, password);
+    const res = await fetch('/api/auth/reset-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId, secret, password })
+    });
+    if (!res.ok) {
+      const data = await res.json();
+      throw new Error(data.error || 'Failed to reset password');
+    }
+    return await res.json();
   }
 };

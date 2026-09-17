@@ -24,7 +24,7 @@ export function ApprovalPending() {
     <div className="fixed inset-0 z-50 bg-[#FDFBF7] flex flex-col items-center justify-center overflow-y-auto p-4 sm:p-8 font-['Inter',_sans-serif]">
       {/* Decorative Background */}
       <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-emerald-500/5 rounded-full blur-[100px] pointer-events-none translate-x-1/3 -translate-y-1/3" />
-      <div className="absolute bottom-0 left-0 w-[800px] h-[800px] bg-[#E86A70]/5 rounded-full blur-[120px] pointer-events-none -translate-x-1/3 translate-y-1/3" />
+      <div className="absolute bottom-0 left-0 w-[800px] h-[800px] bg-brand-coral/5 rounded-full blur-[120px] pointer-events-none -translate-x-1/3 translate-y-1/3" />
       
       {/* Top Logo */}
       <div className="absolute top-8 left-8">
@@ -59,7 +59,7 @@ export function ApprovalPending() {
           </motion.div>
         </motion.div>
         
-        <motion.h1 variants={itemVariants} className="text-4xl md:text-5xl font-black text-[#1F2E4A] mb-4 font-['Poppins',_sans-serif]">
+        <motion.h1 variants={itemVariants} className="text-4xl md:text-5xl font-black text-brand-navy mb-4 font-['Poppins',_sans-serif]">
           Property Submitted!
         </motion.h1>
         
@@ -86,7 +86,7 @@ export function ApprovalPending() {
                 <Clock className="w-4 h-4" />
               </div>
               <div>
-                <h4 className="font-bold text-[#E86A70]">Under Review</h4>
+                <h4 className="font-bold text-brand-coral">Under Review</h4>
                 <p className="text-xs text-slate-500 font-medium">Estimated time: 24-48 hours</p>
               </div>
             </div>
@@ -106,7 +106,7 @@ export function ApprovalPending() {
         
         <motion.div variants={itemVariants}>
           <Link href="/vendor/dashboard">
-            <Button className="h-14 px-10 bg-[#1F2E4A] hover:bg-[#151E2D] text-white rounded-full text-lg font-bold shadow-[0_0_30px_rgba(31,46,74,0.2)] hover:scale-105 transition-all">
+            <Button className="h-14 px-10 bg-brand-navy hover:bg-[#151E2D] text-white rounded-full text-lg font-bold shadow-[0_0_30px_rgba(31,46,74,0.2)] hover:scale-105 transition-all">
               Go To Dashboard
             </Button>
           </Link>

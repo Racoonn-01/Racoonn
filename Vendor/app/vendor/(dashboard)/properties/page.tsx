@@ -19,12 +19,22 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 export default function PropertiesPage() {
   const { user } = useAuthStore();
   const router = useRouter();
   const [properties, setProperties] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [propertyToDelete, setPropertyToDelete] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     const fetchProperties = async () => {
@@ -88,8 +98,14 @@ export default function PropertiesPage() {
     fetchProperties();
   }, [user]);
 
-  const handleDeleteProperty = async (propertyId: string) => {
-    if (!confirm("Are you sure you want to delete this property? This will also delete all its rooms.")) return;
+  const confirmDeleteProperty = (propertyId: string) => {
+    setPropertyToDelete(propertyId);
+  };
+
+  const executeDelete = async () => {
+    if (!propertyToDelete) return;
+    const propertyId = propertyToDelete;
+    setIsDeleting(true);
     
     try {
       // Find rooms for this property and delete them
@@ -120,6 +136,9 @@ export default function PropertiesPage() {
     } catch (error: any) {
       console.error("Failed to delete property:", error);
       toast.error(`Failed to delete property: ${error.message}`);
+    } finally {
+      setIsDeleting(false);
+      setPropertyToDelete(null);
     }
   };
 
@@ -130,7 +149,7 @@ export default function PropertiesPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-[60vh]">
-        <Loader2 className="w-8 h-8 animate-spin text-[#E86A70]" />
+        <Loader2 className="w-8 h-8 animate-spin text-brand-coral" />
       </div>
     );
   }
@@ -218,7 +237,7 @@ export default function PropertiesPage() {
                           <DropdownMenuItem onClick={() => handleEditProperty(property.$id)} className="cursor-pointer font-medium">
                             Edit Property
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleDeleteProperty(property.$id)} className="cursor-pointer text-red-600 font-medium focus:text-red-700 focus:bg-red-50">
+                          <DropdownMenuItem onClick={() => confirmDeleteProperty(property.$id)} className="cursor-pointer text-red-600 font-medium focus:text-red-700 focus:bg-red-50">
                             Delete Property
                           </DropdownMenuItem>
                         </DropdownMenuContent>
@@ -267,6 +286,32 @@ export default function PropertiesPage() {
           </div>
         </CardContent>
       </Card>
+
+      <Dialog open={!!propertyToDelete} onOpenChange={(open) => !open && setPropertyToDelete(null)}>
+        <DialogContent className="p-0 gap-0 border-0 rounded-3xl">
+          <DialogHeader className="pt-8 px-8 pb-6">
+            <DialogTitle className="text-[1.35rem] font-medium text-slate-900 tracking-tight">Delete Property</DialogTitle>
+            <DialogDescription className="text-[0.95rem] text-slate-500 mt-2 leading-relaxed">
+              Are you sure you want to delete this property? This will also delete all its rooms. This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="bg-[#fff9f6] px-8 py-5 sm:justify-end gap-3 rounded-b-3xl border-t border-orange-100/50 m-0! p-6!">
+            <Button variant="outline" onClick={() => setPropertyToDelete(null)} disabled={isDeleting} className="rounded-full bg-white border-slate-200 text-slate-900 hover:bg-slate-50 font-medium px-6 h-11">
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={executeDelete} disabled={isDeleting} className="rounded-full bg-red-50 text-red-500 hover:bg-red-100 hover:text-red-600 shadow-none font-medium px-6 h-11 border-0">
+              {isDeleting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                "Delete"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

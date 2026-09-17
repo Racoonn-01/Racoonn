@@ -47,7 +47,7 @@ export function AddonSelector({ addons, guests = 1 }: AddonSelectorProps) {
       <h2 className="text-xl md:text-2xl font-poppins font-bold text-brand-navy mb-2">Enhance Your Stay</h2>
       <p className="text-sm text-gray-500 mb-6">Select premium add-ons for a better experience</p>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-4">
         {displayAddons.map((addon, index) => {
           const addonId = addon.id || addon.$id || `addon-${index}`;
           const addonTitle = addon.title || addon.name || "Add-on Service";
@@ -58,31 +58,34 @@ export function AddonSelector({ addons, guests = 1 }: AddonSelectorProps) {
           
           return (
             <motion.div
-              whileHover={{ y: -2 }}
-              whileTap={{ scale: 0.98 }}
+              whileHover={{ y: -1 }}
+              whileTap={{ scale: 0.99 }}
               key={addonId}
               onClick={() => toggle(addonId)}
-              className={`relative cursor-pointer rounded-xl border-2 p-4 transition-colors flex flex-col h-full ${
+              className={`relative cursor-pointer rounded-xl border-2 p-3 md:p-4 transition-colors flex items-center gap-3 md:gap-4 ${
                 isSelected 
                   ? "border-brand-coral bg-brand-soft-coral/30" 
-                  : "border-brand-sky hover:border-brand-coral/50"
+                  : "border-brand-sky hover:border-brand-coral/50 bg-white"
               }`}
             >
-              <div className="flex justify-between items-start mb-3">
-                <div className={`p-2 rounded-lg ${isSelected ? "bg-brand-coral text-white" : "bg-brand-sand text-brand-navy"}`}>
-                  <Icon className="w-5 h-5" />
-                </div>
-                <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${
-                  isSelected ? "border-brand-coral bg-brand-coral" : "border-gray-300"
-                }`}>
-                  {isSelected ? <Check className="w-3.5 h-3.5 text-white" /> : <Plus className="w-3.5 h-3.5 text-gray-400" />}
-                </div>
+              <div className={`p-2.5 rounded-lg shrink-0 ${isSelected ? "bg-brand-coral text-white" : "bg-brand-sand text-brand-navy"}`}>
+                <Icon className="w-5 h-5 md:w-6 md:h-6" />
               </div>
               
-              <div className="mt-auto">
-                <h3 className="font-bold text-brand-navy text-sm mb-1">{addonTitle}</h3>
-                {addon.description && <p className="text-xs text-gray-500 mb-3">{addon.description}</p>}
-                <div className="font-medium text-brand-coral">₹{addon.price || 0}</div>
+              <div className="flex-1 min-w-0 pr-2">
+                <h3 className="font-bold text-brand-navy text-sm md:text-base leading-tight mb-0.5">{addonTitle}</h3>
+                {addon.description && <p className="text-xs md:text-sm text-gray-500 truncate">{addon.description}</p>}
+              </div>
+
+              <div className="flex items-center gap-4 shrink-0">
+                <div className="font-bold text-brand-coral text-sm md:text-base">
+                  ₹{addon.price || 0}
+                </div>
+                <div className={`w-5 h-5 md:w-6 md:h-6 rounded-full border-2 flex items-center justify-center transition-colors shrink-0 ${
+                  isSelected ? "border-brand-coral bg-brand-coral" : "border-gray-300"
+                }`}>
+                  {isSelected ? <Check className="w-3 h-3 md:w-3.5 md:h-3.5 text-white" /> : <Plus className="w-3 h-3 md:w-3.5 md:h-3.5 text-gray-400" />}
+                </div>
               </div>
             </motion.div>
           );

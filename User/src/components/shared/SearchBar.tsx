@@ -76,6 +76,7 @@ export default function SearchBar() {
                   selected={date}
                   onSelect={setDate}
                   numberOfMonths={2}
+                  disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
                   fixedWeeks
                   showOutsideDays
                   className="p-0"
@@ -85,8 +86,6 @@ export default function SearchBar() {
                     button_previous: "w-10 h-10 flex items-center justify-center rounded-full border border-gray-200 bg-white hover:bg-brand-coral hover:text-white hover:border-brand-coral text-brand-charcoal shadow-sm transition-all pointer-events-auto",
                     button_next: "w-10 h-10 flex items-center justify-center rounded-full border border-gray-200 bg-white hover:bg-brand-coral hover:text-white hover:border-brand-coral text-brand-charcoal shadow-sm transition-all pointer-events-auto",
                     weekday: "text-gray-400 font-medium text-[13px] w-12 text-center pb-2 uppercase tracking-wider",
-                    day: "h-12 w-12 p-0 font-bold text-[15px] aria-selected:opacity-100 hover:bg-gray-100 rounded-full flex items-center justify-center transition-all text-brand-navy",
-                    selected: "bg-brand-navy text-white hover:bg-brand-navy hover:text-white focus:bg-brand-navy focus:text-white rounded-full shadow-md",
                     today: "bg-brand-sky/30 text-brand-navy",
                     outside: "text-gray-300 opacity-50 font-normal",
                     month_caption: "flex justify-center pt-4 relative items-center mb-6",
@@ -187,31 +186,7 @@ export default function SearchBar() {
                   </div>
                 </div>
 
-                <div className="h-px bg-gray-100 w-full" />
 
-                {/* Pets */}
-                <div className="flex items-center justify-between">
-                  <div className="flex flex-col">
-                    <span className="font-bold text-brand-navy text-[15px]">Pets</span>
-                    <span className="text-[13px] text-brand-charcoal/60 mt-0.5 underline decoration-gray-300 cursor-pointer hover:text-brand-navy">Bringing a service animal?</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <button 
-                      onClick={() => setGuests(prev => ({ ...prev, pets: Math.max(0, prev.pets - 1) }))}
-                      className={`w-8 h-8 rounded-full border flex items-center justify-center transition-colors ${guests.pets === 0 ? 'border-gray-200 text-gray-300 cursor-not-allowed' : 'border-gray-400 text-brand-charcoal hover:border-brand-navy hover:text-brand-navy'}`}
-                      disabled={guests.pets === 0}
-                    >
-                      <Minus size={14} strokeWidth={2.5} />
-                    </button>
-                    <span className="w-4 text-center text-[15px] font-medium text-brand-navy">{guests.pets}</span>
-                    <button 
-                      onClick={() => setGuests(prev => ({ ...prev, pets: prev.pets + 1 }))}
-                      className="w-8 h-8 rounded-full border border-gray-400 text-brand-charcoal flex items-center justify-center hover:border-brand-navy hover:text-brand-navy transition-colors"
-                    >
-                      <Plus size={14} strokeWidth={2.5} />
-                    </button>
-                  </div>
-                </div>
 
               </div>
             </PopoverContent>

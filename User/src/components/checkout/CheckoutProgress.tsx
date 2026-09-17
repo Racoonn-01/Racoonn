@@ -30,7 +30,7 @@ export function CheckoutProgress() {
             </motion.div>
             <span
               className={`text-[10px] md:text-sm whitespace-nowrap font-medium text-center ${
-                step.completed || step.active ? "text-[#E86A70]" : "text-gray-500"
+                step.completed || step.active ? "text-brand-coral" : "text-gray-500"
               }`}
             >
               {step.label}
@@ -38,7 +38,7 @@ export function CheckoutProgress() {
             {index !== steps.length - 1 && (
               <div
                 className={`absolute top-3 md:top-4 left-1/2 w-full h-[2px] -z-10 ${
-                  step.completed ? "bg-[#E86A70]" : "bg-[#DCE8F5]"
+                  step.completed ? "bg-brand-coral" : "bg-[#DCE8F5]"
                 }`}
               />
             )}

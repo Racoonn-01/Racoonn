@@ -63,28 +63,7 @@ export function TopNavbar() {
 
         const notifs: NotificationItem[] = [];
 
-        // 1. Account Status Notification
-        if (profile?.status) {
-          if (profile.status.toLowerCase() === 'approved') {
-            notifs.push({
-              id: 'kyc-approved',
-              title: 'Account Status: Approved',
-              message: 'Your vendor account is active and verified. You can receive guest bookings and payouts.',
-              timeAgo: 'Active',
-              unread: false,
-              type: 'kyc'
-            });
-          } else if (profile.status.toLowerCase() === 'pending') {
-            notifs.push({
-              id: 'kyc-pending',
-              title: 'Account Under Review',
-              message: 'Your account documents are pending Admin approval.',
-              timeAgo: 'In Review',
-              unread: true,
-              type: 'kyc'
-            });
-          }
-        }
+        // Account status notifications removed to only show realtime bookings
 
         if (vendorPropertyIds.length > 0) {
           const queries = [
@@ -204,11 +183,8 @@ export function TopNavbar() {
                   notifications.map((notif) => (
                     <div 
                       key={notif.id}
-                      className="p-4 border-b border-slate-100 hover:bg-slate-50 cursor-pointer transition-colors relative"
+                      className={`p-4 border-b border-slate-100 hover:bg-slate-50 cursor-pointer transition-colors ${notif.unread ? 'border-l-4 border-primary pl-3' : 'pl-4'}`}
                     >
-                      {notif.unread && (
-                        <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary"></div>
-                      )}
                       <p className="text-sm font-bold text-slate-800 mb-1">{notif.title}</p>
                       <p className="text-xs text-slate-500 leading-relaxed">{notif.message}</p>
                       <p className="text-[10px] text-slate-400 mt-2 font-medium">{notif.timeAgo}</p>

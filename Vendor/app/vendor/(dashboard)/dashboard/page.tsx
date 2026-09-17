@@ -98,7 +98,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
     return (
       <div className="bg-white p-4 rounded-2xl shadow-xl border border-slate-100 ring-1 ring-slate-900/5 min-w-30">
         <p className="text-sm font-bold text-slate-400 mb-1">{label}</p>
-        <p className="text-2xl font-black text-[#E86A70]">
+        <p className="text-2xl font-black text-brand-coral">
           ₹{payload[0].value.toLocaleString()}
         </p>
       </div>
@@ -303,7 +303,7 @@ export default function DashboardOverview() {
       <div className="flex justify-end">
         <div className="w-44">
           <Select value={timeframe} onValueChange={(val) => val && setTimeframe(val)}>
-            <SelectTrigger className="h-10 bg-white border-slate-200 font-semibold text-slate-700 shadow-sm rounded-xl focus:ring-2 focus:ring-[#E86A70]/20 focus:border-[#E86A70]">
+            <SelectTrigger className="h-10 bg-white border-slate-200 font-semibold text-slate-700 shadow-sm rounded-xl focus:ring-2 focus:ring-brand-coral/20 focus:border-brand-coral">
               <div className="flex items-center gap-2">
                 <CalendarIcon className="w-4 h-4 text-slate-400" />
                 <SelectValue placeholder="Select timeframe" />
@@ -420,7 +420,7 @@ export default function DashboardOverview() {
           <CardHeader className="border-b border-slate-100 pb-4 bg-slate-50/50">
             <div className="flex items-center justify-between">
               <CardTitle className="text-lg font-heading font-semibold text-secondary">Recent Bookings</CardTitle>
-              <Link href="/vendor/bookings" className="bg-[#E86A70]/10 text-[#E86A70] hover:bg-[#E86A70] hover:text-white px-4 py-2 rounded-full text-xs font-black uppercase tracking-wider transition-all duration-300">
+              <Link href="/vendor/bookings" className="bg-brand-coral/10 text-brand-coral hover:bg-brand-coral hover:text-white px-4 py-2 rounded-full text-xs font-black uppercase tracking-wider transition-all duration-300">
                 View All
               </Link>
             </div>

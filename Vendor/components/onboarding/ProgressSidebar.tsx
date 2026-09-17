@@ -29,7 +29,7 @@ export function ProgressSidebar({ currentStep }: { currentStep: number }) {
       </Link>
 
       <div className="mb-8">
-        <h2 className="text-2xl font-black text-[#1F2E4A] mb-2 font-['Poppins',sans-serif]">Registration</h2>
+        <h2 className="text-2xl font-black text-brand-navy mb-2 font-['Poppins',sans-serif]">Registration</h2>
         <p className="text-sm text-slate-500 font-medium">Get ready to welcome guests from around the globe.</p>
       </div>
 
@@ -37,11 +37,11 @@ export function ProgressSidebar({ currentStep }: { currentStep: number }) {
       <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 mb-8">
         <div className="flex justify-between items-center mb-2">
           <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Progress</span>
-          <span className="text-sm font-black text-[#E86A70]">{progressPercent.toFixed(0)}%</span>
+          <span className="text-sm font-black text-brand-coral">{progressPercent.toFixed(0)}%</span>
         </div>
         <div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden mb-4">
           <motion.div 
-            className="h-full bg-linear-to-r from-[#E86A70] to-[#f48a8e]" 
+            className="h-full bg-linear-to-r from-brand-coral to-[#f48a8e]" 
             initial={{ width: 0 }}
             animate={{ width: `${progressPercent}%` }}
             transition={{ ease: "easeOut", duration: 0.8 }}
@@ -65,18 +65,18 @@ export function ProgressSidebar({ currentStep }: { currentStep: number }) {
               <div key={step.id} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
                 <div className={cn(
                   "flex items-center justify-center w-8 h-8 rounded-full border-2 bg-white shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10 transition-colors duration-300",
-                  isCompleted ? "border-[#E86A70] bg-[#E86A70] text-white" : isActive ? "border-[#E86A70] text-[#E86A70]" : "border-slate-200 text-slate-400"
+                  isCompleted ? "border-brand-coral bg-brand-coral text-white" : isActive ? "border-brand-coral text-brand-coral" : "border-slate-200 text-slate-400"
                 )}>
                   {isCompleted ? <Check className="w-4 h-4" /> : <span className="text-xs font-bold">{step.id}</span>}
                 </div>
                 
                 <div className={cn(
                   "w-[calc(100%-3rem)] md:w-[calc(50%-2rem)] p-4 rounded-xl transition-all duration-300 ml-4 md:ml-0 shadow-[0_0_15px_rgba(0,0,0,0.02)]",
-                  isActive ? "bg-white border border-[#E86A70]/20 scale-105" : "bg-transparent border border-transparent"
+                  isActive ? "bg-white border border-brand-coral/20 scale-105" : "bg-transparent border border-transparent"
                 )}>
                   <p className={cn(
                     "text-sm font-bold",
-                    isCompleted ? "text-slate-700" : isActive ? "text-[#E86A70]" : "text-slate-400"
+                    isCompleted ? "text-slate-700" : isActive ? "text-brand-coral" : "text-slate-400"
                   )}>{step.name}</p>
                 </div>
               </div>

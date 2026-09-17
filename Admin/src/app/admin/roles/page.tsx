@@ -101,7 +101,7 @@ export default function RolesPage() {
     email: "",
     password: "",
     role: "Support Moderator",
-    allowedTabs: ["Dashboard", "Bookings", "Support"] as string[]
+    allowedTabs: ["Bookings", "Support"] as string[]
   });
 
   // Create Role Form State
@@ -136,7 +136,7 @@ export default function RolesPage() {
       email: "",
       password: "",
       role: data.roles[0]?.name || "Support Moderator",
-      allowedTabs: ["Dashboard", "Bookings", "Support"]
+      allowedTabs: ["Bookings", "Support"]
     });
     setIsInviteModalOpen(true);
   };
@@ -148,7 +148,7 @@ export default function RolesPage() {
       email: emp.email,
       password: emp.password || "",
       role: emp.role,
-      allowedTabs: emp.allowedTabs || ["Dashboard", "Bookings", "Support"]
+      allowedTabs: emp.allowedTabs || ["Bookings", "Support"]
     });
     setIsInviteModalOpen(true);
   };
@@ -202,7 +202,7 @@ export default function RolesPage() {
             email: "",
             password: "",
             role: data.roles[0]?.name || "Support Moderator",
-            allowedTabs: ["Dashboard", "Bookings", "Support"]
+            allowedTabs: ["Bookings", "Support"]
           });
           await loadData();
         }
@@ -453,7 +453,7 @@ export default function RolesPage() {
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-wrap gap-1 max-w-xs">
-                        {(emp.allowedTabs || ["Dashboard", "Bookings", "Support"]).slice(0, 4).map(tab => (
+                        {(emp.allowedTabs || ["Bookings", "Support"]).slice(0, 4).map(tab => (
                           <Badge key={tab} variant="outline" className="text-[10px] px-2 py-0.5 bg-slate-100 text-slate-700 font-semibold border-slate-200">
                             {tab}
                           </Badge>

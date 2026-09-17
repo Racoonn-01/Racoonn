@@ -7,25 +7,25 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
+  DialogContent
 } from "@/components/ui/dialog";
 import {
   BadgeDollarSign,
   TrendingUp,
   TrendingDown,
-  Wallet,
   Eye,
   Loader2,
   Receipt,
   Building2,
-  User,
   CreditCard,
   Printer,
-  CheckCircle2,
-  Calendar
+  Download
 } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { DateRange } from "react-day-picker";
+import * as XLSX from "xlsx";
 import { getRevenueData, TransactionItem } from "./actions";
 
 const formatCurrencyCompact = (value: number) => {
@@ -37,7 +37,7 @@ const formatCurrencyExact = (value: number) => {
 };
 
 export default function RevenuePage() {
-  const [data, setData] = useState<{
+  const [rawRevenueData, setRawRevenueData] = useState<{
     totalRevenue: number;
     monthlyRecurring: number;
     platformCommissions: number;
@@ -51,18 +51,28 @@ export default function RevenuePage() {
     transactions: []
   });
 
+  const [filterType, setFilterType] = useState<"Today" | "Weekly" | "Monthly" | "Yearly" | "Lifetime">("Today");
+
   const [isLoading, setIsLoading] = useState(true);
 
   // Popup Modal State for Selected Transaction Receipt
   const [selectedTx, setSelectedTx] = useState<TransactionItem | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+  // Download Statement Popover State
+  const [isDownloadModalOpen, setIsDownloadModalOpen] = useState(false);
+  const [dateRange, setDateRange] = useState<DateRange | undefined>({
+    from: new Date(),
+    to: new Date()
+  });
+  const [downloadError, setDownloadError] = useState("");
+
   useEffect(() => {
     async function loadData() {
       try {
         setIsLoading(true);
         const res = await getRevenueData();
-        setData(res);
+        setRawRevenueData(res);
       } catch (err) {
         console.error("Failed to load revenue overview:", err);
       } finally {
@@ -77,6 +87,48 @@ export default function RevenuePage() {
     setIsModalOpen(true);
   };
 
+  const displayData = React.useMemo(() => {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    
+    const weekStart = new Date(today);
+    weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+    
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const yearStart = new Date(now.getFullYear(), 0, 1);
+
+    const txs = rawRevenueData.transactions.filter(tx => {
+      const txDate = new Date(tx.createdAt);
+      if (filterType === "Today") return txDate >= today;
+      if (filterType === "Weekly") return txDate >= weekStart;
+      if (filterType === "Monthly") return txDate >= monthStart;
+      if (filterType === "Yearly") return txDate >= yearStart;
+      return true;
+    });
+
+    let totalRev = 0;
+    let platComms = 0;
+    let refLosses = 0;
+
+    txs.forEach(tx => {
+      if (tx.status.toLowerCase() !== 'failed' && tx.status.toLowerCase() !== 'cancelled') {
+        totalRev += tx.amount;
+        platComms += tx.commission;
+      }
+      if (tx.type === 'Refund Fee') {
+        refLosses += tx.amount;
+      }
+    });
+
+    return {
+      totalRevenue: totalRev,
+      monthlyRecurring: rawRevenueData.monthlyRecurring,
+      platformCommissions: platComms,
+      refundLosses: refLosses,
+      transactions: txs
+    };
+  }, [rawRevenueData, filterType]);
+
   return (
     <div className="space-y-6 pb-8">
       <div className="flex items-center justify-between">
@@ -84,32 +136,125 @@ export default function RevenuePage() {
           <h2 className="text-3xl font-bold tracking-tight">Revenue Overview</h2>
           <p className="text-muted-foreground mt-1">Track platform commissions, subscriptions, and total income.</p>
         </div>
-        <Button variant="outline" className="rounded-full h-10 px-5">Download Statement</Button>
+        <div className="flex items-center gap-3">
+          <Select value={filterType} onValueChange={(val: "Today" | "Weekly" | "Monthly" | "Yearly" | "Lifetime" | null) => { if (val) setFilterType(val); }}>
+            <SelectTrigger className="w-40 h-10 rounded-full font-medium">
+              <SelectValue placeholder="Filter by date" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Today">Today</SelectItem>
+              <SelectItem value="Weekly">Weekly</SelectItem>
+              <SelectItem value="Monthly">Monthly</SelectItem>
+              <SelectItem value="Yearly">Yearly</SelectItem>
+              <SelectItem value="Lifetime">Lifetime</SelectItem>
+            </SelectContent>
+          </Select>
+          <Popover open={isDownloadModalOpen} onOpenChange={(open) => { setIsDownloadModalOpen(open); if(open) setDownloadError(""); }}>
+            <PopoverTrigger 
+              render={
+                <Button variant="outline" className="rounded-full h-10 px-5 text-slate-700 font-medium">
+                  <Download className="w-4 h-4 mr-2" /> Export Data
+                </Button>
+              }
+            />
+            <PopoverContent align="end" className="w-auto p-4 rounded-xl shadow-xl bg-white border border-slate-200">
+              <div className="mb-4">
+                <h3 className="font-bold text-lg text-slate-900">Export Bookings</h3>
+                <p className="text-sm text-slate-500">Select a date range to export.</p>
+              </div>
+              <div className="border border-slate-200 rounded-xl mb-4 overflow-hidden">
+                <Calendar
+                  mode="range"
+                  selected={dateRange}
+                  onSelect={(range) => {
+                    setDateRange(range);
+                    setDownloadError("");
+                  }}
+                  numberOfMonths={2}
+                />
+              </div>
+
+              {downloadError && (
+                <div className="mb-4 text-sm text-red-500 bg-red-500/10 px-3 py-2 rounded-lg font-medium">
+                  {downloadError}
+                </div>
+              )}
+              
+              <div className="border-t border-slate-100 pt-4 flex justify-end items-center gap-6">
+                <button 
+                  className="text-sm font-semibold text-slate-800 hover:text-slate-950 transition-colors"
+                  onClick={() => setIsDownloadModalOpen(false)}
+                >
+                  Cancel
+                </button>
+                <Button 
+                  className="rounded-lg h-10 px-6 bg-[#E86A70] hover:bg-[#d5585e] text-white font-bold"
+                  onClick={() => {
+                    if (!dateRange?.from) {
+                      setDownloadError("Please select a date range.");
+                      return;
+                    }
+                    
+                    const fromTime = new Date(dateRange.from.getFullYear(), dateRange.from.getMonth(), dateRange.from.getDate()).getTime();
+                    const toDate = dateRange.to || dateRange.from;
+                    const toTime = new Date(toDate.getFullYear(), toDate.getMonth(), toDate.getDate(), 23, 59, 59, 999).getTime();
+
+                    const txsForDate = rawRevenueData.transactions.filter(tx => {
+                      const txTime = new Date(tx.createdAt).getTime();
+                      return txTime >= fromTime && txTime <= toTime;
+                    });
+
+                    if (txsForDate.length === 0) {
+                      setDownloadError(`No Revenue Overview found for selected range.`);
+                      return;
+                    }
+
+                    const excelData = txsForDate.map(tx => ({
+                      "Transaction ID": tx.id,
+                      "Type": tx.type,
+                      "Source": tx.source,
+                      "Customer Name": tx.customerName || "N/A",
+                      "Amount": tx.amount,
+                      "Room Price": tx.roomPrice,
+                      "Taxes": tx.taxes,
+                      "Commission": tx.commission,
+                      "Status": tx.status,
+                      "Date": tx.date
+                    }));
+
+                    const worksheet = XLSX.utils.json_to_sheet(excelData);
+                    const workbook = XLSX.utils.book_new();
+                    XLSX.utils.book_append_sheet(workbook, worksheet, "Statement");
+                    
+                    const fileNameStr = dateRange.to && dateRange.to.getTime() !== dateRange.from.getTime() 
+                      ? `${dateRange.from.toLocaleDateString().replace(/\//g, '-')}_to_${dateRange.to.toLocaleDateString().replace(/\//g, '-')}`
+                      : `${dateRange.from.toLocaleDateString().replace(/\//g, '-')}`;
+                      
+                    XLSX.writeFile(workbook, `Revenue_Statement_${fileNameStr}.xlsx`);
+                    
+                    setIsDownloadModalOpen(false);
+                  }}
+                >
+                  Download Excel
+                </Button>
+              </div>
+            </PopoverContent>
+          </Popover>
+        </div>
       </div>
 
       {/* KPI Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-3">
         <Card className="rounded-2xl border border-border shadow-xs">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
             <BadgeDollarSign className="h-4 w-4 text-emerald-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatCurrencyCompact(data.totalRevenue)}</div>
+            <div className="text-2xl font-bold">{formatCurrencyCompact(displayData.totalRevenue)}</div>
             <p className="text-xs text-emerald-500 flex items-center gap-1 mt-1 font-medium">
               <TrendingUp className="h-3 w-3" /> Realtime totals
             </p>
-          </CardContent>
-        </Card>
-
-        <Card className="rounded-2xl border border-border shadow-xs">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Monthly Recurring</CardTitle>
-            <Wallet className="h-4 w-4 text-blue-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{formatCurrencyCompact(data.monthlyRecurring)}</div>
-            <p className="text-xs text-muted-foreground mt-1">This month&apos;s active transactions</p>
           </CardContent>
         </Card>
 
@@ -119,7 +264,7 @@ export default function RevenuePage() {
             <TrendingUp className="h-4 w-4 text-purple-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatCurrencyCompact(data.platformCommissions)}</div>
+            <div className="text-2xl font-bold">{formatCurrencyCompact(displayData.platformCommissions)}</div>
             <p className="text-xs text-emerald-500 flex items-center gap-1 mt-1 font-medium">
               <TrendingUp className="h-3 w-3" /> 18% Platform Fee
             </p>
@@ -132,7 +277,7 @@ export default function RevenuePage() {
             <TrendingDown className="h-4 w-4 text-red-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatCurrencyCompact(data.refundLosses)}</div>
+            <div className="text-2xl font-bold">{formatCurrencyCompact(displayData.refundLosses)}</div>
             <p className="text-xs text-red-500 flex items-center gap-1 mt-1 font-medium">
               <TrendingDown className="h-3 w-3" /> From cancelled bookings
             </p>
@@ -151,9 +296,9 @@ export default function RevenuePage() {
               <Loader2 className="w-8 h-8 animate-spin mx-auto text-muted-foreground" />
               <p className="mt-2 text-sm text-muted-foreground">Loading transactions...</p>
             </div>
-          ) : data.transactions.length === 0 ? (
+          ) : displayData.transactions.length === 0 ? (
             <div className="py-12 text-center text-muted-foreground text-sm">
-              No recent income transactions found.
+              No recent income transactions found for {filterType}.
             </div>
           ) : (
             <Table>
@@ -169,7 +314,7 @@ export default function RevenuePage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {data.transactions.slice(0, 30).map((tx) => (
+                {displayData.transactions.slice(0, 30).map((tx) => (
                   <TableRow 
                     key={tx.id}
                     onClick={() => handleOpenReceiptModal(tx)}
@@ -331,6 +476,7 @@ export default function RevenuePage() {
           )}
         </DialogContent>
       </Dialog>
+
     </div>
   );
 }

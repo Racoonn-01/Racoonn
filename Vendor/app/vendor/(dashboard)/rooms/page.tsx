@@ -11,12 +11,21 @@ import { Query } from "appwrite";
 import { useAuthStore } from "@/store/authStore";
 import { toast } from "sonner";
 import Link from "next/link";
-
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 export default function RoomsPage() {
   const { user } = useAuthStore();
   const [rooms, setRooms] = useState<any[]>([]);
   const [properties, setProperties] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [roomToDelete, setRoomToDelete] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -45,14 +54,22 @@ export default function RoomsPage() {
     fetchData();
   }, [user]);
 
-  const handleDelete = async (roomId: string) => {
-    if (!confirm("Are you sure you want to delete this room?")) return;
+  const confirmDelete = (roomId: string) => {
+    setRoomToDelete(roomId);
+  };
+
+  const executeDelete = async () => {
+    if (!roomToDelete) return;
+    setIsDeleting(true);
     try {
-      await databases.deleteDocument(appwriteConfig.databaseId, appwriteConfig.roomCollectionId, roomId);
-      setRooms(prev => prev.filter(r => r.$id !== roomId));
+      await databases.deleteDocument(appwriteConfig.databaseId, appwriteConfig.roomCollectionId, roomToDelete);
+      setRooms(prev => prev.filter(r => r.$id !== roomToDelete));
       toast.success("Room deleted successfully!");
     } catch (err: any) {
       toast.error("Failed to delete room: " + err.message);
+    } finally {
+      setIsDeleting(false);
+      setRoomToDelete(null);
     }
   };
 
@@ -159,7 +176,7 @@ export default function RoomsPage() {
                         variant="outline" 
                         size="sm" 
                         className="flex-1 sm:flex-none border-red-100 text-red-500 hover:bg-red-50"
-                        onClick={() => handleDelete(room.$id)}
+                        onClick={() => confirmDelete(room.$id)}
                       >
                         <Trash2 className="w-4 h-4 mr-2" />
                         Delete
@@ -186,6 +203,32 @@ export default function RoomsPage() {
           </div>
         </CardContent>
       </Card>
+
+      <Dialog open={!!roomToDelete} onOpenChange={(open) => !open && setRoomToDelete(null)}>
+        <DialogContent className="p-0 gap-0 border-0 rounded-3xl">
+          <DialogHeader className="pt-8 px-8 pb-6">
+            <DialogTitle className="text-[1.35rem] font-medium text-slate-900 tracking-tight">Delete Room</DialogTitle>
+            <DialogDescription className="text-[0.95rem] text-slate-500 mt-2 leading-relaxed">
+              Are you sure you want to delete this room? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="bg-[#fff9f6] px-8 py-5 sm:justify-end gap-3 rounded-b-3xl border-t border-orange-100/50 m-0! p-6!">
+            <Button variant="outline" onClick={() => setRoomToDelete(null)} disabled={isDeleting} className="rounded-full bg-white border-slate-200 text-slate-900 hover:bg-slate-50 font-medium px-6 h-11">
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={executeDelete} disabled={isDeleting} className="rounded-full bg-red-50 text-red-500 hover:bg-red-100 hover:text-red-600 shadow-none font-medium px-6 h-11 border-0">
+              {isDeleting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                "Delete"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

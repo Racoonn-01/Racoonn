@@ -2,7 +2,7 @@
 
 import { appwriteServer } from "@/lib/appwrite/server";
 import { Models, Query } from "node-appwrite";
-import { sendResolvedEmail } from "@/lib/actions/email";
+import { sendStatusEmail } from "@/lib/actions/email";
 
 const DATABASE_ID = process.env.APPWRITE_DATABASE_ID || process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID || "6a3cec630035d63ea963";
 const TICKETS_COLLECTION_ID = process.env.APPWRITE_TICKETS_COLLECTION_ID!;
@@ -96,8 +96,8 @@ export async function updateTicketStatus(ticketId: string, status: string, vendo
             { status }
         );
         
-        if (status === "Resolved" && vendorEmail) {
-            await sendResolvedEmail(
+        if (vendorEmail && status !== "Closed") {
+            await sendStatusEmail(
                 vendorEmail,
                 vendorName || "Vendor",
                 {
@@ -105,7 +105,8 @@ export async function updateTicketStatus(ticketId: string, status: string, vendo
                     displayId: ticketDisplayId || ticketId,
                     subject: ticketSubject || "Support Ticket",
                     category: ticketCategory || "General"
-                }
+                },
+                status
             );
         }
         

@@ -73,6 +73,33 @@ export default function VendorsClient({ vendors: initialVendors, kpi }: VendorsC
   const [selectedBookingIds, setSelectedBookingIds] = useState<string[]>([]);
   const [isLoadingBookings, setIsLoadingBookings] = useState(false);
 
+  // Delete vendor state
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [vendorToDelete, setVendorToDelete] = useState<VendorData | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleDeleteVendor = async () => {
+    if (!vendorToDelete) return;
+    try {
+      setIsDeleting(true);
+      const res = await fetch(`/api/vendors/${vendorToDelete.id}`, {
+        method: 'DELETE',
+      });
+      
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to delete vendor');
+      }
+      setVendors(prev => prev.filter(v => v.id !== vendorToDelete.id));
+      setIsDeleteDialogOpen(false);
+      setVendorToDelete(null);
+    } catch (error) {
+      console.error("Error deleting vendor:", error);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   const handleOpenGstModal = async (vendor: VendorData) => {
     setSelectedGstVendor(vendor);
     setSelectedBookingIds([]);
@@ -391,9 +418,7 @@ export default function VendorsClient({ vendors: initialVendors, kpi }: VendorsC
           <h2 className="text-3xl font-black tracking-tight text-foreground">Vendor Management</h2>
           <p className="text-muted-foreground mt-1 text-lg">Oversee all your partners, properties, and revenue shares.</p>
         </div>
-        <Button className="h-11 px-6 rounded-full shadow-lg hover:shadow-xl transition-all">
-          <Plus className="mr-2 h-5 w-5" /> Invite New Vendor
-        </Button>
+
       </div>
 
       {/* KPI Cards */}
@@ -587,7 +612,13 @@ export default function VendorsClient({ vendors: initialVendors, kpi }: VendorsC
                               </DropdownMenuItem>
                             )}
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem className="text-red-600 focus:text-red-600 cursor-pointer rounded-md">
+                            <DropdownMenuItem 
+                              className="text-red-600 focus:text-red-600 cursor-pointer rounded-md"
+                              onClick={() => {
+                                setVendorToDelete(vendor);
+                                setIsDeleteDialogOpen(true);
+                              }}
+                            >
                               <Trash2 className="mr-2 h-4 w-4" /> Delete Vendor
                             </DropdownMenuItem>
                           </DropdownMenuGroup>
@@ -781,6 +812,23 @@ export default function VendorsClient({ vendors: initialVendors, kpi }: VendorsC
             </Button>
             <Button onClick={handleSendGstInvoice} disabled={selectedBookingIds.length === 0 || isSendingGst}>
               {isSendingGst ? "Sending..." : "Send Invoice & Email"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Delete Vendor</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete {vendorToDelete?.name}? This action cannot be undone and will permanently remove this vendor's data.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex space-x-2 sm:justify-end">
+            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)} disabled={isDeleting}>Cancel</Button>
+            <Button variant="destructive" onClick={handleDeleteVendor} disabled={isDeleting}>
+              {isDeleting ? "Deleting..." : "Delete"}
             </Button>
           </DialogFooter>
         </DialogContent>

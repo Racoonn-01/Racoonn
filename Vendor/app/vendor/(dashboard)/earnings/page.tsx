@@ -292,7 +292,7 @@ export default function EarningsPage() {
               className="px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-slate-200 w-full md:w-auto"
               title="Filter by Date"
             />
-            <Button onClick={handleDownloadStatement} className="bg-[#1F2E4A] hover:bg-[#151E2D] text-white rounded-xl shadow-sm gap-2 whitespace-nowrap">
+            <Button onClick={handleDownloadStatement} className="bg-brand-navy hover:bg-[#151E2D] text-white rounded-xl shadow-sm gap-2 whitespace-nowrap">
               <Download className="w-4 h-4" /> Download Statement
             </Button>
           </div>

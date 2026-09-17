@@ -27,7 +27,8 @@ export interface ReviewDoc {
 
 export const COMPLIANCE_DOC_TYPES = [
   { id: "pan_card", title: "PAN Card", description: "Permanent Account Number card of entity or proprietor." },
-  { id: "aadhaar_card", title: "Aadhaar Card", description: "Government identity card of the authorized signatory." },
+  { id: "aadhaar_card_front", title: "Aadhaar Card (Front)", description: "Government identity card (Front side)." },
+  { id: "aadhaar_card_back", title: "Aadhaar Card (Back)", description: "Government identity card (Back side)." },
   { id: "gst_certificate", title: "GST Certificate", description: "GSTIN registration certificate (if applicable)." },
   { id: "business_registration", title: "Business Registration Certificate", description: "Trade license, MSME, or incorporation deed." },
   { id: "bank_cheque", title: "Bank Account Details & Cancelled Cheque", description: "Bank passbook or cancelled cheque for settlement payouts." },
@@ -149,20 +150,38 @@ export default function VendorFullPageReviewScreen({ params }: { params: Promise
         };
 
         const finalDocs: ReviewDoc[] = COMPLIANCE_DOC_TYPES.map(template => {
-          let fileId = null;
-          if (template.id === "pan_card") fileId = doc.idProofFront;
-          if (template.id === "aadhaar_card") fileId = doc.idProofBack;
-          if (template.id === "property_proof") fileId = doc.businessProof;
-          
-          let fileUrl = getFileUrl(fileId);
-          let fileName = fileUrl ? `Document_${template.title}` : null;
+          let fileUrl = null;
+          let fileName = null;
 
-          // Fallback to local storage if Appwrite file is invalid/missing (legacy mock data)
-          if (!fileUrl && rawDocs.length > 0) {
-            const fallbackDoc = rawDocs.find((d: ReviewDoc) => d.id === template.id || d.title?.toLowerCase() === template.title.toLowerCase());
+          // 1. First priority: Realtime/dashboard uploaded documents (rawDocs)
+          if (rawDocs && rawDocs.length > 0) {
+            let searchId = template.id;
+            if (template.id === "aadhaar_card_front") searchId = "aadhaar_card";
+            
+            // For aadhaar_card_back, if it's not explicitly in rawDocs, we won't find it here and it will fall back to Appwrite
+            const fallbackDoc = rawDocs.find((d: ReviewDoc) => d.id === searchId || d.title?.toLowerCase() === template.title.toLowerCase());
+            
             if (fallbackDoc && (fallbackDoc.fileUrl || fallbackDoc.fileName)) {
-              fileUrl = fallbackDoc.fileUrl || null;
-              fileName = fallbackDoc.fileName || `Legacy_${template.title}`;
+              // Don't duplicate the dashboard file into the Back slot if they only uploaded one file for Aadhaar
+              if (template.id !== "aadhaar_card_back" || fallbackDoc.id === "aadhaar_card_back") {
+                fileUrl = fallbackDoc.fileUrl || null;
+                fileName = fallbackDoc.fileName || `Legacy_${template.title}`;
+              }
+            }
+          }
+
+          // 2. Second priority: Fallback to Appwrite document fields (from legacy onboarding)
+          if (!fileUrl) {
+            let fileId = null;
+            // PAN card should not use idProofFront as that is actually Aadhaar Front
+            if (template.id === "aadhaar_card_front") fileId = doc.idProofFront;
+            if (template.id === "aadhaar_card_back") fileId = doc.idProofBack;
+            if (template.id === "business_registration") fileId = doc.businessProof;
+            if (template.id === "bank_cheque") fileId = doc.bankCheque;
+            
+            if (fileId) {
+              fileUrl = getFileUrl(fileId);
+              fileName = fileUrl ? `Document_${template.title}` : null;
             }
           }
           
@@ -244,7 +263,18 @@ export default function VendorFullPageReviewScreen({ params }: { params: Promise
       updatedAt: new Date().toISOString()
     };
 
-    // 1. Sync to localStorage for vendor dashboard live detection
+    // 1. Sync to Appwrite Database (so Vendor Management page updates)
+    try {
+      await fetch(`/api/vendors/${vendorId}/status`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus })
+      });
+    } catch (err) {
+      console.error("Failed to update vendor status in database:", err);
+    }
+
+    // 2. Sync to localStorage for vendor dashboard live detection
     localStorage.setItem(`racoonn_vendor_verification_${vendorId}`, JSON.stringify(verData));
     localStorage.setItem(`racoonn_vendor_documents_${vendorId}`, JSON.stringify(updatedDocs));
     localStorage.setItem('racoonn_global_vendor_verification_sync', JSON.stringify({ ...verData, timestamp: Date.now() }));

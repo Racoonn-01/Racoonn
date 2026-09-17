@@ -6,11 +6,13 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
-import { Search, MoreHorizontal, Ban, Mail, Users, CreditCard, CalendarDays, TrendingUp, Filter, UserPlus } from "lucide-react"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuGroup } from "@/components/ui/dropdown-menu"
+import { Search, MoreHorizontal, Ban, Users, CreditCard, CalendarDays, TrendingUp, Filter } from "lucide-react"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger, DropdownMenuGroup } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Skeleton } from "@/components/ui/skeleton"
-import { getAllCustomers } from "./actions"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Calendar } from "@/components/ui/calendar"
+import { getAllCustomers, toggleCustomerStatus } from "./actions"
 
 export type CustomerData = {
   id: string;
@@ -26,6 +28,8 @@ export type CustomerData = {
 
 export default function CustomersPage() {
   const [activeTab, setActiveTab] = useState("all")
+  const [searchQuery, setSearchQuery] = useState("")
+  const [dateFilter, setDateFilter] = useState<Date | undefined>(undefined)
   const [customers, setCustomers] = useState<CustomerData[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
@@ -43,26 +47,70 @@ export default function CustomersPage() {
     loadCustomers()
   }, [])
 
+  const handleToggleStatus = async (customerId: string, currentStatus: string) => {
+    const suspend = currentStatus === 'active';
+    try {
+      const res = await toggleCustomerStatus(customerId, suspend);
+      if (res.success) {
+        setCustomers(prev => prev.map(c => 
+          c.id === customerId ? { ...c, status: suspend ? 'suspended' : 'active' } : c
+        ));
+      } else {
+        alert(res.error || "Failed to update customer status");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("An error occurred");
+    }
+  };
+
   const stats = useMemo(() => {
     const totalCustomers = customers.length;
     let activeBookings = 0;
     let totalRevenue = 0;
     let suspended = 0;
     
+    let newCustomersThisMonth = 0;
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+    
+    let usersWithActiveBookings = 0;
+
     customers.forEach(c => {
       activeBookings += c.activeBookings;
       totalRevenue += c.totalSpentNum;
       if (c.status === 'suspended') suspended++;
+      if (c.activeBookings > 0) usersWithActiveBookings++;
+      
+      const joinedDate = new Date(c.joined);
+      if (joinedDate.getMonth() === currentMonth && joinedDate.getFullYear() === currentYear) {
+        newCustomersThisMonth++;
+      }
     });
 
     const averageSpend = totalCustomers > 0 ? Math.round(totalRevenue / totalCustomers) : 0;
 
-    return { totalCustomers, activeBookings, averageSpend, suspended };
+    return { totalCustomers, activeBookings, averageSpend, suspended, newCustomersThisMonth, usersWithActiveBookings };
   }, [customers])
 
   const filteredCustomers = customers.filter(c => {
-    if (activeTab === "all") return true;
-    return c.status === activeTab;
+    if (activeTab !== "all" && c.status !== activeTab) return false;
+    
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      if (!c.name.toLowerCase().includes(q) && !c.email.toLowerCase().includes(q)) {
+        return false;
+      }
+    }
+    
+    if (dateFilter) {
+      const cDate = new Date(c.joined).toDateString();
+      const fDate = dateFilter.toDateString();
+      if (cDate !== fDate) return false;
+    }
+    
+    return true;
   })
 
 
@@ -75,9 +123,7 @@ export default function CustomersPage() {
           <h2 className="text-3xl font-black tracking-tight text-foreground">Customer Management</h2>
           <p className="text-muted-foreground mt-1 text-lg">Manage platform users, view their booking history, and monitor activity.</p>
         </div>
-        <Button className="h-11 px-6 rounded-full shadow-lg hover:shadow-xl transition-all">
-          <UserPlus className="mr-2 h-5 w-5" /> Add Customer
-        </Button>
+
       </div>
 
       {/* KPI Cards */}
@@ -113,7 +159,13 @@ export default function CustomersPage() {
                   </div>
                 </div>
                 <div className="mt-4 flex items-center text-sm text-emerald-500 font-medium">
-                  <TrendingUp className="mr-1 h-4 w-4" /> +8% this month
+                  {stats.newCustomersThisMonth > 0 ? (
+                    <>
+                      <TrendingUp className="mr-1 h-4 w-4" /> +{stats.newCustomersThisMonth} this month
+                    </>
+                  ) : (
+                    <span className="text-muted-foreground">0 new this month</span>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -129,8 +181,8 @@ export default function CustomersPage() {
                     <CalendarDays className="h-5 w-5 text-blue-500" />
                   </div>
                 </div>
-                <div className="mt-4 flex items-center text-sm text-emerald-500 font-medium">
-                  <TrendingUp className="mr-1 h-4 w-4" /> +124 since yesterday
+                <div className="mt-4 flex items-center text-sm text-muted-foreground font-medium">
+                  Across {stats.usersWithActiveBookings} users
                 </div>
               </CardContent>
             </Card>
@@ -179,7 +231,12 @@ export default function CustomersPage() {
           <div className="flex items-center gap-2 w-full sm:w-auto">
             <div className="relative w-full sm:w-80">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Search customers by name or email..." className="w-full pl-9 bg-background border-muted-foreground/20 rounded-full h-10" />
+              <Input 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search customers by name or email..." 
+                className="w-full pl-9 bg-background border-muted-foreground/20 rounded-full h-10" 
+              />
             </div>
           </div>
           
@@ -199,9 +256,27 @@ export default function CustomersPage() {
                 </button>
               ))}
             </div>
-            <Button variant="outline" size="sm" className="h-9 rounded-full border-muted-foreground/20">
-              <Filter className="mr-2 h-4 w-4" /> Filters
-            </Button>
+            <Popover>
+              <PopoverTrigger render={<Button variant="outline" size="sm" className={`h-9 rounded-full border-muted-foreground/20 ${dateFilter ? 'bg-primary/10 text-primary border-primary/20' : ''}`} />}>
+                <Filter className="mr-2 h-4 w-4" /> 
+                {dateFilter ? dateFilter.toLocaleDateString() : 'Filters'}
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="end">
+                <div className="p-3 border-b flex justify-between items-center">
+                  <span className="text-sm font-semibold">Filter by Join Date</span>
+                  {dateFilter && (
+                    <Button variant="ghost" size="sm" className="h-7 text-xs text-muted-foreground hover:text-foreground" onClick={() => setDateFilter(undefined)}>
+                      Clear
+                    </Button>
+                  )}
+                </div>
+                <Calendar
+                  mode="single"
+                  selected={dateFilter}
+                  onSelect={setDateFilter}
+                />
+              </PopoverContent>
+            </Popover>
           </div>
         </div>
 
@@ -304,16 +379,18 @@ export default function CustomersPage() {
                         <DropdownMenuContent align="end" className="w-40 rounded-xl border-muted/50">
                           <DropdownMenuGroup>
                             <DropdownMenuLabel className="text-xs font-semibold text-muted-foreground">Actions</DropdownMenuLabel>
-                            <DropdownMenuItem className="cursor-pointer rounded-md">
-                              <Mail className="mr-2 h-4 w-4" /> Email Customer
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
                             {customer.status === 'active' ? (
-                              <DropdownMenuItem className="text-orange-600 focus:text-orange-600 cursor-pointer rounded-md">
+                              <DropdownMenuItem 
+                                onClick={() => handleToggleStatus(customer.id, customer.status)}
+                                className="text-orange-600 focus:text-orange-600 cursor-pointer rounded-md"
+                              >
                                 <Ban className="mr-2 h-4 w-4" /> Suspend User
                               </DropdownMenuItem>
                             ) : (
-                              <DropdownMenuItem className="text-emerald-600 focus:text-emerald-600 cursor-pointer rounded-md">
+                              <DropdownMenuItem 
+                                onClick={() => handleToggleStatus(customer.id, customer.status)}
+                                className="text-emerald-600 focus:text-emerald-600 cursor-pointer rounded-md"
+                              >
                                 <Ban className="mr-2 h-4 w-4" /> Reactivate User
                               </DropdownMenuItem>
                             )}

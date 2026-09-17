@@ -2,7 +2,6 @@
 import React from "react";
 import { useCheckoutStore } from "@/store/checkoutStore";
 import { BookingSummary } from "@/components/checkout/BookingSummary";
-import { TrustBadges } from "@/components/checkout/TrustBadges";
 import { CancellationPolicy } from "@/components/checkout/CancellationPolicy";
 
 import { useSearchParams } from "next/navigation";
@@ -10,6 +9,7 @@ import { useSearchParams } from "next/navigation";
 import { DEFAULT_ADDONS } from "@/components/checkout/AddonSelector";
 
 import { calculateRoomGst } from "@/lib/gst";
+import { calculateRoomPricing } from "@/lib/pricing";
 
 export function CheckoutSidebar({
   nights = 3,
@@ -44,10 +44,16 @@ export function CheckoutSidebar({
   const clientRoomName = searchParams.get('roomName');
   const clientPrice = searchParams.get('price');
   const clientHotelName = searchParams.get('hotelName');
+  const clientHotelImage = searchParams.get('hotelImage');
+  const clientHotelLocation = searchParams.get('hotelLocation');
+  const clientRoomImage = searchParams.get('roomImage');
   
   const hotelName = useCheckoutStore((state) => state.hotelName) || clientHotelName || "Grand Ocean Resort";
-  const hotelImage = useCheckoutStore((state) => state.hotelImage) || "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=400&q=80";
-  const hotelLocation = useCheckoutStore((state) => state.hotelLocation) || "Dubai Marina, UAE";
+  const hotelImage = useCheckoutStore((state) => state.hotelImage) || clientHotelImage || "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=400&q=80";
+  const hotelLocation = useCheckoutStore((state) => state.hotelLocation) || clientHotelLocation || "Dubai Marina, UAE";
+  
+  // Note: we don't store roomImage in the checkoutStore currently, so we just use the client value
+  const roomImage = clientRoomImage || undefined;
   
   const finalRoomName = selectedRoomName || clientRoomName || "Deluxe Ocean View Suite";
   const finalPrice = selectedPrice || (clientPrice ? Number(clientPrice) : 8000);
@@ -59,13 +65,30 @@ export function CheckoutSidebar({
     return date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
   };
 
-  const clientCheckIn = formatUrlDate(searchParams.get('checkIn')) || "12 Aug 2026";
-  const clientCheckOut = formatUrlDate(searchParams.get('checkOut')) || "15 Aug 2026";
-  const clientGuests = searchParams.get('guests') || "2";
+  const clientCheckIn = formatUrlDate(searchParams.get('checkIn'));
+  const clientCheckOut = formatUrlDate(searchParams.get('checkOut'));
+  const clientGuests = `${numGuests} Guest${numGuests > 1 ? 's' : ''}`;
 
-  // Calculate statutory GST based on price per night
   const isPackage = finalRoomName.startsWith('Package:') || finalRoomName.toLowerCase().includes('package') || hotelId.startsWith('pkg-');
-  const roomTotal = isPackage ? finalPrice : finalPrice * nights * rooms;
+  
+  const stdCap = Number(searchParams.get('stdCap')) || 2;
+  const maxCap = Number(searchParams.get('maxCap')) || 4;
+  const epc = Number(searchParams.get('epc')) || 0;
+
+  const guestsPerRoom = Math.ceil(numGuests / rooms);
+  const pricing = calculateRoomPricing({
+    basePrice: finalPrice,
+    standardCapacity: stdCap,
+    maximumCapacity: maxCap,
+    extraPersonCharge: epc,
+    totalGuests: guestsPerRoom,
+    numberOfNights: nights
+  });
+
+  const totalBaseRoomAmount = isPackage ? finalPrice : pricing.baseRoomAmount * rooms;
+  const totalExtraGuestAmount = isPackage ? 0 : pricing.extraGuestAmount * rooms;
+  const roomTotal = totalBaseRoomAmount + totalExtraGuestAmount;
+  const effectivePerNightPrice = isPackage ? finalPrice : roomTotal / (nights * rooms);
   
   let dynamicDiscount = 0;
   if (appliedCoupon) {
@@ -76,7 +99,7 @@ export function CheckoutSidebar({
     }
   }
 
-  const gstResult = calculateRoomGst(finalPrice, nights, rooms, dynamicAddonsTotal);
+  const gstResult = calculateRoomGst(effectivePerNightPrice, nights, rooms, dynamicAddonsTotal);
   const finalTaxes = gstResult.gstAmount;
   const currentGstRate = gstResult.gstRate;
 
@@ -91,6 +114,7 @@ export function CheckoutSidebar({
           hotelName={hotelName}
           hotelImage={hotelImage}
           hotelLocation={hotelLocation}
+          roomImage={roomImage}
           nights={nights}
           rooms={rooms}
           guests={clientGuests}
@@ -100,8 +124,9 @@ export function CheckoutSidebar({
           taxes={finalTaxes}
           addons={dynamicAddonsTotal}
           discount={dynamicDiscount}
+          baseRoomAmount={totalBaseRoomAmount}
+          extraGuestAmount={totalExtraGuestAmount}
         />
-        <TrustBadges />
         <CancellationPolicy />
       </div>
     </div>

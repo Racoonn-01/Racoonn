@@ -309,7 +309,7 @@ export function Step3Business({ onNext, onBack }: { onNext: () => void, onBack: 
       className="flex flex-col h-full max-w-xl mx-auto w-full pt-8"
     >
       <motion.div variants={slideUp} className="mb-8">
-        <h1 className="text-3xl md:text-4xl font-black text-[#1F2E4A] mb-3 font-['Poppins',sans-serif]">Tell us about your business</h1>
+        <h1 className="text-3xl md:text-4xl font-black text-brand-navy mb-3 font-['Poppins',sans-serif]">Tell us about your business</h1>
         <p className="text-slate-500 font-medium text-lg">
           Please provide your business and tax details to verify your identity.
         </p>
@@ -323,26 +323,26 @@ export function Step3Business({ onNext, onBack }: { onNext: () => void, onBack: 
             onClick={() => setBizType("individual")}
             className={cn(
               "p-4 rounded-2xl border-2 flex flex-col items-center gap-3 transition-all",
-              bizType === "individual" ? "border-[#E86A70] bg-[#E86A70]/5" : "border-slate-200 bg-white hover:border-slate-300"
+              bizType === "individual" ? "border-brand-coral bg-brand-coral/5" : "border-slate-200 bg-white hover:border-slate-300"
             )}
           >
-            <div className={cn("w-12 h-12 rounded-full flex items-center justify-center", bizType === "individual" ? "bg-[#E86A70] text-white" : "bg-slate-100 text-slate-500")}>
+            <div className={cn("w-12 h-12 rounded-full flex items-center justify-center", bizType === "individual" ? "bg-brand-coral text-white" : "bg-slate-100 text-slate-500")}>
               <User className="w-6 h-6" />
             </div>
-            <span className={cn("font-bold", bizType === "individual" ? "text-[#1F2E4A]" : "text-slate-500")}>Individual / Sole Proprietor</span>
+            <span className={cn("font-bold", bizType === "individual" ? "text-brand-navy" : "text-slate-500")}>Individual / Sole Proprietor</span>
           </button>
           
           <button 
             onClick={() => setBizType("company")}
             className={cn(
               "p-4 rounded-2xl border-2 flex flex-col items-center gap-3 transition-all",
-              bizType === "company" ? "border-[#E86A70] bg-[#E86A70]/5" : "border-slate-200 bg-white hover:border-slate-300"
+              bizType === "company" ? "border-brand-coral bg-brand-coral/5" : "border-slate-200 bg-white hover:border-slate-300"
             )}
           >
-            <div className={cn("w-12 h-12 rounded-full flex items-center justify-center", bizType === "company" ? "bg-[#E86A70] text-white" : "bg-slate-100 text-slate-500")}>
+            <div className={cn("w-12 h-12 rounded-full flex items-center justify-center", bizType === "company" ? "bg-brand-coral text-white" : "bg-slate-100 text-slate-500")}>
               <Building2 className="w-6 h-6" />
             </div>
-            <span className={cn("font-bold text-center", bizType === "company" ? "text-[#1F2E4A]" : "text-slate-500")}>Registered Company / Property</span>
+            <span className={cn("font-bold text-center", bizType === "company" ? "text-brand-navy" : "text-slate-500")}>Registered Company / Property</span>
           </button>
         </div>
 
@@ -359,7 +359,7 @@ export function Step3Business({ onNext, onBack }: { onNext: () => void, onBack: 
               <Input 
                 value={legalName} 
                 onChange={(e) => setLegalName(e.target.value)} 
-                className="h-12 rounded-xl border-slate-200 bg-white focus:ring-2 focus:ring-[#E86A70]/20 focus:border-[#E86A70] transition-all font-medium" 
+                className="h-12 rounded-xl border-slate-200 bg-white focus:ring-2 focus:ring-brand-coral/20 focus:border-brand-coral transition-all font-medium" 
                 placeholder="Racoonn Hospitality Pvt Ltd" 
               />
             </div>
@@ -376,7 +376,7 @@ export function Step3Business({ onNext, onBack }: { onNext: () => void, onBack: 
                       ? isPanValid(panNumber) 
                         ? "border-green-400 focus:ring-green-400/20 focus:border-green-400" 
                         : "border-red-400 focus:ring-red-400/20 focus:border-red-400"
-                      : "border-slate-200 focus:ring-[#E86A70]/20 focus:border-[#E86A70]"
+                      : "border-slate-200 focus:ring-brand-coral/20 focus:border-brand-coral"
                   )} 
                   placeholder="ABCDE1234F" 
                 />
@@ -386,7 +386,7 @@ export function Step3Business({ onNext, onBack }: { onNext: () => void, onBack: 
                 <Input 
                   value={gstNumber} 
                   onChange={(e) => setGstNumber(e.target.value.toUpperCase())} 
-                  className="h-12 rounded-xl border-slate-200 bg-white focus:ring-2 focus:ring-[#E86A70]/20 focus:border-[#E86A70] transition-all font-medium uppercase" 
+                  className="h-12 rounded-xl border-slate-200 bg-white focus:ring-2 focus:ring-brand-coral/20 focus:border-brand-coral transition-all font-medium uppercase" 
                   placeholder="22AAAAA0000A1Z5" 
                 />
               </div>
@@ -397,7 +397,7 @@ export function Step3Business({ onNext, onBack }: { onNext: () => void, onBack: 
               <textarea 
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
-                className="w-full p-4 rounded-xl border border-slate-200 bg-white focus:ring-2 focus:ring-[#E86A70]/20 focus:border-[#E86A70] transition-all font-medium resize-none min-h-25 outline-none" 
+                className="w-full p-4 rounded-xl border border-slate-200 bg-white focus:ring-2 focus:ring-brand-coral/20 focus:border-brand-coral transition-all font-medium resize-none min-h-25 outline-none" 
                 placeholder="123 Business Park, Sector 4..."
               />
             </div>
@@ -446,7 +446,7 @@ export function Step3Business({ onNext, onBack }: { onNext: () => void, onBack: 
               <Input 
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
-                className="h-12 rounded-xl border-slate-200 bg-white focus:ring-2 focus:ring-[#E86A70]/20 focus:border-[#E86A70] transition-all font-medium" 
+                className="h-12 rounded-xl border-slate-200 bg-white focus:ring-2 focus:ring-brand-coral/20 focus:border-brand-coral transition-all font-medium" 
                 placeholder="Jane Doe" 
               />
             </div>
@@ -463,7 +463,7 @@ export function Step3Business({ onNext, onBack }: { onNext: () => void, onBack: 
                       ? isPanValid(panNumber) 
                         ? "border-green-400 focus:ring-green-400/20 focus:border-green-400" 
                         : "border-red-400 focus:ring-red-400/20 focus:border-red-400"
-                      : "border-slate-200 focus:ring-[#E86A70]/20 focus:border-[#E86A70]"
+                      : "border-slate-200 focus:ring-brand-coral/20 focus:border-brand-coral"
                   )} 
                   placeholder="ABCDE1234F" 
                 />
@@ -479,7 +479,7 @@ export function Step3Business({ onNext, onBack }: { onNext: () => void, onBack: 
                       ? isAadharValid(aadharNumber) 
                         ? "border-green-400 focus:ring-green-400/20 focus:border-green-400" 
                         : "border-red-400 focus:ring-red-400/20 focus:border-red-400"
-                      : "border-slate-200 focus:ring-[#E86A70]/20 focus:border-[#E86A70]"
+                      : "border-slate-200 focus:ring-brand-coral/20 focus:border-brand-coral"
                   )} 
                   placeholder="1234 5678 9012" 
                 />
@@ -491,7 +491,7 @@ export function Step3Business({ onNext, onBack }: { onNext: () => void, onBack: 
               <textarea 
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
-                className="w-full p-4 rounded-xl border border-slate-200 bg-white focus:ring-2 focus:ring-[#E86A70]/20 focus:border-[#E86A70] transition-all font-medium resize-none min-h-25 outline-none" 
+                className="w-full p-4 rounded-xl border border-slate-200 bg-white focus:ring-2 focus:ring-brand-coral/20 focus:border-brand-coral transition-all font-medium resize-none min-h-25 outline-none" 
                 placeholder="House No 123, Street Name..."
               />
             </div>

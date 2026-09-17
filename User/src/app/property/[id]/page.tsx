@@ -18,6 +18,7 @@ import PropertyPhotoGallery from '@/components/property/PropertyPhotoGallery';
 import PropertyReviews from '@/components/property/PropertyReviews';
 import PropertyAmenities from '@/components/property/PropertyAmenities';
 import PropertyHeaderActions from '@/components/property/PropertyHeaderActions';
+import BookNowHeader from '@/components/property/BookNowHeader';
 
 import RoomListWithAvailability from '@/components/property/RoomListWithAvailability';
 import VendorPromoPopup from '@/components/property/VendorPromoPopup';
@@ -81,9 +82,15 @@ export default async function PropertyDetails({ params }: { params: Promise<{ id
           notFound();
         }
         title = realProperty.propertyName || realProperty.title || title;
-        location = [realProperty.location, realProperty.city, realProperty.state].filter(Boolean).join(", ") || `${realProperty.city || ''}, ${realProperty.state || ''}`;
+        const parsedLoc = parseLocationGeo(realProperty.location || "");
+        location = [parsedLoc.cleanLocation, realProperty.city, realProperty.state].filter(Boolean).join(", ") || `${realProperty.city || ''}, ${realProperty.state || ''}`;
         if (realProperty.photos && realProperty.photos.length > 0) {
-          images = realProperty.photos;
+          const propertyBucketId = process.env.NEXT_PUBLIC_APPWRITE_PROPERTY_IMAGES_BUCKET_ID || '6a3e398000280b2b3d20';
+          images = realProperty.photos.map((fileId: string) => 
+            fileId.startsWith('http') 
+              ? fileId 
+              : `https://sgp.cloud.appwrite.io/v1/storage/buckets/${propertyBucketId}/files/${fileId}/view?project=${project}`
+          );
         }
         if (realProperty.description) {
           description = realProperty.description;
@@ -111,7 +118,7 @@ export default async function PropertyDetails({ params }: { params: Promise<{ id
                       ? fileId 
                       : `https://sgp.cloud.appwrite.io/v1/storage/buckets/${roomBucketId}/files/${fileId}/view?project=${project}`
                   )
-                : ['https://images.unsplash.com/photo-1542314831-c6a4d14d837e?q=80&w=800&auto=format&fit=crop'];
+                : [];
               
               return {
                 ...room,
@@ -193,10 +200,13 @@ export default async function PropertyDetails({ params }: { params: Promise<{ id
 
           {/* Rooms Available Section (Horizontal Filter) */}
           <div id="rooms" className="scroll-mt-24">
-            <div className="mb-6">
-              <h2 className="text-[24px] font-semibold text-brand-navy mb-1">Rooms available</h2>
-              <p className="text-[15px] text-gray-500">12 options that meet your criteria</p>
-            </div>
+            <BookNowHeader 
+              rooms={rooms}
+              propertyId={id}
+              propertyName={title}
+              propertyImage={images[0]}
+              propertyLocation={location}
+            />
 
             {/* Filter Bar */}
             <PropertyFilterBar />
@@ -224,11 +234,7 @@ export default async function PropertyDetails({ params }: { params: Promise<{ id
             <div className="pb-6">
               <div>
                 <h2 className="text-[24px] font-semibold text-brand-navy mb-2">About the hotel</h2>
-                <div className="flex flex-wrap gap-4 text-[14px] font-medium text-gray-600">
-                  <span className="flex items-center gap-1"><Wifi size={16} /> Free Wifi</span>
-                  <span className="flex items-center gap-1"><Waves size={16} /> Swimming Pool</span>
-                  <span className="flex items-center gap-1"><Car size={16} /> Free parking</span>
-                </div>
+
               </div>
             </div>
 

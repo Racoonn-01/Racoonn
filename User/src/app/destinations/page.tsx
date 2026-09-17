@@ -21,7 +21,7 @@ export default function DestinationsPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8">
           {allDestinations.map((dest) => (
             <Link href={`/search?destination=${dest.name}`} key={dest.id} className="block group">
-              <div className="relative w-full h-100 rounded-[24px] overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300">
+              <div className="relative w-full h-100 rounded-3xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300">
                 <Image
                   src={dest.image}
                   alt={dest.name}

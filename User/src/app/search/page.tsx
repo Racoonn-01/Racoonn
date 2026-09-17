@@ -139,6 +139,7 @@ function SearchContent() {
   // Mobile bottom-sheet drag state
   const [isListExpanded, setIsListExpanded] = useState(false);
   const dragStartY = useRef(0);
+  const [dragOffset, setDragOffset] = useState(0);
   const [displayLimit, setDisplayLimit] = useState(10);
   const loaderRef = useRef<HTMLDivElement>(null);
 
@@ -463,9 +464,10 @@ function SearchContent() {
           style={{
             // Mobile: top slides between 50% (peek) and 0 (full screen)
             top: isListExpanded ? '0' : '50%',
+            transform: dragOffset !== 0 ? `translateY(${dragOffset}px)` : undefined,
             bottom: 0,
             boxShadow: '0 -8px 30px rgba(0,0,0,0.14)',
-            transition: 'top 0.35s cubic-bezier(0.4,0,0.2,1)',
+            transition: dragOffset === 0 ? 'top 0.35s cubic-bezier(0.4,0,0.2,1), transform 0.35s cubic-bezier(0.4,0,0.2,1)' : 'none',
             zIndex: 100,
           }}
         >
@@ -476,10 +478,25 @@ function SearchContent() {
             onTouchStart={(e) => {
               dragStartY.current = e.touches[0].clientY;
             }}
+            onTouchMove={(e) => {
+              const currentY = e.touches[0].clientY;
+              const delta = currentY - dragStartY.current;
+              // Moving down when expanded (positive delta)
+              if (isListExpanded && delta > 0) {
+                setDragOffset(delta);
+              } 
+              // Moving up when collapsed (negative delta)
+              else if (!isListExpanded && delta < 0) {
+                setDragOffset(delta);
+              }
+            }}
             onTouchEnd={(e) => {
-              const delta = dragStartY.current - e.changedTouches[0].clientY;
-              if (delta > 30) setIsListExpanded(true);
-              else if (delta < -30) setIsListExpanded(false);
+              const currentY = e.changedTouches[0].clientY;
+              const delta = currentY - dragStartY.current;
+              setDragOffset(0);
+              
+              if (delta < -30) setIsListExpanded(true); // Swiped up
+              else if (delta > 30) setIsListExpanded(false); // Swiped down
             }}
           >
             <div className="w-12 h-1.5 bg-gray-300 rounded-full" />

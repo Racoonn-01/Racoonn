@@ -1,12 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowRight } from 'lucide-react';
 
 import { useCheckoutStore } from '@/store/checkoutStore';
 import { usePropertyFilterStore } from '@/store/propertyFilterStore';
 import AuthModal from '@/components/auth/AuthModal';
+import { useAuthStore } from '@/store/authStore';
 
 interface ReserveButtonProps {
   hotelId: string;
@@ -34,8 +35,9 @@ export default function ReserveButton({
   const setRoomDetails = useCheckoutStore((state) => state.setRoomDetails);
   const { checkIn, checkOut, rooms, adults, children } = usePropertyFilterStore();
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
 
-  const handleReserve = () => {
+  const proceedToCheckout = () => {
     // Set the room details in the checkout store as the primary source of truth
     setRoomDetails(hotelId, roomName, price, hotelName, hotelImage, hotelLocation, standardCapacity, maximumCapacity, extraPersonCharge, extraBedAvailable);
     
@@ -65,6 +67,22 @@ export default function ReserveButton({
     // Directly redirect to checkout page
     router.push(`/checkout?${query.toString()}`);
   };
+
+  const handleReserve = () => {
+    if (!isAuthenticated) {
+      setIsAuthModalOpen(true);
+      return;
+    }
+    proceedToCheckout();
+  };
+
+  useEffect(() => {
+    if (isAuthModalOpen && isAuthenticated) {
+      setIsAuthModalOpen(false);
+      proceedToCheckout();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthModalOpen, isAuthenticated]);
 
   return (
     <>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, Mail, Phone, MessageSquare, ChevronDown, BookOpen } from 'lucide-react';
+import { Mail, Phone, MessageSquare, ChevronDown, BookOpen } from 'lucide-react';
 import Link from 'next/link';
 
 export default function HelpPage() {
@@ -72,7 +72,7 @@ export default function HelpPage() {
             </div>
             <h3 className="text-xl font-bold text-brand-navy mb-3">Call Support</h3>
             <p className="text-gray-500 mb-4 line-clamp-2">Our support team is available 24/7 to help you over the phone.</p>
-            <p className="text-brand-navy font-semibold text-lg">+1 (555) 123-4567</p>
+            <p className="text-brand-navy font-semibold text-lg">+91 8954442144</p>
           </div>
         </div>
 
@@ -105,7 +105,7 @@ export default function HelpPage() {
           <div className="absolute inset-0 bg-[url('/noise.png')] opacity-5 mix-blend-overlay pointer-events-none"></div>
           <h2 className="text-2xl md:text-3xl font-bold text-white mb-4 relative z-10">Still need help?</h2>
           <p className="text-brand-sky/80 mb-8 max-w-xl mx-auto relative z-10">
-            Can't find the answer you're looking for? Please contact our friendly support team and we'll get back to you as soon as possible.
+            Can&apos;t find the answer you&apos;re looking for? Please contact our friendly support team and we&apos;ll get back to you as soon as possible.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 relative z-10">
             <button className="bg-brand-coral hover:bg-[#d95d63] text-white px-8 py-3 rounded-xl font-bold transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5 flex items-center gap-2">

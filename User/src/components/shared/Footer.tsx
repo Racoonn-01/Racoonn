@@ -159,7 +159,7 @@ export default function Footer() {
                   </div>
                   <div>
                     <p className="text-xs text-brand-sky/50 mb-0.5">Need help booking?</p>
-                    <p className="font-bold text-white">+1 (555) 123-4567</p>
+                    <p className="font-bold text-white">+91 8954442144</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-4 group">
@@ -169,8 +169,8 @@ export default function Footer() {
                   <div>
                     <p className="text-xs text-brand-sky/50 mb-0.5">Headquarters</p>
                     <p className="font-bold text-white text-sm leading-relaxed">
-                      B-81, Rose Villa, Samiah Lake City, Rudrapur,<br />
-                      <span className="font-normal text-white/80">Kichha, Udham Singh Nagar - 263153, Uttarakhand</span>
+                      Corp. Off.-205 PSA Plaza 2nd Floor 19 Kalyani View,<br />
+                      <span className="font-normal text-white/80">Nainital Road Rudrapur 263153 U.S. Nagar (UK)</span>
                     </p>
                   </div>
                 </div>

@@ -42,11 +42,14 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
   const setRoomDetails = useCheckoutStore((state) => state.setRoomDetails);
   const resolvedParams = use(params);
   const rawPkgId = resolvedParams.id || '1';
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [pkg, setPkg] = useState<Record<string, any> | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [itinerary, setItinerary] = useState<Record<string, any>[]>([]);
 
   // Available Hotel Options
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [hotelOptions, setHotelOptions] = useState<Record<string, any>[]>([]);
 
   // Available Activity Options
@@ -75,6 +78,7 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
         const res = await fetch("/api/cms/packages");
         const json = await res.json();
         if (json.success && Array.isArray(json.packages) && json.packages.length > 0) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const cmsFound = json.packages.find((p: Record<string, any>) => String(p.id) === String(rawPkgId));
           if (cmsFound) {
             const minPrice = cmsFound.pricing && cmsFound.pricing[0] ? cmsFound.pricing[0].pricePerPerson : 0;
@@ -622,6 +626,7 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
                                 <div className="p-5 pt-0 border-t border-gray-100 bg-white">
                                   <div className="relative pl-8 ml-6 border-l border-brand-coral/30 py-4 flex flex-col gap-6 mt-4">
                                     {(day.points && day.points.length > 0) ? (
+                                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                       day.points.map((pt: Record<string, any>, pIdx: number) => (
                                         <div key={pIdx} className="relative">
                                           <div className="absolute -left-9.5 top-1.5 w-3 h-3 rounded-full bg-brand-coral ring-4 ring-white" />
@@ -849,7 +854,7 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
                   <div className="bg-gray-50 rounded-2xl p-6 sm:p-8 border border-gray-200">
                     <p className="text-gray-700 mb-6 text-[15px]">Have a special request or need more details about this package? Our travel experts are here to help!</p>
                     <div className="flex flex-col sm:flex-row gap-4">
-                      <a href="tel:+919876543210" className="flex items-center justify-center gap-2 bg-gray-900 hover:bg-black text-white font-bold py-3.5 px-6 rounded-xl transition-all shadow-md w-full sm:w-auto">
+                      <a href="tel:+918954442144" className="flex items-center justify-center gap-2 bg-gray-900 hover:bg-black text-white font-bold py-3.5 px-6 rounded-xl transition-all shadow-md w-full sm:w-auto">
                         <PhoneCall size={18} />
                         Call Us Now
                       </a>

@@ -8,20 +8,20 @@ interface PricePopoverProps {
   isOpen: boolean;
   onClose: () => void;
   minPrice: number;
-  maxPrice: number;
+  absoluteMin: number;
+  absoluteMax: number;
   onApply: (min: number, max: number) => void;
   onClear: () => void;
   matchCount?: number;
 }
-
-const MIN_ALLOWED = 1000;
-const MAX_ALLOWED = 100000;
 
 export default function PricePopover({
   isOpen,
   onClose,
   minPrice: initialMin,
   maxPrice: initialMax,
+  absoluteMin,
+  absoluteMax,
   onApply,
   onClear,
   matchCount,
@@ -60,7 +60,7 @@ export default function PricePopover({
   }, [isOpen, onClose]);
 
   const getPercent = (value: number) => {
-    return Math.round(((value - MIN_ALLOWED) / (MAX_ALLOWED - MIN_ALLOWED)) * 100);
+    return Math.round(((value - absoluteMin) / (absoluteMax - absoluteMin)) * 100) || 0;
   };
 
   const handleMinSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -81,18 +81,18 @@ export default function PricePopover({
     const valStr = e.target.value;
     setMinInputVal(valStr);
     const num = Number(valStr);
-    if (!isNaN(num) && num >= MIN_ALLOWED && num <= maxPrice - 500) {
+    if (!isNaN(num) && num >= absoluteMin && num <= maxPrice - 500) {
       setMinPrice(num);
     }
   };
 
   const handleMinInputBlur = () => {
     const num = Number(minInputVal);
-    if (isNaN(num) || num < MIN_ALLOWED) {
-      setMinPrice(MIN_ALLOWED);
-      setMinInputVal(String(MIN_ALLOWED));
+    if (isNaN(num) || num < absoluteMin) {
+      setMinPrice(absoluteMin);
+      setMinInputVal(String(absoluteMin));
     } else if (num > maxPrice - 500) {
-      const clamped = Math.max(MIN_ALLOWED, maxPrice - 500);
+      const clamped = Math.max(absoluteMin, maxPrice - 500);
       setMinPrice(clamped);
       setMinInputVal(String(clamped));
     }
@@ -102,18 +102,18 @@ export default function PricePopover({
     const valStr = e.target.value;
     setMaxInputVal(valStr);
     const num = Number(valStr);
-    if (!isNaN(num) && num >= minPrice + 500 && num <= MAX_ALLOWED) {
+    if (!isNaN(num) && num >= minPrice + 500 && num <= absoluteMax) {
       setMaxPrice(num);
     }
   };
 
   const handleMaxInputBlur = () => {
     const num = Number(maxInputVal);
-    if (isNaN(num) || num > MAX_ALLOWED) {
-      setMaxPrice(MAX_ALLOWED);
-      setMaxInputVal(String(MAX_ALLOWED));
+    if (isNaN(num) || num > absoluteMax) {
+      setMaxPrice(absoluteMax);
+      setMaxInputVal(String(absoluteMax));
     } else if (num < minPrice + 500) {
-      const clamped = Math.min(MAX_ALLOWED, minPrice + 500);
+      const clamped = Math.min(absoluteMax, minPrice + 500);
       setMaxPrice(clamped);
       setMaxInputVal(String(clamped));
     }
@@ -125,10 +125,10 @@ export default function PricePopover({
   };
 
   const handleClear = () => {
-    setMinPrice(MIN_ALLOWED);
-    setMaxPrice(MAX_ALLOWED);
-    setMinInputVal(String(MIN_ALLOWED));
-    setMaxInputVal(String(MAX_ALLOWED));
+    setMinPrice(absoluteMin);
+    setMaxPrice(absoluteMax);
+    setMinInputVal(String(absoluteMin));
+    setMaxInputVal(String(absoluteMax));
     onClear();
     onClose();
   };
@@ -220,9 +220,9 @@ export default function PricePopover({
                     {/* Minimum Thumb Input */}
                     <input
                       type="range"
-                      min={MIN_ALLOWED}
-                      max={MAX_ALLOWED}
-                      step={500}
+                      min={absoluteMin}
+                      max={absoluteMax}
+                      step={Math.max(500, Math.floor((absoluteMax - absoluteMin) / 100))}
                       value={minPrice}
                       onChange={handleMinSliderChange}
                       onMouseDown={() => setActiveThumb("min")}
@@ -235,9 +235,9 @@ export default function PricePopover({
                     {/* Maximum Thumb Input */}
                     <input
                       type="range"
-                      min={MIN_ALLOWED}
-                      max={MAX_ALLOWED}
-                      step={500}
+                      min={absoluteMin}
+                      max={absoluteMax}
+                      step={Math.max(500, Math.floor((absoluteMax - absoluteMin) / 100))}
                       value={maxPrice}
                       onChange={handleMaxSliderChange}
                       onMouseDown={() => setActiveThumb("max")}

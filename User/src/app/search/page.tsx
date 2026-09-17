@@ -180,6 +180,26 @@ function SearchContent() {
     return filters.length > 1 ? filters : DEFAULT_FILTERS;
   }, [properties]);
 
+  const { absoluteMinPrice, absoluteMaxPrice } = React.useMemo(() => {
+    if (properties.length === 0) return { absoluteMinPrice: 1000, absoluteMaxPrice: 100000 };
+    
+    let min = Infinity;
+    let max = -Infinity;
+    properties.forEach(p => {
+      if (p.price < min) min = p.price;
+      if (p.price > max) max = p.price;
+    });
+    
+    if (min === Infinity || max === -Infinity) return { absoluteMinPrice: 1000, absoluteMaxPrice: 100000 };
+    
+    min = Math.floor(min / 500) * 500;
+    max = Math.ceil(max / 500) * 500;
+    
+    if (max <= min) max = min + 1000;
+    
+    return { absoluteMinPrice: Math.max(0, min), absoluteMaxPrice: max };
+  }, [properties]);
+
 
   useEffect(() => {
     async function loadProperties() {
@@ -611,8 +631,10 @@ function SearchContent() {
       <PricePopover
         isOpen={isPricePopoverOpen}
         onClose={() => setIsPricePopoverOpen(false)}
-        minPrice={advancedFilters?.minPrice ?? 1000}
-        maxPrice={advancedFilters?.maxPrice ?? 100000}
+        minPrice={advancedFilters?.minPrice ?? absoluteMinPrice}
+        maxPrice={advancedFilters?.maxPrice ?? absoluteMaxPrice}
+        absoluteMin={absoluteMinPrice}
+        absoluteMax={absoluteMaxPrice}
         matchCount={filteredProperties.length}
         onApply={(min, max) => {
           setAdvancedFilters((prev) => ({
@@ -630,7 +652,7 @@ function SearchContent() {
           }
         }}
         onClear={() => {
-          setAdvancedFilters((prev) => (prev ? { ...prev, minPrice: 1000, maxPrice: 100000 } : null));
+          setAdvancedFilters((prev) => (prev ? { ...prev, minPrice: absoluteMinPrice, maxPrice: absoluteMaxPrice } : null));
           setSelectedFilters((prev) => prev.filter((f) => f !== 'Price'));
         }}
       />

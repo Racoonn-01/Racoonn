@@ -342,7 +342,7 @@ export function GuestDetailsForm() {
 
             {isDropdownOpen && (
               <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 flex flex-col overflow-hidden">
-                <div className="p-2 border-b border-gray-100 flex items-center bg-white sticky top-0 relative">
+                <div className="p-2 border-b border-gray-100 flex items-center bg-white sticky top-0">
                   <Search className="w-4 h-4 text-gray-400 absolute left-4" />
                   <input
                     type="text"

@@ -285,7 +285,7 @@ export default function RoomListWithAvailability({
 
       {/* Room Details Modal */}
       {selectedRoomForModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-md animate-in fade-in duration-300">
+        <div className="fixed inset-0 z-100 flex items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-md animate-in fade-in duration-300">
           <div className="bg-white rounded-[24px] shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden animate-in zoom-in-95 duration-300 flex flex-col relative ring-1 ring-white/10">
             <button 
               onClick={() => setSelectedRoomForModal(null)}
@@ -302,7 +302,7 @@ export default function RoomListWithAvailability({
                     alt={selectedRoomForModal.name}
                     className="w-full h-full object-cover opacity-90 transition-opacity duration-700 group-hover:opacity-100"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent pointer-events-none" />
+                  <div className="absolute inset-0 bg-linear-to-t from-black/90 via-black/30 to-transparent pointer-events-none" />
                   
                   {selectedRoomForModal.images.length > 1 && (
                     <>

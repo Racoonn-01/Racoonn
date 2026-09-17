@@ -516,10 +516,10 @@ function SearchContent() {
               <div>
                 <h1 className="text-[24px] lg:text-[28px] font-bold text-gray-900">
                   {filteredProperties.length === 0 
-                    ? 'No homes found' 
+                    ? 'No properties found' 
                     : filteredProperties.length === 1 
-                      ? '1 stay found' 
-                      : `${filteredProperties.length} homes available`}
+                      ? '1 property found' 
+                      : `${filteredProperties.length} properties available`}
                 </h1>
                 <p className="text-[14px] lg:text-[15px] text-gray-600 mt-1">Stays in {location}</p>
               </div>

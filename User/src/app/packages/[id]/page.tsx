@@ -53,24 +53,8 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
   const [hotelOptions, setHotelOptions] = useState<Record<string, any>[]>([]);
 
   // Available Activity Options
-  const [activityOptions, setActivityOptions] = useState([
-    {
-      id: 0,
-      title: 'Guided Local Sightseeing',
-      description: 'Explore the best landmarks and hidden gems with our expert local guides. Includes photography points and cultural hubs.',
-      image: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=600&auto=format&fit=crop',
-      pricePerPerson: 0,
-      priceLabel: 'Included in Package'
-    },
-    {
-      id: 1,
-      title: 'Adventure Sports Pass',
-      description: 'Get an adrenaline rush with our adventure sports pass. Includes zip-lining, river rafting, and bungee jumping (where applicable).',
-      image: 'https://images.unsplash.com/photo-1593693397690-362cb9666fc2?q=80&w=600&auto=format&fit=crop',
-      pricePerPerson: 2500,
-      priceLabel: '+ ₹2,500 / person'
-    }
-  ]);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [activityOptions, setActivityOptions] = useState<Record<string, any>[]>([]);
 
   useEffect(() => {
     async function loadCMSPackage() {
@@ -141,40 +125,7 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
   const [isStartOpen, setIsStartOpen] = useState(false);
   const [isEndOpen, setIsEndOpen] = useState(false);
 
-  // Fetch real-time hotel properties from Appwrite DB if not specified in CMS package
-  useEffect(() => {
-    async function loadLiveProperties() {
-      try {
-        const docs = await getProperties();
-        if (docs && docs.length > 0) {
-          const mapped = docs.slice(0, 6).map((d: Models.Document, idx: number) => {
-            const doc = d as unknown as Record<string, unknown>;
-            const rawPrice = Number(
-              doc.price || doc.startingPrice || doc.minPrice || doc.basePrice || doc.pricePerNight || 3500
-            );
-            const photos = Array.isArray(doc.photos) ? doc.photos : [];
-            const photoUrl = photos[0] ? String(photos[0]) : 'https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=600&auto=format&fit=crop';
-            
-            return {
-              id: String(doc.$id || idx),
-              title: String(doc.propertyName || doc.title || 'Premium Property Stay'),
-              description: String(doc.description || 'Handpicked premium property featuring top-notch hospitality and modern comfort.'),
-              image: photoUrl,
-              tags: doc.city ? [String(doc.city), 'AC Rooms'] : ['AC Rooms', 'Breakfast Included'],
-              pricePerNight: rawPrice > 0 ? rawPrice : 3500,
-              isDefault: idx === 0,
-              priceLabel: idx === 0 ? 'Included in Package' : ''
-            };
-          });
-
-          setHotelOptions(prev => prev.length > 0 ? prev : mapped);
-        }
-      } catch (err) {
-        console.error('Error loading Appwrite property data:', err);
-      }
-    }
-    loadLiveProperties();
-  }, []);
+  // Removed fallback fetching of properties, rely only on CMS data
 
   if (isLoading) {
     return (
@@ -754,10 +705,14 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
                 <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
                   <h3 className="text-[20px] font-bold text-gray-900 mb-2 font-heading">Included & Optional Activities</h3>
                   <p className="text-gray-600 mb-6 text-[15px]">Select the activities you want to add to your itinerary.</p>
-                  
-                  <div className="flex flex-col gap-4">
-                    {activityOptions.map((act, index) => {
-                      const isSelected = selectedActivities.includes(index);
+                  {activityOptions.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-12 border border-dashed border-gray-200 rounded-2xl bg-gray-50 text-center">
+                      <p className="text-gray-500 font-medium text-sm">No activities available for this package right now.</p>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col gap-4">
+                      {activityOptions.map((act, index) => {
+                        const isSelected = selectedActivities.includes(index);
                       return (
                         <motion.div
                           key={act.id}
@@ -802,7 +757,8 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
                         </motion.div>
                       );
                     })}
-                  </div>
+                    </div>
+                  )}
                 </div>
               )}
 

@@ -233,6 +233,7 @@ export default function BookingsPage() {
             </div>
             
             <div className="rounded-md border bg-card">
+              {/* @ts-ignore */}
               <CustomCalendar
                 initialFocus
                 mode="range"

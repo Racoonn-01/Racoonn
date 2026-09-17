@@ -27,9 +27,11 @@ interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
   initialView?: 'signin' | 'signup' | 'forgot';
+  onSuccess?: () => void;
+  successUrl?: string;
 }
 
-export default function AuthModal({ isOpen, onClose, initialView = 'signin' }: AuthModalProps) {
+export default function AuthModal({ isOpen, onClose, initialView = 'signin', onSuccess, successUrl }: AuthModalProps) {
   const [view, setView] = useState<'signin' | 'signup' | 'forgot'>(initialView);
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -67,11 +69,13 @@ export default function AuthModal({ isOpen, onClose, initialView = 'signin' }: A
         );
         toast.success('Account Created Successfully');
         await checkAuth();
+        if (onSuccess) onSuccess();
         onClose();
       } else if (view === 'signin') {
         await authService.login(data.email, data.password);
         toast.success('Login Successful');
         await checkAuth();
+        if (onSuccess) onSuccess();
         onClose();
       } else if (view === 'forgot') {
         await authService.forgotPassword(data.email);
@@ -93,7 +97,7 @@ export default function AuthModal({ isOpen, onClose, initialView = 'signin' }: A
   const handleGoogleLogin = async () => {
     try {
       setIsSubmitting(true);
-      await authService.loginWithGoogle();
+      await authService.loginWithGoogle(successUrl);
       // Note: This redirects the browser, so we don't need to manually close the modal or unset loading
     } catch {
       toast.error("Google Login Failed");

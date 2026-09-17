@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowRight } from 'lucide-react';
 
@@ -36,8 +36,9 @@ export default function ReserveButton({
   const { checkIn, checkOut, rooms, adults, children } = usePropertyFilterStore();
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const [pendingCheckoutUrl, setPendingCheckoutUrl] = useState<string>('');
 
-  const proceedToCheckout = () => {
+  const handleReserve = () => {
     // Set the room details in the checkout store as the primary source of truth
     setRoomDetails(hotelId, roomName, price, hotelName, hotelImage, hotelLocation, standardCapacity, maximumCapacity, extraPersonCharge, extraBedAvailable);
     
@@ -64,25 +65,25 @@ export default function ReserveButton({
     query.set('rooms', requiredRooms.toString());
     query.set('guests', totalGuests.toString());
 
-    // Directly redirect to checkout page
-    router.push(`/checkout?${query.toString()}`);
-  };
+    // Construct checkout URL
+    const checkoutUrl = `/checkout?${query.toString()}`;
 
-  const handleReserve = () => {
     if (!isAuthenticated) {
+      // Store checkoutUrl so it can be passed to AuthModal for Google OAuth
+      setPendingCheckoutUrl(checkoutUrl);
       setIsAuthModalOpen(true);
       return;
     }
-    proceedToCheckout();
+
+    // Directly redirect to checkout page
+    router.push(checkoutUrl);
   };
 
-  useEffect(() => {
-    if (isAuthModalOpen && isAuthenticated) {
-      setIsAuthModalOpen(false);
-      proceedToCheckout();
+  const handleAuthSuccess = () => {
+    if (pendingCheckoutUrl) {
+      router.push(pendingCheckoutUrl);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthModalOpen, isAuthenticated]);
+  };
 
   return (
     <>
@@ -107,6 +108,8 @@ export default function ReserveButton({
         isOpen={isAuthModalOpen} 
         onClose={() => setIsAuthModalOpen(false)} 
         initialView="signin" 
+        onSuccess={handleAuthSuccess}
+        successUrl={pendingCheckoutUrl ? `${window.location.origin}${pendingCheckoutUrl}` : undefined}
       />
     </>
   );

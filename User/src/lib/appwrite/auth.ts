@@ -33,10 +33,10 @@ export const authService = {
     return session;
   },
 
-  async loginWithGoogle() {
+  async loginWithGoogle(successUrl?: string) {
     account.createOAuth2Session(
       OAuthProvider.Google, // provider
-      `${window.location.origin}/`, // success url
+      successUrl || `${window.location.origin}/`, // success url
       `${window.location.origin}/`  // failure url
     );
   },

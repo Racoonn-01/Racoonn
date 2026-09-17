@@ -299,7 +299,6 @@ export default function MapMockup({
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<{ id: string; marker: mapboxgl.Marker; coords: [number, number] }[]>([]);
   const [searchAsMove, setSearchAsMove] = useState(true);
-  const [showSearchAreaBtn, setShowSearchAreaBtn] = useState(false);
   const [mapStyle, setMapStyle] = useState<'streets' | 'satellite'>('streets');
   const [geocodedMap, setGeocodedMap] = useState<Record<string, [number, number]>>({});
   const [overlay, setOverlay] = useState<OverlayState | null>(null);
@@ -365,7 +364,6 @@ export default function MapMockup({
     });
 
     map.addControl(new mapboxgl.NavigationControl(), 'bottom-right');
-    map.on('moveend', () => setShowSearchAreaBtn(true));
     // Close overlay on map canvas click
     map.on('click', () => setOverlay(null));
 
@@ -506,24 +504,6 @@ export default function MapMockup({
         />
       )}
 
-      {/* Search This Area button */}
-      {showSearchAreaBtn && (
-        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20">
-          <button
-            onClick={() => {
-              setShowSearchAreaBtn(false);
-              if (properties.length > 0 && mapRef.current) {
-                const bounds = new mapboxgl.LngLatBounds();
-                properties.forEach((p, i) => bounds.extend(getPropertyCoordinates(p, i, geocodedMap)));
-                mapRef.current.fitBounds(bounds, { padding: 80, maxZoom: 13, animate: true });
-              }
-            }}
-            className="bg-white text-gray-900 font-bold text-xs px-4 py-2 rounded-full shadow-xl border border-gray-200 hover:bg-gray-900 hover:text-white transition-all cursor-pointer flex items-center gap-1.5"
-          >
-            <span>🔍</span> Search This Area
-          </button>
-        </div>
-      )}
 
       {/* Top Controls */}
       <div className="absolute top-4 left-4 right-4 flex flex-wrap items-center justify-between gap-2 z-10 pointer-events-none">

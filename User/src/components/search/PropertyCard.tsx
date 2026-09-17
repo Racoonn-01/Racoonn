@@ -119,7 +119,7 @@ export default function PropertyCard({
             <span className="text-[14px] text-gray-500 line-through">₹{property.originalPrice.toLocaleString()}</span>
           )}
           <span className="text-[15px] font-semibold text-gray-900">₹{property.price.toLocaleString()}</span>
-          <span className="text-[14px] text-gray-900">for 5 nights</span>
+          <span className="text-[14px] text-gray-900">per night</span>
         </div>
         {property.freeCancellation && (
           <p className="text-[13px] text-gray-500 mt-1">Free cancellation</p>

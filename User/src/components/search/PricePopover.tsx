@@ -8,6 +8,7 @@ interface PricePopoverProps {
   isOpen: boolean;
   onClose: () => void;
   minPrice: number;
+  maxPrice: number;
   absoluteMin: number;
   absoluteMax: number;
   onApply: (min: number, max: number) => void;
@@ -151,12 +152,12 @@ export default function PricePopover({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="fixed inset-0 z-[150] bg-black/30 backdrop-blur-[2px]"
+            className="fixed inset-0 z-150 bg-black/30 backdrop-blur-[2px]"
             onClick={onClose}
           />
 
           {/* Popup Modal */}
-          <div className="fixed inset-0 z-[160] flex items-center justify-center p-4 pointer-events-none">
+          <div className="fixed inset-0 z-160 flex items-center justify-center p-4 pointer-events-none">
             <motion.div
               ref={popoverRef}
               initial={{ opacity: 0, scale: 0.92, y: 12 }}

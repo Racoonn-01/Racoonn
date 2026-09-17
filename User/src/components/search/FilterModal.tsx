@@ -40,8 +40,6 @@ export default function FilterModal({ isOpen, onClose, onApply, initialFilters, 
   const [selectedAmenities, setSelectedAmenities] = useState<string[]>(initialFilters?.selectedAmenities ?? []);
   const [showPropertyType, setShowPropertyType] = useState(false);
   const [selectedPropertyTypes, setSelectedPropertyTypes] = useState<string[]>(initialFilters?.selectedPropertyTypes ?? []);
-  const [showAccessibility, setShowAccessibility] = useState(false);
-  const [showHostLanguage, setShowHostLanguage] = useState(false);
   const [selectedBookingOptions, setSelectedBookingOptions] = useState<string[]>(initialFilters?.selectedBookingOptions ?? []);
 
   const modalRef = useRef<HTMLDivElement>(null);
@@ -225,12 +223,12 @@ export default function FilterModal({ isOpen, onClose, onApply, initialFilters, 
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="fixed inset-0 z-[150] bg-black/30 backdrop-blur-[3px]"
+            className="fixed inset-0 z-150 bg-black/30 backdrop-blur-[3px]"
             onClick={onClose}
           />
 
           {/* Smooth Popup Modal Card */}
-          <div className="fixed inset-0 z-[160] flex items-center justify-center p-4 pointer-events-none">
+          <div className="fixed inset-0 z-160 flex items-center justify-center p-4 pointer-events-none">
             <motion.div
               ref={modalRef}
               initial={{ opacity: 0, scale: 0.92, y: 16 }}

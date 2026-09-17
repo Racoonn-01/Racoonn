@@ -26,7 +26,7 @@ export default function TermsPage() {
       <div className="relative bg-slate-900 text-white overflow-hidden">
         {/* Abstract Background Elements */}
         <div className="absolute inset-0 z-0">
-          <div className="absolute -top-[20%] -left-[10%] w-[50%] h-[50%] rounded-full bg-rose-500/20 blur-[100px]" />
+          <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] rounded-full bg-rose-500/20 blur-[100px]" />
           <div className="absolute bottom-[0%] right-[0%] w-[40%] h-[40%] rounded-full bg-blue-500/20 blur-[100px]" />
           <div className="absolute top-[20%] left-[40%] w-[30%] h-[30%] rounded-full bg-indigo-500/10 blur-[80px]" />
         </div>
@@ -35,7 +35,7 @@ export default function TermsPage() {
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/10 text-rose-200 text-sm font-semibold tracking-wide mb-6">
             <ShieldCheck size={16} /> Legal Documentation
           </div>
-          <h1 className="text-5xl md:text-7xl font-black tracking-tight mb-6 bg-clip-text text-transparent bg-gradient-to-r from-white via-slate-200 to-slate-400">
+          <h1 className="text-5xl md:text-7xl font-black tracking-tight mb-6 bg-clip-text text-transparent bg-linear-to-r from-white via-slate-200 to-slate-400">
             Terms & Conditions
           </h1>
           <p className="text-lg md:text-xl text-slate-300 max-w-2xl font-light">
@@ -222,7 +222,7 @@ export default function TermsPage() {
             </section>
 
             {/* Support / Contact Section */}
-            <section id="contact" className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-3xl shadow-xl p-8 md:p-12 text-white overflow-hidden relative">
+            <section id="contact" className="bg-linear-to-br from-slate-900 to-slate-800 rounded-3xl shadow-xl p-8 md:p-12 text-white overflow-hidden relative">
               <div className="absolute top-0 right-0 w-64 h-64 bg-rose-500/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
               
               <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-8">

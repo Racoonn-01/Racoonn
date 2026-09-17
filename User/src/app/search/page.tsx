@@ -393,7 +393,7 @@ function SearchContent() {
   return (
     <div className="flex flex-col h-[calc(100vh-92px)] overflow-hidden">
       {/* Top Filter Bar */}
-      <div className="relative shrink-0">
+      <div className="relative shrink-0 hidden lg:block">
         <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center gap-3 overflow-x-auto hide-scrollbar">
           <button 
             className="flex items-center gap-2 border border-gray-300 hover:border-gray-900 rounded-full px-4 py-2 transition-colors shrink-0 font-medium text-[14px] text-gray-700"

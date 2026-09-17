@@ -466,7 +466,7 @@ function SearchContent() {
             bottom: 0,
             boxShadow: '0 -8px 30px rgba(0,0,0,0.14)',
             transition: 'top 0.35s cubic-bezier(0.4,0,0.2,1)',
-            zIndex: 10,
+            zIndex: 100,
           }}
         >
           {/* ── Pull bar / drag handle (mobile only) ── */}

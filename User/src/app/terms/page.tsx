@@ -91,7 +91,7 @@ export default function TermsPage() {
               </div>
               <div className="prose prose-slate prose-lg max-w-none text-slate-600 font-normal leading-relaxed">
                 <p>
-                  Welcome to Racoonn. These Terms and Conditions govern your use of the Racoonn website, mobile application, and services (collectively, the "Platform"). Racoonn operates as an online marketplace connecting guests ("Users") with hotel and property owners ("Vendors"). 
+                  Welcome to Racoonn. These Terms and Conditions govern your use of the Racoonn website, mobile application, and services (collectively, the &quot;Platform&quot;). Racoonn operates as an online marketplace connecting guests (&quot;Users&quot;) with hotel and property owners (&quot;Vendors&quot;). 
                 </p>
                 <p>
                   By accessing or using our Platform, you explicitly agree to comply with and be bound by these Terms. If you do not agree with any part of these terms, you must discontinue your use of the Platform immediately.

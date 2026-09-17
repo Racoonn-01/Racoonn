@@ -13,9 +13,8 @@ import { databases } from '@/lib/appwrite/config';
 
 const DATABASE_ID = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID!;
 
-const filters = [
-  'Price', 'Washing machine', 'WiFi', 'Allows pets', 'Instant Book', 'Air conditioning', 'Free parking', 'TV', 'Kitchen'
-];
+// We will compute filters dynamically inside SearchContent based on fetched properties.
+const DEFAULT_FILTERS = ['Price', 'Washing machine', 'WiFi', 'Allows pets', 'Instant Book', 'Air conditioning', 'Free parking', 'TV', 'Kitchen'];
 
 interface AppwriteDoc {
   $id: string;
@@ -142,6 +141,44 @@ function SearchContent() {
   const [dragOffset, setDragOffset] = useState(0);
   const [displayLimit, setDisplayLimit] = useState(10);
   const loaderRef = useRef<HTMLDivElement>(null);
+
+  // Dynamically generate filter options based on available properties
+  const dynamicFilters = React.useMemo(() => {
+    if (properties.length === 0) return DEFAULT_FILTERS;
+    
+    const foundAmenities = new Set<string>();
+    properties.forEach(p => {
+      if (p.isSuperhost) foundAmenities.add('Instant Book');
+      if (p.amenities) {
+        p.amenities.forEach(a => {
+          if (a.includes('wifi') || a.includes('internet')) foundAmenities.add('WiFi');
+          else if (a.includes('park') || a.includes('ev') || a.includes('garage')) foundAmenities.add('Free parking');
+          else if (a.includes('kitchen') || a.includes('restaurant')) foundAmenities.add('Kitchen');
+          else if (a.includes('wash') || a.includes('laundry')) foundAmenities.add('Washing machine');
+          else if (a.includes('ac') || a.includes('air') || a.includes('cool')) foundAmenities.add('Air conditioning');
+          else if (a.includes('pet') || a.includes('dog') || a.includes('cat')) foundAmenities.add('Allows pets');
+          else if (a.includes('tv') || a.includes('television')) foundAmenities.add('TV');
+          else if (a.includes('pool') || a.includes('swim')) foundAmenities.add('Pool');
+          else if (a.includes('gym') || a.includes('fitness')) foundAmenities.add('Gym');
+          else if (a.includes('spa') || a.includes('massage')) foundAmenities.add('Spa');
+          else if (a.includes('balcony') || a.includes('terrace')) foundAmenities.add('Balcony');
+        });
+      }
+    });
+
+    // Always keep 'Price' first
+    const filters = ['Price'];
+    // Add dynamically found standard filters
+    DEFAULT_FILTERS.slice(1).forEach(f => {
+      if (foundAmenities.has(f)) filters.push(f);
+    });
+    // Add any extra found filters
+    ['Pool', 'Gym', 'Spa', 'Balcony'].forEach(f => {
+      if (foundAmenities.has(f) && !filters.includes(f)) filters.push(f);
+    });
+    
+    return filters.length > 1 ? filters : DEFAULT_FILTERS;
+  }, [properties]);
 
 
   useEffect(() => {
@@ -404,7 +441,7 @@ function SearchContent() {
           
           <div className="h-8 w-px bg-gray-200 shrink-0 mx-1" />
           
-          {filters.map((filter, idx) => {
+          {dynamicFilters.map((filter, idx) => {
             const isDropdown = filter === 'Price';
             const isSelected = selectedFilters.includes(filter);
 

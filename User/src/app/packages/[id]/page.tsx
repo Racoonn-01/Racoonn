@@ -1125,10 +1125,11 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
                     <h3 className="text-[18px] font-semibold text-brand-navy mb-4">Your Name</h3>
                     <input 
                       type="text"
-                      value={newReviewName}
+                      value={profile?.name || newReviewName}
                       onChange={(e) => setNewReviewName(e.target.value)}
+                      readOnly={!!profile?.name}
                       placeholder="Enter your name"
-                      className="w-full p-4 rounded-xl border border-gray-300 focus:border-brand-navy focus:ring-1 focus:ring-brand-navy outline-none"
+                      className={`w-full p-4 rounded-xl border border-gray-300 outline-none ${profile?.name ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : 'focus:border-brand-navy focus:ring-1 focus:ring-brand-navy'}`}
                     />
                   </div>
                   
@@ -1190,7 +1191,7 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
                         createReview({
                           propertyId: rawPkgId,
                           vendorId: pkg?.vendorId || 'system',
-                          userName: newReviewName,
+                          userName: profile?.name || newReviewName,
                           rating: newRating,
                           text: newReviewText,
                           category: newReviewCategory
@@ -1208,11 +1209,11 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
                         });
                       }}
                       className={`px-8 py-3 rounded-xl font-semibold text-[15px] transition-colors flex items-center gap-2 ${
-                        newRating > 0 && newReviewText.length > 0 && newReviewName.length > 0
+                        newRating > 0 && newReviewText.length > 0 && (profile?.name || newReviewName)?.length > 0
                           ? 'bg-brand-coral text-white hover:bg-[#d95d62]'
                           : 'bg-gray-200 text-gray-400 cursor-not-allowed'
                       }`}
-                      disabled={newRating === 0 || newReviewText.length === 0 || newReviewName.length === 0 || isSubmitting}
+                      disabled={newRating === 0 || newReviewText.length === 0 || !(profile?.name || newReviewName)?.length || isSubmitting}
                     >
                       {isSubmitting ? <div className="w-5 h-5 rounded-full border-2 border-white border-t-transparent animate-spin" /> : null}
                       {isSubmitting ? 'Submitting...' : 'Submit'}

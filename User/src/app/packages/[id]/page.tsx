@@ -125,6 +125,9 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
   const [selectedActivities, setSelectedActivities] = useState<number[]>([]);
   const [adultsCount, setAdultsCount] = useState<number>(1);
   const [isHotelModalOpen, setIsHotelModalOpen] = useState(false);
+  const [isActivityModalOpen, setIsActivityModalOpen] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [selectedActivityForModal, setSelectedActivityForModal] = useState<any>(null);
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const [isAllReviewsModalOpen, setIsAllReviewsModalOpen] = useState(false);
   const [activeReviewFilter, setActiveReviewFilter] = useState('All');
@@ -693,10 +696,24 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
                                           {pt.hasActivityActions && (
                                             <div className="flex gap-3 mt-3">
                                               <button 
+                                                onClick={() => {
+                                                  const activity = pt.selectedActivityId 
+                                                    ? activityOptions.find(a => a.id === pt.selectedActivityId) 
+                                                    : activityOptions[0];
+                                                  if (activity) {
+                                                    setSelectedActivityForModal(activity);
+                                                    setIsActivityModalOpen(true);
+                                                  }
+                                                }}
+                                                className="flex items-center gap-2 px-3 py-1.5 border border-brand-navy text-brand-navy rounded-lg text-[13px] font-semibold hover:bg-brand-navy hover:text-white transition-colors"
+                                              >
+                                                <Compass size={14} /> View Activities
+                                              </button>
+                                              <button 
                                                 onClick={() => setActiveTab('activities')}
                                                 className="flex items-center gap-2 px-3 py-1.5 border border-gray-300 text-gray-600 rounded-lg text-[13px] font-semibold hover:bg-gray-50 transition-colors"
                                               >
-                                                <Compass size={14} /> View Activities
+                                                <Pencil size={14} /> Change Activity
                                               </button>
                                             </div>
                                           )}
@@ -1023,6 +1040,43 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
                 </p>
                 
 
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Activity Details Modal */}
+        {isActivityModalOpen && selectedActivityForModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
+            <div 
+              className="absolute inset-0 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200"
+              onClick={() => setIsActivityModalOpen(false)}
+            />
+            <div className="relative w-full max-w-2xl bg-white rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+              <button 
+                onClick={() => setIsActivityModalOpen(false)}
+                className="absolute top-4 right-4 z-10 w-8 h-8 flex items-center justify-center bg-white/80 hover:bg-white text-gray-900 rounded-full transition-colors backdrop-blur-sm shadow-sm"
+              >
+                <X size={18} />
+              </button>
+              <div className="relative h-64 sm:h-80 w-full group/slider bg-gray-100">
+                <Image 
+                  src={selectedActivityForModal.image || 'https://images.unsplash.com/photo-1533105079780-92b9be482077?q=80&w=1200&auto=format&fit=crop'} 
+                  alt={selectedActivityForModal.title || "Activity"} 
+                  fill 
+                  className="object-cover" 
+                />
+              </div>
+              <div className="p-6 sm:p-8">
+                <h3 className="text-2xl font-bold text-gray-900 mb-3 font-heading">{selectedActivityForModal.title}</h3>
+                <p className="text-gray-600 text-[15px] leading-relaxed mb-6">
+                  {selectedActivityForModal.description || 'Enjoy this fantastic activity as part of your itinerary. Unforgettable moments await!'}
+                </p>
+                {selectedActivityForModal.pricePerPerson > 0 && (
+                  <div className="inline-flex items-center gap-2 px-4 py-2 bg-brand-navy/5 text-brand-navy rounded-lg font-bold">
+                    <span className="text-[14px]">From ₹{selectedActivityForModal.pricePerPerson} {selectedActivityForModal.priceLabel ? `/ ${selectedActivityForModal.priceLabel}` : ''}</span>
+                  </div>
+                )}
               </div>
             </div>
           </div>

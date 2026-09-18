@@ -70,9 +70,8 @@ export default function DynamicPopularStays() {
       if (docs) {
         const mapped: Property[] = docs.map((d: Models.Document) => {
           const doc = d as unknown as Record<string, unknown>;
-          const rawPrice = Number(
-            doc.price || doc.startingPrice || doc.minPrice || doc.basePrice || doc.pricePerNight || 3500
-          );
+          const priceRawStr = String(doc.price || doc.startingPrice || doc.minPrice || doc.basePrice || doc.pricePerNight || "3500");
+          const rawPrice = Number(priceRawStr.replace(/[^\d.]/g, ''));
           const photos = Array.isArray(doc.photos) ? doc.photos : [];
           return {
             id: String(doc.$id || ""),

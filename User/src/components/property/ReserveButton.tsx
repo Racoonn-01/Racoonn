@@ -40,7 +40,7 @@ export default function ReserveButton({
 
   const handleReserve = () => {
     // Set the room details in the checkout store as the primary source of truth
-    setRoomDetails(hotelId, roomName, price, hotelName, hotelImage, hotelLocation, standardCapacity, maximumCapacity, extraPersonCharge, extraBedAvailable);
+    setRoomDetails(hotelId, roomName, price, hotelName, roomImage || hotelImage, hotelLocation, standardCapacity, maximumCapacity, extraPersonCharge, extraBedAvailable);
     
     // Build query parameters
     const query = new URLSearchParams();

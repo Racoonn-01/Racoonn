@@ -90,8 +90,9 @@ export default function RoomSelectionModal({
   const dateKey = checkIn ? checkIn : new Date().toISOString().split('T')[0];
 
   const handleSelectRoom = (room: Room, price: number) => {
+    const roomImg = (room.photos && room.photos.length > 0) ? (room.photos[0].startsWith('http') ? room.photos[0] : `${appwriteConfig.endpoint}/storage/buckets/${appwriteConfig.roomImagesBucketId}/files/${room.photos[0]}/view?project=${appwriteConfig.projectId}`) : propertyImage;
     // Set the room details in the checkout store
-    setRoomDetails(propertyId, room.name, price, propertyName, propertyImage, propertyLocation);
+    setRoomDetails(propertyId, room.name, price, propertyName, roomImg, propertyLocation);
     
     const totalGuests = adults + children;
     const maxCap = (room.maximumCapacity as number) || 4;

@@ -15,6 +15,7 @@ export interface UIBooking {
   id: string;
   rawId: string;
   hotel: string;
+  roomName: string;
   location: string;
   checkIn: string;
   checkOut: string;
@@ -62,6 +63,7 @@ export default function BookingsSection() {
           id: String(doc.$id).substring(0, 8).toUpperCase(),
           rawId: String(doc.$id),
           hotel: String(doc.hotelName),
+          roomName: String(doc.roomName || ''),
           location: String(doc.hotelLocation),
           checkIn: new Date(String(doc.checkIn)).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }),
           checkOut: new Date(String(doc.checkOut)).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }),
@@ -69,7 +71,7 @@ export default function BookingsSection() {
           guests: `${doc.adults} Adults${doc.children ? `, ${doc.children} Child` : ''}`,
           amount: payment ? `₹${Number((payment as Record<string, unknown>).totalAmount).toLocaleString()}` : `₹${(doc.priceAfterTax ? Number(doc.priceAfterTax) : (doc.totalAmount ? Number(doc.totalAmount) : (Number(doc.nights) * Number(doc.roomPricePerNight || 0)))).toLocaleString()}`,
           status: currentStatus === 'Confirmed' ? 'Upcoming' : currentStatus,
-          image: String(doc.hotelImage),
+          image: String(doc.roomImage || doc.hotelImage),
         };
       });
       setBookings(formatted);
@@ -160,6 +162,9 @@ export default function BookingsSection() {
                     <div className="flex justify-between items-start mb-2">
                       <div>
                         <h3 className="text-xl font-heading font-bold text-brand-navy">{booking.hotel}</h3>
+                        {booking.roomName && (
+                          <p className="text-sm font-semibold text-brand-navy/80 mt-0.5">{booking.roomName}</p>
+                        )}
                         <p className="text-gray-500 text-sm flex items-center gap-1 mt-1">
                           <MapPin size={14} /> {booking.location}
                         </p>
@@ -190,23 +195,16 @@ export default function BookingsSection() {
                     </div>
 
                     {/* Actions */}
-                    <div className="mt-auto flex flex-wrap gap-3">
-                      <button 
-                        onClick={() => setBookingToView({ booking, mode: 'invoice' })}
-                        className="px-5 py-2.5 bg-gray-50 hover:bg-gray-100 text-brand-navy text-sm font-bold rounded-xl transition-colors flex items-center gap-2"
-                      >
-                        <FileText size={16} /> Invoice
-                      </button>
-                      
+                    <div className="mt-auto flex flex-wrap gap-3 justify-end">
                       {booking.status === 'Completed' && (
-                        <button className="px-5 py-2.5 bg-brand-coral/10 hover:bg-brand-coral/20 text-brand-coral text-sm font-bold rounded-xl transition-colors flex items-center gap-2 ml-auto">
+                        <button className="px-5 py-2.5 bg-brand-coral/10 hover:bg-brand-coral/20 text-brand-coral text-sm font-bold rounded-xl transition-colors flex items-center gap-2">
                           <Star size={16} /> Leave Review
                         </button>
                       )}
                       {booking.status === 'Upcoming' && (
                         <button 
                           onClick={() => setBookingToCancel(booking)}
-                          className="px-5 py-2.5 bg-red-50 hover:bg-red-100 text-red-500 text-sm font-bold rounded-xl transition-colors ml-auto"
+                          className="px-5 py-2.5 bg-red-50 hover:bg-red-100 text-red-500 text-sm font-bold rounded-xl transition-colors"
                         >
                           Cancel
                         </button>

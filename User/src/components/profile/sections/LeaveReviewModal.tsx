@@ -66,15 +66,15 @@ export default function LeaveReviewModal({ isOpen, onClose, booking }: LeaveRevi
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-[450px] p-0 overflow-hidden border-0 shadow-2xl rounded-3xl">
-        <div className="p-6 bg-brand-navy text-white text-center">
-          <DialogTitle className="text-2xl font-heading font-bold mb-1">Leave a Review</DialogTitle>
-          <DialogDescription className="text-white/70 text-sm">
-            How was your stay at <span className="font-bold text-white">{booking?.hotel}</span>?
+      <DialogContent className="sm:max-w-[450px] p-6 sm:p-8 bg-white border-0 shadow-2xl rounded-3xl">
+        <DialogHeader className="mb-2">
+          <DialogTitle className="text-2xl font-heading font-bold text-brand-navy">Leave a Review</DialogTitle>
+          <DialogDescription className="text-gray-500 text-sm mt-1">
+            How was your stay at <span className="font-bold text-brand-navy">{booking?.hotel}</span>?
           </DialogDescription>
-        </div>
+        </DialogHeader>
 
-        <div className="p-6 space-y-6 bg-white">
+        <div className="space-y-6 bg-white">
           <div className="space-y-2">
             <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Your Name</label>
             <input
@@ -134,14 +134,14 @@ export default function LeaveReviewModal({ isOpen, onClose, booking }: LeaveRevi
           </div>
         </div>
 
-        <DialogFooter className="p-4 sm:p-6 bg-gray-50/80 border-t border-gray-100 sm:justify-end gap-3 flex-col sm:flex-row">
-          <Button variant="outline" onClick={onClose} disabled={isSubmitting} className="rounded-xl border-gray-200 hover:bg-gray-100 font-bold h-11">
+        <DialogFooter className="mt-4 gap-3 flex-col sm:flex-row">
+          <Button variant="outline" onClick={onClose} disabled={isSubmitting} className="rounded-xl border-gray-200 hover:bg-gray-100 font-bold h-11 w-full sm:w-auto">
             Cancel
           </Button>
           <Button 
             onClick={handleSubmit} 
             disabled={isSubmitting || rating === 0 || reviewText.length < 10}
-            className="bg-brand-coral hover:bg-brand-coral/90 text-white rounded-xl font-bold h-11"
+            className="bg-brand-coral hover:bg-brand-coral/90 text-white rounded-xl font-bold h-11 w-full sm:w-auto"
           >
             {isSubmitting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
             Submit Review

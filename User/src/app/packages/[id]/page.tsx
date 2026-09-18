@@ -3,7 +3,7 @@
 import { useState, useEffect, use } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useCheckoutStore } from '@/store/checkoutStore';
 import { useAuthStore } from '@/store/authStore';
 import { 
@@ -41,6 +41,7 @@ import 'swiper/css/pagination';
 
 export default function PackageDetails({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const setRoomDetails = useCheckoutStore((state) => state.setRoomDetails);
   const resolvedParams = use(params);
   const rawPkgId = resolvedParams.id || '1';
@@ -135,6 +136,15 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
 
   const { profile, toggleSavedHotel, isAuthenticated } = useAuthStore();
   const isSaved = profile?.savedHotels?.includes(rawPkgId) || false;
+
+  useEffect(() => {
+    if (isAuthenticated && searchParams.get('action') === 'review') {
+      setActiveTab('reviews');
+      setIsReviewModalOpen(true);
+      // Clean up the URL without triggering a full page reload
+      router.replace(`/packages/${rawPkgId}`, { scroll: false });
+    }
+  }, [isAuthenticated, searchParams, router, rawPkgId]);
 
   // Date selection state
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
@@ -1213,6 +1223,22 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* Auth Modal for Login */}
+        <AuthModal 
+          isOpen={isAuthModalOpen} 
+          onClose={() => setIsAuthModalOpen(false)} 
+          initialView="signin" 
+          successUrl={typeof window !== 'undefined' ? `${window.location.origin}/packages/${rawPkgId}?action=review` : undefined}
+          onSuccess={() => {
+            setIsAuthModalOpen(false);
+            // Optionally, automatically open the review modal upon successful login:
+            setTimeout(() => {
+              setActiveTab('reviews');
+              setIsReviewModalOpen(true);
+            }, 300);
+          }}
+        />
       </div>
   );
 }

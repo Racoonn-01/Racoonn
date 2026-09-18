@@ -153,7 +153,7 @@ export function CheckoutFlow() {
     useCheckoutStore.setState({ isSubmitting: true, bookingError: null });
 
     try {
-      const availability = await checkAvailability(hotelId, checkIn, checkOut, 1);
+      const availability = await checkAvailability(hotelId, checkIn, checkOut, rooms, roomName);
       
       if (!availability.isAvailable) {
         useCheckoutStore.setState({ 

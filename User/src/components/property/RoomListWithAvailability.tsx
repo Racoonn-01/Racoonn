@@ -69,7 +69,8 @@ export default function RoomListWithAvailability({
         const defaultCheckOut = new Date(new Date(dCheckIn).getTime() + msPerDay).toISOString().split('T')[0];
         const dCheckOut = checkOut || defaultCheckOut;
 
-        const res = await fetch(`/api/rooms/availability?hotelId=${propertyId}&checkIn=${dCheckIn}&checkOut=${dCheckOut}`);
+        const timestamp = new Date().getTime();
+        const res = await fetch(`/api/rooms/availability?hotelId=${propertyId}&checkIn=${dCheckIn}&checkOut=${dCheckOut}&_t=${timestamp}`, { cache: 'no-store' });
         const json = await res.json();
         if (json.success && json.occupied) {
           setOccupiedRooms(json.occupied);
@@ -81,6 +82,12 @@ export default function RoomListWithAvailability({
 
     loadAvailability();
     loadOccupiedRooms();
+
+    const handleFocus = () => {
+      loadOccupiedRooms();
+    };
+
+    window.addEventListener('focus', handleFocus);
 
     const handleCustomEvent = (e: Event) => {
       const detail = (e as CustomEvent).detail;
@@ -100,6 +107,7 @@ export default function RoomListWithAvailability({
     }
 
     return () => {
+      window.removeEventListener('focus', handleFocus);
       window.removeEventListener("racoonn_availability_updated", handleCustomEvent);
       if (bc) bc.close();
     };

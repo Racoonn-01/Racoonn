@@ -424,6 +424,7 @@ export const useCheckoutStore = create<CheckoutState>((set, get) => ({
           userId: user.$id,
           hotelId: bookingData.hotelId || get().selectedHotelId || 'hotel-123',
           roomId: bookingData.roomName || 'Unknown Room',
+          rooms: roomsCount,
           checkIn: bookingData.checkIn,
           checkOut: bookingData.checkOut,
           nights: nightsCount,

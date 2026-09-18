@@ -126,7 +126,7 @@ export function CheckoutFlow() {
     const shouldSkipPrompt = skipPrompt === true;
 
     // 1. Validate add-ons (if none selected, prompt)
-    if (selectedAddons.length === 0 && !highlightAddonSection && !shouldSkipPrompt && displayAddons.length > 0) {
+    if (!isPackage && selectedAddons.length === 0 && !highlightAddonSection && !shouldSkipPrompt && displayAddons.length > 0) {
       setHighlightAddonSection(true);
       setTimeout(() => {
         const addonElement = document.getElementById("addon-section");

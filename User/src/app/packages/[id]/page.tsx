@@ -1022,26 +1022,7 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
                   {hotelOptions[selectedHotel]?.description || 'Experience maximum comfort in our handpicked properties. Located in the heart of the city, this hotel features excellent amenities, prime locations, and top-tier hygiene standards. Wake up to beautiful views and enjoy a complimentary lavish breakfast spread each morning.'}
                 </p>
                 
-                <h4 className="font-bold text-gray-900 mb-3 text-[15px]">Popular Amenities</h4>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-y-3 gap-x-4 text-[14px] text-gray-600">
-                  {hotelOptions[selectedHotel]?.tags && hotelOptions[selectedHotel].tags.length > 0 ? (
-                    hotelOptions[selectedHotel].tags.map((tag: string, idx: number) => (
-                      <span key={idx} className="flex items-center gap-2">
-                        <div className="w-1.5 h-1.5 rounded-full bg-brand-coral shrink-0" /> 
-                        {tag}
-                      </span>
-                    ))
-                  ) : (
-                    <>
-                      <span className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-brand-coral shrink-0" /> Air Conditioning</span>
-                      <span className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-brand-coral shrink-0" /> Free High-Speed WiFi</span>
-                      <span className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-brand-coral shrink-0" /> Complimentary Breakfast</span>
-                      <span className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-brand-coral shrink-0" /> Room Service</span>
-                      <span className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-brand-coral shrink-0" /> Daily Housekeeping</span>
-                      <span className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-brand-coral shrink-0" /> Attached Washroom</span>
-                    </>
-                  )}
-                </div>
+
               </div>
             </div>
           </div>

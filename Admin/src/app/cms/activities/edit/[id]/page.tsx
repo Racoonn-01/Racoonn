@@ -69,7 +69,7 @@ export default function EditActivityPage({ params }: { params: Promise<{ id: str
     fetchActivity();
   }, [id, COLLECTION_ID, router]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
@@ -221,7 +221,7 @@ export default function EditActivityPage({ params }: { params: Promise<{ id: str
               id="description" 
               name="description" 
               value={formData.description} 
-              onChange={handleChange as any} 
+              onChange={handleChange} 
               placeholder="Detailed description of the activity..." 
               className="min-h-30 resize-y" 
             />

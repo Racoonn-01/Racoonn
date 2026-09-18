@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { client, appwriteConfig, storage } from '@/lib/appwrite/client';
 import { Databases, ID } from 'appwrite';
-import { Loader2, ArrowLeft, Upload, Image as ImageIcon } from 'lucide-react';
+import { Loader2, ArrowLeft, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -31,7 +31,7 @@ export default function NewActivityPage() {
   const COLLECTION_ID = process.env.NEXT_PUBLIC_APPWRITE_ACTIVITIES_COLLECTION_ID || 'activities';
   const BUCKET_ID = '6a3e398000280b2b3d20'; // Reusing general images bucket
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
@@ -154,7 +154,7 @@ export default function NewActivityPage() {
               id="description" 
               name="description" 
               value={formData.description} 
-              onChange={handleChange as any} 
+              onChange={handleChange} 
               placeholder="Detailed description of the activity..." 
               className="min-h-30 resize-y" 
             />

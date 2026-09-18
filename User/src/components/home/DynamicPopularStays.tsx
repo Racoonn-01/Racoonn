@@ -66,32 +66,77 @@ export default function DynamicPopularStays() {
 
     async function loadData() {
       setLoading(true);
-      const docs = await getProperties();
-      if (docs) {
-        const mapped: Property[] = docs.map((d: Models.Document) => {
-          const doc = d as unknown as Record<string, unknown>;
-          const priceRawStr = String(doc.price || doc.startingPrice || doc.minPrice || doc.basePrice || doc.pricePerNight || "3500");
-          const rawPrice = Number(priceRawStr.replace(/[^\d.]/g, ''));
-          const photos = Array.isArray(doc.photos) ? doc.photos : [];
-          return {
-            id: String(doc.$id || ""),
-            title: String(doc.propertyName || doc.title || "Luxury Stay"),
-            subtitle: String(doc.description || ""),
-            details: String(doc.description || "Beautiful view · Heritage stay"),
-            location: [doc.location, doc.city].filter(Boolean).map(String).join(", ") || String(doc.city || "Uttarakhand"),
-            city: String(doc.city || ""),
-            rating: Number(doc.rating || 4.8),
-            reviews: Number(doc.reviewsCount || 120),
-            price: rawPrice > 0 ? rawPrice : 3500,
-            image: photos[0]
-              ? String(photos[0])
-              : "https://images.unsplash.com/photo-1542718610-a1d656d1884c?q=80&w=800&auto=format&fit=crop",
-            status: typeof doc.status === "string" ? doc.status.toLowerCase() : undefined,
-          };
-        });
-        setAllProperties(mapped.filter(isActiveProperty));
+      
+      try {
+        // 1. Fetch properties
+        const docs = await getProperties();
+        
+        // 2. Fetch all rooms to determine the real starting price per property
+        let propertyPriceMap: Record<string, number> = {};
+        if (typeof window !== "undefined") {
+          // Dynamic import or direct fetch to avoid circular dependency / SSR issues if needed
+          const res = await fetch("/api/properties/rooms").catch(() => null);
+          // Wait, we can just use Appwrite directly since this is client-side
+          try {
+            const { databases, appwriteConfig } = await import("@/lib/appwrite/config");
+            const { Query } = await import("appwrite");
+            const roomsRes = await databases.listDocuments(
+              appwriteConfig.databaseId, 
+              appwriteConfig.roomCollectionId, 
+              [Query.limit(1000)]
+            );
+            
+            roomsRes.documents.forEach(room => {
+              const propId = room.propertyId;
+              if (propId) {
+                const p = room.discountPrice && room.discountPrice > 0 ? room.discountPrice : room.price;
+                if (p) {
+                  if (!propertyPriceMap[propId] || p < propertyPriceMap[propId]) {
+                    propertyPriceMap[propId] = p;
+                  }
+                }
+              }
+            });
+          } catch (e) {
+            console.error("Failed to fetch rooms for prices", e);
+          }
+        }
+
+        if (docs) {
+          const mapped: Property[] = docs.map((d: Models.Document) => {
+            const doc = d as unknown as Record<string, unknown>;
+            const priceRawStr = String(doc.price || doc.startingPrice || doc.minPrice || doc.basePrice || doc.pricePerNight || "");
+            let rawPrice = priceRawStr ? Number(priceRawStr.replace(/[^\d.]/g, '')) : 0;
+            
+            // Override with actual min room price if available
+            if (propertyPriceMap[doc.$id] && propertyPriceMap[doc.$id] > 0) {
+              rawPrice = propertyPriceMap[doc.$id];
+            }
+            
+            const photos = Array.isArray(doc.photos) ? doc.photos : [];
+            return {
+              id: String(doc.$id || ""),
+              title: String(doc.propertyName || doc.title || "Luxury Stay"),
+              subtitle: String(doc.description || ""),
+              details: String(doc.description || "Beautiful view · Heritage stay"),
+              location: [doc.location, doc.city].filter(Boolean).map(String).join(", ") || String(doc.city || "Uttarakhand"),
+              city: String(doc.city || ""),
+              rating: Number(doc.rating || 4.8),
+              reviews: Number(doc.reviewsCount || 120),
+              price: rawPrice > 0 ? rawPrice : 3500,
+              image: photos[0]
+                ? String(photos[0])
+                : "https://images.unsplash.com/photo-1542718610-a1d656d1884c?q=80&w=800&auto=format&fit=crop",
+              status: typeof doc.status === "string" ? doc.status.toLowerCase() : undefined,
+            };
+          });
+          setAllProperties(mapped.filter(isActiveProperty));
+        }
+      } catch (err) {
+        console.error("Error loading properties:", err);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     }
 
     loadData();

@@ -408,11 +408,11 @@ export function CheckoutFlow() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.7, ease: "easeOut" }}
-              className="bg-gradient-to-br from-brand-navy via-slate-900 to-slate-800 rounded-3xl shadow-2xl border border-white/10 p-8 md:p-16 text-center text-white overflow-hidden relative"
+              className="bg-linear-to-br from-brand-navy via-slate-900 to-slate-800 rounded-3xl shadow-2xl border border-white/10 p-8 md:p-16 text-center text-white overflow-hidden relative"
             >
               <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
-                <div className="absolute -top-[20%] -right-[10%] w-[50%] h-[50%] bg-brand-coral/20 blur-[100px] rounded-full"></div>
-                <div className="absolute -bottom-[20%] -left-[10%] w-[50%] h-[50%] bg-brand-sky/20 blur-[100px] rounded-full"></div>
+                <div className="absolute top-[-20%] right-[-10%] w-[50%] h-[50%] bg-brand-coral/20 blur-[100px] rounded-full"></div>
+                <div className="absolute bottom-[-20%] left-[-10%] w-[50%] h-[50%] bg-brand-sky/20 blur-[100px] rounded-full"></div>
               </div>
               
               <div className="relative z-10 flex flex-col items-center">
@@ -420,14 +420,14 @@ export function CheckoutFlow() {
                   initial={{ scale: 0, rotate: -180 }}
                   animate={{ scale: 1, rotate: 0 }}
                   transition={{ type: "spring", stiffness: 200, damping: 15, delay: 0.2 }}
-                  className="w-24 h-24 bg-gradient-to-tr from-emerald-400 to-emerald-600 rounded-full flex items-center justify-center mb-8 shadow-[0_0_40px_rgba(52,211,153,0.4)]"
+                  className="w-24 h-24 bg-linear-to-tr from-emerald-400 to-emerald-600 rounded-full flex items-center justify-center mb-8 shadow-[0_0_40px_rgba(52,211,153,0.4)]"
                 >
                   <motion.div
                     initial={{ pathLength: 0 }}
                     animate={{ pathLength: 1 }}
                     transition={{ duration: 0.6, delay: 0.6 }}
                   >
-                    <Check className="w-12 h-12 text-white stroke-[3]" />
+                    <Check className="w-12 h-12 text-white stroke-3" />
                   </motion.div>
                 </motion.div>
                 
@@ -467,7 +467,7 @@ export function CheckoutFlow() {
                       <div className="p-2 bg-white/10 rounded-lg"><MapPin className="w-4 h-4 text-emerald-400" /></div>
                       <span className="text-sm font-medium uppercase tracking-wider">Location</span>
                     </div>
-                    <span className="font-medium text-white text-right max-w-[150px] truncate">{hotelLocation}</span>
+                    <span className="font-medium text-white text-right max-w-37.5 truncate">{hotelLocation}</span>
                   </div>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3 text-slate-300">
@@ -507,7 +507,7 @@ export function CheckoutFlow() {
                   animate={{ pathLength: 1, opacity: 1 }}
                   transition={{ duration: 0.5, delay: 0.5, ease: "easeInOut" }}
                 >
-                  <Check className="w-10 h-10 text-green-500 stroke-[3]" />
+                  <Check className="w-10 h-10 text-green-500 stroke-3" />
                 </motion.div>
               </motion.div>
               <motion.h2 

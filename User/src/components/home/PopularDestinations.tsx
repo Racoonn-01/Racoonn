@@ -33,7 +33,7 @@ export default function PopularDestinations() {
   };
 
   useEffect(() => {
-    loadDestinations();
+    void loadDestinations();
 
     window.addEventListener("cms_popular_destinations_updated", loadDestinations);
 
@@ -104,7 +104,7 @@ export default function PopularDestinations() {
               {[1, 2, 3, 4].map((i) => (
                 <div 
                   key={i} 
-                  className="w-full min-w-full md:min-w-0 md:w-[calc(50%-12px)] lg:w-[calc(25%-18px)] shrink-0 rounded-3xl overflow-hidden shadow-sm h-[450px] bg-gray-100 animate-pulse relative snap-center md:snap-start"
+                  className="w-full min-w-full md:min-w-0 md:w-[calc(50%-12px)] lg:w-[calc(25%-18px)] shrink-0 rounded-3xl overflow-hidden shadow-sm h-112.5 bg-gray-100 animate-pulse relative snap-center md:snap-start"
                 >
                   <div className="absolute top-4 left-4 bg-gray-200 w-28 h-8 rounded-full" />
                   <div className="absolute bottom-6 left-6 right-6 flex flex-col gap-4">
@@ -122,7 +122,7 @@ export default function PopularDestinations() {
                 <Link
                   href={`/search?location=${encodeURIComponent(dest.city)}`}
                   key={dest.id}
-                  className="w-full min-w-full md:min-w-0 md:w-[calc(50%-12px)] lg:w-[calc(25%-18px)] shrink-0 group/card relative rounded-3xl overflow-hidden cursor-pointer shadow-sm hover:shadow-xl transition-all duration-300 snap-center md:snap-start h-[450px]"
+                  className="w-full min-w-full md:min-w-0 md:w-[calc(50%-12px)] lg:w-[calc(25%-18px)] shrink-0 group/card relative rounded-3xl overflow-hidden cursor-pointer shadow-sm hover:shadow-xl transition-all duration-300 snap-center md:snap-start h-112.5"
                 >
                   <Image
                     src={dest.image || "https://images.unsplash.com/photo-1626621341517-bbf3d9990a23?q=80&w=800&auto=format&fit=crop"}

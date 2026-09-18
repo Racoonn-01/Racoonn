@@ -179,7 +179,9 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
   };
 
   // Calculate base price from pricing slabs based on adults count, fallback to default price
-  let basePriceNum = parseInt(pkg.price.replace(/[^\d]/g, ''), 10) || 0;
+  let defaultBasePriceNum = parseInt(pkg.price.replace(/[^\d]/g, ''), 10) || 0;
+  let groupBasePrice = defaultBasePriceNum * adultsCount;
+
   if (pkg.pricing && Array.isArray(pkg.pricing) && pkg.pricing.length > 0) {
     const sortedSlabs = [...pkg.pricing].sort((a: any, b: any) => {
       const aMin = Math.min(a.minPersons || 1, a.maxPersons || 999);
@@ -200,7 +202,7 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
     }
 
     if (applicableSlab) {
-      basePriceNum = applicableSlab.pricePerPerson || 0;
+      groupBasePrice = applicableSlab.pricePerPerson || 0; // This is actually the TOTAL price for the slab
     }
   }
 
@@ -227,9 +229,12 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
     return sum + (act ? act.pricePerPerson : 0);
   }, 0);
 
-  // Total price per person and grand total
-  const effectivePricePerPerson = basePriceNum + hotelExtraPerPerson + activitiesExtraPerPerson;
-  const totalPriceNum = effectivePricePerPerson * adultsCount;
+  // Total price calculations
+  const groupHotelExtra = hotelExtraPerPerson * adultsCount;
+  const groupActivitiesExtra = activitiesExtraPerPerson * adultsCount;
+  
+  const totalPriceNum = groupBasePrice + groupHotelExtra + groupActivitiesExtra;
+  const effectivePricePerPerson = Math.round(totalPriceNum / adultsCount);
 
   const totalPriceFormatted = new Intl.NumberFormat('en-IN', {
     style: 'currency',

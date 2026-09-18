@@ -716,7 +716,7 @@ export default function PackagesPage() {
                     />
                   </div>
                   <div className="grid gap-2 flex-1 w-full sm:w-auto">
-                    <Label className="text-xs uppercase tracking-wider text-slate-500 font-bold">Price per Person (₹)</Label>
+                    <Label className="text-xs uppercase tracking-wider text-slate-500 font-bold">Total Package Price (₹)</Label>
                     <div className="relative">
                       <IndianRupee className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                       <Input 

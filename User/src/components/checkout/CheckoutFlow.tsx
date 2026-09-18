@@ -6,7 +6,7 @@ import { GuestDetailsForm } from "@/components/checkout/GuestDetailsForm";
 import { TravelersForm } from "@/components/checkout/TravelersForm";
 import { AdditionalRequestsForm } from "@/components/checkout/AdditionalRequestsForm";
 import { AddonSelector, DEFAULT_ADDONS } from "@/components/checkout/AddonSelector";
-import { CheckCircle, Loader2, AlertCircle, Gem, Sparkles, MapPin, CalendarDays, Check } from "lucide-react";
+import { CheckCircle, Loader2, AlertCircle, Gem, Ticket, MapPin, CalendarDays, Check } from "lucide-react";
 import { motion } from "framer-motion";
 import Script from "next/script";
 import { checkAvailability } from "@/lib/appwrite/availability";
@@ -435,7 +435,7 @@ export function CheckoutFlow() {
                   transition={{ duration: 0.5, delay: 0.4 }}
                   className="text-4xl md:text-5xl font-poppins font-extrabold mb-4 tracking-tight"
                 >
-                  Adventure <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-coral to-amber-400">Confirmed!</span>
+                  <span className="text-white">Adventure </span><span style={{ color: '#E86A6F' }}>Confirmed!</span>
                 </motion.h2>
                 
                 <motion.p 
@@ -455,7 +455,7 @@ export function CheckoutFlow() {
                 >
                   <div className="flex items-center justify-between pb-4 border-b border-white/10">
                     <div className="flex items-center gap-3 text-slate-300">
-                      <div className="p-2 bg-white/10 rounded-lg"><Sparkles className="w-4 h-4 text-amber-400" /></div>
+                      <div className="p-2 bg-white/10 rounded-lg"><Ticket className="w-4 h-4 text-amber-400" /></div>
                       <span className="text-sm font-medium uppercase tracking-wider">Booking ID</span>
                     </div>
                     <span className="font-mono font-bold text-white text-lg">{useCheckoutStore.getState().confirmedBookingId || "PKG-8849-2A"}</span>

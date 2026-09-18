@@ -292,7 +292,6 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
     query.set('price', finalPackagePrice.toString());
     query.set('hotelName', pkg.title);
     query.set('hotelLocation', pkg.location);
-    query.set('hotelImage', pkgImage);
     query.set('guests', finalAdults.toString());
     query.set('adults', finalAdults.toString());
     

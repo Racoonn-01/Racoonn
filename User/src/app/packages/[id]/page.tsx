@@ -753,9 +753,16 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
                               <p className="text-[14px] text-gray-600 mt-2 line-clamp-2">{act.description}</p>
                             </div>
                             <div className="mt-4 flex items-center justify-between">
-                              <span className={`text-[13px] font-bold ${act.pricePerPerson === 0 ? "text-brand-coral" : "text-gray-900"}`}>
-                                {act.priceLabel}
-                              </span>
+                              {index === 0 ? (
+                                <span className="text-[13px] font-bold text-brand-coral bg-brand-coral/10 px-3 py-1 rounded-full border border-brand-coral/20">
+                                  Included in Package
+                                </span>
+                              ) : (
+                                <span className="text-[14px] font-bold text-gray-900">
+                                  + ₹{(act.pricePerPerson || 0).toLocaleString('en-IN')}{' '}
+                                  <span className="text-[13px] font-normal text-gray-500">/ person</span>
+                                </span>
+                              )}
                             </div>
                           </div>
                         </motion.div>

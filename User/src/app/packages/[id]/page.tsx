@@ -89,13 +89,46 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
               setItinerary(cmsFound.itinerary);
             }
 
+            // Fetch fresh global activities and properties to keep names synced without requiring a package re-save
+            let freshActivities: any[] = [];
+            let freshProperties: any[] = [];
+            try {
+              const [actRes, propRes] = await Promise.all([
+                fetch("/api/cms/activities").catch(() => null),
+                fetch("/api/cms/properties").catch(() => null)
+              ]);
+              if (actRes) {
+                const actJson = await actRes.json();
+                if (actJson.success && Array.isArray(actJson.activities)) {
+                  freshActivities = actJson.activities;
+                }
+              }
+              if (propRes) {
+                const propJson = await propRes.json();
+                if (propJson.success && Array.isArray(propJson.properties)) {
+                  freshProperties = propJson.properties;
+                }
+              }
+            } catch (err) {
+              console.error("Failed to fetch fresh global activities/properties:", err);
+            }
+
             if (cmsFound.hotelOptions && Array.isArray(cmsFound.hotelOptions) && cmsFound.hotelOptions.length > 0) {
-              setHotelOptions(cmsFound.hotelOptions);
+              const updatedHotels = cmsFound.hotelOptions.map((h: any) => {
+                const fresh = freshProperties.find((fp: any) => fp.id === h.id);
+                return fresh ? { ...h, ...fresh } : h;
+              });
+              setHotelOptions(updatedHotels);
             }
 
             if (cmsFound.activityOptions && Array.isArray(cmsFound.activityOptions) && cmsFound.activityOptions.length > 0) {
               const legacyDummyIds = ["act-1", "act-2", "act-3", "act-4", "act-5"];
-              const filteredActivities = cmsFound.activityOptions.filter((act: any) => !legacyDummyIds.includes(act.id));
+              const filteredActivities = cmsFound.activityOptions
+                .filter((act: any) => !legacyDummyIds.includes(act.id))
+                .map((act: any) => {
+                  const fresh = freshActivities.find((fa: any) => fa.id === act.id);
+                  return fresh ? { ...act, ...fresh } : act;
+                });
               setActivityOptions(filteredActivities);
               if (filteredActivities.length > 0) {
                 setSelectedActivities([0]);

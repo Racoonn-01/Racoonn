@@ -872,7 +872,8 @@ export default function PackagesPage() {
                         </div>
                       </div>
                     );
-                  })}
+                  })
+                )()}
               </div>
             </div>
           </section>

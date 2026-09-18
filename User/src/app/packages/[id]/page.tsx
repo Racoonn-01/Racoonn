@@ -231,7 +231,8 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
   // Activities extra cost per person
   const activitiesExtraPerPerson = selectedActivities.reduce((sum, actIndex) => {
     const act = activityOptions[actIndex];
-    return sum + (act ? act.pricePerPerson : 0);
+    // The first activity (index 0) is included in the base package price
+    return sum + (act && actIndex !== 0 ? act.pricePerPerson : 0);
   }, 0);
 
   // Total price calculations

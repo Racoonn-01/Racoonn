@@ -837,11 +837,18 @@ export default function PackagesPage() {
                   <div className="col-span-full py-12 flex flex-col items-center justify-center text-slate-400">
                     <p className="text-sm font-medium">No activities found.</p>
                   </div>
-                ) : availableActivities
-                  .filter(a => a.title.toLowerCase().includes(activitySearch.toLowerCase()) || (a.description || "").toLowerCase().includes(activitySearch.toLowerCase()))
-                  .map((act) => {
-                    const isSelected = (formData.activityOptions || []).some(a => a.id === act.id || a.title === act.title);
-                    return (
+                ) : (() => {
+                  const mergedActivities = [...availableActivities];
+                  (formData.activityOptions || []).forEach(selectedAct => {
+                    if (!mergedActivities.some(a => a.id === selectedAct.id)) {
+                      mergedActivities.push(selectedAct);
+                    }
+                  });
+                  return mergedActivities
+                    .filter(a => a.title.toLowerCase().includes(activitySearch.toLowerCase()) || (a.description || "").toLowerCase().includes(activitySearch.toLowerCase()))
+                    .map((act) => {
+                      const isSelected = (formData.activityOptions || []).some(a => a.id === act.id || a.title === act.title);
+                      return (
                       <div 
                         key={act.id}
                         onClick={() => toggleSelectActivity(act)}

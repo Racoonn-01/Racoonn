@@ -24,12 +24,7 @@ export function CheckoutFlow() {
   const [highlightAddonSection, setHighlightAddonSection] = useState(false);
 
   
-  const isFormValid = 
-    guestDetails.firstName.trim() !== '' && 
-    guestDetails.lastName.trim() !== '' && 
-    guestDetails.email.trim() !== '' && 
-    guestDetails.phone.trim() !== '' &&
-    guestDetails.country.trim() !== '';
+  const additionalTravelers = useCheckoutStore((state) => state.additionalTravelers);
   
   const searchParams = useSearchParams();
   const price = Number(searchParams.get('price')) || 32000;
@@ -64,6 +59,22 @@ export function CheckoutFlow() {
   const rooms = Number(searchParams.get('rooms')) || 1;
   const roomName = searchParams.get('roomName') || '';
   const isPackage = roomName.startsWith('Package:') || roomName.toLowerCase().includes('package');
+
+  let isFormValid = 
+    guestDetails.firstName.trim() !== '' && 
+    guestDetails.lastName.trim() !== '' && 
+    guestDetails.email.trim() !== '' && 
+    guestDetails.phone.trim() !== '' &&
+    guestDetails.country.trim() !== '';
+
+  if (isFormValid && isPackage) {
+    const allTravelersValid = additionalTravelers.every(t => 
+      t.fullName.trim() !== '' && 
+      t.gender.trim() !== '' && 
+      t.dateOfBirth.trim() !== ''
+    );
+    isFormValid = allTravelersValid;
+  }
   
   const stdCap = Number(searchParams.get('stdCap')) || useCheckoutStore.getState().standardCapacity || 2;
   const maxCap = Number(searchParams.get('maxCap')) || useCheckoutStore.getState().maximumCapacity || 4;

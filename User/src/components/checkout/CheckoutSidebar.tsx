@@ -75,18 +75,23 @@ export function CheckoutSidebar({
   const maxCap = Number(searchParams.get('maxCap')) || 4;
   const epc = Number(searchParams.get('epc')) || 0;
 
-  const guestsPerRoom = Math.ceil(numGuests / rooms);
-  const pricing = calculateRoomPricing({
-    basePrice: finalPrice,
-    standardCapacity: stdCap,
-    maximumCapacity: maxCap,
-    extraPersonCharge: epc,
-    totalGuests: guestsPerRoom,
-    numberOfNights: nights
-  });
+  let totalBaseRoomAmount = finalPrice;
+  let totalExtraGuestAmount = 0;
 
-  const totalBaseRoomAmount = isPackage ? finalPrice : pricing.baseRoomAmount * rooms;
-  const totalExtraGuestAmount = isPackage ? 0 : pricing.extraGuestAmount * rooms;
+  if (!isPackage) {
+    const guestsPerRoom = Math.ceil(numGuests / rooms);
+    const pricing = calculateRoomPricing({
+      basePrice: finalPrice,
+      standardCapacity: stdCap,
+      maximumCapacity: maxCap,
+      extraPersonCharge: epc,
+      totalGuests: guestsPerRoom,
+      numberOfNights: nights
+    });
+    totalBaseRoomAmount = pricing.baseRoomAmount * rooms;
+    totalExtraGuestAmount = pricing.extraGuestAmount * rooms;
+  }
+
   const roomTotal = totalBaseRoomAmount + totalExtraGuestAmount;
   const effectivePerNightPrice = isPackage ? finalPrice : roomTotal / (nights * rooms);
   

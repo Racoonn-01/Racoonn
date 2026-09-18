@@ -21,6 +21,7 @@ export async function GET() {
       location: [doc.location, doc.city, doc.state].filter(Boolean).join(", ") || doc.city || "",
       city: doc.city || "",
       image: doc.photos && doc.photos[0] ? doc.photos[0] : "https://images.unsplash.com/photo-1542718610-a1d656d1884c?w=800&q=80",
+      price: Number(doc.price || doc.startingPrice || doc.minPrice || doc.basePrice || doc.pricePerNight || 3500)
     }));
 
     return NextResponse.json({ success: true, properties });

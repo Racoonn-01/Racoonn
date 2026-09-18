@@ -62,6 +62,42 @@
         ],
         "pricePerNight": 3500,
         "isDefault": true
+      },
+      {
+        "id": "6aa52d130005b3aba844",
+        "title": "Himdarshan home stay ",
+        "description": "Stay at Himdarshan home stay  situated in Almora, Uttarakhand, Almora, Uttarakhand.",
+        "image": "https://sgp.cloud.appwrite.io/v1/storage/buckets/6a3e398000280b2b3d20/files/6aa535a8000b209f23b1/view?project=6a3bce6900381359c3ce",
+        "tags": [
+          "AC Rooms",
+          "Breakfast Included"
+        ],
+        "pricePerNight": 3500,
+        "isDefault": false
+      },
+      {
+        "id": "6a82bf9e003cf09088dc",
+        "title": "Royal Garden",
+        "description": "Stay at Royal Garden situated in Preet Tech, near Krishna Hospital, Subhash Nagar, Bhotia Parao, Haldwani, Uttarakhand 263139, Haldwani, Uttarakhand [GEO: 30.278100, 77.989990], Haldwani, Uttarakhand.",
+        "image": "https://sgp.cloud.appwrite.io/v1/storage/buckets/6a3e398000280b2b3d20/files/6a82c1fa002052498dcb/view?project=6a3bce6900381359c3ce",
+        "tags": [
+          "AC Rooms",
+          "Breakfast Included"
+        ],
+        "pricePerNight": 3500,
+        "isDefault": false
+      },
+      {
+        "id": "6a4645d500061bbfb3d1",
+        "title": "Golden Edit",
+        "description": "Stay at Golden Edit situated in Dewalchaurh kham near ram darbar [GEO: 30.691907, 76.792860], haldwani, Uttarakhand.",
+        "image": "https://sgp.cloud.appwrite.io/v1/storage/buckets/6a3e398000280b2b3d20/files/6a4645f1002fc000d09c/view?project=6a3bce6900381359c3ce",
+        "tags": [
+          "AC Rooms",
+          "Breakfast Included"
+        ],
+        "pricePerNight": 3500,
+        "isDefault": false
       }
     ],
     "activityOptions": [

@@ -92,6 +92,9 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
               const legacyDummyIds = ["act-1", "act-2", "act-3", "act-4", "act-5"];
               const filteredActivities = cmsFound.activityOptions.filter((act: any) => !legacyDummyIds.includes(act.id));
               setActivityOptions(filteredActivities);
+              if (filteredActivities.length > 0) {
+                setSelectedActivities([0]);
+              }
             }
           }
         }

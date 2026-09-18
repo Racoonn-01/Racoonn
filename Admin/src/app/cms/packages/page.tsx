@@ -359,10 +359,15 @@ export default function PackagesPage() {
 
   // Pricing Handlers
   const addPricingSlab = () => {
-    setFormData(prev => ({
-      ...prev,
-      pricing: [...prev.pricing, { id: Date.now().toString(), minPersons: 1, maxPersons: 2, pricePerPerson: 0 }]
-    }))
+    setFormData(prev => {
+      const lastSlab = prev.pricing[prev.pricing.length - 1];
+      const nextMin = lastSlab ? (lastSlab.maxPersons || lastSlab.minPersons) + 1 : 1;
+      const nextMax = nextMin + 1;
+      return {
+        ...prev,
+        pricing: [...prev.pricing, { id: Date.now().toString(), minPersons: nextMin, maxPersons: nextMax, pricePerPerson: 0 }]
+      };
+    })
   }
 
   const updatePricingSlab = (id: string, field: keyof PricingSlab, value: number) => {

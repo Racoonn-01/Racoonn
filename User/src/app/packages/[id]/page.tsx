@@ -181,7 +181,24 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
   // Calculate base price from pricing slabs based on adults count, fallback to default price
   let basePriceNum = parseInt(pkg.price.replace(/[^\d]/g, ''), 10) || 0;
   if (pkg.pricing && Array.isArray(pkg.pricing) && pkg.pricing.length > 0) {
-    const applicableSlab = pkg.pricing.find((slab: any) => adultsCount >= (slab.minPersons || 1) && adultsCount <= (slab.maxPersons || 999));
+    const sortedSlabs = [...pkg.pricing].sort((a: any, b: any) => {
+      const aMin = Math.min(a.minPersons || 1, a.maxPersons || 999);
+      const bMin = Math.min(b.minPersons || 1, b.maxPersons || 999);
+      return aMin - bMin;
+    });
+
+    let applicableSlab = sortedSlabs.find((slab: any) => {
+      const min = Math.min(slab.minPersons || 1, slab.maxPersons || 999);
+      const max = Math.max(slab.minPersons || 1, slab.maxPersons || 999);
+      return adultsCount >= min && adultsCount <= max;
+    });
+
+    // If there's a gap between slabs or adultsCount exceeds the maximum of all slabs, fallback gracefully
+    if (!applicableSlab) {
+      const lowerSlabs = sortedSlabs.filter((slab: any) => Math.min(slab.minPersons || 1, slab.maxPersons || 999) <= adultsCount);
+      applicableSlab = lowerSlabs.length > 0 ? lowerSlabs[lowerSlabs.length - 1] : sortedSlabs[0];
+    }
+
     if (applicableSlab) {
       basePriceNum = applicableSlab.pricePerPerson || 0;
     }

@@ -11,22 +11,22 @@
     ],
     "pricing": [
       {
-        "id": "1785145622980",
+        "id": "1785145728100",
         "minPersons": 1,
         "maxPersons": 2,
         "pricePerPerson": 5000
       },
       {
-        "id": "1785145711880",
+        "id": "1789708018439",
         "minPersons": 4,
-        "maxPersons": 3,
-        "pricePerPerson": 8000
+        "maxPersons": 8,
+        "pricePerPerson": 8800
       },
       {
-        "id": "1785145728100",
-        "minPersons": 8,
-        "maxPersons": 6,
-        "pricePerPerson": 16000
+        "id": "1789708036322",
+        "minPersons": 10,
+        "maxPersons": 15,
+        "pricePerPerson": 28000
       }
     ],
     "metaTitle": "Char Dham Yatra",

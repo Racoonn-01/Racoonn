@@ -9,7 +9,8 @@ import {
   Map, 
   Package, 
   ChevronLeft,
-  FileText
+  FileText,
+  Tent
 } from "lucide-react"
 
 import {
@@ -27,6 +28,7 @@ const navItems = [
   { title: "Blog Management", url: "/cms/blogs", icon: FileText },
   { title: "Popular Stay", url: "/cms/popular-stays", icon: Home },
   { title: "Popular Destinations", url: "/cms/popular-destinations", icon: Map },
+  { title: "Activities", url: "/cms/activities", icon: Tent },
   { title: "Create Packages", url: "/cms/packages", icon: Package },
 ]
 

@@ -68,7 +68,6 @@ const operationsItems: NavItem[] = [
   { title: "Reviews", url: "/admin/reviews", icon: MessageSquare, key: "Reviews" },
   { title: "Support", url: "/admin/support", icon: LifeBuoy, key: "Support" },
   { title: "Marketing", url: "/admin/marketing", icon: Megaphone, key: "Marketing" },
-  { title: "Activities", url: "/admin/activities", icon: Tent, key: "Activities" },
 ]
 
 const systemItems: NavItem[] = [

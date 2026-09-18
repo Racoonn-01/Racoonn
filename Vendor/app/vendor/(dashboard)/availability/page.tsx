@@ -74,6 +74,7 @@ export default function AvailabilityPage() {
   const [selectedPropertyId, setSelectedPropertyId] = useState<string>("prop-default-1");
   const [selectedRoomId, setSelectedRoomId] = useState<string>("room-default-1");
   const [isLoading, setIsLoading] = useState(true);
+  const [vendorBookings, setVendorBookings] = useState<any[]>([]);
 
   // Bulk update state
   const [startDate, setStartDate] = useState<string>("");
@@ -122,6 +123,21 @@ export default function AvailabilityPage() {
           setProperties(propsRes.documents);
           const defaultPropId = propsRes.documents[0].$id;
           setSelectedPropertyId(defaultPropId);
+          const propIds = propsRes.documents.map((p: any) => p.$id);
+          
+          try {
+            const bookingsRes = await databases.listDocuments(
+              appwriteConfig.databaseId,
+              appwriteConfig.bookingCollectionId || "bookings",
+              [
+                Query.equal("hotelId", propIds),
+                Query.equal("status", ["Confirmed", "Completed", "confirmed", "completed"])
+              ]
+            );
+            setVendorBookings(bookingsRes.documents);
+          } catch (e) {
+            console.error("Failed to fetch bookings for availability:", e);
+          }
 
           if (roomsRes.documents.length > 0) {
             setRooms(roomsRes.documents);
@@ -254,6 +270,7 @@ export default function AvailabilityPage() {
     const monthStr = String(date.getMonth() + 1).padStart(2, '0');
     const dayStr = String(date.getDate()).padStart(2, '0');
     const dateKey = `${yearStr}-${monthStr}-${dayStr}`;
+    const dateTime = date.getTime();
     const isPast = date < today;
 
     const override = overrides[selectedRoomId]?.[dateKey];
@@ -264,10 +281,29 @@ export default function AvailabilityPage() {
       dateKey >= o.startDate && dateKey <= o.endDate
     );
 
+    // Calculate occupied rooms for this day
+    let occupiedRooms = 0;
+    if (selectedRoom) {
+      for (const booking of vendorBookings) {
+        const isSameRoom = booking.roomId === selectedRoom.$id || booking.roomId === selectedRoom.name;
+        if (!isSameRoom) continue;
+
+        const bookingCheckIn = new Date(booking.checkIn).getTime();
+        const bookingCheckOut = new Date(booking.checkOut).getTime();
+
+        if (bookingCheckIn <= dateTime && bookingCheckOut > dateTime) {
+          occupiedRooms += (Number(booking.rooms) || 1);
+        }
+      }
+    }
+
+    const baseAvail = override?.available !== undefined ? override.available : baseAvailable;
+    const finalAvail = Math.max(0, baseAvail - occupiedRooms);
+
     return {
       day: i + 1,
       dateKey,
-      available: override?.available !== undefined ? override.available : baseAvailable,
+      available: finalAvail,
       price: override?.price !== undefined ? override.price : roomPrice,
       isWeekend: dayOfWeek === 0 || dayOfWeek === 6,
       hasOffer,

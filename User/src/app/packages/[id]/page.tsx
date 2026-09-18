@@ -39,6 +39,8 @@ import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/pagination';
 
+import { PackageDetailsSkeleton } from '@/components/skeletons/PageSkeletons';
+
 export default function PackageDetails({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -60,6 +62,11 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
   const [activityOptions, setActivityOptions] = useState<Record<string, any>[]>([]);
   
   const [reviewsData, setReviewsData] = useState<Record<string, any>[]>([]);
+
+  // Force scroll to top on mount to prevent showing footer first
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+  }, []);
 
   useEffect(() => {
     async function loadCMSPackage() {
@@ -193,8 +200,8 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center pt-24 pb-20">
-        <div className="w-12 h-12 border-4 border-gray-200 border-t-brand-coral rounded-full animate-spin"></div>
+      <div className="min-h-screen bg-white">
+        <PackageDetailsSkeleton />
       </div>
     );
   }

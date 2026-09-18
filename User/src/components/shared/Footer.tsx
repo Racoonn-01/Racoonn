@@ -178,22 +178,10 @@ export default function Footer() {
             </div>
 
             {/* Empty space for spacing */}
-            <div className="hidden lg:block lg:col-span-1"></div>
+            <div className="hidden lg:block lg:col-span-2"></div>
 
-            {/* Destinations (2 cols) */}
-            <div className="lg:col-span-2">
-              <h4 className="text-lg font-bold mb-6 text-white tracking-wide">Top Destinations</h4>
-              <ul className="space-y-4 text-brand-sky/70">
-                <li><Link href="/destinations/bali" className="hover:text-brand-coral hover:translate-x-1 inline-block transition-transform">Bali, Indonesia</Link></li>
-                <li><Link href="/destinations/dubai" className="hover:text-brand-coral hover:translate-x-1 inline-block transition-transform">Dubai, UAE</Link></li>
-                <li><Link href="/destinations/maldives" className="hover:text-brand-coral hover:translate-x-1 inline-block transition-transform">Maldives</Link></li>
-                <li><Link href="/destinations/paris" className="hover:text-brand-coral hover:translate-x-1 inline-block transition-transform">Paris, France</Link></li>
-                <li><Link href="/destinations/tokyo" className="hover:text-brand-coral hover:translate-x-1 inline-block transition-transform">Tokyo, Japan</Link></li>
-              </ul>
-            </div>
-
-            {/* Explore (2 cols) */}
-            <div className="lg:col-span-2">
+            {/* Explore (3 cols) */}
+            <div className="lg:col-span-3">
               <h4 className="text-lg font-bold mb-6 text-white tracking-wide">Explore</h4>
               <ul className="space-y-4 text-brand-sky/70">
                 <li><Link href="/search" className="hover:text-brand-coral hover:translate-x-1 inline-block transition-transform">Search Hotels</Link></li>

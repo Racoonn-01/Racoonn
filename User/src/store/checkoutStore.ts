@@ -408,7 +408,9 @@ export const useCheckoutStore = create<CheckoutState>((set, get) => ({
         status: 'Confirmed',
         paymentStatus: 'Paid',
         hotelName: bookingData.hotelName,
-        hotelImage: bookingData.hotelImage || get().hotelImage || 'https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=1600&auto=format&fit=crop',
+        hotelImage: (bookingData.hotelImage || get().hotelImage || '').length > 1000 
+          ? 'https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=1600&auto=format&fit=crop'
+          : (bookingData.hotelImage || get().hotelImage || 'https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=1600&auto=format&fit=crop'),
         hotelLocation: bookingData.hotelLocation || get().hotelLocation || 'Udaipur, Rajasthan, India',
         adults: bookingData.adults || 2,
         roomPricePerNight: gstCalc.pricePerNight,

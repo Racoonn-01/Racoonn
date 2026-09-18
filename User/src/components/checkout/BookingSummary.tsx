@@ -86,18 +86,27 @@ export function BookingSummary({
       </div>
 
       <div className="p-6 py-4 space-y-4 border-b border-brand-sky text-sm">
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-1">
-            <p className="text-gray-500 flex items-center gap-2"><Calendar className="w-4 h-4 text-brand-coral" /> Check-In</p>
-            <p className="font-medium text-brand-navy">{checkIn}</p>
-            <p className="text-xs text-gray-500">From 14:00</p>
+        {isPackage ? (
+          <div className="grid grid-cols-1 gap-4">
+            <div className="space-y-1">
+              <p className="text-gray-500 flex items-center gap-2"><Calendar className="w-4 h-4 text-brand-coral" /> Start Date</p>
+              <p className="font-medium text-brand-navy">{checkIn}</p>
+            </div>
           </div>
-          <div className="space-y-1">
-            <p className="text-gray-500 flex items-center gap-2"><Calendar className="w-4 h-4 text-brand-coral" /> Check-Out</p>
-            <p className="font-medium text-brand-navy">{checkOut}</p>
-            <p className="text-xs text-gray-500">Until 12:00</p>
+        ) : (
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1">
+              <p className="text-gray-500 flex items-center gap-2"><Calendar className="w-4 h-4 text-brand-coral" /> Check-In</p>
+              <p className="font-medium text-brand-navy">{checkIn}</p>
+              <p className="text-xs text-gray-500">From 14:00</p>
+            </div>
+            <div className="space-y-1">
+              <p className="text-gray-500 flex items-center gap-2"><Calendar className="w-4 h-4 text-brand-coral" /> Check-Out</p>
+              <p className="font-medium text-brand-navy">{checkOut}</p>
+              <p className="text-xs text-gray-500">Until 12:00</p>
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       <div className="p-6 py-4 space-y-3 text-sm border-b border-brand-sky">
@@ -105,10 +114,12 @@ export function BookingSummary({
           <span className="text-gray-500 flex items-center gap-2"><Users className="w-4 h-4 text-brand-coral" /> Guests</span>
           <span className="font-medium text-brand-navy">{guests}</span>
         </div>
-        <div className="flex justify-between items-center">
-          <span className="text-gray-500 flex items-center gap-2"><BedDouble className="w-4 h-4 text-brand-coral" /> Room</span>
-          <span className="font-medium text-brand-navy text-right">{rooms} × {roomName}</span>
-        </div>
+        {!isPackage && (
+          <div className="flex justify-between items-center">
+            <span className="text-gray-500 flex items-center gap-2"><BedDouble className="w-4 h-4 text-brand-coral" /> Room</span>
+            <span className="font-medium text-brand-navy text-right">{rooms} × {roomName}</span>
+          </div>
+        )}
       </div>
 
       {/* Coupon Field */}

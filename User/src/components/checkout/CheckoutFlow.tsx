@@ -6,7 +6,7 @@ import { GuestDetailsForm } from "@/components/checkout/GuestDetailsForm";
 import { TravelersForm } from "@/components/checkout/TravelersForm";
 import { AdditionalRequestsForm } from "@/components/checkout/AdditionalRequestsForm";
 import { AddonSelector, DEFAULT_ADDONS } from "@/components/checkout/AddonSelector";
-import { CheckCircle, Loader2, AlertCircle, Gem, Ticket, MapPin, CalendarDays, Check } from "lucide-react";
+import { Loader2, AlertCircle, Gem, Ticket, MapPin, CalendarDays, Check } from "lucide-react";
 import { motion } from "framer-motion";
 import Script from "next/script";
 import { checkAvailability } from "@/lib/appwrite/availability";
@@ -50,7 +50,7 @@ export function CheckoutFlow() {
     if (typeof window !== 'undefined') {
       const storedImage = localStorage.getItem('racoonn_checkout_image');
       if (storedImage) {
-        setLocalHotelImage(storedImage);
+        void Promise.resolve().then(() => setLocalHotelImage(storedImage));
       }
     }
   }, []);
@@ -446,7 +446,7 @@ export function CheckoutFlow() {
                   transition={{ duration: 0.5, delay: 0.6 }}
                   className="text-slate-300 mb-10 max-w-lg text-lg leading-relaxed"
                 >
-                  Your ultimate getaway at <strong className="text-white">{hotelName}</strong> is fully booked and ready for you. We've emailed you the complete itinerary!
+                  Your ultimate getaway at <strong className="text-white">{hotelName}</strong> is fully booked and ready for you. We&apos;ve emailed you the complete itinerary!
                 </motion.p>
                 
                 <motion.div 

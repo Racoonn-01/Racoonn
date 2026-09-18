@@ -344,6 +344,9 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
     );
 
     // Build URL search params for checkout page
+    if (pkgImage) {
+      localStorage.setItem('racoonn_checkout_image', pkgImage);
+    }
     const query = new URLSearchParams();
     query.set('hotelId', `pkg-${pkgIdStr}`);
     query.set('roomName', `Package: ${pkg.title}`);
@@ -352,9 +355,6 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
     query.set('hotelLocation', pkg.location);
     query.set('guests', finalAdults.toString());
     query.set('adults', finalAdults.toString());
-    if (pkgImage) {
-      query.set('hotelImage', pkgImage);
-    }
     
     if (startDate) {
       query.set('checkIn', startDate.toISOString().split('T')[0]);

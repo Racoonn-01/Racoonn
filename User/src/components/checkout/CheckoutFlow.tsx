@@ -43,7 +43,18 @@ export function CheckoutFlow() {
   const hotelId = searchParams.get('hotelId') || useCheckoutStore.getState().selectedHotelId || 'hotel-123';
   const hotelName = searchParams.get('hotelName') || useCheckoutStore.getState().hotelName || 'The Oberoi Udaivilas';
   const hotelLocation = searchParams.get('hotelLocation') || useCheckoutStore.getState().hotelLocation || 'Udaipur, Rajasthan, India';
-  const hotelImage = searchParams.get('roomImage') || searchParams.get('hotelImage') || useCheckoutStore.getState().hotelImage || 'https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=1600&auto=format&fit=crop';
+  const [localHotelImage, setLocalHotelImage] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const storedImage = localStorage.getItem('racoonn_checkout_image');
+      if (storedImage) {
+        setLocalHotelImage(storedImage);
+      }
+    }
+  }, []);
+
+  const hotelImage = localHotelImage || searchParams.get('roomImage') || searchParams.get('hotelImage') || useCheckoutStore.getState().hotelImage || 'https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=1600&auto=format&fit=crop';
   const adults = Number(searchParams.get('guests')) || 2;
 
   const fetchPropertyAddons = useCheckoutStore(state => state.fetchPropertyAddons);

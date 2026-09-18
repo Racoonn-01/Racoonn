@@ -319,7 +319,7 @@ export const useCheckoutStore = create<CheckoutState>((set, get) => ({
     extraBedAvailable: eba
   }),
   fetchPropertyAddons: async (hotelId) => {
-    if (!hotelId || hotelId === 'hotel-123' || hotelId === 'undefined') {
+    if (!hotelId || hotelId === 'hotel-123' || hotelId === 'undefined' || hotelId.startsWith('pkg-')) {
       set({ propertyAddons: [] });
       return;
     }

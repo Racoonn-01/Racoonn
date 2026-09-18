@@ -29,7 +29,7 @@ export async function GET() {
     );
     const packages = doc.details ? JSON.parse(doc.details) : [];
     return NextResponse.json({ success: true, packages });
-  } catch (err: any) {
+  } catch {
     return NextResponse.json({ success: true, packages: [] });
   }
 }

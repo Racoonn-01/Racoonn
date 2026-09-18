@@ -79,10 +79,9 @@ export default function LeaveReviewModal({ isOpen, onClose, booking }: LeaveRevi
             <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Your Name</label>
             <input
               type="text"
-              placeholder="Enter your name"
               value={userName}
-              onChange={(e) => setUserName(e.target.value)}
-              className="flex w-full rounded-xl border border-gray-200 bg-gray-50/50 px-4 py-3 text-sm transition-colors focus:border-brand-coral focus:ring-1 focus:ring-brand-coral/20 outline-none"
+              readOnly
+              className="flex w-full rounded-xl border border-gray-200 bg-gray-100 px-4 py-3 text-sm text-gray-600 outline-none cursor-not-allowed"
             />
           </div>
 
@@ -100,7 +99,7 @@ export default function LeaveReviewModal({ isOpen, onClose, booking }: LeaveRevi
                 >
                   <Star 
                     size={32} 
-                    className={`transition-colors ${(hoverRating || rating) >= star ? 'fill-brand-coral text-brand-coral' : 'fill-gray-100 text-gray-200'}`} 
+                    className={`transition-colors ${(hoverRating || rating) >= star ? 'fill-yellow-400 text-yellow-400' : 'fill-gray-100 text-gray-200'}`} 
                   />
                 </button>
               ))}

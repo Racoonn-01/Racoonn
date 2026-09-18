@@ -23,7 +23,8 @@ import {
   ChevronDown,
   ChevronUp,
   Pencil,
-  X
+  X,
+  User
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getProperties, getReviews, createReview } from '@/lib/appwrite/api';

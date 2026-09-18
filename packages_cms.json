@@ -60,9 +60,9 @@
           {
             "title": "Testing 2",
             "description": "Testing 2",
-            "hasHotelActions": true,
+            "hasHotelActions": false,
             "selectedHotelId": "6a868a860030fc3f495d",
-            "hasActivityActions": true,
+            "hasActivityActions": false,
             "selectedActivityId": "6aacd7f70031a4b1ddf0"
           }
         ]
@@ -80,7 +80,10 @@
           "Breakfast Included"
         ],
         "pricePerNight": 3500,
-        "isDefault": true
+        "isDefault": true,
+        "location": "ROSE VILLA B 81 \nNRI LAKE CITY SAMIAH \nKASHIPUR ROAD RUDRAPUR , Rudrapur , Uttarakhand [GEO: 29.210440, 78.961810], Rudrapur , Uttarakhand",
+        "city": "Rudrapur ",
+        "price": 3500
       },
       {
         "id": "6a82bf9e003cf09088dc",
@@ -92,7 +95,10 @@
           "Breakfast Included"
         ],
         "pricePerNight": 3500,
-        "isDefault": false
+        "isDefault": false,
+        "location": "Preet Tech, near Krishna Hospital, Subhash Nagar, Bhotia Parao, Haldwani, Uttarakhand 263139, Haldwani, Uttarakhand [GEO: 30.278100, 77.989990], Haldwani, Uttarakhand",
+        "city": "Haldwani",
+        "price": 3500
       },
       {
         "id": "6a868a860030fc3f495d",
@@ -104,7 +110,10 @@
           "Breakfast Included"
         ],
         "pricePerNight": 3500,
-        "isDefault": false
+        "isDefault": false,
+        "location": "haldwani, Haldwani, Uttarakhand [GEO: 29.214275, 79.528070], Haldwani, Uttarakhand",
+        "city": "Haldwani",
+        "price": 3500
       },
       {
         "id": "6aa52d130005b3aba844",
@@ -116,7 +125,10 @@
           "Breakfast Included"
         ],
         "pricePerNight": 3500,
-        "isDefault": false
+        "isDefault": false,
+        "location": "Almora, Uttarakhand, Almora, Uttarakhand",
+        "city": "Almora",
+        "price": 3500
       },
       {
         "id": "cms_packages_v1",
@@ -128,14 +140,17 @@
           "Breakfast Included"
         ],
         "pricePerNight": 3500,
-        "isDefault": false
+        "isDefault": false,
+        "location": "CMS, CMS, CMS",
+        "city": "CMS",
+        "price": 3500
       }
     ],
     "activityOptions": [
       {
         "id": "6aacd7f70031a4b1ddf0",
-        "title": "Testing",
-        "description": "Testing",
+        "title": "Latest Activity",
+        "description": "Latest Activity",
         "image": "https://sgp.cloud.appwrite.io/v1/storage/buckets/6a3e398000280b2b3d20/files/6aacd7f6002a1af92a4a/view?project=6a3bce6900381359c3ce",
         "pricePerPerson": 20000,
         "priceLabel": "+ ₹20000 / person"

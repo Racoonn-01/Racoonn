@@ -127,49 +127,6 @@ const emptyForm: Package = {
   status: 'draft'
 }
 
-const PRESET_ACTIVITIES = [
-  {
-    id: "act-1",
-    title: "Guided Local Sightseeing",
-    description: "Explore the best landmarks and hidden gems with our expert local guides. Includes photography points and cultural hubs.",
-    image: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=600&auto=format&fit=crop",
-    pricePerPerson: 0,
-    priceLabel: "Included in Package"
-  },
-  {
-    id: "act-2",
-    title: "Adventure Sports Pass",
-    description: "Get an adrenaline rush with zip-lining, river rafting, and bungee jumping passes.",
-    image: "https://images.unsplash.com/photo-1593693397690-362cb9666fc2?q=80&w=600&auto=format&fit=crop",
-    pricePerPerson: 2500,
-    priceLabel: "+ ₹2,500 / person"
-  },
-  {
-    id: "act-3",
-    title: "Campfire & Music Evening",
-    description: "Enjoy a cozy mountain evening under stars with live acoustic music and bonfire.",
-    image: "https://images.unsplash.com/photo-1510312305653-8ed496efae75?q=80&w=600&auto=format&fit=crop",
-    pricePerPerson: 800,
-    priceLabel: "+ ₹800 / person"
-  },
-  {
-    id: "act-4",
-    title: "Mountain Trekking & Camping",
-    description: "Guided day trek into scenic valley trails with outdoor camping gear provided.",
-    image: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=600&auto=format&fit=crop",
-    pricePerPerson: 1800,
-    priceLabel: "+ ₹1,800 / person"
-  },
-  {
-    id: "act-5",
-    title: "Wildlife Safari Pass",
-    description: "Open jeep safari through national park tiger reserves with expert forest guides.",
-    image: "https://images.unsplash.com/photo-1516426122078-c23e76319801?q=80&w=600&auto=format&fit=crop",
-    pricePerPerson: 3200,
-    priceLabel: "+ ₹3,200 / person"
-  }
-];
-
 export default function PackagesPage() {
   const [packages, setPackages] = useState<Package[]>([])
   const [loading, setLoading] = useState(true)
@@ -178,6 +135,8 @@ export default function PackagesPage() {
   const [formData, setFormData] = useState<Package>(emptyForm)
   const [availableProperties, setAvailableProperties] = useState<{ id: string; title: string; location?: string; city?: string; image?: string; price?: number }[]>([])
   const [isLoadingProperties, setIsLoadingProperties] = useState(false)
+  const [availableActivities, setAvailableActivities] = useState<{ id: string; title: string; description?: string; image?: string; pricePerPerson?: number; priceLabel?: string }[]>([])
+  const [isLoadingActivities, setIsLoadingActivities] = useState(false)
   const [propertySearch, setPropertySearch] = useState('')
   const [activitySearch, setActivitySearch] = useState('')
 
@@ -196,9 +155,25 @@ export default function PackagesPage() {
     }
   };
 
+  const fetchAvailableActivities = async () => {
+    try {
+      setIsLoadingActivities(true);
+      const res = await fetch("/api/cms/activities");
+      const json = await res.json();
+      if (json.success && Array.isArray(json.activities)) {
+        setAvailableActivities(json.activities);
+      }
+    } catch (err) {
+      console.error("Error fetching activities for packages:", err);
+    } finally {
+      setIsLoadingActivities(false);
+    }
+  };
+
   useEffect(() => {
     setTimeout(() => {
       fetchAvailableProperties();
+      fetchAvailableActivities();
     }, 0);
   }, []);
 
@@ -231,7 +206,7 @@ export default function PackagesPage() {
     });
   };
 
-  const toggleSelectActivity = (act: typeof PRESET_ACTIVITIES[0]) => {
+  const toggleSelectActivity = (act: { id: string; title: string; description?: string; image?: string; pricePerPerson?: number; priceLabel?: string }) => {
     setFormData(prev => {
       const currentList = prev.activityOptions || [];
       const exists = currentList.some(a => a.id === act.id || a.title === act.title);
@@ -853,8 +828,17 @@ export default function PackagesPage() {
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 max-h-64 overflow-y-auto p-2 bg-slate-50 border border-slate-200 rounded-2xl">
-                {PRESET_ACTIVITIES
-                  .filter(a => a.title.toLowerCase().includes(activitySearch.toLowerCase()) || a.description.toLowerCase().includes(activitySearch.toLowerCase()))
+                {isLoadingActivities ? (
+                  <div className="col-span-full py-12 flex flex-col items-center justify-center text-slate-400">
+                    <Loader2 className="w-8 h-8 animate-spin mb-3" />
+                    <p className="text-sm font-medium">Loading activities...</p>
+                  </div>
+                ) : availableActivities.length === 0 ? (
+                  <div className="col-span-full py-12 flex flex-col items-center justify-center text-slate-400">
+                    <p className="text-sm font-medium">No activities found.</p>
+                  </div>
+                ) : availableActivities
+                  .filter(a => a.title.toLowerCase().includes(activitySearch.toLowerCase()) || (a.description || "").toLowerCase().includes(activitySearch.toLowerCase()))
                   .map((act) => {
                     const isSelected = (formData.activityOptions || []).some(a => a.id === act.id || a.title === act.title);
                     return (

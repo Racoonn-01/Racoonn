@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { 
   Plus, Trash2, Image as ImageIcon, ArrowLeft, Pencil, 
   IndianRupee, ChevronLeft, ChevronRight, X, Check,
-  Building, Loader2, Search
+  Building, Loader2, Search, Compass
 } from "lucide-react"
 import { storage } from "@/lib/appwrite/client";
 import { ID } from "appwrite";
@@ -26,6 +26,7 @@ type ItineraryPoint = {
   title: string;
   description: string;
   hasHotelActions?: boolean;
+  hasActivityActions?: boolean;
 }
 
 type ItineraryDay = {
@@ -1010,15 +1011,27 @@ export default function PackagesPage() {
                                       placeholder="Description (e.g. Our representative will greet you...)" 
                                       className="h-20 resize-none text-slate-600"
                                     />
-                                    <div className="flex items-center gap-2 mt-1">
-                                      <Switch 
-                                        id={`hotel-actions-${day.id}-${pIdx}`}
-                                        checked={pt.hasHotelActions || false}
-                                        onCheckedChange={(checked) => updateItineraryPoint(day.id, pIdx, 'hasHotelActions', checked)}
-                                      />
-                                      <Label htmlFor={`hotel-actions-${day.id}-${pIdx}`} className="text-sm font-medium text-slate-600 cursor-pointer">
-                                        Include Hotel Actions (View/Change Hotel buttons)
-                                      </Label>
+                                    <div className="flex flex-col gap-2 mt-1">
+                                      <div className="flex items-center gap-2">
+                                        <Switch 
+                                          id={`hotel-actions-${day.id}-${pIdx}`}
+                                          checked={pt.hasHotelActions || false}
+                                          onCheckedChange={(checked) => updateItineraryPoint(day.id, pIdx, 'hasHotelActions', checked)}
+                                        />
+                                        <Label htmlFor={`hotel-actions-${day.id}-${pIdx}`} className="text-sm font-medium text-slate-600 cursor-pointer">
+                                          Include Hotel Actions (View/Change Hotel buttons)
+                                        </Label>
+                                      </div>
+                                      <div className="flex items-center gap-2">
+                                        <Switch 
+                                          id={`activity-actions-${day.id}-${pIdx}`}
+                                          checked={pt.hasActivityActions || false}
+                                          onCheckedChange={(checked) => updateItineraryPoint(day.id, pIdx, 'hasActivityActions', checked)}
+                                        />
+                                        <Label htmlFor={`activity-actions-${day.id}-${pIdx}`} className="text-sm font-medium text-slate-600 cursor-pointer">
+                                          Include Activity Actions (View Activities button)
+                                        </Label>
+                                      </div>
                                     </div>
                                   </div>
                                   <Button type="button" variant="ghost" size="icon" onClick={() => removeItineraryPoint(day.id, pIdx)} className="h-9 w-9 text-slate-400 hover:text-red-500 shrink-0">
@@ -1033,6 +1046,13 @@ export default function PackagesPage() {
                                     </div>
                                     <div className="flex items-center justify-center gap-2 px-3 py-1.5 border border-slate-300 text-slate-600 rounded-lg text-[13px] font-semibold bg-white cursor-not-allowed opacity-70">
                                       <Pencil size={14} /> Change Hotel
+                                    </div>
+                                  </div>
+                                )}
+                                {pt.hasActivityActions && (
+                                  <div className="flex gap-3 mt-1">
+                                    <div className="flex items-center justify-center gap-2 px-3 py-1.5 border border-slate-300 text-slate-600 rounded-lg text-[13px] font-semibold bg-white cursor-not-allowed opacity-70">
+                                      <Compass size={14} /> View Activities
                                     </div>
                                   </div>
                                 )}

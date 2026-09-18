@@ -6,7 +6,8 @@ import { GuestDetailsForm } from "@/components/checkout/GuestDetailsForm";
 import { TravelersForm } from "@/components/checkout/TravelersForm";
 import { AdditionalRequestsForm } from "@/components/checkout/AdditionalRequestsForm";
 import { AddonSelector, DEFAULT_ADDONS } from "@/components/checkout/AddonSelector";
-import { CheckCircle, Loader2, AlertCircle, Gem } from "lucide-react";
+import { CheckCircle, Loader2, AlertCircle, Gem, Sparkles, MapPin, CalendarDays, Check } from "lucide-react";
+import { motion } from "framer-motion";
 import Script from "next/script";
 import { checkAvailability } from "@/lib/appwrite/availability";
 import { useEffect, useState } from "react";
@@ -400,39 +401,128 @@ export function CheckoutFlow() {
 
       {currentStep === 4 && (
         <div className="space-y-8 animate-in fade-in zoom-in-95 duration-500">
-          <div className="bg-white rounded-xl shadow-sm border border-brand-sky p-8 md:p-12 text-center">
-            <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-              <CheckCircle className="w-10 h-10 text-green-500" />
-            </div>
-            <h2 className="text-3xl font-poppins font-bold text-brand-navy mb-4">Booking Confirmed!</h2>
-            <p className="text-gray-600 mb-8 max-w-md mx-auto">
-              Your booking at Grand Ocean Resort has been successfully confirmed. A confirmation email has been sent to your inbox.
-            </p>
-            <div className="p-6 bg-brand-sand rounded-xl text-left max-w-md mx-auto mb-8 space-y-3 border border-brand-sky">
-              <div className="flex justify-between items-center border-b border-brand-sky/60 pb-2">
-                <span className="text-xs text-gray-500 font-semibold uppercase">Booking Reference</span>
-                <span className="text-sm font-bold text-brand-navy">{useCheckoutStore.getState().confirmedBookingId || "RCN-8849-2A"}</span>
+          {isPackage ? (
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, ease: "easeOut" }}
+              className="bg-gradient-to-br from-brand-navy via-slate-900 to-slate-800 rounded-3xl shadow-2xl border border-white/10 p-8 md:p-16 text-center text-white overflow-hidden relative"
+            >
+              <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
+                <div className="absolute -top-[20%] -right-[10%] w-[50%] h-[50%] bg-brand-coral/20 blur-[100px] rounded-full"></div>
+                <div className="absolute -bottom-[20%] -left-[10%] w-[50%] h-[50%] bg-brand-sky/20 blur-[100px] rounded-full"></div>
               </div>
-              <div className="flex justify-between items-center text-xs text-gray-600">
-                <span>Payment Status</span>
-                <span className="font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded">PAID</span>
+              
+              <div className="relative z-10 flex flex-col items-center">
+                <motion.div 
+                  initial={{ scale: 0, rotate: -180 }}
+                  animate={{ scale: 1, rotate: 0 }}
+                  transition={{ type: "spring", stiffness: 200, damping: 15, delay: 0.2 }}
+                  className="w-24 h-24 bg-gradient-to-tr from-emerald-400 to-emerald-600 rounded-full flex items-center justify-center mb-8 shadow-[0_0_40px_rgba(52,211,153,0.4)]"
+                >
+                  <motion.div
+                    initial={{ pathLength: 0 }}
+                    animate={{ pathLength: 1 }}
+                    transition={{ duration: 0.6, delay: 0.6 }}
+                  >
+                    <Check className="w-12 h-12 text-white stroke-[3]" />
+                  </motion.div>
+                </motion.div>
+                
+                <motion.h2 
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.4 }}
+                  className="text-4xl md:text-5xl font-poppins font-extrabold mb-4 tracking-tight"
+                >
+                  Adventure <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-coral to-amber-400">Confirmed!</span>
+                </motion.h2>
+                
+                <motion.p 
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.5, delay: 0.6 }}
+                  className="text-slate-300 mb-10 max-w-lg text-lg leading-relaxed"
+                >
+                  Your ultimate getaway at <strong className="text-white">{hotelName}</strong> is fully booked and ready for you. We've emailed you the complete itinerary!
+                </motion.p>
+                
+                <motion.div 
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.5, delay: 0.8 }}
+                  className="w-full max-w-md bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-6 mb-10 space-y-4"
+                >
+                  <div className="flex items-center justify-between pb-4 border-b border-white/10">
+                    <div className="flex items-center gap-3 text-slate-300">
+                      <div className="p-2 bg-white/10 rounded-lg"><Sparkles className="w-4 h-4 text-amber-400" /></div>
+                      <span className="text-sm font-medium uppercase tracking-wider">Booking ID</span>
+                    </div>
+                    <span className="font-mono font-bold text-white text-lg">{useCheckoutStore.getState().confirmedBookingId || "PKG-8849-2A"}</span>
+                  </div>
+                  <div className="flex items-center justify-between pb-4 border-b border-white/10">
+                    <div className="flex items-center gap-3 text-slate-300">
+                      <div className="p-2 bg-white/10 rounded-lg"><MapPin className="w-4 h-4 text-emerald-400" /></div>
+                      <span className="text-sm font-medium uppercase tracking-wider">Location</span>
+                    </div>
+                    <span className="font-medium text-white text-right max-w-[150px] truncate">{hotelLocation}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3 text-slate-300">
+                      <div className="p-2 bg-white/10 rounded-lg"><CalendarDays className="w-4 h-4 text-brand-sky" /></div>
+                      <span className="text-sm font-medium uppercase tracking-wider">Status</span>
+                    </div>
+                    <span className="font-bold text-emerald-400 bg-emerald-400/10 px-3 py-1 rounded-full text-xs tracking-wide">PAID IN FULL</span>
+                  </div>
+                </motion.div>
+                
+                <motion.button 
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 1 }}
+                  onClick={() => window.location.href = "/"}
+                  className="bg-white text-brand-navy hover:bg-brand-sky hover:text-brand-navy font-bold py-4 px-10 rounded-xl transition-all shadow-[0_0_20px_rgba(255,255,255,0.1)] hover:shadow-[0_0_30px_rgba(255,255,255,0.2)] hover:scale-105 active:scale-95"
+                >
+                  Explore More Packages
+                </motion.button>
               </div>
-              <div className="flex justify-between items-center text-xs text-gray-600">
-                <span>GST Tax Compliance</span>
-                <span className="font-bold text-slate-800">GST Invoice Issued</span>
+            </motion.div>
+          ) : (
+            <div className="bg-white rounded-xl shadow-sm border border-brand-sky p-8 md:p-12 text-center">
+              <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <CheckCircle className="w-10 h-10 text-green-500" />
+              </div>
+              <h2 className="text-3xl font-poppins font-bold text-brand-navy mb-4">Booking Confirmed!</h2>
+              <p className="text-gray-600 mb-8 max-w-md mx-auto">
+                Your booking at Grand Ocean Resort has been successfully confirmed. A confirmation email has been sent to your inbox.
+              </p>
+              <div className="p-6 bg-brand-sand rounded-xl text-left max-w-md mx-auto mb-8 space-y-3 border border-brand-sky">
+                <div className="flex justify-between items-center border-b border-brand-sky/60 pb-2">
+                  <span className="text-xs text-gray-500 font-semibold uppercase">Booking Reference</span>
+                  <span className="text-sm font-bold text-brand-navy">{useCheckoutStore.getState().confirmedBookingId || "RCN-8849-2A"}</span>
+                </div>
+                <div className="flex justify-between items-center text-xs text-gray-600">
+                  <span>Payment Status</span>
+                  <span className="font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded">PAID</span>
+                </div>
+                <div className="flex justify-between items-center text-xs text-gray-600">
+                  <span>GST Tax Compliance</span>
+                  <span className="font-bold text-slate-800">GST Invoice Issued</span>
+                </div>
+              </div>
+              <div>
+                <button 
+                  onClick={() => window.location.href = "/"}
+                  className="bg-brand-navy hover:bg-brand-navy/90 text-white font-bold py-3 px-8 rounded-xl transition-transform active:scale-[0.98]"
+                >
+                  Back to Home
+                </button>
               </div>
             </div>
-            <div>
-              <button 
-                onClick={() => window.location.href = "/"}
-                className="bg-brand-navy hover:bg-brand-navy/90 text-white font-bold py-3 px-8 rounded-xl transition-transform active:scale-[0.98]"
-              >
-                Back to Home
-              </button>
-            </div>
-          </div>
+          )}
         </div>
       )}
+
     </div>
   );
 }

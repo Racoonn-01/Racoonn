@@ -359,6 +359,10 @@ export const useCheckoutStore = create<CheckoutState>((set, get) => ({
       const perNightPrice = bookingData.price || 3500;
       const nightsCount = bookingData.nights || 1;
       const roomsCount = bookingData.rooms || 1;
+      const isPackage = (bookingData.roomName || '').startsWith('Package:') || (bookingData.roomName || '').toLowerCase().includes('package');
+
+      const calcNights = isPackage ? 1 : nightsCount;
+      const calcRooms = isPackage ? 1 : roomsCount;
       
       const pricingParams = {
         basePrice: perNightPrice,
@@ -366,17 +370,17 @@ export const useCheckoutStore = create<CheckoutState>((set, get) => ({
         maximumCapacity: get().maximumCapacity,
         extraPersonCharge: get().extraPersonCharge,
         totalGuests: Math.ceil((bookingData.adults || 2) / roomsCount),
-        numberOfNights: nightsCount
+        numberOfNights: calcNights
       };
       
       const pricing = calculateRoomPricing(pricingParams);
 
-      const totalRoomSubtotal = pricing.roomSubtotal * roomsCount;
-      const totalExtraGuestAmount = pricing.extraGuestAmount * roomsCount;
-      const totalBaseRoomAmount = pricing.baseRoomAmount * roomsCount;
-      const effectivePerNightPrice = totalRoomSubtotal / (nightsCount * roomsCount);
+      const totalRoomSubtotal = isPackage ? perNightPrice : (pricing.roomSubtotal * roomsCount);
+      const totalExtraGuestAmount = isPackage ? 0 : (pricing.extraGuestAmount * roomsCount);
+      const totalBaseRoomAmount = isPackage ? perNightPrice : (pricing.baseRoomAmount * roomsCount);
+      const effectivePerNightPrice = isPackage ? perNightPrice : (totalRoomSubtotal / (nightsCount * roomsCount));
 
-      const gstCalc = calculateRoomGst(effectivePerNightPrice, nightsCount, roomsCount, addons);
+      const gstCalc = calculateRoomGst(effectivePerNightPrice, calcNights, calcRooms, addons, isPackage);
 
       const roomAmount = gstCalc.roomAmount;
       const gstRate = gstCalc.gstRate;

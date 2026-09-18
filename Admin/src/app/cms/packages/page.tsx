@@ -223,10 +223,10 @@ export default function PackagesPage() {
             {
               id: act.id,
               title: act.title,
-              description: act.description,
-              image: act.image,
-              pricePerPerson: act.pricePerPerson,
-              priceLabel: act.priceLabel
+              description: act.description || "",
+              image: act.image || "https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=600&auto=format&fit=crop",
+              pricePerPerson: act.pricePerPerson || 0,
+              priceLabel: act.priceLabel || `+ ₹${act.pricePerPerson || 0} / person`
             }
           ]
         };
@@ -852,7 +852,7 @@ export default function PackagesPage() {
                         }`}
                       >
                         <div className="relative w-10 h-10 rounded-lg overflow-hidden shrink-0 bg-slate-200">
-                          <Image src={act.image} alt={act.title} fill className="object-cover" />
+                          <Image src={act.image || "https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=600&auto=format&fit=crop"} alt={act.title} fill className="object-cover" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <h4 className="text-xs font-bold text-slate-900 truncate">{act.title}</h4>

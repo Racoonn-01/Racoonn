@@ -264,6 +264,11 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
   };
 
   const handleBookPackage = () => {
+    if (!startDate || !endDate) {
+      setIsStartOpen(true);
+      return;
+    }
+    
     const pkgIdStr = String(pkg.id || rawPkgId);
     const selectedStay = hotelOptions[selectedHotel] || hotelOptions[0];
     const pkgImage = (pkg.images && pkg.images[0]) || (selectedStay?.image) || 'https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=600&auto=format&fit=crop';

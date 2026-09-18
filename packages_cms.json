@@ -44,7 +44,26 @@
           {
             "title": "Testing",
             "description": "testing",
-            "hasHotelActions": true
+            "hasHotelActions": true,
+            "hasActivityActions": true,
+            "selectedActivityId": "6aacd7f70031a4b1ddf0",
+            "selectedHotelId": "6a841cf5002eda68b16f"
+          }
+        ]
+      },
+      {
+        "id": "1789715610215",
+        "dayNumber": 2,
+        "title": "Testing 2",
+        "activities": "",
+        "points": [
+          {
+            "title": "Testing 2",
+            "description": "Testing 2",
+            "hasHotelActions": true,
+            "selectedHotelId": "6a868a860030fc3f495d",
+            "hasActivityActions": true,
+            "selectedActivityId": "6a69abfa00163684a891"
           }
         ]
       }
@@ -129,7 +148,6 @@
         "pricePerPerson": 1500,
         "priceLabel": "+ ₹1500 / person"
       }
-    ],
-    "location": "Uttarakhand"
+    ]
   }
 ]

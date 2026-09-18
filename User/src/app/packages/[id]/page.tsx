@@ -690,6 +690,16 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
                                               </button>
                                             </div>
                                           )}
+                                          {pt.hasActivityActions && (
+                                            <div className="flex gap-3 mt-3">
+                                              <button 
+                                                onClick={() => setActiveTab('activities')}
+                                                className="flex items-center gap-2 px-3 py-1.5 border border-gray-300 text-gray-600 rounded-lg text-[13px] font-semibold hover:bg-gray-50 transition-colors"
+                                              >
+                                                <Compass size={14} /> View Activities
+                                              </button>
+                                            </div>
+                                          )}
                                         </div>
                                       ))
                                     ) : (

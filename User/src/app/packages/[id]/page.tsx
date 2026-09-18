@@ -352,6 +352,9 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
     query.set('hotelLocation', pkg.location);
     query.set('guests', finalAdults.toString());
     query.set('adults', finalAdults.toString());
+    if (pkgImage) {
+      query.set('hotelImage', pkgImage);
+    }
     
     if (startDate) {
       query.set('checkIn', startDate.toISOString().split('T')[0]);

@@ -288,10 +288,10 @@ export default function AvailabilityPage() {
         const isSameRoom = booking.roomId === selectedRoom.$id || booking.roomId === selectedRoom.name;
         if (!isSameRoom) continue;
 
-        const bookingCheckIn = new Date(booking.checkIn).getTime();
-        const bookingCheckOut = new Date(booking.checkOut).getTime();
+        const checkInStr = typeof booking.checkIn === 'string' ? booking.checkIn.split('T')[0] : '';
+        const checkOutStr = typeof booking.checkOut === 'string' ? booking.checkOut.split('T')[0] : '';
 
-        if (bookingCheckIn <= dateTime && bookingCheckOut > dateTime) {
+        if (checkInStr <= dateKey && checkOutStr > dateKey) {
           occupiedRooms += (Number(booking.rooms) || 1);
         }
       }

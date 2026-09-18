@@ -491,7 +491,8 @@ export const useCheckoutStore = create<CheckoutState>((set, get) => ({
             bookingId: bookingId.substring(0, 8).toUpperCase(),
             addonsList: addonsList,
             gstRate: gstRate,
-            gstAmount: gstAmount
+            gstAmount: gstAmount,
+            isPackage: (bookingData.roomName || '').startsWith('Package:') || (bookingData.roomName || '').toLowerCase().includes('package')
           })
         });
         

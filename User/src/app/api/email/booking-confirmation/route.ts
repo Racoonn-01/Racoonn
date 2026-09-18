@@ -35,7 +35,8 @@ function generateInvoicePdf(data: any): Promise<Buffer> {
         bookingId = 'N/A',
         addonsList = [],
         gstRate = 18,
-        gstAmount = 0
+        gstAmount = 0,
+        isPackage = false
       } = data;
 
       // 1. Header (Logo & Company Info)
@@ -68,7 +69,7 @@ function generateInvoicePdf(data: any): Promise<Buffer> {
       doc.fontSize(10).font('Helvetica').fillColor(COLORS.textLight).text(`${firstName} ${lastName}`.trim() || 'Guest', 50, 215);
       doc.text(email, 50, 230);
 
-      doc.fontSize(12).font('Helvetica-Bold').fillColor(COLORS.textDark).text('Hotel Details', 300, 195);
+      doc.fontSize(12).font('Helvetica-Bold').fillColor(COLORS.textDark).text(isPackage ? 'Package Details' : 'Hotel Details', 300, 195);
       doc.fontSize(10).font('Helvetica').fillColor(COLORS.textLight).text(hotelName, 300, 215, { width: 245 });
       if (hotelLocation) {
         doc.text(hotelLocation, 300, doc.y + 2, { width: 245 });
@@ -86,22 +87,35 @@ function generateInvoicePdf(data: any): Promise<Buffer> {
       let rowY = tableY + 45;
       doc.font('Helvetica').fillColor(COLORS.textDark);
       
-      doc.text('Check-In Date', 60, rowY);
-      doc.text(checkIn, 300, rowY);
-      rowY += 20;
-      
-      doc.text('Check-Out Date', 60, rowY);
-      doc.text(checkOut, 300, rowY);
-      rowY += 20;
+      if (isPackage) {
+        doc.text('Starting Date', 60, rowY);
+        doc.text(checkIn, 300, rowY);
+        rowY += 20;
 
-      doc.text('Duration', 60, rowY);
-      doc.text(`${nights} Night(s)`, 300, rowY);
-      rowY += 20;
+        doc.text('Duration', 60, rowY);
+        doc.text(`${nights} Night(s)`, 300, rowY);
+        rowY += 20;
 
-      doc.text('Guests', 60, rowY);
-      doc.text(`${adults} Adult(s)`, 300, rowY);
-      
-      rowY += 30;
+        doc.text('Guests', 60, rowY);
+        doc.text(`${adults} Adult(s)`, 300, rowY);
+        rowY += 30;
+      } else {
+        doc.text('Check-In Date', 60, rowY);
+        doc.text(checkIn, 300, rowY);
+        rowY += 20;
+        
+        doc.text('Check-Out Date', 60, rowY);
+        doc.text(checkOut, 300, rowY);
+        rowY += 20;
+
+        doc.text('Duration', 60, rowY);
+        doc.text(`${nights} Night(s)`, 300, rowY);
+        rowY += 20;
+
+        doc.text('Guests', 60, rowY);
+        doc.text(`${adults} Adult(s)`, 300, rowY);
+        rowY += 30;
+      }
       doc.moveTo(50, rowY).lineTo(545, rowY).strokeColor(COLORS.border).stroke();
 
       // 4. Financial Breakdown
@@ -119,12 +133,14 @@ function generateInvoicePdf(data: any): Promise<Buffer> {
       doc.font('Helvetica').fillColor(COLORS.textLight).text('Base Price (Excl. GST):', 300, rowY);
       doc.font('Helvetica').fillColor(COLORS.textDark).text(`INR ${safeBasePrice.toLocaleString('en-IN')}`, 450, rowY, { align: 'right' });
       
-      addonsList.forEach((addon: any) => {
-        rowY += 20;
-        const addonPrice = Number(addon.price) || 0;
-        doc.font('Helvetica').fillColor(COLORS.textLight).text(`Add-on: ${addon.name}`, 300, rowY);
-        doc.font('Helvetica').fillColor(COLORS.textDark).text(`INR ${addonPrice.toLocaleString('en-IN')}`, 450, rowY, { align: 'right' });
-      });
+      if (!isPackage) {
+        addonsList.forEach((addon: any) => {
+          rowY += 20;
+          const addonPrice = Number(addon.price) || 0;
+          doc.font('Helvetica').fillColor(COLORS.textLight).text(`Add-on: ${addon.name}`, 300, rowY);
+          doc.font('Helvetica').fillColor(COLORS.textDark).text(`INR ${addonPrice.toLocaleString('en-IN')}`, 450, rowY, { align: 'right' });
+        });
+      }
       
       rowY += 20;
       const safeGstAmount = Number(gstAmount) || 0;
@@ -169,7 +185,8 @@ export async function POST(req: Request) {
       bookingId = 'N/A',
       addonsList = [],
       gstRate = 18,
-      gstAmount = 0
+      gstAmount = 0,
+      isPackage = false
     } = data;
 
     if (!email) {
@@ -205,12 +222,17 @@ export async function POST(req: Request) {
           <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin: 20px 0;">
             <h3 style="margin-top: 0; color: #E86A6F;">Booking Details</h3>
             <p style="margin: 5px 0;"><strong>Booking ID:</strong> ${bookingId || 'N/A'}</p>
-            <p style="margin: 5px 0;"><strong>Hotel:</strong> ${hotelName} ${hotelLocation ? '(' + hotelLocation + ')' : ''}</p>
-            <p style="margin: 5px 0;"><strong>Check-in:</strong> ${checkIn}</p>
-            <p style="margin: 5px 0;"><strong>Check-out:</strong> ${checkOut}</p>
-            <p style="margin: 5px 0;"><strong>Guests:</strong> ${adults || 1} Adult(s)</p>
-            <p style="margin: 5px 0;"><strong>Duration:</strong> ${nights} Night(s)</p>
-            ${addonsList?.length > 0 ? addonsList.map((a: any) => `<p style="margin: 5px 0;"><strong>Add-on (${a.name}):</strong> ₹${(Number(a.price) || 0).toLocaleString("en-IN")}</p>`).join('') : ''}
+            <p style="margin: 5px 0;"><strong>${isPackage ? 'Package Name' : 'Hotel'}:</strong> ${hotelName} ${hotelLocation ? '(' + hotelLocation + ')' : ''}</p>
+            ${isPackage ? `
+              <p style="margin: 5px 0;"><strong>Starting date:</strong> ${checkIn}</p>
+              <p style="margin: 5px 0;"><strong>Duration of Package:</strong> ${nights} Night(s)</p>
+            ` : `
+              <p style="margin: 5px 0;"><strong>Check-in:</strong> ${checkIn}</p>
+              <p style="margin: 5px 0;"><strong>Check-out:</strong> ${checkOut}</p>
+              <p style="margin: 5px 0;"><strong>Guests:</strong> ${adults || 1} Adult(s)</p>
+              <p style="margin: 5px 0;"><strong>Duration:</strong> ${nights} Night(s)</p>
+              ${addonsList?.length > 0 ? addonsList.map((a: any) => `<p style="margin: 5px 0;"><strong>Add-on (${a.name}):</strong> ₹${(Number(a.price) || 0).toLocaleString("en-IN")}</p>`).join('') : ''}
+            `}
             <hr style="border: none; border-top: 1px solid #ddd; margin: 15px 0;" />
             <p style="margin: 5px 0; font-size: 1.1em;"><strong>Total Paid:</strong> ₹${(Number(price) || 0).toLocaleString("en-IN")}</p>
           </div>

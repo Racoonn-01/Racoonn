@@ -28,7 +28,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { getProperties } from '@/lib/appwrite/api';
 import { Models } from 'appwrite';
-import { format, addDays } from 'date-fns';
+import { format, addDays, differenceInDays } from 'date-fns';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { Swiper, SwiperSlide } from 'swiper/react';
@@ -181,11 +181,22 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
   // Parse base price from string like "₹18,999" to number 18999
   const basePriceNum = parseInt(pkg.price.replace(/[^\d]/g, ''), 10) || 0;
 
+  // Calculate selected nights vs package base nights
+  const selectedNights = startDate && endDate ? Math.max(0, differenceInDays(endDate, startDate)) : nightsCount;
+  const extraNights = Math.max(0, selectedNights - nightsCount);
+
   // Accommodation extra cost per person relative to default base option (Hotel 0)
   // Deduct included base hotel price and add selected hotel price
   const baseHotelPrice = hotelOptions[0]?.pricePerNight ?? 0;
   const currentHotelPrice = (hotelOptions[selectedHotel] || hotelOptions[0])?.pricePerNight ?? 0;
-  const hotelExtraPerPerson = (currentHotelPrice - baseHotelPrice) * nightsCount;
+  
+  // Cost difference for the core package nights
+  const hotelExtraForCoreNights = (currentHotelPrice - baseHotelPrice) * nightsCount;
+  
+  // Full cost for any extra nights beyond the package duration
+  const hotelCostForExtraNights = currentHotelPrice * extraNights;
+
+  const hotelExtraPerPerson = hotelExtraForCoreNights + hotelCostForExtraNights;
 
   // Activities extra cost per person
   const activitiesExtraPerPerson = selectedActivities.reduce((sum, actIndex) => {

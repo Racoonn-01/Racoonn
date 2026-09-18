@@ -114,36 +114,12 @@
     ],
     "activityOptions": [
       {
-        "id": "act-2",
-        "title": "Adventure Sports Pass",
-        "description": "Get an adrenaline rush with zip-lining, river rafting, and bungee jumping passes.",
-        "image": "https://images.unsplash.com/photo-1593693397690-362cb9666fc2?q=80&w=600&auto=format&fit=crop",
-        "pricePerPerson": 2500,
-        "priceLabel": "+ ₹2,500 / person"
-      },
-      {
-        "id": "act-5",
-        "title": "Wildlife Safari Pass",
-        "description": "Open jeep safari through national park tiger reserves with expert forest guides.",
-        "image": "https://images.unsplash.com/photo-1516426122078-c23e76319801?q=80&w=600&auto=format&fit=crop",
-        "pricePerPerson": 3200,
-        "priceLabel": "+ ₹3,200 / person"
-      },
-      {
-        "id": "act-4",
-        "title": "Mountain Trekking & Camping",
-        "description": "Guided day trek into scenic valley trails with outdoor camping gear provided.",
-        "image": "https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=600&auto=format&fit=crop",
-        "pricePerPerson": 1800,
-        "priceLabel": "+ ₹1,800 / person"
-      },
-      {
-        "id": "act-1",
-        "title": "Guided Local Sightseeing",
-        "description": "Explore the best landmarks and hidden gems with our expert local guides. Includes photography points and cultural hubs.",
-        "image": "https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=600&auto=format&fit=crop",
-        "pricePerPerson": 0,
-        "priceLabel": "Included in Package"
+        "id": "6a69abfa00163684a891",
+        "title": "Testing",
+        "description": "Elevate your travel experience with curated adventures and memorable local activities.\nElevate your travel experience with curated adventures and memorable local activities.\n",
+        "image": "https://sgp.cloud.appwrite.io/v1/storage/buckets/6a3e398000280b2b3d20/files/6a69abf90010ec46ba4b/view?project=6a3bce6900381359c3ce",
+        "pricePerPerson": 1400,
+        "priceLabel": "+ ₹1400 / person"
       }
     ]
   }

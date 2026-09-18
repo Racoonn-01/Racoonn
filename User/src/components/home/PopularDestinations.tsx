@@ -99,42 +99,60 @@ export default function PopularDestinations() {
           className="flex overflow-x-auto hide-scrollbar gap-4 md:gap-6 pb-4 snap-x snap-mandatory"
           style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
         >
-          {destinations.map((dest) => {
-            const rawPrice = dest.price ? String(dest.price).replace(/[^0-9,]/g, "") : "3,999";
-            return (
-              <Link
-                href={`/search?location=${encodeURIComponent(dest.city)}`}
-                key={dest.id}
-                className="w-full min-w-full md:min-w-0 md:w-[calc(50%-12px)] lg:w-[calc(25%-18px)] shrink-0 group/card relative rounded-3xl overflow-hidden cursor-pointer shadow-sm hover:shadow-xl transition-all duration-300 snap-center md:snap-start h-[450px]"
-              >
-                <Image
-                  src={dest.image || "https://images.unsplash.com/photo-1626621341517-bbf3d9990a23?q=80&w=800&auto=format&fit=crop"}
-                  alt={dest.city}
-                  fill
-                  unoptimized
-                  className="object-cover group-hover/card:scale-110 transition-transform duration-700"
-                  sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 25vw"
-                />
-                <div className="absolute inset-0 bg-linear-to-b from-transparent via-black/20 to-black/90" />
-
-                {/* Location Tag (Top Left) */}
-                <div className="absolute top-4 left-4 bg-white px-4 py-1.5 rounded-full flex items-center gap-1.5 shadow-md">
-                  <MapPin size={14} className="text-brand-coral" fill="currentColor" />
-                  <span className="text-sm font-bold text-brand-navy">{dest.city}</span>
-                </div>
-
-                {/* Bottom Info */}
-                <div className="absolute bottom-0 left-0 w-full p-6 text-white flex flex-col gap-4">
-                  <p className="text-white/90 font-medium text-[16px] leading-snug line-clamp-2">
-                    {dest.description}
-                  </p>
-                  <div className="bg-white/95 px-5 py-2 rounded-full self-start text-brand-navy font-bold text-sm shadow-lg transform-gpu">
-                    Stays from ₹{rawPrice}
+          {loading ? (
+            <>
+              {[1, 2, 3, 4].map((i) => (
+                <div 
+                  key={i} 
+                  className="w-full min-w-full md:min-w-0 md:w-[calc(50%-12px)] lg:w-[calc(25%-18px)] shrink-0 rounded-3xl overflow-hidden shadow-sm h-[450px] bg-gray-100 animate-pulse relative snap-center md:snap-start"
+                >
+                  <div className="absolute top-4 left-4 bg-gray-200 w-28 h-8 rounded-full" />
+                  <div className="absolute bottom-6 left-6 right-6 flex flex-col gap-4">
+                    <div className="bg-gray-200 h-4 w-full rounded" />
+                    <div className="bg-gray-200 h-4 w-2/3 rounded" />
+                    <div className="bg-gray-200 h-9 w-36 rounded-full" />
                   </div>
                 </div>
-              </Link>
-            );
-          })}
+              ))}
+            </>
+          ) : (
+            destinations.map((dest) => {
+              const rawPrice = dest.price ? String(dest.price).replace(/[^0-9,]/g, "") : "3,999";
+              return (
+                <Link
+                  href={`/search?location=${encodeURIComponent(dest.city)}`}
+                  key={dest.id}
+                  className="w-full min-w-full md:min-w-0 md:w-[calc(50%-12px)] lg:w-[calc(25%-18px)] shrink-0 group/card relative rounded-3xl overflow-hidden cursor-pointer shadow-sm hover:shadow-xl transition-all duration-300 snap-center md:snap-start h-[450px]"
+                >
+                  <Image
+                    src={dest.image || "https://images.unsplash.com/photo-1626621341517-bbf3d9990a23?q=80&w=800&auto=format&fit=crop"}
+                    alt={dest.city}
+                    fill
+                    unoptimized
+                    className="object-cover group-hover/card:scale-110 transition-transform duration-700"
+                    sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                  />
+                  <div className="absolute inset-0 bg-linear-to-b from-transparent via-black/20 to-black/90" />
+  
+                  {/* Location Tag (Top Left) */}
+                  <div className="absolute top-4 left-4 bg-white px-4 py-1.5 rounded-full flex items-center gap-1.5 shadow-md">
+                    <MapPin size={14} className="text-brand-coral" fill="currentColor" />
+                    <span className="text-sm font-bold text-brand-navy">{dest.city}</span>
+                  </div>
+  
+                  {/* Bottom Info */}
+                  <div className="absolute bottom-0 left-0 w-full p-6 text-white flex flex-col gap-4">
+                    <p className="text-white/90 font-medium text-[16px] leading-snug line-clamp-2">
+                      {dest.description}
+                    </p>
+                    <div className="bg-white/95 px-5 py-2 rounded-full self-start text-brand-navy font-bold text-sm shadow-lg transform-gpu">
+                      Stays from ₹{rawPrice}
+                    </div>
+                  </div>
+                </Link>
+              );
+            })
+          )}
         </div>
 
         {/* Navigation Buttons */}

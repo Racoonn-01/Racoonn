@@ -131,7 +131,8 @@ export default function AvailabilityPage() {
               appwriteConfig.bookingCollectionId || "bookings",
               [
                 Query.equal("hotelId", propIds),
-                Query.equal("status", ["Confirmed", "Completed", "confirmed", "completed"])
+                Query.equal("status", ["Confirmed", "Completed", "confirmed", "completed"]),
+                Query.limit(5000)
               ]
             );
             setVendorBookings(bookingsRes.documents);

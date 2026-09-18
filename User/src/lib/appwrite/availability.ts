@@ -33,7 +33,8 @@ export async function checkAvailability(
       'bookings', 
       [
         Query.equal('hotelId', hotelId),
-        Query.equal('status', ['Confirmed', 'Completed'])
+        Query.equal('status', ['Confirmed', 'Completed']),
+        Query.limit(5000)
       ]
     );
 

@@ -488,18 +488,51 @@ export function CheckoutFlow() {
               </div>
             </motion.div>
           ) : (
-            <div className="bg-white rounded-xl shadow-sm border border-brand-sky p-8 md:p-12 text-center">
-              <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                <CheckCircle className="w-10 h-10 text-green-500" />
-              </div>
-              <h2 className="text-3xl font-poppins font-bold text-brand-navy mb-4">Booking Confirmed!</h2>
-              <p className="text-gray-600 mb-8 max-w-md mx-auto">
-                Your booking at Grand Ocean Resort has been successfully confirmed. A confirmation email has been sent to your inbox.
-              </p>
-              <div className="p-6 bg-brand-sand rounded-xl text-left max-w-md mx-auto mb-8 space-y-3 border border-brand-sky">
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, ease: "easeOut" }}
+              className="bg-white rounded-xl shadow-sm border border-brand-sky p-8 md:p-12 text-center"
+            >
+              <motion.div 
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ type: "spring", stiffness: 200, damping: 15, delay: 0.2 }}
+                className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6"
+              >
+                <motion.div
+                  initial={{ pathLength: 0, opacity: 0 }}
+                  animate={{ pathLength: 1, opacity: 1 }}
+                  transition={{ duration: 0.5, delay: 0.5, ease: "easeInOut" }}
+                >
+                  <Check className="w-10 h-10 text-green-500 stroke-[3]" />
+                </motion.div>
+              </motion.div>
+              <motion.h2 
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.4 }}
+                className="text-3xl font-poppins font-bold text-brand-navy mb-4"
+              >
+                Booking Confirmed!
+              </motion.h2>
+              <motion.p 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.5, delay: 0.6 }}
+                className="text-gray-600 mb-8 max-w-md mx-auto"
+              >
+                Your booking at <strong className="text-brand-navy">{hotelName}</strong> has been successfully confirmed. A confirmation email has been sent to your inbox.
+              </motion.p>
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.5, delay: 0.8 }}
+                className="p-6 bg-brand-sand rounded-xl text-left max-w-md mx-auto mb-8 space-y-3 border border-brand-sky"
+              >
                 <div className="flex justify-between items-center border-b border-brand-sky/60 pb-2">
                   <span className="text-xs text-gray-500 font-semibold uppercase">Booking Reference</span>
-                  <span className="text-sm font-bold text-brand-navy">{useCheckoutStore.getState().confirmedBookingId || "RCN-8849-2A"}</span>
+                  <span className="text-sm font-bold text-brand-navy">{useCheckoutStore.getState().confirmedBookingId || ""}</span>
                 </div>
                 <div className="flex justify-between items-center text-xs text-gray-600">
                   <span>Payment Status</span>
@@ -509,16 +542,20 @@ export function CheckoutFlow() {
                   <span>GST Tax Compliance</span>
                   <span className="font-bold text-slate-800">GST Invoice Issued</span>
                 </div>
-              </div>
-              <div>
+              </motion.div>
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 1 }}
+              >
                 <button 
                   onClick={() => window.location.href = "/"}
                   className="bg-brand-navy hover:bg-brand-navy/90 text-white font-bold py-3 px-8 rounded-xl transition-transform active:scale-[0.98]"
                 >
                   Back to Home
                 </button>
-              </div>
-            </div>
+              </motion.div>
+            </motion.div>
           )}
         </div>
       )}

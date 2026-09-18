@@ -83,7 +83,7 @@ const ActivityCardAdmin = ({ activity, handleDelete }: { activity: Activity, han
           {activity.category}
         </div>
         <div className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity z-20">
-          <Link href={`/admin/activities/edit/${activity.$id}`}>
+          <Link href={`/cms/activities/edit/${activity.$id}`}>
             <Button size="icon" variant="secondary" className="h-8 w-8 rounded-full shadow-lg bg-white/90 hover:bg-white text-gray-700 hover:text-brand-navy">
               <Edit2 className="h-4 w-4" />
             </Button>

@@ -348,7 +348,7 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
             <div className="flex items-center gap-4 text-[15px] font-medium text-gray-800">
               <span className="flex items-center gap-1">
                 <Star size={16} className="fill-current text-gray-900" />
-                {Number(pkg.rating) > 0 ? pkg.rating : 'New'} · <span onClick={() => setIsAllReviewsModalOpen(true)} className="underline underline-offset-4 font-semibold text-gray-600 cursor-pointer hover:text-gray-900 transition-colors">{pkg.reviews || 0} reviews</span>
+                {currentRating} · <span onClick={() => setIsAllReviewsModalOpen(true)} className="underline underline-offset-4 font-semibold text-gray-600 cursor-pointer hover:text-gray-900 transition-colors">{currentReviewsCount} reviews</span>
               </span>
               <span className="text-gray-300">•</span>
               <span className="flex items-center gap-1 text-gray-600">
@@ -393,7 +393,7 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
           <h1 className="text-[26px] font-bold mb-2 font-heading leading-tight">{pkg.title}</h1>
           <div className="flex flex-wrap gap-y-2 gap-x-4 text-[14px] text-gray-600">
              <span className="flex items-center gap-1 font-semibold text-gray-900">
-                <Star size={14} className="fill-current" /> {Number(pkg.rating) > 0 ? pkg.rating : 'New'} ({pkg.reviews || 0})
+                <Star size={14} className="fill-current" /> {currentRating} {currentReviewsCount > 0 ? `(${currentReviewsCount})` : ''}
              </span>
              <span className="flex items-center gap-1"><MapPin size={14} /> {pkg.location}</span>
              <span className="flex items-center gap-1"><Clock size={14} /> {pkg.duration}</span>

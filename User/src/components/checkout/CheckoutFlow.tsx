@@ -46,6 +46,7 @@ export function CheckoutFlow() {
   const nights = Math.max(1, Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / msPerDay));
   
   const hotelId = searchParams.get('hotelId') || useCheckoutStore.getState().selectedHotelId || 'hotel-123';
+  const isPackage = hotelId.startsWith('pkg-');
   const hotelName = searchParams.get('hotelName') || useCheckoutStore.getState().hotelName || 'The Oberoi Udaivilas';
   const hotelLocation = searchParams.get('hotelLocation') || useCheckoutStore.getState().hotelLocation || 'Udaipur, Rajasthan, India';
   const hotelImage = searchParams.get('roomImage') || searchParams.get('hotelImage') || useCheckoutStore.getState().hotelImage || 'https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=1600&auto=format&fit=crop';
@@ -330,33 +331,35 @@ export function CheckoutFlow() {
             <GuestDetailsForm />
             <TravelersForm />
             <AdditionalRequestsForm />
-            {propertyAddons === null ? (
-              <div className="bg-white rounded-xl shadow-sm border border-brand-sky p-6 md:p-8 animate-pulse">
-                <div className="h-8 bg-gray-200 rounded w-1/3 mb-4"></div>
-                <div className="h-4 bg-gray-200 rounded w-1/2 mb-8"></div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  <div className="h-32 bg-gray-200 rounded-xl"></div>
-                  <div className="h-32 bg-gray-200 rounded-xl hidden sm:block"></div>
-                  <div className="h-32 bg-gray-200 rounded-xl hidden lg:block"></div>
-                </div>
-              </div>
-            ) : (
-              <div id="addon-section" className={`transition-all duration-700 rounded-2xl ${highlightAddonSection ? "ring-2 ring-brand-coral ring-offset-4 shadow-lg shadow-brand-coral/20" : ""}`}>
-                <div 
-                  className={`grid transition-[grid-template-rows,opacity,margin] duration-500 ease-in-out ${highlightAddonSection ? 'grid-rows-[1fr] opacity-100 mb-6' : 'grid-rows-[0fr] opacity-0 mb-0'}`}
-                >
-                  <div className="overflow-hidden">
-                    <div className="bg-brand-sky/20 border border-brand-sky/50 text-brand-navy px-4 py-3 rounded-xl flex items-start gap-3">
-                      <Gem className="w-4 h-4 shrink-0 mt-0.5 text-brand-coral" />
-                      <p className="text-xs md:text-sm leading-relaxed">
-                        <strong className="font-semibold block mb-0.5 text-sm">Upgrade Your Experience</strong>
-                        Add premium services below to make your stay truly memorable, or click <strong>Continue without Addons</strong> to proceed with your current selection.
-                      </p>
-                    </div>
+            {!isPackage && (
+              propertyAddons === null ? (
+                <div className="bg-white rounded-xl shadow-sm border border-brand-sky p-6 md:p-8 animate-pulse">
+                  <div className="h-8 bg-gray-200 rounded w-1/3 mb-4"></div>
+                  <div className="h-4 bg-gray-200 rounded w-1/2 mb-8"></div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div className="h-32 bg-gray-200 rounded-xl"></div>
+                    <div className="h-32 bg-gray-200 rounded-xl hidden sm:block"></div>
+                    <div className="h-32 bg-gray-200 rounded-xl hidden lg:block"></div>
                   </div>
                 </div>
-                <AddonSelector addons={displayAddons} guests={adults} />
-              </div>
+              ) : (
+                <div id="addon-section" className={`transition-all duration-700 rounded-2xl ${highlightAddonSection ? "ring-2 ring-brand-coral ring-offset-4 shadow-lg shadow-brand-coral/20" : ""}`}>
+                  <div 
+                    className={`grid transition-[grid-template-rows,opacity,margin] duration-500 ease-in-out ${highlightAddonSection ? 'grid-rows-[1fr] opacity-100 mb-6' : 'grid-rows-[0fr] opacity-0 mb-0'}`}
+                  >
+                    <div className="overflow-hidden">
+                      <div className="bg-brand-sky/20 border border-brand-sky/50 text-brand-navy px-4 py-3 rounded-xl flex items-start gap-3">
+                        <Gem className="w-4 h-4 shrink-0 mt-0.5 text-brand-coral" />
+                        <p className="text-xs md:text-sm leading-relaxed">
+                          <strong className="font-semibold block mb-0.5 text-sm">Upgrade Your Experience</strong>
+                          Add premium services below to make your stay truly memorable, or click <strong>Continue without Addons</strong> to proceed with your current selection.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  <AddonSelector addons={displayAddons} guests={adults} />
+                </div>
+              )
             )}
           </div>
           <div className="hidden md:flex flex-col items-end gap-2">

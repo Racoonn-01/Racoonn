@@ -252,7 +252,7 @@ export default function AvailabilityPage() {
 
   const selectedRoom = rooms.find(r => r.$id === selectedRoomId);
   const roomPrice = selectedRoom ? (selectedRoom.discountPrice && selectedRoom.discountPrice > 0 ? selectedRoom.discountPrice : selectedRoom.price) : 0;
-  const baseAvailable = selectedRoom ? (selectedRoom.availableRooms || selectedRoom.occupancy || 2) : 0;
+  const baseAvailable = selectedRoom ? (Number(selectedRoom.totalRooms) || 1) : 0;
   
   // Calculate calendar days
   const year = currentMonth.getFullYear();

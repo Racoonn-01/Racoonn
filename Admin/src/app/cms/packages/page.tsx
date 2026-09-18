@@ -27,6 +27,8 @@ type ItineraryPoint = {
   description: string;
   hasHotelActions?: boolean;
   hasActivityActions?: boolean;
+  selectedHotelId?: string;
+  selectedActivityId?: string;
 }
 
 type ItineraryDay = {
@@ -1011,26 +1013,59 @@ export default function PackagesPage() {
                                       placeholder="Description (e.g. Our representative will greet you...)" 
                                       className="h-20 resize-none text-slate-600"
                                     />
-                                    <div className="flex flex-col gap-2 mt-1">
-                                      <div className="flex items-center gap-2">
-                                        <Switch 
-                                          id={`hotel-actions-${day.id}-${pIdx}`}
-                                          checked={pt.hasHotelActions || false}
-                                          onCheckedChange={(checked) => updateItineraryPoint(day.id, pIdx, 'hasHotelActions', checked)}
-                                        />
-                                        <Label htmlFor={`hotel-actions-${day.id}-${pIdx}`} className="text-sm font-medium text-slate-600 cursor-pointer">
-                                          Include Hotel Actions (View/Change Hotel buttons)
-                                        </Label>
+                                    <div className="flex flex-col gap-3 mt-3 border-t pt-3 border-slate-100">
+                                      <div>
+                                        <div className="flex items-center gap-2 mb-2">
+                                          <Switch 
+                                            id={`hotel-actions-${day.id}-${pIdx}`}
+                                            checked={pt.hasHotelActions || false}
+                                            onCheckedChange={(checked) => updateItineraryPoint(day.id, pIdx, 'hasHotelActions', checked)}
+                                          />
+                                          <Label htmlFor={`hotel-actions-${day.id}-${pIdx}`} className="text-sm font-medium text-slate-600 cursor-pointer">
+                                            Include Hotel Actions (View/Change Hotel buttons)
+                                          </Label>
+                                        </div>
+                                        {pt.hasHotelActions && (
+                                          <div className="pl-11">
+                                            <select 
+                                              value={pt.selectedHotelId || ''} 
+                                              onChange={(e) => updateItineraryPoint(day.id, pIdx, 'selectedHotelId', e.target.value)}
+                                              className="w-full max-w-md p-2 text-sm border border-gray-200 rounded-md bg-slate-50 text-gray-700 outline-none focus:border-[#E86A70] focus:ring-1 focus:ring-[#E86A70]"
+                                            >
+                                              <option value="">Select a hotel...</option>
+                                              {(formData.hotelOptions || []).map(h => (
+                                                <option key={h.id} value={h.id}>{h.title}</option>
+                                              ))}
+                                            </select>
+                                          </div>
+                                        )}
                                       </div>
-                                      <div className="flex items-center gap-2">
-                                        <Switch 
-                                          id={`activity-actions-${day.id}-${pIdx}`}
-                                          checked={pt.hasActivityActions || false}
-                                          onCheckedChange={(checked) => updateItineraryPoint(day.id, pIdx, 'hasActivityActions', checked)}
-                                        />
-                                        <Label htmlFor={`activity-actions-${day.id}-${pIdx}`} className="text-sm font-medium text-slate-600 cursor-pointer">
-                                          Include Activity Actions (View Activities button)
-                                        </Label>
+                                      
+                                      <div>
+                                        <div className="flex items-center gap-2 mb-2">
+                                          <Switch 
+                                            id={`activity-actions-${day.id}-${pIdx}`}
+                                            checked={pt.hasActivityActions || false}
+                                            onCheckedChange={(checked) => updateItineraryPoint(day.id, pIdx, 'hasActivityActions', checked)}
+                                          />
+                                          <Label htmlFor={`activity-actions-${day.id}-${pIdx}`} className="text-sm font-medium text-slate-600 cursor-pointer">
+                                            Include Activity Actions (View Activities button)
+                                          </Label>
+                                        </div>
+                                        {pt.hasActivityActions && (
+                                          <div className="pl-11">
+                                            <select 
+                                              value={pt.selectedActivityId || ''} 
+                                              onChange={(e) => updateItineraryPoint(day.id, pIdx, 'selectedActivityId', e.target.value)}
+                                              className="w-full max-w-md p-2 text-sm border border-gray-200 rounded-md bg-slate-50 text-gray-700 outline-none focus:border-[#E86A70] focus:ring-1 focus:ring-[#E86A70]"
+                                            >
+                                              <option value="">Select an activity...</option>
+                                              {(formData.activityOptions || []).map(a => (
+                                                <option key={a.id} value={a.id}>{a.title}</option>
+                                              ))}
+                                            </select>
+                                          </div>
+                                        )}
                                       </div>
                                     </div>
                                   </div>

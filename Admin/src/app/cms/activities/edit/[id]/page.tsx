@@ -61,7 +61,7 @@ export default function EditActivityPage({ params }: { params: Promise<{ id: str
       } catch (error) {
         console.error('Error fetching activity:', error);
         alert('Failed to load activity details.');
-        router.push('/admin/activities');
+        router.push('/cms/activities');
       } finally {
         setLoading(false);
       }
@@ -138,7 +138,7 @@ export default function EditActivityPage({ params }: { params: Promise<{ id: str
         }
       );
       
-      router.push('/admin/activities');
+      router.push('/cms/activities');
     } catch (error) {
       console.error('Error updating activity:', error);
       alert('Failed to update activity.');
@@ -158,7 +158,7 @@ export default function EditActivityPage({ params }: { params: Promise<{ id: str
   return (
     <div className="p-6 md:p-10 max-w-4xl mx-auto space-y-8 min-h-[calc(100vh-80px)]">
       <div className="flex items-center gap-4">
-        <Link href="/admin/activities">
+        <Link href="/cms/activities">
           <Button variant="outline" size="icon" className="rounded-full h-10 w-10">
             <ArrowLeft className="h-5 w-5" />
           </Button>
@@ -243,7 +243,7 @@ export default function EditActivityPage({ params }: { params: Promise<{ id: str
           </div>
 
           <div className="pt-6 border-t border-gray-100 flex justify-end gap-4">
-            <Link href="/admin/activities">
+            <Link href="/cms/activities">
                 <Button variant="outline" className="h-12 px-8" type="button">Cancel</Button>
             </Link>
             <Button type="submit" disabled={submitting} className="h-12 px-8">

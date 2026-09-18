@@ -348,13 +348,30 @@ export default function PackagesPage() {
     }
     if (formData.pricing.length === 0) return alert("At least one pricing slab is required")
     
+    // Sync fresh activity and hotel data before saving
+    const syncedFormData = { ...formData };
+    
+    if (syncedFormData.activityOptions) {
+      syncedFormData.activityOptions = syncedFormData.activityOptions.map(a => {
+        const freshAct = availableActivities.find(avail => avail.id === a.id);
+        return freshAct ? { ...a, ...freshAct } : a;
+      });
+    }
+
+    if (syncedFormData.hotelOptions) {
+      syncedFormData.hotelOptions = syncedFormData.hotelOptions.map(h => {
+        const freshProp = availableProperties.find(prop => prop.id === h.id);
+        return freshProp ? { ...h, ...freshProp } : h;
+      });
+    }
+
     const existingIndex = packages.findIndex(p => p.id === formData.id)
     let updated: Package[] = []
     if (existingIndex >= 0) {
       updated = [...packages]
-      updated[existingIndex] = formData
+      updated[existingIndex] = syncedFormData
     } else {
-      updated = [formData, ...packages]
+      updated = [syncedFormData, ...packages]
     }
     savePackagesToServer(updated)
     handleCloseForm()
@@ -1033,9 +1050,10 @@ export default function PackagesPage() {
                                               className="w-full max-w-md p-2 text-sm border border-gray-200 rounded-md bg-slate-50 text-gray-700 outline-none focus:border-[#E86A70] focus:ring-1 focus:ring-[#E86A70]"
                                             >
                                               <option value="">Select a hotel...</option>
-                                              {(formData.hotelOptions || []).map(h => (
-                                                <option key={h.id} value={h.id}>{h.title}</option>
-                                              ))}
+                                              {(formData.hotelOptions || []).map(h => {
+                                                const freshProp = availableProperties.find(p => p.id === h.id);
+                                                return <option key={h.id} value={h.id}>{freshProp ? freshProp.title : h.title}</option>;
+                                              })}
                                             </select>
                                           </div>
                                         )}
@@ -1060,9 +1078,10 @@ export default function PackagesPage() {
                                               className="w-full max-w-md p-2 text-sm border border-gray-200 rounded-md bg-slate-50 text-gray-700 outline-none focus:border-[#E86A70] focus:ring-1 focus:ring-[#E86A70]"
                                             >
                                               <option value="">Select an activity...</option>
-                                              {(formData.activityOptions || []).map(a => (
-                                                <option key={a.id} value={a.id}>{a.title}</option>
-                                              ))}
+                                              {(formData.activityOptions || []).map(a => {
+                                                const freshAct = availableActivities.find(avail => avail.id === a.id);
+                                                return <option key={a.id} value={a.id}>{freshAct ? freshAct.title : a.title}</option>;
+                                              })}
                                             </select>
                                           </div>
                                         )}

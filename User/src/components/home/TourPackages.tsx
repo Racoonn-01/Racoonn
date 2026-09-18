@@ -198,10 +198,37 @@ export default function TourPackages() {
             <AnimatePresence mode="popLayout">
               {packageList.filter(pkg => {
                 if (activeFilter === 'all') return true;
-                if (activeFilter === 'uttarakhand') return pkg.location.toLowerCase().includes('uttarakhand');
-                if (activeFilter === 'himachal') return pkg.location.toLowerCase().includes('himachal');
-                if (activeFilter === 'international') return pkg.location.toLowerCase().includes('international');
-                if (activeFilter === 'weekend') return pkg.duration.includes('3 Nights') || pkg.duration.includes('2 Nights');
+                const searchStr = `${pkg.title} ${pkg.location}`.toLowerCase();
+                
+                if (activeFilter === 'uttarakhand') {
+                  return searchStr.includes('uttarakhand') || 
+                         searchStr.includes('char dham') || 
+                         searchStr.includes('kedarnath') || 
+                         searchStr.includes('badrinath') || 
+                         searchStr.includes('rishikesh') || 
+                         searchStr.includes('nainital') ||
+                         searchStr.includes('mussoorie');
+                }
+                if (activeFilter === 'himachal') {
+                  return searchStr.includes('himachal') || 
+                         searchStr.includes('manali') || 
+                         searchStr.includes('shimla') || 
+                         searchStr.includes('kasol') || 
+                         searchStr.includes('spiti') || 
+                         searchStr.includes('dharamshala');
+                }
+                if (activeFilter === 'international') {
+                  return searchStr.includes('international') || 
+                         searchStr.includes('dubai') || 
+                         searchStr.includes('bali') || 
+                         searchStr.includes('maldives') || 
+                         searchStr.includes('thailand');
+                }
+                if (activeFilter === 'weekend') {
+                  return pkg.duration.includes('3 Nights') || 
+                         pkg.duration.includes('2 Nights') || 
+                         searchStr.includes('weekend');
+                }
                 return true;
               }).map((pkg) => (
                 <motion.div 

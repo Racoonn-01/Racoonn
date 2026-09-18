@@ -33,10 +33,10 @@ export default function RootLayout({
       className={`${inter.variable} ${poppins.variable} h-full antialiased`}
       suppressHydrationWarning
     >
-      <body className="min-h-full flex flex-col" suppressHydrationWarning>
+      <body className="min-h-screen flex flex-col" suppressHydrationWarning>
         <QueryProvider>
           <Navbar />
-          <main className="flex-1">{children}</main>
+          <main className="flex-1 flex flex-col">{children}</main>
           <ConditionalFooter />
           <PromoPopup />
         </QueryProvider>

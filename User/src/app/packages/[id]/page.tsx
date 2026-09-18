@@ -844,31 +844,14 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
               >
                 <X size={18} />
               </button>
-              <div className="relative h-64 sm:h-80 w-full group/slider">
-              <Swiper
-                modules={[Pagination, Autoplay]}
-                pagination={{ clickable: true }}
-                autoplay={{ delay: 3000, disableOnInteraction: false }}
-                loop={true}
-                className="w-full h-full [&_.swiper-pagination-bullet]:bg-white/50 [&_.swiper-pagination-bullet-active]:bg-white"
-              >
-                {[
-                  "https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=1200&auto=format&fit=crop",
-                  "https://images.unsplash.com/photo-1582719508461-905c673771fd?q=80&w=1200&auto=format&fit=crop",
-                  "https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?q=80&w=1200&auto=format&fit=crop"
-                ].map((img, i) => (
-                  <SwiperSlide key={i} className="relative w-full h-full">
-                    <Image 
-                      src={img} 
-                      alt={`Premium Hotel - Image ${i + 1}`} 
-                      fill 
-                      className="object-cover" 
-                    />
-                    <div className="absolute inset-0 bg-black/10 pointer-events-none" />
-                  </SwiperSlide>
-                ))}
-              </Swiper>
-            </div>
+              <div className="relative h-64 sm:h-80 w-full group/slider bg-gray-100">
+                <Image 
+                  src={hotelOptions[selectedHotel]?.image || 'https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=1200&auto=format&fit=crop'} 
+                  alt={hotelOptions[selectedHotel]?.title || "Premium Hotel Stay"} 
+                  fill 
+                  className="object-cover" 
+                />
+              </div>
               <div className="p-6 sm:p-8">
                 <div className="flex items-center gap-2 mb-2">
                   <div className="flex text-yellow-400">
@@ -879,19 +862,30 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
                   </div>
                   <span className="text-[13px] text-gray-500 font-medium">4-Star Property</span>
                 </div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-3 font-heading">Premium Hotel Stay</h3>
+                <h3 className="text-2xl font-bold text-gray-900 mb-3 font-heading">{hotelOptions[selectedHotel]?.title || 'Premium Hotel Stay'}</h3>
                 <p className="text-gray-600 text-[15px] leading-relaxed mb-6">
-                  Experience maximum comfort in our handpicked properties. Located in the heart of the city, this hotel features excellent amenities, prime locations, and top-tier hygiene standards. Wake up to beautiful views and enjoy a complimentary lavish breakfast spread each morning.
+                  {hotelOptions[selectedHotel]?.description || 'Experience maximum comfort in our handpicked properties. Located in the heart of the city, this hotel features excellent amenities, prime locations, and top-tier hygiene standards. Wake up to beautiful views and enjoy a complimentary lavish breakfast spread each morning.'}
                 </p>
                 
                 <h4 className="font-bold text-gray-900 mb-3 text-[15px]">Popular Amenities</h4>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-y-3 gap-x-4 text-[14px] text-gray-600">
-                  <span className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-brand-coral" /> Air Conditioning</span>
-                  <span className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-brand-coral" /> Free High-Speed WiFi</span>
-                  <span className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-brand-coral" /> Complimentary Breakfast</span>
-                  <span className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-brand-coral" /> Room Service</span>
-                  <span className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-brand-coral" /> Daily Housekeeping</span>
-                  <span className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-brand-coral" /> Attached Washroom</span>
+                  {hotelOptions[selectedHotel]?.tags && hotelOptions[selectedHotel].tags.length > 0 ? (
+                    hotelOptions[selectedHotel].tags.map((tag: string, idx: number) => (
+                      <span key={idx} className="flex items-center gap-2">
+                        <div className="w-1.5 h-1.5 rounded-full bg-brand-coral shrink-0" /> 
+                        {tag}
+                      </span>
+                    ))
+                  ) : (
+                    <>
+                      <span className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-brand-coral shrink-0" /> Air Conditioning</span>
+                      <span className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-brand-coral shrink-0" /> Free High-Speed WiFi</span>
+                      <span className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-brand-coral shrink-0" /> Complimentary Breakfast</span>
+                      <span className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-brand-coral shrink-0" /> Room Service</span>
+                      <span className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-brand-coral shrink-0" /> Daily Housekeeping</span>
+                      <span className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-brand-coral shrink-0" /> Attached Washroom</span>
+                    </>
+                  )}
                 </div>
               </div>
             </div>

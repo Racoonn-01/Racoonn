@@ -863,29 +863,31 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
               {/* Tab 4: Review rating */}
               {activeTab === 'reviews' && (
                 <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-                  <div className="flex items-center gap-4 mb-8 pb-8 border-b border-gray-200">
-                    <div className="text-center">
-                      <h3 className="text-[48px] font-black text-gray-900 leading-none">{currentRating}</h3>
-                      <div className="flex items-center justify-center gap-1 mt-1 text-gray-900">
-                        <Star size={12} className="fill-current" /><Star size={12} className="fill-current" /><Star size={12} className="fill-current" /><Star size={12} className="fill-current" /><StarHalf size={12} className="fill-current" />
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-6 mb-8 pb-8 border-b border-gray-200">
+                    <div className="flex items-center gap-4">
+                      <div className="text-center shrink-0">
+                        <h3 className="text-[48px] font-black text-gray-900 leading-none">{currentRating}</h3>
+                        <div className="flex items-center justify-center gap-1 mt-1 text-gray-900">
+                          <Star size={12} className="fill-current" /><Star size={12} className="fill-current" /><Star size={12} className="fill-current" /><Star size={12} className="fill-current" /><StarHalf size={12} className="fill-current" />
+                        </div>
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-[18px] text-gray-900">Guest Favorite</h4>
+                        <p className="text-gray-500 text-[14px]">Based on {currentReviewsCount} verified reviews</p>
                       </div>
                     </div>
-                    <div>
-                      <h4 className="font-bold text-[18px] text-gray-900">Guest Favorite</h4>
-                      <p className="text-gray-500 text-[14px]">Based on {currentReviewsCount} verified reviews</p>
-                    </div>
-                    <div className="ml-auto">
+                    <div className="sm:ml-auto w-full sm:w-auto">
                       {isAuthenticated ? (
                         <button 
                           onClick={() => setIsReviewModalOpen(true)}
-                          className="flex items-center gap-2 px-4 py-2 border border-gray-900 text-gray-900 rounded-lg text-[14px] font-bold hover:bg-gray-900 hover:text-white transition-colors"
+                          className="flex items-center justify-center w-full sm:w-auto gap-2 px-6 py-2.5 border border-gray-900 text-gray-900 rounded-lg text-[14px] font-bold hover:bg-gray-900 hover:text-white transition-colors"
                         >
                           <Pencil size={16} /> Write Review
                         </button>
                       ) : (
                         <button 
                           onClick={() => setIsAuthModalOpen(true)}
-                          className="flex items-center gap-2 px-4 py-2 border border-brand-coral text-brand-coral rounded-lg text-[14px] font-bold hover:bg-brand-coral hover:text-white transition-colors"
+                          className="flex items-center justify-center w-full sm:w-auto gap-2 px-6 py-2.5 border border-brand-coral text-brand-coral rounded-lg text-[14px] font-bold hover:bg-brand-coral hover:text-white transition-colors"
                         >
                           <User size={16} /> Login to Write a Review
                         </button>

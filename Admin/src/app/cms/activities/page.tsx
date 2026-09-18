@@ -186,7 +186,7 @@ export default function ActivitiesPage() {
           <p className="text-gray-500 mt-1">Manage and add activities for the User panel.</p>
         </div>
 
-        <Link href="/admin/activities/new">
+        <Link href="/cms/activities/new">
             <Button className="gap-2">
             <Plus className="h-4 w-4" /> Add Activity
             </Button>

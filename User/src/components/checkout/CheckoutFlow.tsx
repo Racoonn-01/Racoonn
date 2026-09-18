@@ -272,6 +272,7 @@ export function CheckoutFlow() {
               price,
               nights,
               rooms,
+              roomName,
               checkIn,
               checkOut,
               adults
@@ -318,6 +319,7 @@ export function CheckoutFlow() {
         price,
         nights,
         rooms,
+        roomName,
         checkIn,
         checkOut,
         adults

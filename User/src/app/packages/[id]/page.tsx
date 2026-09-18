@@ -155,6 +155,11 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
   const nightsMatch = pkg.duration.match(/(\d+)\s*Nights?/i);
   const nightsCount = nightsMatch ? parseInt(nightsMatch[1], 10) : 1;
 
+  // Find the absolute maximum allowed travelers across all slabs (default 999 if no limit defined)
+  const maxTravelersLimit = pkg.pricing && Array.isArray(pkg.pricing) && pkg.pricing.length > 0
+    ? Math.max(...pkg.pricing.map((slab: any) => Math.max(slab.maxPersons || 1, slab.minPersons || 1)))
+    : 999;
+
   const handleStartDateSelect = (date: Date | undefined) => {
     if (!date) return;
     setStartDate(date);
@@ -517,8 +522,13 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
                     </button>
                     <span className="text-[14px] text-gray-900 font-medium min-w-12.5 text-center">{adultsCount} {adultsCount === 1 ? 'adult' : 'adults'}</span>
                     <button 
-                      onClick={() => setAdultsCount(adultsCount + 1)} 
-                      className="w-5 h-5 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 hover:bg-gray-300 hover:text-gray-900 transition-colors"
+                      onClick={() => setAdultsCount(Math.min(maxTravelersLimit, adultsCount + 1))} 
+                      disabled={adultsCount >= maxTravelersLimit}
+                      className={`w-5 h-5 rounded-full flex items-center justify-center transition-colors ${
+                        adultsCount >= maxTravelersLimit 
+                          ? 'bg-gray-100 text-gray-300 cursor-not-allowed' 
+                          : 'bg-gray-200 text-gray-600 hover:bg-gray-300 hover:text-gray-900'
+                      }`}
                     >
                       +
                     </button>

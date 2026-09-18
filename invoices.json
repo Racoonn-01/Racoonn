@@ -1,5 +1,349 @@
 [
   {
+    "id": "inv-wd-auto-1789731670641-861",
+    "invoiceNumber": "INV-WD-AUTO-3356",
+    "type": "withdrawal",
+    "vendorId": "6a83ebf000333e2448b0",
+    "vendorName": "Vendor",
+    "vendorBusiness": "Vendor Business",
+    "vendorEmail": "jamesgraphicsjames@gmail.com",
+    "vendorPhone": "",
+    "vendorAddress": "haldwani",
+    "vendorGstin": "",
+    "bankName": "HDFC Bank",
+    "accountHolder": "",
+    "accountNumber": "",
+    "ifsc": "",
+    "upiId": "",
+    "bookingIds": [
+      "6a881057001b3c3ed3bc",
+      "6aa3cf67001ed0cf4a29",
+      "6aa4fdaa00268947df58",
+      "6aa50080003acb99b5ca",
+      "6aa5025d00387df2cea0",
+      "6aa503a70007a2b517d9",
+      "6aa50a8300301f2c506d"
+    ],
+    "grossAmount": 28875,
+    "platformFeeRate": 10,
+    "platformFeeAmount": 2888,
+    "issueDate": "2026-09-18",
+    "dueDate": "2026-09-18",
+    "items": [
+      {
+        "id": "gross-6a881057001b3c3ed3bc",
+        "description": "Booking #6a881057001b3c3ed3bc Revenue (Royal Palace Haldwani)",
+        "quantity": 1,
+        "unitPrice": 2625,
+        "amount": 2625,
+        "bookingId": "6a881057001b3c3ed3bc"
+      },
+      {
+        "id": "gross-6aa3cf67001ed0cf4a29",
+        "description": "Booking #6aa3cf67001ed0cf4a29 Revenue (Royal Palace Haldwani)",
+        "quantity": 1,
+        "unitPrice": 2625,
+        "amount": 2625,
+        "bookingId": "6aa3cf67001ed0cf4a29"
+      },
+      {
+        "id": "gross-6aa4fdaa00268947df58",
+        "description": "Booking #6aa4fdaa00268947df58 Revenue (Royal Palace Haldwani)",
+        "quantity": 1,
+        "unitPrice": 5250,
+        "amount": 5250,
+        "bookingId": "6aa4fdaa00268947df58"
+      },
+      {
+        "id": "gross-6aa50080003acb99b5ca",
+        "description": "Booking #6aa50080003acb99b5ca Revenue (Royal Palace Haldwani)",
+        "quantity": 1,
+        "unitPrice": 5250,
+        "amount": 5250,
+        "bookingId": "6aa50080003acb99b5ca"
+      },
+      {
+        "id": "gross-6aa5025d00387df2cea0",
+        "description": "Booking #6aa5025d00387df2cea0 Revenue (Royal Palace Haldwani)",
+        "quantity": 1,
+        "unitPrice": 5250,
+        "amount": 5250,
+        "bookingId": "6aa5025d00387df2cea0"
+      },
+      {
+        "id": "gross-6aa503a70007a2b517d9",
+        "description": "Booking #6aa503a70007a2b517d9 Revenue (Royal Palace Haldwani)",
+        "quantity": 1,
+        "unitPrice": 5250,
+        "amount": 5250,
+        "bookingId": "6aa503a70007a2b517d9"
+      },
+      {
+        "id": "gross-6aa50a8300301f2c506d",
+        "description": "Booking #6aa50a8300301f2c506d Revenue (Royal Palace Haldwani)",
+        "quantity": 1,
+        "unitPrice": 2625,
+        "amount": 2625,
+        "bookingId": "6aa50a8300301f2c506d"
+      },
+      {
+        "id": "fee-deduction-1789731670641",
+        "description": "Racoonn Platform Commission Fee (10%)",
+        "quantity": 1,
+        "unitPrice": -2888,
+        "amount": -2888
+      }
+    ],
+    "subtotal": 28875,
+    "taxRate": 18,
+    "taxAmount": 0,
+    "discount": 0,
+    "totalAmount": 25987,
+    "status": "Sent",
+    "notes": "Automated withdrawal generated after 72 hours of booking completion.",
+    "createdAt": "2026-09-18T11:41:10.641Z"
+  },
+  {
+    "id": "inv-wd-auto-1789731667083-783",
+    "invoiceNumber": "INV-WD-AUTO-7162",
+    "type": "withdrawal",
+    "vendorId": "6a82be9e000db1741375",
+    "vendorName": "Vendor",
+    "vendorBusiness": "Vendor Business",
+    "vendorEmail": "lucifergaming94s@gmail.com",
+    "vendorPhone": "",
+    "vendorAddress": "Preet Tech, near Krishna Hospital, Subhash Nagar, Bhotia Parao, Haldwani, Uttarakhand 263139",
+    "vendorGstin": "",
+    "bankName": "HDFC Bank",
+    "accountHolder": "",
+    "accountNumber": "",
+    "ifsc": "",
+    "upiId": "royalgarden@oksbi",
+    "bookingIds": [
+      "6a82ceda00369abec2a6",
+      "6a82cef10017288607af",
+      "6a82cf580002bababe80",
+      "6a82cf9d00249c448269",
+      "6a82daf8001e9e2df7e1",
+      "6a82e0a2000c9efa34b3"
+    ],
+    "grossAmount": 63000,
+    "platformFeeRate": 10,
+    "platformFeeAmount": 6300,
+    "issueDate": "2026-09-18",
+    "dueDate": "2026-09-18",
+    "items": [
+      {
+        "id": "gross-6a82ceda00369abec2a6",
+        "description": "Booking #6a82ceda00369abec2a6 Revenue (Royal Garden)",
+        "quantity": 1,
+        "unitPrice": 21000,
+        "amount": 21000,
+        "bookingId": "6a82ceda00369abec2a6"
+      },
+      {
+        "id": "gross-6a82cef10017288607af",
+        "description": "Booking #6a82cef10017288607af Revenue (Royal Garden)",
+        "quantity": 1,
+        "unitPrice": 15750,
+        "amount": 15750,
+        "bookingId": "6a82cef10017288607af"
+      },
+      {
+        "id": "gross-6a82cf580002bababe80",
+        "description": "Booking #6a82cf580002bababe80 Revenue (Royal Garden)",
+        "quantity": 1,
+        "unitPrice": 18375,
+        "amount": 18375,
+        "bookingId": "6a82cf580002bababe80"
+      },
+      {
+        "id": "gross-6a82cf9d00249c448269",
+        "description": "Booking #6a82cf9d00249c448269 Revenue (Royal Garden)",
+        "quantity": 1,
+        "unitPrice": 2625,
+        "amount": 2625,
+        "bookingId": "6a82cf9d00249c448269"
+      },
+      {
+        "id": "gross-6a82daf8001e9e2df7e1",
+        "description": "Booking #6a82daf8001e9e2df7e1 Revenue (Royal Garden)",
+        "quantity": 1,
+        "unitPrice": 2625,
+        "amount": 2625,
+        "bookingId": "6a82daf8001e9e2df7e1"
+      },
+      {
+        "id": "gross-6a82e0a2000c9efa34b3",
+        "description": "Booking #6a82e0a2000c9efa34b3 Revenue (Royal Garden)",
+        "quantity": 1,
+        "unitPrice": 2625,
+        "amount": 2625,
+        "bookingId": "6a82e0a2000c9efa34b3"
+      },
+      {
+        "id": "fee-deduction-1789731667083",
+        "description": "Racoonn Platform Commission Fee (10%)",
+        "quantity": 1,
+        "unitPrice": -6300,
+        "amount": -6300
+      }
+    ],
+    "subtotal": 63000,
+    "taxRate": 18,
+    "taxAmount": 0,
+    "discount": 0,
+    "totalAmount": 56700,
+    "status": "Sent",
+    "notes": "Automated withdrawal generated after 72 hours of booking completion.",
+    "createdAt": "2026-09-18T11:41:07.083Z"
+  },
+  {
+    "id": "inv-wd-auto-1789731663224-149",
+    "invoiceNumber": "INV-WD-AUTO-5960",
+    "type": "withdrawal",
+    "vendorId": "6a54bd42001c26364da4",
+    "vendorName": "Vendor",
+    "vendorBusiness": "Vendor Business",
+    "vendorEmail": "rajattornado@gmail.com",
+    "vendorPhone": "",
+    "vendorAddress": "",
+    "vendorGstin": "",
+    "bankName": "",
+    "accountHolder": "",
+    "accountNumber": "",
+    "ifsc": "",
+    "upiId": "",
+    "bookingIds": [
+      "6a74622e001a3240c87d"
+    ],
+    "grossAmount": 4900,
+    "platformFeeRate": 10,
+    "platformFeeAmount": 490,
+    "issueDate": "2026-09-18",
+    "dueDate": "2026-09-18",
+    "items": [
+      {
+        "id": "gross-6a74622e001a3240c87d",
+        "description": "Booking #6a74622e001a3240c87d Revenue (Luxury Stay)",
+        "quantity": 1,
+        "unitPrice": 4900,
+        "amount": 4900,
+        "bookingId": "6a74622e001a3240c87d"
+      },
+      {
+        "id": "fee-deduction-1789731663224",
+        "description": "Racoonn Platform Commission Fee (10%)",
+        "quantity": 1,
+        "unitPrice": -490,
+        "amount": -490
+      }
+    ],
+    "subtotal": 4900,
+    "taxRate": 18,
+    "taxAmount": 0,
+    "discount": 0,
+    "totalAmount": 4410,
+    "status": "Sent",
+    "notes": "Automated withdrawal generated after 72 hours of booking completion.",
+    "createdAt": "2026-09-18T11:41:03.224Z"
+  },
+  {
+    "id": "inv-wd-auto-1789731658994-409",
+    "invoiceNumber": "INV-WD-AUTO-2507",
+    "type": "withdrawal",
+    "vendorId": "6a44e9d4003015938636",
+    "vendorName": "Vendor",
+    "vendorBusiness": "Vendor Business",
+    "vendorEmail": "blackrolex1144@gmail.com",
+    "vendorPhone": "",
+    "vendorAddress": "Dewalchaurh kham near ram darbar",
+    "vendorGstin": "",
+    "bankName": "HDFC Bank",
+    "accountHolder": "",
+    "accountNumber": "",
+    "ifsc": "",
+    "upiId": "",
+    "bookingIds": [
+      "6a6782fb00314e10aac4",
+      "6a67850c003be8747852",
+      "6a69b7a70034fe123976",
+      "6a69bd49000dfd65fe6d",
+      "6a69bddb0027d70df5e9",
+      "6a82d73a00010ec9cdfa"
+    ],
+    "grossAmount": 105211,
+    "platformFeeRate": 10,
+    "platformFeeAmount": 10521,
+    "issueDate": "2026-09-18",
+    "dueDate": "2026-09-18",
+    "items": [
+      {
+        "id": "gross-6a6782fb00314e10aac4",
+        "description": "Booking #6a6782fb00314e10aac4 Revenue (Golden Edit)",
+        "quantity": 1,
+        "unitPrice": 105,
+        "amount": 105,
+        "bookingId": "6a6782fb00314e10aac4"
+      },
+      {
+        "id": "gross-6a67850c003be8747852",
+        "description": "Booking #6a67850c003be8747852 Revenue (Golden Edit)",
+        "quantity": 1,
+        "unitPrice": 105,
+        "amount": 105,
+        "bookingId": "6a67850c003be8747852"
+      },
+      {
+        "id": "gross-6a69b7a70034fe123976",
+        "description": "Booking #6a69b7a70034fe123976 Revenue (Royal Town)",
+        "quantity": 1,
+        "unitPrice": 52500,
+        "amount": 52500,
+        "bookingId": "6a69b7a70034fe123976"
+      },
+      {
+        "id": "gross-6a69bd49000dfd65fe6d",
+        "description": "Booking #6a69bd49000dfd65fe6d Revenue (Royal Town)",
+        "quantity": 1,
+        "unitPrice": 26250,
+        "amount": 26250,
+        "bookingId": "6a69bd49000dfd65fe6d"
+      },
+      {
+        "id": "gross-6a69bddb0027d70df5e9",
+        "description": "Booking #6a69bddb0027d70df5e9 Revenue (Royal Town)",
+        "quantity": 1,
+        "unitPrice": 26250,
+        "amount": 26250,
+        "bookingId": "6a69bddb0027d70df5e9"
+      },
+      {
+        "id": "gross-6a82d73a00010ec9cdfa",
+        "description": "Booking #6a82d73a00010ec9cdfa Revenue (Golden Edit)",
+        "quantity": 1,
+        "unitPrice": 1,
+        "amount": 1,
+        "bookingId": "6a82d73a00010ec9cdfa"
+      },
+      {
+        "id": "fee-deduction-1789731658993",
+        "description": "Racoonn Platform Commission Fee (10%)",
+        "quantity": 1,
+        "unitPrice": -10521,
+        "amount": -10521
+      }
+    ],
+    "subtotal": 105211,
+    "taxRate": 18,
+    "taxAmount": 0,
+    "discount": 0,
+    "totalAmount": 94690,
+    "status": "Sent",
+    "notes": "Automated withdrawal generated after 72 hours of booking completion.",
+    "createdAt": "2026-09-18T11:40:58.994Z"
+  },
+  {
     "id": "inv-wd-1789566604415",
     "invoiceNumber": "RAC-WD-2026-463",
     "type": "withdrawal",

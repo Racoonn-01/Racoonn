@@ -359,7 +359,7 @@ export const useCheckoutStore = create<CheckoutState>((set, get) => ({
       const perNightPrice = bookingData.price || 3500;
       const nightsCount = bookingData.nights || 1;
       const roomsCount = bookingData.rooms || 1;
-      const isPackage = (bookingData.roomName || '').startsWith('Package:') || (bookingData.roomName || '').toLowerCase().includes('package');
+      const isPackage = (bookingData.roomName || '').startsWith('Package:') || (bookingData.roomName || '').toLowerCase().includes('package') || (bookingData.hotelId || '').startsWith('pkg-');
 
       const calcNights = isPackage ? 1 : nightsCount;
       const calcRooms = isPackage ? 1 : roomsCount;
@@ -496,7 +496,7 @@ export const useCheckoutStore = create<CheckoutState>((set, get) => ({
             addonsList: addonsList,
             gstRate: gstRate,
             gstAmount: gstAmount,
-            isPackage: (bookingData.roomName || '').startsWith('Package:') || (bookingData.roomName || '').toLowerCase().includes('package')
+            isPackage: (bookingData.roomName || '').startsWith('Package:') || (bookingData.roomName || '').toLowerCase().includes('package') || (bookingData.hotelId || '').startsWith('pkg-')
           })
         });
         

@@ -2,7 +2,6 @@
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
 import { Star, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { createReview, getProperty } from '@/lib/appwrite/api';
@@ -54,9 +53,9 @@ export default function LeaveReviewModal({ isOpen, onClose, booking }: LeaveRevi
       setRating(0);
       setHoverRating(0);
       setReviewText('');
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Failed to submit review:', error);
-      toast.error(error.message || 'Failed to submit review');
+      toast.error(error instanceof Error ? error.message : 'Failed to submit review');
     } finally {
       setIsSubmitting(false);
     }
@@ -64,7 +63,7 @@ export default function LeaveReviewModal({ isOpen, onClose, booking }: LeaveRevi
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-125">
         <DialogHeader>
           <DialogTitle className="text-2xl font-heading font-bold text-brand-navy">Leave a Review</DialogTitle>
           <DialogDescription>
@@ -96,11 +95,11 @@ export default function LeaveReviewModal({ isOpen, onClose, booking }: LeaveRevi
 
           <div className="space-y-2">
             <label className="text-sm font-bold text-brand-navy">Write your review</label>
-            <Textarea
+            <textarea
               placeholder="Tell us about your experience..."
               value={reviewText}
-              onChange={(e) => setReviewText(e.target.value)}
-              className="min-h-[120px] resize-none"
+              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setReviewText(e.target.value)}
+              className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 min-h-30 resize-none"
             />
           </div>
         </div>

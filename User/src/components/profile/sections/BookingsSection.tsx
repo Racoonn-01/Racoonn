@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Clock, MapPin, FileText, Star, Loader2 } from 'lucide-react';
+import { Clock, MapPin, Star, Loader2 } from 'lucide-react';
 import Image from 'next/image';
 import { databases } from '@/lib/appwrite/config';
 import { useAuthStore } from '@/store/authStore';

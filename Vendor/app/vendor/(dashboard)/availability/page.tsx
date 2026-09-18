@@ -694,7 +694,7 @@ export default function AvailabilityPage() {
                         </SelectTrigger>
                         <SelectContent className="rounded-2xl shadow-lg border-slate-100">
                           <SelectItem value="none" className="font-medium cursor-pointer rounded-xl mx-1 my-0.5">Select Room</SelectItem>
-                          <SelectItem value="all" className="font-medium cursor-pointer rounded-xl mx-1 my-0.5 font-bold text-brand-coral">All Rooms</SelectItem>
+                          <SelectItem value="all" className="cursor-pointer rounded-xl mx-1 my-0.5 font-bold text-brand-coral">All Rooms</SelectItem>
                           {filteredRooms.map(room => (
                             <SelectItem key={room.$id} value={room.$id} className="font-medium cursor-pointer rounded-xl mx-1 my-0.5">{room.name}</SelectItem>
                           ))}

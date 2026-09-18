@@ -892,6 +892,25 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
                 </div>
               )}
 
+              {/* Common Contact Us Section for Main Tabs */}
+              {['plan', 'stays', 'activities'].includes(activeTab) && (
+                <div className="mt-12 pt-8 border-t border-gray-200 animate-in fade-in duration-500">
+                  <h3 className="text-[20px] font-bold text-gray-900 mb-6 font-heading">Get in Touch</h3>
+                  <div className="bg-gray-50 rounded-2xl p-6 sm:p-8 border border-gray-200">
+                    <p className="text-gray-700 mb-6 text-[15px]">Have a special request or need more details about this package? Our travel experts are here to help!</p>
+                    <div className="flex flex-col sm:flex-row gap-4">
+                      <a href="tel:+918954442144" className="flex items-center justify-center gap-2 bg-gray-900 hover:bg-black text-white font-bold py-3.5 px-6 rounded-xl transition-all shadow-md w-full sm:w-auto">
+                        <PhoneCall size={18} />
+                        Call Us Now
+                      </a>
+                      <a href="mailto:hello@racoonn.com" className="flex items-center justify-center gap-2 bg-white hover:bg-gray-50 text-gray-900 border border-gray-300 font-bold py-3.5 px-6 rounded-xl transition-all shadow-sm w-full sm:w-auto">
+                        Email Support
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              )}
+
             </div>
           </div>
         </div>

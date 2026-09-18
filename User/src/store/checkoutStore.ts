@@ -401,42 +401,6 @@ export const useCheckoutStore = create<CheckoutState>((set, get) => ({
       const platformCommissionAmount = Math.round((roomAmount * (platformCommissionRate / 100)) * 100) / 100;
       const vendorSettlement = Math.round((totalAmount - platformCommissionAmount) * 100) / 100;
 
-      // 1. Create Booking
-      await databases.createDocument(DATABASE_ID, 'bookings', bookingId, {
-        userId: user.$id,
-        hotelId: bookingData.hotelId || get().selectedHotelId || 'hotel-123',
-        roomId: bookingData.roomName || 'Unknown Room',
-        checkIn: bookingData.checkIn,
-        checkOut: bookingData.checkOut,
-        nights: nightsCount,
-        status: 'Confirmed',
-        paymentStatus: 'Paid',
-        hotelName: bookingData.hotelName,
-        hotelImage: (bookingData.hotelImage || get().hotelImage || '').length > 1000 
-          ? 'https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=1600&auto=format&fit=crop'
-          : (bookingData.hotelImage || get().hotelImage || 'https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=1600&auto=format&fit=crop'),
-        hotelLocation: bookingData.hotelLocation || get().hotelLocation || 'Udaipur, Rajasthan, India',
-        adults: bookingData.adults || 2,
-        roomPricePerNight: gstCalc.pricePerNight,
-        gstPercentage: gstCalc.gstRate,
-        gstAmount: gstCalc.gstAmount,
-        gstType: gstCalc.gstStatus,
-        priceBeforeTax: gstCalc.roomAmount,
-        priceAfterTax: gstCalc.totalAmount,
-        taxableAmount: gstCalc.roomAmount + addons,
-        
-        // Dynamic Pricing Fields
-        standardCapacity: pricing.standardCapacity,
-        maximumCapacity: pricing.maximumCapacity,
-        totalGuests: bookingData.adults || 2,
-        extraGuests: pricing.extraGuests * roomsCount,
-        extraPersonCharge: pricing.extraPersonCharge,
-        baseRoomAmount: totalBaseRoomAmount,
-        extraGuestAmount: totalExtraGuestAmount,
-        pricingBreakdown: JSON.stringify(pricing.pricingBreakdown),
-        snapshotRoomConfig: JSON.stringify(pricingParams),
-      });
-
       // Format additional travelers and GST metadata info
       let finalSpecialRequests = guestDetails.specialRequests || '';
       finalSpecialRequests += `\n[GST Info: Rate=${gstRate}%, Taxable=₹${roomAmount}, GST=₹${gstAmount}, VendorPayout=₹${vendorSettlement}]`;
@@ -453,65 +417,92 @@ export const useCheckoutStore = create<CheckoutState>((set, get) => ({
         }
       }
 
-      // 2. Create Guest Details
-      await databases.createDocument(DATABASE_ID, 'booking_guests', ID.unique(), {
-        bookingId: bookingId,
-        firstName: guestDetails.firstName,
-        lastName: guestDetails.lastName,
-        email: guestDetails.email,
-        phone: guestDetails.phone,
-        country: guestDetails.country,
-        specialRequests: finalSpecialRequests.trim()
-      });
+      // Run Appwrite database creations concurrently for speed
+      await Promise.all([
+        // 1. Create Booking
+        databases.createDocument(DATABASE_ID, 'bookings', bookingId, {
+          userId: user.$id,
+          hotelId: bookingData.hotelId || get().selectedHotelId || 'hotel-123',
+          roomId: bookingData.roomName || 'Unknown Room',
+          checkIn: bookingData.checkIn,
+          checkOut: bookingData.checkOut,
+          nights: nightsCount,
+          status: 'Confirmed',
+          paymentStatus: 'Paid',
+          hotelName: bookingData.hotelName,
+          hotelImage: (bookingData.hotelImage || get().hotelImage || '').length > 1000 
+            ? 'https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=1600&auto=format&fit=crop'
+            : (bookingData.hotelImage || get().hotelImage || 'https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=1600&auto=format&fit=crop'),
+          hotelLocation: bookingData.hotelLocation || get().hotelLocation || 'Udaipur, Rajasthan, India',
+          adults: bookingData.adults || 2,
+          roomPricePerNight: gstCalc.pricePerNight,
+          gstPercentage: gstCalc.gstRate,
+          gstAmount: gstCalc.gstAmount,
+          gstType: gstCalc.gstStatus,
+          priceBeforeTax: gstCalc.roomAmount,
+          priceAfterTax: gstCalc.totalAmount,
+          taxableAmount: gstCalc.roomAmount + addons,
+          
+          // Dynamic Pricing Fields
+          standardCapacity: pricing.standardCapacity,
+          maximumCapacity: pricing.maximumCapacity,
+          totalGuests: bookingData.adults || 2,
+          extraGuests: pricing.extraGuests * roomsCount,
+          extraPersonCharge: pricing.extraPersonCharge,
+          baseRoomAmount: totalBaseRoomAmount,
+          extraGuestAmount: totalExtraGuestAmount,
+          pricingBreakdown: JSON.stringify(pricing.pricingBreakdown),
+          snapshotRoomConfig: JSON.stringify(pricingParams),
+        }),
 
-      // 3. Create Payment Details
-      await databases.createDocument(DATABASE_ID, 'booking_payments', ID.unique(), {
-        bookingId: bookingId,
-        roomPrice: roomAmount,
-        taxes: gstAmount,
-        serviceFees: addons,
-        discount: discount,
-        totalAmount: totalAmount
-      });
+        // 2. Create Guest Details
+        databases.createDocument(DATABASE_ID, 'booking_guests', ID.unique(), {
+          bookingId: bookingId,
+          firstName: guestDetails.firstName,
+          lastName: guestDetails.lastName,
+          email: guestDetails.email,
+          phone: guestDetails.phone,
+          country: guestDetails.country,
+          specialRequests: finalSpecialRequests.trim()
+        }),
 
-      // 4. Send Confirmation Email
-      try {
-        const emailResponse = await fetch('/api/email/booking-confirmation', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            hotelName: bookingData.hotelName,
-            hotelLocation: bookingData.hotelLocation || get().hotelLocation,
-            price: totalAmount,
-            nights: bookingData.nights,
-            checkIn: bookingData.checkIn,
-            checkOut: bookingData.checkOut,
-            adults: bookingData.adults || 2,
-            email: guestDetails.email,
-            firstName: guestDetails.firstName,
-            lastName: guestDetails.lastName,
-            bookingId: bookingId.substring(0, 8).toUpperCase(),
-            addonsList: addonsList,
-            gstRate: gstRate,
-            gstAmount: gstAmount,
-            isPackage: (bookingData.roomName || '').startsWith('Package:') || (bookingData.roomName || '').toLowerCase().includes('package') || (bookingData.hotelId || '').startsWith('pkg-')
-          })
-        });
-        
-        if (!emailResponse.ok) {
-          const errorData = await emailResponse.json().catch(() => ({}));
-          console.error("Email API failed:", emailResponse.status, errorData);
-        } else {
-          console.log("Confirmation email sent successfully!");
-        }
-      } catch (emailError) {
-        console.error("Failed to send confirmation email:", emailError);
-        // Silently fail if email is not sent, booking is already successful
-      }
+        // 3. Create Payment Details
+        databases.createDocument(DATABASE_ID, 'booking_payments', ID.unique(), {
+          bookingId: bookingId,
+          roomPrice: roomAmount,
+          taxes: gstAmount,
+          serviceFees: addons,
+          discount: discount,
+          totalAmount: totalAmount
+        })
+      ]);
 
-      // Move to success step
+      // 4. Send Confirmation Email (Fire and forget, do not await!)
+      fetch('/api/email/booking-confirmation', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          hotelName: bookingData.hotelName,
+          hotelLocation: bookingData.hotelLocation || get().hotelLocation,
+          price: totalAmount,
+          nights: bookingData.nights,
+          checkIn: bookingData.checkIn,
+          checkOut: bookingData.checkOut,
+          adults: bookingData.adults || 2,
+          email: guestDetails.email,
+          firstName: guestDetails.firstName,
+          lastName: guestDetails.lastName,
+          bookingId: bookingId.substring(0, 8).toUpperCase(),
+          addonsList: addonsList,
+          gstRate: gstRate,
+          gstAmount: gstAmount,
+          isPackage: (bookingData.roomName || '').startsWith('Package:') || (bookingData.roomName || '').toLowerCase().includes('package') || (bookingData.hotelId || '').startsWith('pkg-')
+        })
+      }).catch(err => console.error("Background email task failed:", err));
+
+      // Move to success step immediately
       set({ 
         currentStep: 4, 
         isSubmitting: false, 

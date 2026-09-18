@@ -180,11 +180,11 @@ export default function PackagesPage() {
   const toggleSelectProperty = (prop: { id: string; title: string; location?: string; city?: string; image?: string; price?: number }) => {
     setFormData(prev => {
       const currentList = prev.hotelOptions || [];
-      const exists = currentList.some(h => h.id === prop.id || h.title === prop.title);
+      const exists = currentList.some(h => h.id === prop.id);
       if (exists) {
         return {
           ...prev,
-          hotelOptions: currentList.filter(h => h.id !== prop.id && h.title !== prop.title)
+          hotelOptions: currentList.filter(h => h.id !== prop.id)
         };
       } else {
         return {
@@ -209,11 +209,11 @@ export default function PackagesPage() {
   const toggleSelectActivity = (act: { id: string; title: string; description?: string; image?: string; pricePerPerson?: number; priceLabel?: string }) => {
     setFormData(prev => {
       const currentList = prev.activityOptions || [];
-      const exists = currentList.some(a => a.id === act.id || a.title === act.title);
+      const exists = currentList.some(a => a.id === act.id);
       if (exists) {
         return {
           ...prev,
-          activityOptions: currentList.filter(a => a.id !== act.id && a.title !== act.title)
+          activityOptions: currentList.filter(a => a.id !== act.id)
         };
       } else {
         return {
@@ -777,7 +777,7 @@ export default function PackagesPage() {
                   availableProperties
                     .filter(p => p.title?.toLowerCase().includes(propertySearch.toLowerCase()) || p.location?.toLowerCase().includes(propertySearch.toLowerCase()))
                     .map((prop) => {
-                      const isSelected = (formData.hotelOptions || []).some(h => h.id === prop.id || h.title === prop.title);
+                      const isSelected = (formData.hotelOptions || []).some(h => h.id === prop.id);
                       return (
                         <div 
                           key={prop.id}
@@ -852,7 +852,7 @@ export default function PackagesPage() {
                   return mergedActivities
                     .filter(a => a.title.toLowerCase().includes(activitySearch.toLowerCase()) || (a.description || "").toLowerCase().includes(activitySearch.toLowerCase()))
                     .map((act) => {
-                      const isSelected = (formData.activityOptions || []).some(a => a.id === act.id || a.title === act.title);
+                      const isSelected = (formData.activityOptions || []).some(a => a.id === act.id);
                       return (
                       <div 
                         key={act.id}

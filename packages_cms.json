@@ -114,12 +114,12 @@
     ],
     "activityOptions": [
       {
-        "id": "6a69abfa00163684a891",
+        "id": "6aacd7f70031a4b1ddf0",
         "title": "Testing",
-        "description": "Elevate your travel experience with curated adventures and memorable local activities.\nElevate your travel experience with curated adventures and memorable local activities.\n",
-        "image": "https://sgp.cloud.appwrite.io/v1/storage/buckets/6a3e398000280b2b3d20/files/6a69abf90010ec46ba4b/view?project=6a3bce6900381359c3ce",
-        "pricePerPerson": 1400,
-        "priceLabel": "+ ₹1400 / person"
+        "description": "Testing",
+        "image": "https://sgp.cloud.appwrite.io/v1/storage/buckets/6a3e398000280b2b3d20/files/6aacd7f6002a1af92a4a/view?project=6a3bce6900381359c3ce",
+        "pricePerPerson": 20000,
+        "priceLabel": "+ ₹20000 / person"
       }
     ]
   }

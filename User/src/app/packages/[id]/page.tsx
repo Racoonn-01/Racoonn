@@ -682,7 +682,7 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
                                 ))}
                               </div>
                               <div className="shrink-0">
-                                {hotel.isDefault ? (
+                                {index === 0 ? (
                                   <span className="text-[13px] font-bold text-brand-coral bg-brand-coral/10 px-3 py-1 rounded-full border border-brand-coral/20">
                                     Included in Package
                                   </span>

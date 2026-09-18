@@ -895,7 +895,7 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
                   {currentReviewsCount > 0 ? (
                     <div className="mt-8">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                        {reviewsData.slice(0, 3).map((review: any, i: number) => (
+                        {reviewsData.slice(0, 4).map((review: any, i: number) => (
                           <div key={review.$id || i} className="bg-slate-50 p-6 rounded-2xl">
                             <div className="flex items-center gap-4 mb-4">
                               <div className="w-12 h-12 relative rounded-full overflow-hidden shrink-0 bg-gray-200">

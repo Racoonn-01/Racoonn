@@ -815,7 +815,7 @@ export default function PackagesPage() {
             {/* Activity Preset Selector Grid */}
             <div className="space-y-3">
               <div className="flex items-center justify-between gap-4">
-                <Label className="text-xs uppercase tracking-wider text-slate-500 font-bold">Select Preset Activities ({formData.activityOptions?.length || 0} Selected)</Label>
+                <Label className="text-xs uppercase tracking-wider text-slate-500 font-bold">Select Activities ({formData.activityOptions?.length || 0} Selected)</Label>
                 <div className="relative w-64">
                   <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                   <Input 

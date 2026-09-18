@@ -32,6 +32,7 @@ import { format, addDays, differenceInDays } from 'date-fns';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { Swiper, SwiperSlide } from 'swiper/react';
+import AuthModal from '@/components/auth/AuthModal';
 import { Navigation, Pagination, Autoplay } from 'swiper/modules';
 import 'swiper/css';
 import 'swiper/css/navigation';
@@ -115,6 +116,7 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
     }
     loadCMSPackage();
   }, [rawPkgId]);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('plan');
   const [openDay, setOpenDay] = useState<number>(1);
   const [selectedHotel, setSelectedHotel] = useState<number>(0);
@@ -861,12 +863,21 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
                       <p className="text-gray-500 text-[14px]">Based on {currentReviewsCount} verified reviews</p>
                     </div>
                     <div className="ml-auto">
-                      <button 
-                        onClick={() => setIsReviewModalOpen(true)}
-                        className="flex items-center gap-2 px-4 py-2 border border-gray-900 text-gray-900 rounded-lg text-[14px] font-bold hover:bg-gray-900 hover:text-white transition-colors"
-                      >
-                        <Pencil size={16} /> Write Review
-                      </button>
+                      {isAuthenticated ? (
+                        <button 
+                          onClick={() => setIsReviewModalOpen(true)}
+                          className="flex items-center gap-2 px-4 py-2 border border-gray-900 text-gray-900 rounded-lg text-[14px] font-bold hover:bg-gray-900 hover:text-white transition-colors"
+                        >
+                          <Pencil size={16} /> Write Review
+                        </button>
+                      ) : (
+                        <button 
+                          onClick={() => setIsAuthModalOpen(true)}
+                          className="flex items-center gap-2 px-4 py-2 border border-brand-coral text-brand-coral rounded-lg text-[14px] font-bold hover:bg-brand-coral hover:text-white transition-colors"
+                        >
+                          <User size={16} /> Login to Write a Review
+                        </button>
+                      )}
                     </div>
                   </div>
                   

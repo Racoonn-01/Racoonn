@@ -177,10 +177,12 @@ export function BookingSummary({
               <span className="font-medium">₹{extraGuestAmount.toLocaleString('en-IN')}</span>
             </div>
           )}
-          <div className="flex justify-between">
-            <span className="text-gray-600">Add-On Services</span>
-            <span className="font-medium text-brand-navy">₹{addons.toLocaleString('en-IN')}</span>
-          </div>
+          {!isPackage && (
+            <div className="flex justify-between">
+              <span className="text-gray-600">Add-On Services</span>
+              <span className="font-medium text-brand-navy">₹{addons.toLocaleString('en-IN')}</span>
+            </div>
+          )}
           <div className="flex justify-between items-center">
             <span className="text-gray-600 flex items-center gap-1.5">
               GST ({gstRate}%)

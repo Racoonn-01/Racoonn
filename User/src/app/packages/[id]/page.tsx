@@ -26,7 +26,7 @@ import {
   X
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { getProperties } from '@/lib/appwrite/api';
+import { getProperties, getReviews, createReview } from '@/lib/appwrite/api';
 import { Models } from 'appwrite';
 import { format, addDays, differenceInDays } from 'date-fns';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -55,6 +55,8 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
   // Available Activity Options
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [activityOptions, setActivityOptions] = useState<Record<string, any>[]>([]);
+  
+  const [reviewsData, setReviewsData] = useState<Record<string, any>[]>([]);
 
   useEffect(() => {
     async function loadCMSPackage() {
@@ -96,6 +98,13 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
                 setSelectedActivities([0]);
               }
             }
+          }
+          
+          try {
+            const reviews = await getReviews(rawPkgId);
+            setReviewsData(reviews || []);
+          } catch (err) {
+            console.error("Failed to load reviews:", err);
           }
         }
       } catch (err) {
@@ -162,6 +171,11 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
   const maxTravelersLimit = pkg.pricing && Array.isArray(pkg.pricing) && pkg.pricing.length > 0
     ? Math.max(...pkg.pricing.map((slab: any) => Math.max(slab.maxPersons || 1, slab.minPersons || 1)))
     : 999;
+
+  const currentReviewsCount = reviewsData.length;
+  const currentRating = currentReviewsCount > 0 
+    ? (reviewsData.reduce((acc, r) => acc + (r.rating || 0), 0) / currentReviewsCount).toFixed(1) 
+    : 'New';
 
   const handleStartDateSelect = (date: Date | undefined) => {
     if (!date) return;
@@ -837,14 +851,14 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
                 <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
                   <div className="flex items-center gap-4 mb-8 pb-8 border-b border-gray-200">
                     <div className="text-center">
-                      <h3 className="text-[48px] font-black text-gray-900 leading-none">{Number(pkg.rating) > 0 ? pkg.rating : 'New'}</h3>
+                      <h3 className="text-[48px] font-black text-gray-900 leading-none">{currentRating}</h3>
                       <div className="flex items-center justify-center gap-1 mt-1 text-gray-900">
                         <Star size={12} className="fill-current" /><Star size={12} className="fill-current" /><Star size={12} className="fill-current" /><Star size={12} className="fill-current" /><StarHalf size={12} className="fill-current" />
                       </div>
                     </div>
                     <div>
                       <h4 className="font-bold text-[18px] text-gray-900">Guest Favorite</h4>
-                      <p className="text-gray-500 text-[14px]">Based on {pkg.reviews || 0} verified reviews</p>
+                      <p className="text-gray-500 text-[14px]">Based on {currentReviewsCount} verified reviews</p>
                     </div>
                     <div className="ml-auto">
                       <button 
@@ -856,13 +870,13 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
                     </div>
                   </div>
                   
-                  {Number(pkg.reviews) > 0 ? (
+                  {currentReviewsCount > 0 ? (
                     <div className="mt-4">
                       <button 
                         onClick={() => setIsAllReviewsModalOpen(true)}
                         className="px-6 py-3 border border-gray-900 text-gray-900 font-bold rounded-xl hover:bg-gray-50 transition-colors"
                       >
-                        Show all {pkg.reviews} reviews
+                        Show all {currentReviewsCount} reviews
                       </button>
                     </div>
                   ) : (
@@ -1007,122 +1021,32 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
               <div className="max-w-4xl mx-auto">
                 <div className="flex items-center justify-center gap-3 mb-10 text-brand-navy">
                   <Star size={32} className="fill-current" />
-                  <h2 className="text-3xl font-black tracking-tight font-heading">4.96 · 241 reviews</h2>
+                  <h2 className="text-3xl font-black tracking-tight font-heading">{currentRating} · {currentReviewsCount} reviews</h2>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Review 1 */}
-                  <div className="bg-slate-50 p-6 rounded-2xl">
-                    <div className="flex items-center gap-4 mb-4">
-                      <div className="w-12 h-12 relative rounded-full overflow-hidden shrink-0">
-                        <Image src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=200&auto=format&fit=crop" alt="Sarah" fill className="object-cover" />
+                  {reviewsData.map((review: any, i: number) => (
+                    <div key={review.$id || i} className="bg-slate-50 p-6 rounded-2xl">
+                      <div className="flex items-center gap-4 mb-4">
+                        <div className="w-12 h-12 relative rounded-full overflow-hidden shrink-0 bg-gray-200">
+                          <Image src={`https://ui-avatars.com/api/?name=${encodeURIComponent(review.userName || 'Guest')}&background=random`} alt={review.userName} fill className="object-cover" />
+                        </div>
+                        <div>
+                          <p className="font-bold text-[16px] text-gray-900">{review.userName}</p>
+                          <p className="text-[13px] text-gray-500 font-medium">{review.$createdAt ? format(new Date(review.$createdAt), 'MMMM yyyy') : 'Just now'} • {review.category || 'Experience'}</p>
+                        </div>
+                        <div className="ml-auto flex text-yellow-400">
+                           {Array.from({ length: 5 }).map((_, idx) => (
+                             <Star key={idx} size={14} className={idx < review.rating ? "fill-current text-yellow-400" : "text-gray-300"} />
+                           ))}
+                        </div>
                       </div>
-                      <div>
-                        <p className="font-bold text-[16px] text-gray-900">Sarah</p>
-                        <p className="text-[13px] text-gray-500 font-medium">October 2025 • Location</p>
-                      </div>
+                      <p className="text-[15px] text-gray-700 leading-relaxed">{review.text}</p>
                     </div>
-                    <p className="text-[15px] text-gray-700 leading-relaxed">Absolutely breathtaking experience. The views are exactly as pictured, and the service was impeccable from start to finish. Highly recommend for a relaxing getaway.</p>
-                  </div>
-
-                  {/* Review 2 */}
-                  <div className="bg-slate-50 p-6 rounded-2xl">
-                    <div className="flex items-center gap-4 mb-4">
-                      <div className="w-12 h-12 relative rounded-full overflow-hidden shrink-0">
-                        <Image src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=200&auto=format&fit=crop" alt="Michael" fill className="object-cover" />
-                      </div>
-                      <div>
-                        <p className="font-bold text-[16px] text-gray-900">Michael</p>
-                        <p className="text-[13px] text-gray-500 font-medium">September 2025 • Amenities</p>
-                      </div>
-                    </div>
-                    <p className="text-[15px] text-gray-700 leading-relaxed">The attention to detail in this property is unmatched. We loved the private pool and the seamless check-in process. We will definitely be coming back next year.</p>
-                  </div>
-
-                  {/* Review 3 */}
-                  <div className="bg-slate-50 p-6 rounded-2xl">
-                    <div className="flex items-center gap-4 mb-4">
-                      <div className="w-12 h-12 relative rounded-full overflow-hidden shrink-0">
-                        <Image src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=200&auto=format&fit=crop" alt="Emma" fill className="object-cover" />
-                      </div>
-                      <div>
-                        <p className="font-bold text-[16px] text-gray-900">Emma</p>
-                        <p className="text-[13px] text-gray-500 font-medium">August 2025 • Cleanliness</p>
-                      </div>
-                    </div>
-                    <p className="text-[15px] text-gray-700 leading-relaxed">Spotlessly clean! I am usually very picky, but the room was pristine. The housekeeping staff did an incredible job every single day.</p>
-                  </div>
-
-                  {/* Review 4 */}
-                  <div className="bg-slate-50 p-6 rounded-2xl">
-                    <div className="flex items-center gap-4 mb-4">
-                      <div className="w-12 h-12 relative rounded-full overflow-hidden shrink-0">
-                        <Image src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=200&auto=format&fit=crop" alt="James" fill className="object-cover" />
-                      </div>
-                      <div>
-                        <p className="font-bold text-[16px] text-gray-900">James</p>
-                        <p className="text-[13px] text-gray-500 font-medium">July 2025 • Food</p>
-                      </div>
-                    </div>
-                    <p className="text-[15px] text-gray-700 leading-relaxed">The complimentary breakfast was out of this world. Fresh pastries, great coffee, and a wonderful selection of local dishes.</p>
-                  </div>
-
-                  {/* Review 5 */}
-                  <div className="bg-slate-50 p-6 rounded-2xl">
-                    <div className="flex items-center gap-4 mb-4">
-                      <div className="w-12 h-12 relative rounded-full overflow-hidden shrink-0">
-                        <Image src="https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?q=80&w=200&auto=format&fit=crop" alt="Olivia" fill className="object-cover" />
-                      </div>
-                      <div>
-                        <p className="font-bold text-[16px] text-gray-900">Olivia</p>
-                        <p className="text-[13px] text-gray-500 font-medium">June 2025 • Hospitality</p>
-                      </div>
-                    </div>
-                    <p className="text-[15px] text-gray-700 leading-relaxed">The staff went above and beyond to make our anniversary special. From the welcome drink to the personalized note in our room, 10/10.</p>
-                  </div>
-
-                  {/* Review 6 */}
-                  <div className="bg-slate-50 p-6 rounded-2xl">
-                    <div className="flex items-center gap-4 mb-4">
-                      <div className="w-12 h-12 relative rounded-full overflow-hidden shrink-0">
-                        <Image src="https://images.unsplash.com/photo-1524250502761-1ac6f2e30d43?q=80&w=200&auto=format&fit=crop" alt="David" fill className="object-cover" />
-                      </div>
-                      <div>
-                        <p className="font-bold text-[16px] text-gray-900">David</p>
-                        <p className="text-[13px] text-gray-500 font-medium">May 2025 • Comfort</p>
-                      </div>
-                    </div>
-                    <p className="text-[15px] text-gray-700 leading-relaxed">The bed was so comfortable it was hard to get up in the morning. Really high-quality linens and perfectly plump pillows.</p>
-                  </div>
-
-                  {/* Review 7 */}
-                  <div className="bg-slate-50 p-6 rounded-2xl">
-                    <div className="flex items-center gap-4 mb-4">
-                      <div className="w-12 h-12 relative rounded-full overflow-hidden shrink-0">
-                        <Image src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?q=80&w=200&auto=format&fit=crop" alt="Sophia" fill className="object-cover" />
-                      </div>
-                      <div>
-                        <p className="font-bold text-[16px] text-gray-900">Sophia</p>
-                        <p className="text-[13px] text-gray-500 font-medium">April 2025 • Location</p>
-                      </div>
-                    </div>
-                    <p className="text-[15px] text-gray-700 leading-relaxed">Perfectly situated right next to the main attractions, yet completely peaceful once you step inside the gates.</p>
-                  </div>
-
-                  {/* Review 8 */}
-                  <div className="bg-slate-50 p-6 rounded-2xl">
-                    <div className="flex items-center gap-4 mb-4">
-                      <div className="w-12 h-12 relative rounded-full overflow-hidden shrink-0">
-                        <Image src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=200&auto=format&fit=crop" alt="Daniel" fill className="object-cover" />
-                      </div>
-                      <div>
-                        <p className="font-bold text-[16px] text-gray-900">Daniel</p>
-                        <p className="text-[13px] text-gray-500 font-medium">March 2025 • Cleanliness</p>
-                      </div>
-                    </div>
-                    <p className="text-[15px] text-gray-700 leading-relaxed">Very well maintained property. Everything felt brand new and the bathrooms were spectacular.</p>
-                  </div>
-
+                  ))}
+                  {reviewsData.length === 0 && (
+                     <p className="text-gray-500 col-span-full text-center py-8">No reviews yet. Be the first to leave one!</p>
+                  )}
                 </div>
               </div>
             </div>
@@ -1219,15 +1143,26 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
                     </button>
                     <button 
                       onClick={() => {
-                        // Submit logic would go here
                         setIsSubmitting(true);
-                        setTimeout(() => {
+                        createReview({
+                          propertyId: rawPkgId,
+                          vendorId: pkg?.vendorId || 'system',
+                          userName: newReviewName,
+                          rating: newRating,
+                          text: newReviewText,
+                          category: newReviewCategory
+                        }).then(newReview => {
+                          setReviewsData(prev => [newReview, ...prev]);
                           setIsSubmitting(false);
                           setIsReviewModalOpen(false);
                           setNewRating(0);
                           setNewReviewName('');
                           setNewReviewText('');
-                        }, 1000);
+                        }).catch(err => {
+                          console.error('Failed to submit review', err);
+                          alert('Failed to submit review. Please try again.');
+                          setIsSubmitting(false);
+                        });
                       }}
                       className={`px-8 py-3 rounded-xl font-semibold text-[15px] transition-colors flex items-center gap-2 ${
                         newRating > 0 && newReviewText.length > 0 && newReviewName.length > 0

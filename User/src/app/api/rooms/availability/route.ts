@@ -1,10 +1,16 @@
 import { NextResponse } from 'next/server';
-import { databases } from '@/lib/appwrite/config';
-import { Query } from 'appwrite';
+import { Client, Databases, Query } from 'node-appwrite';
 
 const DATABASE_ID = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID!;
 
 export const dynamic = 'force-dynamic';
+
+const client = new Client()
+    .setEndpoint(process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT!)
+    .setProject(process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID!)
+    .setKey(process.env.APPWRITE_API_KEY!);
+
+const databases = new Databases(client);
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);

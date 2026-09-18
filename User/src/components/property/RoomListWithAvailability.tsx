@@ -72,6 +72,7 @@ export default function RoomListWithAvailability({
         const timestamp = new Date().getTime();
         const res = await fetch(`/api/rooms/availability?hotelId=${propertyId}&checkIn=${dCheckIn}&checkOut=${dCheckOut}&_t=${timestamp}`, { cache: 'no-store' });
         const json = await res.json();
+        console.log("CLIENT FETCH API RESPONSE:", json);
         if (json.success && json.occupied) {
           setOccupiedRooms(json.occupied);
         }
@@ -130,7 +131,8 @@ export default function RoomListWithAvailability({
           const epc = room.extraPersonCharge || 0;
           const eba = room.extraBedAvailable || false;
           
-          const roomOccupiedCount = occupiedRooms[room.name] || occupiedRooms[room.$id] || 0;
+          const roomNameKey = room.name ? room.name.trim() : "";
+          const roomOccupiedCount = occupiedRooms[roomNameKey] || occupiedRooms[room.$id] || 0;
           const roomTotalRooms = Number(room.totalRooms) || 1;
           const availableRooms = Math.max(0, roomTotalRooms - roomOccupiedCount);
           
@@ -189,8 +191,9 @@ export default function RoomListWithAvailability({
                     <span className="text-gray-300">|</span>
                     <span className="flex items-center gap-1.5"><Maximize2 size={16} className="text-gray-400 shrink-0" /> Size: {room.size || 350} sq ft</span>
                     <span className="text-gray-300 hidden sm:inline">|</span>
-                    <span className={`flex items-center gap-1.5 ${availableRooms > 0 ? 'text-[#10b981]' : 'text-red-500'}`}>
-                      <Bed size={16} className="shrink-0" /> {availableRooms} {availableRooms === 1 ? 'room' : 'rooms'} left
+                    <span className={`flex flex-col gap-1 ${availableRooms > 0 ? 'text-[#10b981]' : 'text-red-500'}`}>
+                      <span className="flex items-center gap-1.5"><Bed size={16} className="shrink-0" /> {availableRooms} {availableRooms === 1 ? 'room' : 'rooms'} left</span>
+                      <span className="text-xs text-gray-400">DB Total: {roomTotalRooms} | Occupied: {roomOccupiedCount}</span>
                     </span>
                   </div>
 

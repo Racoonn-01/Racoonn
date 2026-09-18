@@ -4,6 +4,8 @@ import { Client, Databases, Query } from 'node-appwrite';
 const DATABASE_ID = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID!;
 
 export const dynamic = 'force-dynamic';
+export const fetchCache = 'force-no-store';
+export const revalidate = 0;
 
 const client = new Client()
     .setEndpoint(process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT!)
@@ -45,7 +47,7 @@ export async function GET(req: Request) {
       // Overlap condition: (StartA < EndB) and (EndA > StartB)
       if (targetCheckIn < bookingCheckOut && targetCheckOut > bookingCheckIn) {
         // Use roomId which we saved as roomName from checkout flow
-        const roomIdentifier = booking.roomId;
+        const roomIdentifier = booking.roomId ? booking.roomId.trim() : null;
         if (roomIdentifier) {
           occupiedByRoom[roomIdentifier] = (occupiedByRoom[roomIdentifier] || 0) + (booking.rooms || 1);
         }

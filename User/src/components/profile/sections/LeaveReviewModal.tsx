@@ -15,11 +15,13 @@ interface LeaveReviewModalProps {
 }
 
 export default function LeaveReviewModal({ isOpen, onClose, booking }: LeaveReviewModalProps) {
+  const user = useAuthStore(state => state.user);
   const [rating, setRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
   const [reviewText, setReviewText] = useState('');
+  const [userName, setUserName] = useState(user?.name || '');
+  const [aspect, setAspect] = useState('Overall Stay');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const user = useAuthStore(state => state.user);
 
   const handleSubmit = async () => {
     if (!booking || !user) return;
@@ -41,10 +43,10 @@ export default function LeaveReviewModal({ isOpen, onClose, booking }: LeaveRevi
       await createReview({
         propertyId: booking.hotelId,
         vendorId: vendorId,
-        userName: user.name || 'Anonymous User',
+        userName: userName.trim() || 'Anonymous User',
         rating: rating,
         text: reviewText.trim(),
-        category: 'general'
+        category: aspect
       });
 
       toast.success('Thank you for your review!');
@@ -53,6 +55,7 @@ export default function LeaveReviewModal({ isOpen, onClose, booking }: LeaveRevi
       setRating(0);
       setHoverRating(0);
       setReviewText('');
+      setAspect('Overall Stay');
     } catch (error: unknown) {
       console.error('Failed to submit review:', error);
       toast.error(error instanceof Error ? error.message : 'Failed to submit review');
@@ -63,17 +66,28 @@ export default function LeaveReviewModal({ isOpen, onClose, booking }: LeaveRevi
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-125">
-        <DialogHeader>
-          <DialogTitle className="text-2xl font-heading font-bold text-brand-navy">Leave a Review</DialogTitle>
-          <DialogDescription>
-            How was your stay at {booking?.hotel}?
+      <DialogContent className="sm:max-w-[450px] p-0 overflow-hidden border-0 shadow-2xl rounded-3xl">
+        <div className="p-6 bg-brand-navy text-white text-center">
+          <DialogTitle className="text-2xl font-heading font-bold mb-1">Leave a Review</DialogTitle>
+          <DialogDescription className="text-white/70 text-sm">
+            How was your stay at <span className="font-bold text-white">{booking?.hotel}</span>?
           </DialogDescription>
-        </DialogHeader>
+        </div>
 
-        <div className="py-6 space-y-6">
-          <div className="flex flex-col items-center justify-center space-y-3">
-            <p className="text-sm font-bold text-gray-500 uppercase tracking-wider">Tap to Rate</p>
+        <div className="p-6 space-y-6 bg-white">
+          <div className="space-y-2">
+            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Your Name</label>
+            <input
+              type="text"
+              placeholder="Enter your name"
+              value={userName}
+              onChange={(e) => setUserName(e.target.value)}
+              className="flex w-full rounded-xl border border-gray-200 bg-gray-50/50 px-4 py-3 text-sm transition-colors focus:border-brand-coral focus:ring-1 focus:ring-brand-coral/20 outline-none"
+            />
+          </div>
+
+          <div className="space-y-3">
+            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Overall Rating</label>
             <div className="flex gap-2">
               {[1, 2, 3, 4, 5].map((star) => (
                 <button
@@ -82,11 +96,11 @@ export default function LeaveReviewModal({ isOpen, onClose, booking }: LeaveRevi
                   onClick={() => setRating(star)}
                   onMouseEnter={() => setHoverRating(star)}
                   onMouseLeave={() => setHoverRating(0)}
-                  className="p-1 transition-transform hover:scale-110"
+                  className="p-1 transition-transform hover:scale-110 focus:outline-none"
                 >
                   <Star 
-                    size={36} 
-                    className={`transition-colors ${(hoverRating || rating) >= star ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`} 
+                    size={32} 
+                    className={`transition-colors ${(hoverRating || rating) >= star ? 'fill-brand-coral text-brand-coral' : 'fill-gray-100 text-gray-200'}`} 
                   />
                 </button>
               ))}
@@ -94,22 +108,40 @@ export default function LeaveReviewModal({ isOpen, onClose, booking }: LeaveRevi
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-bold text-brand-navy">Write your review</label>
+            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">What aspect are you reviewing?</label>
+            <select
+              value={aspect}
+              onChange={(e) => setAspect(e.target.value)}
+              className="flex w-full rounded-xl border border-gray-200 bg-gray-50/50 px-4 py-3 text-sm transition-colors focus:border-brand-coral focus:ring-1 focus:ring-brand-coral/20 outline-none appearance-none cursor-pointer"
+            >
+              <option value="Overall Stay">Overall Stay</option>
+              <option value="Cleanliness">Cleanliness</option>
+              <option value="Service">Service</option>
+              <option value="Location">Location</option>
+              <option value="Facilities">Facilities</option>
+              <option value="Value for Money">Value for Money</option>
+            </select>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Your Review</label>
             <textarea
               placeholder="Tell us about your experience..."
               value={reviewText}
               onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setReviewText(e.target.value)}
-              className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 min-h-30 resize-none"
+              className="flex w-full rounded-xl border border-gray-200 bg-gray-50/50 px-4 py-3 text-sm transition-colors focus:border-brand-coral focus:ring-1 focus:ring-brand-coral/20 outline-none min-h-28 resize-none"
             />
           </div>
         </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose} disabled={isSubmitting}>Cancel</Button>
+        <DialogFooter className="p-4 sm:p-6 bg-gray-50/80 border-t border-gray-100 sm:justify-end gap-3 flex-col sm:flex-row">
+          <Button variant="outline" onClick={onClose} disabled={isSubmitting} className="rounded-xl border-gray-200 hover:bg-gray-100 font-bold h-11">
+            Cancel
+          </Button>
           <Button 
             onClick={handleSubmit} 
             disabled={isSubmitting || rating === 0 || reviewText.length < 10}
-            className="bg-brand-coral hover:bg-brand-coral/90 text-white"
+            className="bg-brand-coral hover:bg-brand-coral/90 text-white rounded-xl font-bold h-11"
           >
             {isSubmitting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
             Submit Review

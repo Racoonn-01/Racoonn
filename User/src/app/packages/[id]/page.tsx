@@ -238,10 +238,6 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
     }
 
     setIsStartOpen(false);
-    // Smoothly auto open end date picker
-    setTimeout(() => {
-      setIsEndOpen(true);
-    }, 150);
   };
 
   const handleEndDateSelect = (date: Date | undefined) => {
@@ -529,7 +525,7 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
                 <div className="flex w-full sm:w-2/3 divide-x divide-gray-300">
                   {/* Start Date Popover */}
                   <Popover open={isStartOpen} onOpenChange={setIsStartOpen}>
-                    <PopoverTrigger className="w-1/2 p-2.5 cursor-pointer hover:bg-gray-50 transition-colors text-left outline-none group">
+                    <PopoverTrigger className="w-full p-2.5 cursor-pointer hover:bg-gray-50 transition-colors text-left outline-none group">
                       <div className="text-[10px] font-bold uppercase tracking-wider text-gray-900 group-hover:text-brand-coral transition-colors">Start Date</div>
                       <div className="text-[13px] font-semibold text-gray-800 mt-0.5 whitespace-nowrap overflow-hidden text-ellipsis">
                         {startDate ? format(startDate, 'dd/MM/yyyy') : 'Add date'}
@@ -549,33 +545,6 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
                         selected={startDate}
                         onSelect={handleStartDateSelect}
                         disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
-                        className="p-1"
-                      />
-                    </PopoverContent>
-                  </Popover>
-
-                  {/* End Date Popover */}
-                  <Popover open={isEndOpen} onOpenChange={setIsEndOpen}>
-                    <PopoverTrigger className="w-1/2 p-2.5 cursor-pointer hover:bg-gray-50 transition-colors text-left outline-none group">
-                      <div className="text-[10px] font-bold uppercase tracking-wider text-gray-900 group-hover:text-brand-coral transition-colors">End Date</div>
-                      <div className="text-[13px] font-semibold text-gray-800 mt-0.5 whitespace-nowrap overflow-hidden text-ellipsis">
-                        {endDate ? format(endDate, 'dd/MM/yyyy') : 'Add date'}
-                      </div>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-4 rounded-3xl shadow-[0_12px_40px_rgba(0,0,0,0.12)] border border-gray-100 bg-white z-50" align="start" sideOffset={8}>
-                      <div className="flex items-center justify-between px-2 pb-3 mb-2 border-b border-gray-100">
-                        <div className="flex items-center gap-2">
-                          <span className="w-2.5 h-2.5 rounded-full bg-brand-navy animate-pulse" />
-                          <span className="text-xs font-bold uppercase tracking-wider text-brand-navy">
-                            Select End Date
-                          </span>
-                        </div>
-                      </div>
-                      <Calendar
-                        mode="single"
-                        selected={endDate}
-                        onSelect={handleEndDateSelect}
-                        disabled={(date) => (startDate ? date <= startDate : date < new Date(new Date().setHours(0, 0, 0, 0)))}
                         className="p-1"
                       />
                     </PopoverContent>

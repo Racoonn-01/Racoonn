@@ -289,9 +289,7 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
   }).format(effectivePricePerPerson);
 
   const toggleActivity = (index: number) => {
-    setSelectedActivities(prev => 
-      prev.includes(index) ? prev.filter(i => i !== index) : [...prev, index]
-    );
+    setSelectedActivities([index]);
   };
 
   const handleBookPackage = () => {
@@ -697,9 +695,8 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
                                             <div className="flex gap-3 mt-3">
                                               <button 
                                                 onClick={() => {
-                                                  const activity = pt.selectedActivityId 
-                                                    ? activityOptions.find(a => a.id === pt.selectedActivityId) 
-                                                    : activityOptions[0];
+                                                  const selectedActIndex = selectedActivities.length > 0 ? selectedActivities[0] : 0;
+                                                  const activity = activityOptions[selectedActIndex] || (pt.selectedActivityId ? activityOptions.find(a => a.id === pt.selectedActivityId) : activityOptions[0]);
                                                   if (activity) {
                                                     setSelectedActivityForModal(activity);
                                                     setIsActivityModalOpen(true);

@@ -178,8 +178,14 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
     setIsEndOpen(false);
   };
 
-  // Parse base price from string like "₹18,999" to number 18999
-  const basePriceNum = parseInt(pkg.price.replace(/[^\d]/g, ''), 10) || 0;
+  // Calculate base price from pricing slabs based on adults count, fallback to default price
+  let basePriceNum = parseInt(pkg.price.replace(/[^\d]/g, ''), 10) || 0;
+  if (pkg.pricing && Array.isArray(pkg.pricing) && pkg.pricing.length > 0) {
+    const applicableSlab = pkg.pricing.find((slab: any) => adultsCount >= (slab.minPersons || 1) && adultsCount <= (slab.maxPersons || 999));
+    if (applicableSlab) {
+      basePriceNum = applicableSlab.pricePerPerson || 0;
+    }
+  }
 
   // Calculate selected nights vs package base nights
   const selectedNights = startDate && endDate ? Math.max(0, differenceInDays(endDate, startDate)) : nightsCount;

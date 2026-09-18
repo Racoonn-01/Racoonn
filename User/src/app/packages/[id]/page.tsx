@@ -127,6 +127,7 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
   const [isHotelModalOpen, setIsHotelModalOpen] = useState(false);
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const [isAllReviewsModalOpen, setIsAllReviewsModalOpen] = useState(false);
+  const [activeReviewFilter, setActiveReviewFilter] = useState('All');
   const [newRating, setNewRating] = useState<number>(0);
   const [newReviewName, setNewReviewName] = useState('');
   const [newReviewCategory, setNewReviewCategory] = useState('Experience');
@@ -1048,10 +1049,11 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
               
               {/* Filter Chips */}
               <div className="flex items-center gap-2 overflow-x-auto hide-scrollbar pb-1">
-                {['All', 'View', 'Hospitality', 'Location', 'Cleanliness', 'Amenities', 'Indoor spaces', 'Comfort', 'Getting around', 'Family', 'Condition', 'Food'].map((filter, idx) => (
+                {['All', 'Experience', 'Value', 'Guide', 'Accommodation', 'Food', 'Other'].map((filter) => (
                   <button 
                     key={filter}
-                    className={`px-4 py-2 rounded-full text-[14px] font-semibold whitespace-nowrap transition-colors ${idx === 0 ? 'bg-brand-navy text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+                    onClick={() => setActiveReviewFilter(filter)}
+                    className={`px-4 py-2 rounded-full text-[14px] font-semibold whitespace-nowrap transition-colors ${activeReviewFilter === filter ? 'bg-brand-navy text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
                   >
                     {filter}
                   </button>
@@ -1068,7 +1070,7 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {reviewsData.map((review: any, i: number) => (
+                  {reviewsData.filter((r: any) => activeReviewFilter === 'All' || r.category === activeReviewFilter).map((review: any, i: number) => (
                     <div key={review.$id || i} className="bg-slate-50 p-6 rounded-2xl">
                       <div className="flex items-center gap-4 mb-4">
                         <div className="w-12 h-12 relative rounded-full overflow-hidden shrink-0 bg-gray-200">

@@ -1029,7 +1029,7 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
                     <div key={review.$id || i} className="bg-slate-50 p-6 rounded-2xl">
                       <div className="flex items-center gap-4 mb-4">
                         <div className="w-12 h-12 relative rounded-full overflow-hidden shrink-0 bg-gray-200">
-                          <Image src={`https://ui-avatars.com/api/?name=${encodeURIComponent(review.userName || 'Guest')}&background=random`} alt={review.userName} fill className="object-cover" />
+                          <img src={`https://ui-avatars.com/api/?name=${encodeURIComponent(review.userName || 'Guest')}&background=random`} alt={review.userName} className="object-cover w-full h-full" />
                         </div>
                         <div>
                           <p className="font-bold text-[16px] text-gray-900">{review.userName}</p>

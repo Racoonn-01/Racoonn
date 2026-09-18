@@ -8,12 +8,14 @@ import { useAuthStore } from '@/store/authStore';
 import { Query } from 'appwrite';
 import CancelBookingModal from './CancelBookingModal';
 import BookingDetailsModal from './BookingDetailsModal';
+import LeaveReviewModal from './LeaveReviewModal';
 
 const DATABASE_ID = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID!;
 
 export interface UIBooking {
   id: string;
   rawId: string;
+  hotelId: string;
   hotel: string;
   roomName: string;
   location: string;
@@ -32,6 +34,7 @@ export default function BookingsSection() {
   const [isLoading, setIsLoading] = useState(true);
   const [bookingToCancel, setBookingToCancel] = useState<UIBooking | null>(null);
   const [bookingToView, setBookingToView] = useState<{ booking: UIBooking, mode: 'details' | 'invoice' } | null>(null);
+  const [bookingToReview, setBookingToReview] = useState<UIBooking | null>(null);
   const user = useAuthStore(state => state.user);
 
   const fetchBookings = useCallback(async (isRefresh = false) => {
@@ -62,6 +65,7 @@ export default function BookingsSection() {
         return {
           id: String(doc.$id).substring(0, 8).toUpperCase(),
           rawId: String(doc.$id),
+          hotelId: String(doc.hotelId),
           hotel: String(doc.hotelName),
           roomName: String(doc.roomName || ''),
           location: String(doc.hotelLocation),
@@ -197,7 +201,10 @@ export default function BookingsSection() {
                     {/* Actions */}
                     <div className="mt-auto flex flex-wrap gap-3 justify-end">
                       {booking.status === 'Completed' && (
-                        <button className="px-5 py-2.5 bg-brand-coral/10 hover:bg-brand-coral/20 text-brand-coral text-sm font-bold rounded-xl transition-colors flex items-center gap-2">
+                        <button 
+                          onClick={() => setBookingToReview(booking)}
+                          className="px-5 py-2.5 bg-brand-coral/10 hover:bg-brand-coral/20 text-brand-coral text-sm font-bold rounded-xl transition-colors flex items-center gap-2"
+                        >
                           <Star size={16} /> Leave Review
                         </button>
                       )}
@@ -231,6 +238,11 @@ export default function BookingsSection() {
         onClose={() => setBookingToView(null)}
         booking={bookingToView?.booking}
         mode={bookingToView?.mode || 'details'}
+      />
+      <LeaveReviewModal
+        isOpen={!!bookingToReview}
+        onClose={() => setBookingToReview(null)}
+        booking={bookingToReview}
       />
     </div>
   );

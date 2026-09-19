@@ -6,7 +6,9 @@ import { Button } from "@/components/ui/button"
 import { CheckCircle2, XCircle, Search, Filter } from "lucide-react"
 import { Input } from "@/components/ui/input"
 
-export default function VerificationLayout({ children }: { children: React.ReactNode }) {
+import { Suspense } from "react"
+
+function VerificationLayoutContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -23,7 +25,6 @@ export default function VerificationLayout({ children }: { children: React.React
   
   const tabs = [
     { label: "KYC Verification", value: "kyc" },
-
     { label: "Pending", value: "pending" },
     { label: "Approved", value: "approved" },
     { label: "Rejected", value: "rejected" },
@@ -82,5 +83,13 @@ export default function VerificationLayout({ children }: { children: React.React
         </div>
       </div>
     </div>
+  )
+}
+
+export default function VerificationLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <Suspense fallback={<div className="p-8 text-center text-muted-foreground">Loading verification center...</div>}>
+      <VerificationLayoutContent>{children}</VerificationLayoutContent>
+    </Suspense>
   )
 }

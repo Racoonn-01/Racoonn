@@ -109,8 +109,8 @@ export default function DynamicPopularStays() {
             let rawPrice = priceRawStr ? Number(priceRawStr.replace(/[^\d.]/g, '')) : 0;
             
             // Override with actual min room price if available
-            if (propertyPriceMap[doc.$id] && propertyPriceMap[doc.$id] > 0) {
-              rawPrice = propertyPriceMap[doc.$id];
+            if (propertyPriceMap[doc.$id as string] && propertyPriceMap[doc.$id as string] > 0) {
+              rawPrice = propertyPriceMap[doc.$id as string];
             }
             
             const photos = Array.isArray(doc.photos) ? doc.photos : [];

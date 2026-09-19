@@ -52,11 +52,9 @@ export default function ReserveButton({
     query.set('epc', extraPersonCharge.toString());
     query.set('eba', extraBedAvailable.toString());
     
-    if (roomImage) query.set('roomImage', roomImage);
-    
     if (hotelName) query.set('hotelName', hotelName);
     if (hotelLocation) query.set('hotelLocation', hotelLocation);
-    if (hotelImage) query.set('hotelImage', hotelImage);
+    if (roomImage || hotelImage) query.set('hotelImage', roomImage || hotelImage || '');
     query.set('checkIn', checkIn);
     query.set('checkOut', checkOut);
     const totalGuests = adults + children;

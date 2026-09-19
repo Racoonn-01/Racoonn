@@ -235,7 +235,6 @@ export default function BookingsPage() {
             <div className="rounded-md border bg-card">
               {/* @ts-ignore */}
               <CustomCalendar
-                initialFocus
                 mode="range"
                 defaultMonth={dateRange?.from}
                 selected={dateRange}

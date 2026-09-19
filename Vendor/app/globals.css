@@ -165,50 +165,58 @@
 
 /* Print Media Styles for Invoices */
 @media print {
-  body {
+  html, body {
     background: #ffffff !important;
     color: #0f172a !important;
+    height: auto !important;
+    min-height: auto !important;
+    overflow: visible !important;
+    margin: 0 !important;
+    padding: 0 !important;
   }
 
-  /* Hide background elements during print */
-  aside,
-  header,
-  nav,
-  .print-hidden,
-  .print\:hidden {
+  /* Hide background app content completely to prevent empty pages */
+  body > *:not([data-radix-portal]) {
     display: none !important;
   }
 
-  /* Reset fixed positioning for print modal wrapper */
-  .fixed.inset-0 {
-    position: static !important;
+  /* Ensure the portal takes normal document flow */
+  [data-radix-portal] {
     display: block !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    background: transparent !important;
-    width: 100% !important;
+    position: static !important;
     height: auto !important;
   }
 
-  .printable-invoice-modal {
+  /* Reset fixed positioning for the Dialog overlay and content */
+  .fixed, [role="dialog"], [data-state="open"] {
     position: static !important;
+    transform: none !important;
+    display: block !important;
+    padding: 0 !important;
+    margin: 0 !important;
     width: 100% !important;
     max-width: 100% !important;
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
     box-shadow: none !important;
     border: none !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    background: #ffffff !important;
-    color: #0f172a !important;
-    overflow: visible !important;
-    max-height: none !important;
   }
 
-  .printable-invoice {
+  /* Hide buttons during print */
+  button, .print-hidden {
+    display: none !important;
+  }
+
+  /* Force the invoice to take full width and avoid breaks inside */
+  #printable-invoice {
     width: 100% !important;
     margin: 0 !important;
     padding: 0 !important;
     overflow: visible !important;
+    page-break-inside: avoid !important;
+    border: none !important;
+    box-shadow: none !important;
   }
 
   @page {

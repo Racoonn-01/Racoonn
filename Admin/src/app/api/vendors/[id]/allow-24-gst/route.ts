@@ -3,10 +3,11 @@ import { NextResponse } from "next/server";
 
 export async function PATCH(
   request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> | { id: string } }
 ) {
   try {
-    const { id } = await params;
+    const params = await context.params;
+    const id = params.id;
     const body = await request.json();
     const { allow24PercentGst } = body;
 

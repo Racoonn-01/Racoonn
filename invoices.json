@@ -1,5 +1,57 @@
 [
   {
+    "id": "inv-wd-1789794545002",
+    "invoiceNumber": "RAC-WD-2026-805",
+    "type": "withdrawal",
+    "vendorId": "6a44e9d4003015938636",
+    "vendorName": "Vivek rolex",
+    "vendorBusiness": "blackrolex1144",
+    "vendorEmail": "blackrolex1144@gmail.com",
+    "vendorPhone": "+91 7900310444",
+    "vendorAddress": "Dewalchaurh kham near ram darbar, , ",
+    "vendorGstin": "",
+    "bankName": "HDFC Bank",
+    "accountHolder": "Vivek rolex",
+    "accountNumber": "987654321098",
+    "ifsc": "HDFC0001234",
+    "upiId": "+91 7900310444@upi",
+    "bookingIds": [
+      "6aad2d1c0003678126dd"
+    ],
+    "grossAmount": 2800,
+    "platformFeeRate": 24,
+    "platformFeeAmount": 672,
+    "issueDate": "2026-09-19",
+    "dueDate": "2026-09-26",
+    "items": [
+      {
+        "id": "gross-6aad2d1c0003678126dd",
+        "description": "Booking #6aad2d1c0003678126dd Revenue (Vivek Kumar · Royal Town)",
+        "quantity": 1,
+        "unitPrice": 2800,
+        "amount": 2800,
+        "bookingId": "6aad2d1c0003678126dd"
+      },
+      {
+        "id": "fee-deduction-1789794545002",
+        "description": "Racoonn Platform Commission Fee (Including GST)",
+        "quantity": 1,
+        "unitPrice": -672,
+        "amount": -672
+      }
+    ],
+    "subtotal": 2800,
+    "taxRate": 0,
+    "taxAmount": 0,
+    "discount": 0,
+    "totalAmount": 2128,
+    "status": "Paid",
+    "notes": "Please process this payout invoice to the specified bank account / UPI ID. Thank you!",
+    "createdAt": "2026-09-19T05:09:05.002Z",
+    "updatedAt": "2026-09-19T05:13:35.469Z",
+    "adminRemarks": "Payout Processed via Bank Transfer (NEFT/RTGS) (UTR: UTR1789794688886)"
+  },
+  {
     "id": "inv-wd-auto-1789731670641-861",
     "invoiceNumber": "INV-WD-AUTO-3356",
     "type": "withdrawal",
@@ -99,9 +151,11 @@
     "taxAmount": 0,
     "discount": 0,
     "totalAmount": 25987,
-    "status": "Sent",
+    "status": "Paid",
     "notes": "Automated withdrawal generated after 72 hours of booking completion.",
-    "createdAt": "2026-09-18T11:41:10.641Z"
+    "createdAt": "2026-09-18T11:41:10.641Z",
+    "updatedAt": "2026-09-19T05:11:56.712Z",
+    "adminRemarks": "Payout Processed via Bank Transfer (NEFT/RTGS) (UTR: UTR1789794688886)"
   },
   {
     "id": "inv-wd-auto-1789731667083-783",
@@ -194,9 +248,11 @@
     "taxAmount": 0,
     "discount": 0,
     "totalAmount": 56700,
-    "status": "Sent",
+    "status": "Approved",
     "notes": "Automated withdrawal generated after 72 hours of booking completion.",
-    "createdAt": "2026-09-18T11:41:07.083Z"
+    "createdAt": "2026-09-18T11:41:07.083Z",
+    "adminRemarks": "Approved by Super Admin: All booking data & bank details verified cleanly.",
+    "updatedAt": "2026-09-19T05:11:20.558Z"
   },
   {
     "id": "inv-wd-auto-1789731663224-149",
@@ -244,9 +300,11 @@
     "taxAmount": 0,
     "discount": 0,
     "totalAmount": 4410,
-    "status": "Sent",
+    "status": "Approved",
     "notes": "Automated withdrawal generated after 72 hours of booking completion.",
-    "createdAt": "2026-09-18T11:41:03.224Z"
+    "createdAt": "2026-09-18T11:41:03.224Z",
+    "adminRemarks": "Approved by Super Admin: All booking data & bank details verified cleanly.",
+    "updatedAt": "2026-09-19T05:11:22.144Z"
   },
   {
     "id": "inv-wd-auto-1789731658994-409",
@@ -339,9 +397,11 @@
     "taxAmount": 0,
     "discount": 0,
     "totalAmount": 94690,
-    "status": "Sent",
+    "status": "Approved",
     "notes": "Automated withdrawal generated after 72 hours of booking completion.",
-    "createdAt": "2026-09-18T11:40:58.994Z"
+    "createdAt": "2026-09-18T11:40:58.994Z",
+    "adminRemarks": "Approved by Super Admin: All booking data & bank details verified cleanly.",
+    "updatedAt": "2026-09-19T05:11:07.082Z"
   },
   {
     "id": "inv-wd-1789566604415",
@@ -389,10 +449,11 @@
     "taxAmount": 19,
     "discount": 0,
     "totalAmount": 98,
-    "status": "Sent",
+    "status": "Approved",
     "notes": "Please process this payout invoice to the specified bank account / UPI ID. Thank you!",
     "createdAt": "2026-09-16T13:50:04.415Z",
-    "updatedAt": "2026-09-16T13:51:06.789Z"
+    "updatedAt": "2026-09-19T05:11:09.019Z",
+    "adminRemarks": "Approved by Super Admin: All booking data & bank details verified cleanly."
   },
   {
     "id": "inv-wd-1786772580566",
@@ -587,9 +648,10 @@
     "taxRate": 24,
     "taxAmount": 4540.5599999999995,
     "totalAmount": 23459.559999999998,
-    "status": "Sent",
+    "status": "Approved",
     "createdAt": "2026-07-29T10:31:02.737Z",
-    "updatedAt": "2026-09-16T05:02:13.809Z"
+    "updatedAt": "2026-09-19T05:10:11.129Z",
+    "adminRemarks": "Approved by Super Admin: All booking data & bank details verified cleanly."
   },
   {
     "id": "inv-admin-1785320818660",
@@ -641,8 +703,10 @@
     "taxRate": 24,
     "taxAmount": 4540.5599999999995,
     "totalAmount": 23459.559999999998,
-    "status": "Sent",
-    "createdAt": "2026-07-29T10:26:58.660Z"
+    "status": "Approved",
+    "createdAt": "2026-07-29T10:26:58.660Z",
+    "adminRemarks": "Approved by Super Admin: All booking data & bank details verified cleanly.",
+    "updatedAt": "2026-09-19T05:10:27.088Z"
   },
   {
     "id": "inv-admin-1785320524501",
@@ -686,8 +750,10 @@
     "taxRate": 24,
     "taxAmount": 4536,
     "totalAmount": 23436,
-    "status": "Sent",
-    "createdAt": "2026-07-29T10:22:04.501Z"
+    "status": "Approved",
+    "createdAt": "2026-07-29T10:22:04.501Z",
+    "adminRemarks": "Approved by Super Admin: All booking data & bank details verified cleanly.",
+    "updatedAt": "2026-09-19T05:10:51.409Z"
   },
   {
     "id": "inv-admin-1785319809124",
@@ -714,8 +780,10 @@
     "taxRate": 24,
     "taxAmount": 2400,
     "totalAmount": 12400,
-    "status": "Sent",
-    "createdAt": "2026-07-29T10:10:09.124Z"
+    "status": "Approved",
+    "createdAt": "2026-07-29T10:10:09.124Z",
+    "adminRemarks": "Approved by Super Admin: All booking data & bank details verified cleanly.",
+    "updatedAt": "2026-09-19T05:10:54.048Z"
   },
   {
     "id": "inv-admin-1785319795501",
@@ -742,8 +810,10 @@
     "taxRate": 24,
     "taxAmount": 2400,
     "totalAmount": 12400,
-    "status": "Sent",
-    "createdAt": "2026-07-29T10:09:55.501Z"
+    "status": "Approved",
+    "createdAt": "2026-07-29T10:09:55.501Z",
+    "adminRemarks": "Approved by Super Admin: All booking data & bank details verified cleanly.",
+    "updatedAt": "2026-09-19T05:11:26.587Z"
   },
   {
     "id": "inv-wd-1785060403332",

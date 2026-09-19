@@ -116,7 +116,7 @@ export default function VendorInvoicesPage() {
   // Search & Filter state
   const [searchQuery, setSearchQuery] = useState("");
   const [propertyFilter, setPropertyFilter] = useState("All");
-  const effectiveFeePercent = 21.24; // 18% base commission + 18% GST on commission
+  const effectiveFeePercent = profile?.allow24PercentGst ? 24 : 18; // 24% or 18% platform fee based on admin settings
 
   // Withdrawal Form State
   const [invoiceNumber, setInvoiceNumber] = useState("");
@@ -186,9 +186,9 @@ export default function VendorInvoicesPage() {
         const vendorPropertyIds = propertiesRes.documents.map((p: any) => p.$id);
 
         const [bookingsRes, guestsRes, paymentsRes] = await Promise.all([
-          databases.listDocuments(appwriteConfig.databaseId, "bookings", [Query.orderDesc("$createdAt")]),
-          databases.listDocuments(appwriteConfig.databaseId, "booking_guests"),
-          databases.listDocuments(appwriteConfig.databaseId, "booking_payments"),
+          databases.listDocuments(appwriteConfig.databaseId, "bookings", [Query.orderDesc("$createdAt"), Query.limit(1000)]),
+          databases.listDocuments(appwriteConfig.databaseId, "booking_guests", [Query.limit(1000)]),
+          databases.listDocuments(appwriteConfig.databaseId, "booking_payments", [Query.limit(1000)]),
         ]);
 
         const vendorBookings = bookingsRes.documents.filter(b => vendorPropertyIds.includes(b.hotelId));
@@ -205,15 +205,14 @@ export default function VendorInvoicesPage() {
 
           // Exclude Cancelled, Pending, or Refunded bookings
           if (isCompleted && b.status !== "Cancelled" && b.status !== "Pending") {
-            const gross = payment ? Number(payment.totalAmount || 0) : 12000;
+            const parsedBookingPrice = b.totalAmount ? Number(b.totalAmount) : (b.priceAfterTax ? Number(b.priceAfterTax) : 0);
+            const gross = payment ? Number(payment.totalAmount || parsedBookingPrice) : parsedBookingPrice;
             const fee = Math.round((gross * effectiveFeePercent) / 100);
             const earnings = gross - fee;
 
             let bStatus: "Completed" | "Pending Withdrawal" | "Paid" = "Completed";
             if (paidBookingIds.has(b.$id)) {
               bStatus = "Paid";
-            } else if (withdrawnOrPendingBookingIds.has(b.$id)) {
-              bStatus = "Pending Withdrawal";
             }
 
             mappedBookings.push({
@@ -253,6 +252,7 @@ export default function VendorInvoicesPage() {
   // Filtered Eligible Completed Bookings
   const eligibleBookings = useMemo(() => {
     return bookings.filter((b) => {
+      if (b.status === "Paid") return false;
       const matchesSearch =
         b.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
         b.guestName.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -290,10 +290,7 @@ export default function VendorInvoicesPage() {
     [selectedGrossTotal, selectedPlatformFeeTotal]
   );
 
-  const calculatedGstAmount = useMemo(
-    () => Math.round((selectedNetEarningsTotal * vendorGstRate) / 100),
-    [selectedNetEarningsTotal, vendorGstRate]
-  );
+  const calculatedGstAmount = 0;
 
 
   // Overall Financial Summaries
@@ -433,10 +430,10 @@ export default function VendorInvoicesPage() {
       dueDate,
       items: generatedItems,
       subtotal: selectedGrossTotal,
-      taxRate: vendorGstRate,
-      taxAmount: calculatedGstAmount,
+      taxRate: 0,
+      taxAmount: 0,
       discount: 0,
-      totalAmount: selectedNetEarningsTotal + calculatedGstAmount,
+      totalAmount: selectedNetEarningsTotal,
       status,
       notes,
       createdAt: new Date().toISOString(),
@@ -1065,15 +1062,9 @@ export default function VendorInvoicesPage() {
                   <span>Platform Fee (Including GST):</span>
                   <span className="font-bold">-₹{selectedPlatformFeeTotal.toLocaleString("en-IN")}</span>
                 </div>
-                <div className="flex justify-between text-indigo-600 items-center">
-                  <span>Add GST ({vendorGstRate}%):</span>
-                  <div className="flex items-center gap-1">
-                    <span className="font-bold text-indigo-600">₹{calculatedGstAmount.toLocaleString("en-IN")}</span>
-                  </div>
-                </div>
                 <div className="border-t pt-2 mt-2 flex justify-between text-base font-black text-emerald-700">
                   <span>Net Payable To Vendor:</span>
-                  <span>₹{(selectedNetEarningsTotal + calculatedGstAmount).toLocaleString("en-IN")}</span>
+                  <span>₹{selectedNetEarningsTotal.toLocaleString("en-IN")}</span>
                 </div>
               </div>
             </div>
@@ -1130,8 +1121,8 @@ export default function VendorInvoicesPage() {
 
       {/* HIGH-RES INVOICE PDF PREVIEW MODAL */}
       <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
-        <DialogContent className="sm:max-w-3xl max-h-[92vh] flex flex-col rounded-3xl p-0 overflow-hidden bg-gray-100">
-          <DialogHeader className="p-4 px-6 border-b border-gray-200 bg-white flex flex-row items-center justify-between">
+        <DialogContent className="sm:max-w-3xl max-h-[92vh] flex flex-col rounded-3xl p-0 overflow-hidden bg-gray-100 print:bg-white print:max-h-none print:overflow-visible print:rounded-none print:border-none print:shadow-none print:p-0 print:m-0">
+          <DialogHeader className="p-4 px-6 border-b border-gray-200 bg-white flex flex-row items-center justify-between print:hidden">
             <DialogTitle className="text-lg font-bold text-gray-900">
               Invoice #{selectedInvoice?.invoiceNumber}
             </DialogTitle>
@@ -1139,7 +1130,7 @@ export default function VendorInvoicesPage() {
               variant="outline"
               size="sm"
               onClick={() => window.print()}
-              className="rounded-xl gap-1.5 font-semibold text-gray-700 bg-white"
+              className="rounded-xl gap-1.5 font-semibold text-gray-700 bg-white print:hidden"
             >
               <Printer size={16} /> Print / Download PDF
             </Button>
@@ -1147,11 +1138,11 @@ export default function VendorInvoicesPage() {
 
           {selectedInvoice && (
             <div
-              className="p-6 md:p-8 overflow-y-auto flex-1 bg-white m-4 rounded-2xl border border-gray-200 shadow-sm text-gray-900 space-y-8"
+              className="p-6 md:p-8 overflow-y-auto flex-1 bg-white m-4 rounded-2xl border border-gray-200 shadow-sm text-gray-900 space-y-8 print:m-0 print:p-0 print:border-none print:shadow-none print:rounded-none print:overflow-visible print:flex-none print:h-auto"
               id="printable-invoice"
             >
               {/* Header with Racoonn Branding */}
-              <div className="flex justify-between items-start border-b pb-6">
+              <div className="flex justify-between items-start border-b pb-6 print:border-gray-200">
                 <div>
                   <div className="relative w-40 h-12 mb-2">
                     <Image src="/racoonn-logo-text.png" alt="Racoonn Logo" fill className="object-contain object-left" unoptimized />

@@ -5,6 +5,7 @@ import { X, ArrowRight, User } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { usePropertyFilterStore } from '@/store/propertyFilterStore';
 import { useCheckoutStore } from '@/store/checkoutStore';
+import { appwriteConfig } from '@/lib/appwrite/config';
 
 interface Room {
   $id: string;
@@ -90,7 +91,7 @@ export default function RoomSelectionModal({
   const dateKey = checkIn ? checkIn : new Date().toISOString().split('T')[0];
 
   const handleSelectRoom = (room: Room, price: number) => {
-    const roomImg = (room.photos && room.photos.length > 0) ? (room.photos[0].startsWith('http') ? room.photos[0] : `${appwriteConfig.endpoint}/storage/buckets/${appwriteConfig.roomImagesBucketId}/files/${room.photos[0]}/view?project=${appwriteConfig.projectId}`) : propertyImage;
+    const roomImg = (Array.isArray(room.photos) && room.photos.length > 0) ? (room.photos[0].startsWith('http') ? room.photos[0] : `${process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT}/storage/buckets/${process.env.NEXT_PUBLIC_APPWRITE_ROOM_IMAGES_BUCKET_ID}/files/${room.photos[0]}/view?project=${process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID}`) : propertyImage;
     // Set the room details in the checkout store
     setRoomDetails(propertyId, room.name, price, propertyName, roomImg, propertyLocation);
     
@@ -104,13 +105,9 @@ export default function RoomSelectionModal({
     query.set('roomName', room.name);
     query.set('price', price.toString());
     
-    if (room.images && room.images.length > 0) {
-      query.set('roomImage', room.images[0]);
-    }
-    
     if (propertyName) query.set('hotelName', propertyName);
     if (propertyLocation) query.set('hotelLocation', propertyLocation);
-    if (propertyImage) query.set('hotelImage', propertyImage);
+    if (roomImg) query.set('hotelImage', roomImg);
     query.set('checkIn', checkIn);
     query.set('checkOut', checkOut);
     query.set('rooms', requiredRooms.toString());

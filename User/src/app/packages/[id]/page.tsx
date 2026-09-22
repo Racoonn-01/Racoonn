@@ -74,7 +74,9 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
   const [isHotelModalOpen, setIsHotelModalOpen] = useState(false);
   const [isActivityModalOpen, setIsActivityModalOpen] = useState(false);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [selectedActivityForModal, setSelectedActivityForModal] = useState<unknown>(null);
+  const [selectedActivityForModal, setSelectedActivityForModal] = useState<any>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [selectedHotelForModal, setSelectedHotelForModal] = useState<any>(null);
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const [isAllReviewsModalOpen, setIsAllReviewsModalOpen] = useState(false);
   const [activeReviewFilter, setActiveReviewFilter] = useState('All');
@@ -694,7 +696,16 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
                                           {pt.hasHotelActions && (
                                             <div className="flex flex-wrap gap-2 sm:gap-3 mt-3">
                                               <button 
-                                                onClick={() => setIsHotelModalOpen(true)}
+                                                onClick={() => {
+                                                  const selectedHIndex = (typeof selectedHotels !== 'undefined' && selectedHotels.length > 0) ? selectedHotels[0] : (typeof selectedHotel === 'number' ? selectedHotel : 0);
+                                                  const hotel = pt.selectedHotelId 
+                                                    ? hotelOptions.find(h => h.id === pt.selectedHotelId) 
+                                                    : hotelOptions[selectedHIndex] || hotelOptions[0];
+                                                  if (hotel) {
+                                                    setSelectedHotelForModal(hotel);
+                                                    setIsHotelModalOpen(true);
+                                                  }
+                                                }}
                                                 className="flex items-center justify-center gap-2 px-3 py-1.5 border border-brand-coral text-brand-coral rounded-lg text-[13px] font-semibold hover:bg-brand-coral hover:text-white transition-colors whitespace-nowrap flex-1 sm:flex-none"
                                               >
                                                 <Hotel size={14} /> View Hotel
@@ -711,8 +722,10 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
                                             <div className="flex flex-wrap gap-2 sm:gap-3 mt-3">
                                               <button 
                                                 onClick={() => {
-                                                  const selectedActIndex = selectedActivities.length > 0 ? selectedActivities[0] : 0;
-                                                  const activity = activityOptions[selectedActIndex] || (pt.selectedActivityId ? activityOptions.find(a => a.id === pt.selectedActivityId) : activityOptions[0]);
+                                                  const selectedActIndex = (typeof selectedActivities !== 'undefined' && selectedActivities.length > 0) ? selectedActivities[0] : 0;
+                                                  const activity = pt.selectedActivityId 
+                                                    ? activityOptions.find(a => a.id === pt.selectedActivityId) 
+                                                    : activityOptions[selectedActIndex] || activityOptions[0];
                                                   if (activity) {
                                                     setSelectedActivityForModal(activity);
                                                     setIsActivityModalOpen(true);
@@ -1016,7 +1029,7 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
         </div>
 
         {/* Hotel Details Modal */}
-        {isHotelModalOpen && (
+        {isHotelModalOpen && selectedHotelForModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
             <div 
               className="absolute inset-0 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200"
@@ -1031,8 +1044,8 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
               </button>
               <div className="relative h-64 sm:h-80 w-full group/slider bg-gray-100">
                 <Image 
-                  src={hotelOptions[selectedHotel]?.image || 'https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=1200&auto=format&fit=crop'} 
-                  alt={hotelOptions[selectedHotel]?.title || "Premium Hotel Stay"} 
+                  src={selectedHotelForModal.image || 'https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=1200&auto=format&fit=crop'} 
+                  alt={selectedHotelForModal.title || "Premium Hotel Stay"} 
                   fill 
                   className="object-cover" 
                 />
@@ -1047,9 +1060,9 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
                   </div>
                   <span className="text-[13px] text-gray-500 font-medium">4-Star Property</span>
                 </div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-3 font-heading">{hotelOptions[selectedHotel]?.title || 'Premium Hotel Stay'}</h3>
+                <h3 className="text-2xl font-bold text-gray-900 mb-3 font-heading">{selectedHotelForModal.title || 'Premium Hotel Stay'}</h3>
                 <p className="text-gray-600 text-[15px] leading-relaxed mb-6">
-                  {hotelOptions[selectedHotel]?.description || 'Experience maximum comfort in our handpicked properties. Located in the heart of the city, this hotel features excellent amenities, prime locations, and top-tier hygiene standards. Wake up to beautiful views and enjoy a complimentary lavish breakfast spread each morning.'}
+                  {selectedHotelForModal.description || 'Experience maximum comfort in our handpicked properties. Located in the heart of the city, this hotel features excellent amenities, prime locations, and top-tier hygiene standards. Wake up to beautiful views and enjoy a complimentary lavish breakfast spread each morning.'}
                 </p>
                 
 

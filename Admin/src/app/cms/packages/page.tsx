@@ -280,9 +280,7 @@ export default function PackagesPage() {
     };
   }, []);
 
-  const savePackagesToServer = async (newList: Package[]) => {
-    const previousList = packages;
-    setPackages(newList);
+  const savePackagesToServer = async (newList: Package[]): Promise<boolean> => {
     try {
       const res = await fetch("/api/cms/packages", {
         method: "POST",
@@ -295,17 +293,19 @@ export default function PackagesPage() {
         throw new Error(data.error || "Failed to save to database");
       }
 
+      setPackages(newList);
       window.dispatchEvent(new Event("cms_packages_updated"));
       if (typeof window !== "undefined" && "BroadcastChannel" in window) {
         const bc = new BroadcastChannel("racoonn_cms_channel");
         bc.postMessage({ type: "PACKAGES_UPDATED", data: newList });
         bc.close();
       }
+      return true;
     } catch (err: unknown) {
       const error = err as Error;
       console.error("Error saving packages:", error);
-      alert("Failed to save packages: " + (error.message || "Unknown error"));
-      setPackages(previousList); // Rollback on failure
+      alert("Package could not be saved. Please try again.\n\nError: " + (error.message || "Unknown error"));
+      return false;
     }
   };
 
@@ -324,21 +324,23 @@ export default function PackagesPage() {
     setFormData(emptyForm)
   }
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (confirm("Are you sure you want to delete this package?")) {
       const updated = packages.filter(p => p.id !== id);
-      savePackagesToServer(updated);
+      const success = await savePackagesToServer(updated);
+      if (success) fetchPackages();
     }
   }
 
-  const handleToggleStatus = (id: string) => {
+  const handleToggleStatus = async (id: string) => {
     const updated = packages.map(p => 
       p.id === id ? { ...p, status: (p.status === 'published' ? 'draft' : 'published') as 'draft' | 'published' } : p
     );
-    savePackagesToServer(updated);
+    const success = await savePackagesToServer(updated);
+    if (success) fetchPackages();
   };
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
     
     // Validation
@@ -373,8 +375,16 @@ export default function PackagesPage() {
     } else {
       updated = [syncedFormData, ...packages]
     }
-    savePackagesToServer(updated)
-    handleCloseForm()
+    
+    setLoading(true);
+    const success = await savePackagesToServer(updated);
+    setLoading(false);
+    
+    if (success) {
+      alert("Package saved successfully");
+      handleCloseForm();
+      fetchPackages();
+    }
   }
 
   // Pricing Handlers

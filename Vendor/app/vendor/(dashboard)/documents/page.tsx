@@ -136,9 +136,21 @@ export default function DocumentsPage() {
           } else if (t.id === "aadhaar_card_front" && profile.idProofBack) {
              fileIdFromProfile = profile.idProofBack;
              fileNameFromProfile = "Aadhaar Card Front (Uploaded)";
-          } else if (t.id === "property_proof" && profile.businessProof) {
+          } else if (t.id === "aadhaar_card_back" && (profile as any).aadhaarCardBack) {
+             fileIdFromProfile = (profile as any).aadhaarCardBack;
+             fileNameFromProfile = "Aadhaar Card Back (Uploaded)";
+          } else if ((t.id === "property_proof" || t.id === "business_registration") && profile.businessProof) {
              fileIdFromProfile = profile.businessProof;
              fileNameFromProfile = "Property Proof (Uploaded)";
+          } else if (t.id === "gst_certificate" && (profile as any).gstCertificate) {
+             fileIdFromProfile = (profile as any).gstCertificate;
+             fileNameFromProfile = "GST Certificate (Uploaded)";
+          } else if (t.id === "bank_cheque" && (profile as any).bankCheque) {
+             fileIdFromProfile = (profile as any).bankCheque;
+             fileNameFromProfile = "Bank Cheque (Uploaded)";
+          } else if (t.id === "fssai_license" && (profile as any).fssaiLicense) {
+             fileIdFromProfile = (profile as any).fssaiLicense;
+             fileNameFromProfile = "FSSAI License (Uploaded)";
           }
         }
 

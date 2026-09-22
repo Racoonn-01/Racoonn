@@ -142,6 +142,12 @@ export default function PackagesPage() {
   const [isLoadingActivities, setIsLoadingActivities] = useState(false)
   const [propertySearch, setPropertySearch] = useState('')
   const [activitySearch, setActivitySearch] = useState('')
+  const [toast, setToast] = useState<{title: string, type: 'success' | 'error'} | null>(null)
+
+  const showToast = (title: string, type: 'success' | 'error' = 'success') => {
+    setToast({ title, type })
+    setTimeout(() => setToast(null), 4000)
+  }
 
   const fetchAvailableProperties = async () => {
     try {
@@ -304,7 +310,7 @@ export default function PackagesPage() {
     } catch (err: unknown) {
       const error = err as Error;
       console.error("Error saving packages:", error);
-      alert("Package could not be saved. Please try again.\n\nError: " + (error.message || "Unknown error"));
+      showToast("Package could not be saved. " + (error.message || "Unknown error"), 'error');
       return false;
     }
   };
@@ -344,11 +350,11 @@ export default function PackagesPage() {
     e.preventDefault()
     
     // Validation
-    if (!formData.title) return alert("Title is required")
+    if (!formData.title) return showToast("Title is required", 'error')
     if (formData.images.length < 4 || formData.images.length > 6) {
-      return alert(`Please upload between 4 and 6 images. Currently you have ${formData.images.length}.`)
+      return showToast(`Please upload between 4 and 6 images. Currently you have ${formData.images.length}.`, 'error')
     }
-    if (formData.pricing.length === 0) return alert("At least one pricing slab is required")
+    if (formData.pricing.length === 0) return showToast("At least one pricing slab is required", 'error')
     
     // Sync fresh activity and hotel data before saving
     const syncedFormData = { ...formData };
@@ -381,7 +387,7 @@ export default function PackagesPage() {
     setLoading(false);
     
     if (success) {
-      alert("Package saved successfully");
+      showToast("Package saved successfully", 'success');
       handleCloseForm();
       fetchPackages();
     }
@@ -1218,6 +1224,17 @@ export default function PackagesPage() {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Toast Notification */}
+      {toast && (
+        <div className={`fixed bottom-4 right-4 z-50 px-4 py-3 rounded-lg shadow-lg text-white flex items-center gap-3 animate-in fade-in slide-in-from-bottom-5 duration-300 ${toast.type === 'success' ? 'bg-green-600' : 'bg-red-600'}`}>
+          {toast.type === 'success' ? <Check className="w-5 h-5" /> : <X className="w-5 h-5" />}
+          <p className="font-medium text-sm">{toast.title}</p>
+          <button onClick={() => setToast(null)} className="ml-2 p-1 opacity-70 hover:opacity-100 transition-opacity">
+            <X className="w-4 h-4" />
+          </button>
         </div>
       )}
     </div>

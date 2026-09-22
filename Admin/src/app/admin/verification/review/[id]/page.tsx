@@ -176,11 +176,10 @@ export default function VendorFullPageReviewScreen({ params }: { params: Promise
           // 2. Second priority: Fallback to Appwrite document fields (from legacy onboarding)
           if (!fileUrl) {
             let fileId = null;
-            // PAN card should not use idProofFront as that is actually Aadhaar Front
-            if (template.id === "aadhaar_card_front") fileId = doc.idProofFront;
-            if (template.id === "aadhaar_card_back") fileId = doc.idProofBack;
-            if (template.id === "business_registration") fileId = doc.businessProof;
-            if (template.id === "bank_cheque") fileId = doc.bankCheque;
+            // Map Appwrite database fields based on what Step9KYC.tsx actually saves:
+            if (template.id === "pan_card") fileId = doc.idProofFront;
+            if (template.id === "aadhaar_card_front") fileId = doc.idProofBack;
+            if (template.id === "property_proof") fileId = doc.businessProof;
             
             if (fileId) {
               fileUrl = getFileUrl(fileId);

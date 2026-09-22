@@ -12,7 +12,7 @@ export async function GET() {
     const response = await appwriteServer.databases.listDocuments(
       DATABASE_ID,
       PROPERTY_COLLECTION_ID,
-      [Query.limit(100), Query.orderDesc("$createdAt")]
+      [Query.limit(1000), Query.orderDesc("$createdAt")]
     );
 
     const properties = response.documents.map((doc) => ({

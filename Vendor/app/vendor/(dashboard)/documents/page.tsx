@@ -398,6 +398,28 @@ export default function DocumentsPage() {
         return d;
       });
 
+      // Update Appwrite Database so Admin can read it!
+      if (appwriteConfig.projectId && appwriteConfig.databaseId && appwriteConfig.vendorCollectionId && profile?.$id && uploadedFileId) {
+        try {
+          const updatePayload: any = {};
+          if (docId === "pan_card") updatePayload.idProofFront = uploadedFileId;
+          if (docId === "aadhaar_card_front") updatePayload.idProofBack = uploadedFileId;
+          if (docId === "property_proof") updatePayload.businessProof = uploadedFileId;
+          
+          if (Object.keys(updatePayload).length > 0) {
+             const { databases } = await import("@/lib/appwrite/client");
+             await databases.updateDocument(
+               appwriteConfig.databaseId,
+               appwriteConfig.vendorCollectionId,
+               profile.$id,
+               updatePayload
+             );
+          }
+        } catch (dbErr) {
+          console.warn("Failed to sync doc to DB:", dbErr);
+        }
+      }
+
       saveDocumentsState(updatedList);
       toast.success(`${targetDoc?.title || "Document"} uploaded successfully!`, {
         description: "Status updated to Pending. Compliance audit initiated."

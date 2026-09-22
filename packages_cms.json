@@ -57,56 +57,9 @@
         ],
         "pricePerNight": 4200,
         "isDefault": false
-      },
-      {
-        "id": "6aae2136001f40e1ed14",
-        "title": "SAM Hotel",
-        "description": "Stay at SAM Hotel situated in Dewalchaurh kham, Haldwani, Uttarakhand [GEO: 29.214275, 79.528070], Haldwani, Uttarakhand.",
-        "image": "https://sgp.cloud.appwrite.io/v1/storage/buckets/6a3e398000280b2b3d20/files/6aae21660019e1e2fcc3/view?project=6a3bce6900381359c3ce",
-        "tags": [
-          "AC Rooms",
-          "Breakfast Included"
-        ],
-        "pricePerNight": 3500,
-        "isDefault": false,
-        "location": "Dewalchaurh kham, Haldwani, Uttarakhand [GEO: 29.214275, 79.528070], Haldwani, Uttarakhand",
-        "city": "Haldwani",
-        "price": 3500
-      },
-      {
-        "id": "6aa79b7b002b15f3b037",
-        "title": "Verma's Hotel",
-        "description": "Stay at Verma's Hotel situated in Dewalchaurh kham, Haldwani, Uttarakhand [GEO: 29.214275, 79.528070], Haldwani, Uttarakhand.",
-        "image": "https://sgp.cloud.appwrite.io/v1/storage/buckets/6a3e398000280b2b3d20/files/6aa79be9000820128f91/view?project=6a3bce6900381359c3ce",
-        "tags": [
-          "AC Rooms",
-          "Breakfast Included"
-        ],
-        "pricePerNight": 3500,
-        "isDefault": false,
-        "location": "Dewalchaurh kham, Haldwani, Uttarakhand [GEO: 29.214275, 79.528070], Haldwani, Uttarakhand",
-        "city": "Haldwani",
-        "price": 3500
       }
     ],
-    "activityOptions": [
-      {
-        "id": "6a69abfa00163684a891",
-        "title": "Testing",
-        "description": "Elevate your travel experience with curated adventures and memorable local activities.\nElevate your travel experience with curated adventures and memorable local activities.\n",
-        "image": "https://sgp.cloud.appwrite.io/v1/storage/buckets/6a3e398000280b2b3d20/files/6a69abf90010ec46ba4b/view?project=6a3bce6900381359c3ce",
-        "pricePerPerson": 1500,
-        "priceLabel": "+ ₹1500 / person"
-      },
-      {
-        "id": "6aacd7f70031a4b1ddf0",
-        "title": "Latest Activity",
-        "description": "Latest Activity",
-        "image": "https://sgp.cloud.appwrite.io/v1/storage/buckets/6a3e398000280b2b3d20/files/6aacd7f6002a1af92a4a/view?project=6a3bce6900381359c3ce",
-        "pricePerPerson": 20000,
-        "priceLabel": "+ ₹20000 / person"
-      }
-    ],
+    "activityOptions": [],
     "metaTitle": "SIKKIM & DARJEELING",
     "metaDescription": "SIKKIM & DARJEELING",
     "metaKeywords": [

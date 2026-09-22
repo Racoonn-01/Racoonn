@@ -366,9 +366,9 @@ export const useCheckoutStore = create<CheckoutState>((set, get) => ({
       
       const pricingParams = {
         basePrice: perNightPrice,
-        standardCapacity: get().standardCapacity,
-        maximumCapacity: get().maximumCapacity,
-        extraPersonCharge: get().extraPersonCharge,
+        standardCapacity: isPackage ? 99 : get().standardCapacity,
+        maximumCapacity: isPackage ? 99 : get().maximumCapacity,
+        extraPersonCharge: isPackage ? 0 : get().extraPersonCharge,
         totalGuests: Math.ceil((bookingData.adults || 2) / roomsCount),
         numberOfNights: calcNights
       };

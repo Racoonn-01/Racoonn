@@ -54,6 +54,8 @@ export async function POST(request: Request) {
         COLLECTION_ID,
         DOC_ID,
         { 
+          propertyName: "CMS Packages Configuration",
+          title: "CMS Packages Configuration",
           details: jsonStr,
           vendorId: "cms_admin",
           propertyType: "CMS",

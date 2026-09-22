@@ -1,6 +1,9 @@
 export const dynamic = "force-dynamic";
+export const fetchCache = "force-no-store";
+export const revalidate = 0;
 
 import { NextResponse } from "next/server";
+import { unstable_noStore as noStore } from "next/cache";
 import fs from "fs";
 import { appwriteServer } from "@/lib/appwrite/server";
 
@@ -10,6 +13,7 @@ const COLLECTION_ID = process.env.NEXT_PUBLIC_APPWRITE_PROPERTY_COLLECTION_ID ||
 const DOC_ID = "cms_popular_destinations_v1";
 
 export async function GET() {
+  noStore();
   try {
     if (fs.existsSync(SHARED_FILE_PATH)) {
       const fileData = fs.readFileSync(SHARED_FILE_PATH, "utf-8");
@@ -50,7 +54,19 @@ export async function POST(request: Request) {
         DATABASE_ID,
         COLLECTION_ID,
         DOC_ID,
-        { details: jsonStr }
+        { 
+          propertyName: "CMS Popular Destinations Configuration",
+          title: "CMS Popular Destinations Configuration",
+          details: jsonStr,
+          vendorId: "cms_admin",
+          propertyType: "CMS",
+          description: "CMS System Document",
+          city: "CMS",
+          state: "CMS",
+          location: "CMS",
+          status: "Published",
+          price: 0
+        }
       );
     } catch (err: unknown) {
       const error = err as { code?: number };
@@ -64,7 +80,14 @@ export async function POST(request: Request) {
               propertyName: "CMS Popular Destinations Configuration",
               title: "CMS Popular Destinations Configuration",
               details: jsonStr,
-              vendorId: "admin_cms",
+              vendorId: "cms_admin",
+              propertyType: "CMS",
+              description: "CMS System Document",
+              city: "CMS",
+              state: "CMS",
+              location: "CMS",
+              status: "Published",
+              price: 0
             }
           );
         } catch (createErr) {

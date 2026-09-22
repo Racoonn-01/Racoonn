@@ -1,8 +1,10 @@
 export const dynamic = "force-dynamic";
+export const fetchCache = "force-no-store";
+export const revalidate = 0;
 
 import { NextResponse } from "next/server";
+import { unstable_noStore as noStore } from "next/cache";
 import fs from "fs";
-
 import { appwriteServer } from "@/lib/appwrite/server";
 
 const SHARED_FILE_PATH = "/Users/haldwani/Documents/Working/Working/Racoonn/popular_stays_cms.json";
@@ -11,6 +13,7 @@ const COLLECTION_ID = process.env.NEXT_PUBLIC_APPWRITE_PROPERTY_COLLECTION_ID ||
 const DOC_ID = "cms_popular_stays_v1";
 
 export async function GET() {
+  noStore();
   try {
     // 1. Try reading from shared file
     if (fs.existsSync(SHARED_FILE_PATH)) {
@@ -55,7 +58,19 @@ export async function POST(request: Request) {
         DATABASE_ID,
         COLLECTION_ID,
         DOC_ID,
-        { details: jsonStr }
+        { 
+          propertyName: "CMS Popular Stays Configuration",
+          title: "CMS Popular Stays Configuration",
+          details: jsonStr,
+          vendorId: "cms_admin",
+          propertyType: "CMS",
+          description: "CMS System Document",
+          city: "CMS",
+          state: "CMS",
+          location: "CMS",
+          status: "Published",
+          price: 0
+        }
       );
     } catch (err: unknown) {
       const error = err as { code?: number };
@@ -69,7 +84,14 @@ export async function POST(request: Request) {
               propertyName: "CMS Popular Stays Configuration",
               title: "CMS Popular Stays Configuration",
               details: jsonStr,
-              vendorId: "admin_cms",
+              vendorId: "cms_admin",
+              propertyType: "CMS",
+              description: "CMS System Document",
+              city: "CMS",
+              state: "CMS",
+              location: "CMS",
+              status: "Published",
+              price: 0
             }
           );
         } catch (createErr) {

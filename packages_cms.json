@@ -86,8 +86,9 @@
             "title": "Check-in at hotel",
             "description": "Check-in at hotel",
             "hasHotelActions": false,
-            "selectedHotelId": "6aa7ac9600174575a40c",
-            "hasActivityActions": false
+            "selectedHotelId": "6aa79dde00272702c418",
+            "hasActivityActions": false,
+            "selectedActivityId": "6a69abfa00163684a891"
           },
           {
             "title": "Evening at leisure",

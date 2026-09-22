@@ -49,8 +49,8 @@ export default function GuestsPage() {
 
         // Fetch all bookings and guest records from Appwrite in real-time
         const [bookingsRes, guestsRes] = await Promise.all([
-          databases.listDocuments(appwriteConfig.databaseId, 'bookings', [Query.orderDesc('$createdAt')]),
-          databases.listDocuments(appwriteConfig.databaseId, 'booking_guests')
+          databases.listDocuments(appwriteConfig.databaseId, 'bookings', [Query.orderDesc('$createdAt'), Query.limit(1000)]),
+          databases.listDocuments(appwriteConfig.databaseId, 'booking_guests', [Query.orderDesc('$createdAt'), Query.limit(1000)])
         ]);
 
         const vendorBookings = bookingsRes.documents.filter(b => vendorPropertyIds.includes(b.hotelId));
@@ -232,7 +232,6 @@ export default function GuestsPage() {
                   <th className="p-4 font-medium text-center">Total Stays</th>
                   <th className="p-4 font-medium">Last Visit</th>
                   <th className="p-4 font-medium text-center">Status</th>
-                  <th className="p-4 font-medium text-center">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-sm">
@@ -271,22 +270,11 @@ export default function GuestsPage() {
                           {guest.status}
                         </span>
                       </td>
-                      <td className="p-4 text-center">
-                        <a 
-                          href={`mailto:${guest.email}`} 
-                          target="_blank" 
-                          rel="noreferrer" 
-                          className="inline-flex items-center justify-center h-8 w-8 rounded-lg text-slate-400 hover:text-secondary hover:bg-slate-100 transition-colors"
-                          title="Contact Guest"
-                        >
-                          <ExternalLink className="w-4 h-4" />
-                        </a>
-                      </td>
                     </motion.tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={6} className="p-16 text-center">
+                    <td colSpan={5} className="p-16 text-center">
                       <div className="flex flex-col items-center justify-center">
                         <div className="h-16 w-16 bg-slate-100 rounded-full flex items-center justify-center mb-4">
                           <Users className="h-8 w-8 text-slate-300" />

@@ -57,33 +57,9 @@
         ],
         "pricePerNight": 4200,
         "isDefault": false
-      },
-      {
-        "id": "6aa53d930005d015e972",
-        "title": "Royal Angel",
-        "description": "Stay at Royal Angel situated in Dewalchaurh kham manpur paschim , Haldwani, Uttarakhand [GEO: 29.185246, 79.507160], Haldwani, Uttarakhand.",
-        "image": "https://sgp.cloud.appwrite.io/v1/storage/buckets/6a3e398000280b2b3d20/files/6aa53dbd001d10a3b4e5/view?project=6a3bce6900381359c3ce",
-        "tags": [
-          "AC Rooms",
-          "Breakfast Included"
-        ],
-        "pricePerNight": 3500,
-        "isDefault": false,
-        "location": "Dewalchaurh kham manpur paschim , Haldwani, Uttarakhand [GEO: 29.185246, 79.507160], Haldwani, Uttarakhand",
-        "city": "Haldwani",
-        "price": 3500
       }
     ],
-    "activityOptions": [
-      {
-        "id": "6aacd7f70031a4b1ddf0",
-        "title": "Latest Activity",
-        "description": "Latest Activity",
-        "image": "https://sgp.cloud.appwrite.io/v1/storage/buckets/6a3e398000280b2b3d20/files/6aacd7f6002a1af92a4a/view?project=6a3bce6900381359c3ce",
-        "pricePerPerson": 20000,
-        "priceLabel": "+ ₹20000 / person"
-      }
-    ],
+    "activityOptions": [],
     "metaTitle": "SIKKIM & DARJEELING",
     "metaDescription": "SIKKIM & DARJEELING",
     "metaKeywords": [
@@ -99,9 +75,9 @@
           {
             "title": "Arrival at IXB Airport",
             "description": "Arrival at IXB Airport",
-            "hasHotelActions": true,
+            "hasHotelActions": false,
             "selectedHotelId": "h1",
-            "hasActivityActions": true,
+            "hasActivityActions": false,
             "selectedActivityId": "6aacd7f70031a4b1ddf0"
           },
           {

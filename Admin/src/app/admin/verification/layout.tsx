@@ -34,49 +34,53 @@ function VerificationLayoutContent({ children }: { children: React.ReactNode }) 
   return (
     <div className="space-y-8 pb-8">
       {/* Header Section */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
-        <div>
-          <h2 className="text-3xl font-black tracking-tight text-foreground">Verification Center</h2>
-          <p className="text-muted-foreground mt-1 text-lg">Review and manage vendor compliance documents securely.</p>
+      {!pathname.includes('/review/') && (
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+          <div>
+            <h2 className="text-3xl font-black tracking-tight text-foreground">Verification Center</h2>
+            <p className="text-muted-foreground mt-1 text-lg">Review and manage vendor compliance documents securely.</p>
+          </div>
         </div>
-      </div>
+      )}
 
-      <div className="rounded-2xl border bg-card shadow-sm overflow-hidden p-6">
+      <div className={`rounded-2xl border bg-card shadow-sm overflow-hidden ${pathname.includes('/review/') ? 'border-none shadow-none bg-transparent' : 'p-6'}`}>
         <div className="w-full">
           {/* Custom Tabs List */}
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
-            <div className="flex flex-wrap h-auto gap-1 bg-muted/30 p-1 rounded-2xl w-full sm:w-auto overflow-x-auto justify-start">
-              {tabs.map((tab) => {
-                const isActive = pathname === `/admin/verification/${tab.value}`
-                return (
-                  <Link 
-                    key={tab.value} 
-                    href={`/admin/verification/${tab.value}`}
-                    className={`rounded-xl px-4 py-2 capitalize transition-all text-sm font-medium ${
-                      isActive 
-                        ? 'bg-background text-foreground shadow-sm' 
-                        : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-                    }`}
-                  >
-                    {tab.label}
-                  </Link>
-                )
-              })}
-            </div>
-            
-            {/* Toolbar Area */}
-            <div className="flex w-full sm:w-auto items-center gap-3">
-              <div className="relative w-full sm:w-64">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input 
-                  placeholder="Search documents..." 
-                  className="w-full pl-9 bg-background border-muted-foreground/20 rounded-full h-10" 
-                  defaultValue={searchParams.get('q') || ''}
-                  onChange={handleSearchChange}
-                />
+          {!pathname.includes('/review/') && (
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
+              <div className="flex flex-wrap h-auto gap-1 bg-muted/30 p-1 rounded-2xl w-full sm:w-auto overflow-x-auto justify-start">
+                {tabs.map((tab) => {
+                  const isActive = pathname === `/admin/verification/${tab.value}`
+                  return (
+                    <Link 
+                      key={tab.value} 
+                      href={`/admin/verification/${tab.value}`}
+                      className={`rounded-xl px-4 py-2 capitalize transition-all text-sm font-medium ${
+                        isActive 
+                          ? 'bg-background text-foreground shadow-sm' 
+                          : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                      }`}
+                    >
+                      {tab.label}
+                    </Link>
+                  )
+                })}
+              </div>
+              
+              {/* Toolbar Area */}
+              <div className="flex w-full sm:w-auto items-center gap-3">
+                <div className="relative w-full sm:w-64">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input 
+                    placeholder="Search documents..." 
+                    className="w-full pl-9 bg-background border-muted-foreground/20 rounded-full h-10" 
+                    defaultValue={searchParams.get('q') || ''}
+                    onChange={handleSearchChange}
+                  />
+                </div>
               </div>
             </div>
-          </div>
+          )}
           
           <div className="mt-0 outline-none">
             {children}

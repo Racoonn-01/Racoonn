@@ -125,8 +125,8 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
             }
 
             // Fetch fresh global activities and properties to keep names synced without requiring a package re-save
-            let freshActivities: unknown[] = [];
-            let freshProperties: unknown[] = [];
+            let freshActivities: Record<string, unknown>[] = [];
+            let freshProperties: Record<string, unknown>[] = [];
             try {
               const [actRes, propRes] = await Promise.all([
                 fetch("/api/cms/activities").catch(() => null),
@@ -162,9 +162,9 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
             if (cmsFound.activityOptions && Array.isArray(cmsFound.activityOptions) && cmsFound.activityOptions.length > 0) {
               const legacyDummyIds = ["act-1", "act-2", "act-3", "act-4", "act-5"];
               const filteredActivities = cmsFound.activityOptions
-                .filter((act: Record<string, unknown>) => !legacyDummyIds.includes(act.id))
+                .filter((act: Record<string, unknown>) => !legacyDummyIds.includes(act.id as string))
                 .map((act: Record<string, unknown>) => {
-                  const fresh = freshActivities.find((fa: Record<string, unknown>) => fa.id === act.id);
+                  const fresh = freshActivities.find((fa: Record<string, unknown>) => (fa.id as string) === (act.id as string));
                   return fresh ? { ...act, ...fresh } : act;
                 });
               setActivityOptions(filteredActivities);

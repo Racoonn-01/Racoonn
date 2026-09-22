@@ -444,7 +444,7 @@ export default function PackagesPage() {
         }))
       } catch (error) {
         console.error("Image upload failed", error);
-        alert("Failed to upload image. Please try again.");
+        showToast("Failed to upload image. Please try again.", 'error');
       }
     }
   }

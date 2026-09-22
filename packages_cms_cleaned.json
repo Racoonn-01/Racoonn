@@ -1,0 +1,534 @@
+[
+  {
+    "id": "1789804548131",
+    "title": "SIKKIM & DARJEELING",
+    "location": "SIKKIM & DARJEELING",
+    "duration": "5 Days / 4 Nights",
+    "features": "Meals | Stay | Transfer",
+    "badge": "Bestseller",
+    "images": [
+      "https://sgp.cloud.appwrite.io/v1/storage/buckets/6a3e398000280b2b3d20/files/6aae40610005ccc24e74/view?project=6a3bce6900381359c3ce",
+      "https://sgp.cloud.appwrite.io/v1/storage/buckets/6a3e398000280b2b3d20/files/6aae40610035c11efd06/view?project=6a3bce6900381359c3ce",
+      "https://sgp.cloud.appwrite.io/v1/storage/buckets/6a3e398000280b2b3d20/files/6aae406200237f8a7d52/view?project=6a3bce6900381359c3ce",
+      "https://sgp.cloud.appwrite.io/v1/storage/buckets/6a3e398000280b2b3d20/files/6aae406c0029fc0bb8ae/view?project=6a3bce6900381359c3ce",
+      "https://sgp.cloud.appwrite.io/v1/storage/buckets/6a3e398000280b2b3d20/files/6aae406d0034f28396f1/view?project=6a3bce6900381359c3ce"
+    ],
+    "pricing": [
+      {
+        "id": "1789804544913",
+        "minPersons": 1,
+        "maxPersons": 2,
+        "pricePerPerson": 14599
+      },
+      {
+        "id": "1789804699490",
+        "minPersons": 3,
+        "maxPersons": 4,
+        "pricePerPerson": 10299
+      },
+      {
+        "id": "1789804713148",
+        "minPersons": 5,
+        "maxPersons": 6,
+        "pricePerPerson": 9699
+      }
+    ],
+    "hotelOptions": [
+      {
+        "id": "h1",
+        "title": "Premium Hotel Stay",
+        "description": "Experience maximum comfort in our handpicked 3 or 4-star properties.",
+        "image": "https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=600&auto=format&fit=crop",
+        "tags": [
+          "AC Rooms",
+          "Breakfast Included"
+        ],
+        "pricePerNight": 3500,
+        "isDefault": true
+      },
+      {
+        "id": "h2",
+        "title": "Experiential Swiss Camps",
+        "description": "For applicable locations, enjoy a night under the stars in our luxury swiss tents.",
+        "image": "https://images.unsplash.com/photo-1523987355523-c7b5b0dd90a7?q=80&w=600&auto=format&fit=crop",
+        "tags": [
+          "Luxury Tents",
+          "All Meals"
+        ],
+        "pricePerNight": 4200,
+        "isDefault": false
+      },
+      {
+        "id": "6aa79dde00272702c418",
+        "title": "Hotel Grand ",
+        "description": "Stay at Hotel Grand  situated in Dewalchaurh kham, Haldwani, Uttarakhand [GEO: 29.214275, 79.528070], Haldwani, Uttarakhand.",
+        "image": "https://sgp.cloud.appwrite.io/v1/storage/buckets/6a3e398000280b2b3d20/files/6aa79df90011eb5ebbc8/view?project=6a3bce6900381359c3ce",
+        "tags": [
+          "AC Rooms",
+          "Breakfast Included"
+        ],
+        "pricePerNight": 3500,
+        "isDefault": false,
+        "location": "Dewalchaurh kham, Haldwani, Uttarakhand [GEO: 29.214275, 79.528070], Haldwani, Uttarakhand",
+        "city": "Haldwani",
+        "price": 3500
+      }
+    ],
+    "activityOptions": [
+      {
+        "id": "6a69abfa00163684a891",
+        "title": "Testing",
+        "description": "Elevate your travel experience with curated adventures and memorable local activities.\nElevate your travel experience with curated adventures and memorable local activities.\n",
+        "image": "https://sgp.cloud.appwrite.io/v1/storage/buckets/6a3e398000280b2b3d20/files/6a69abf90010ec46ba4b/view?project=6a3bce6900381359c3ce",
+        "pricePerPerson": 1500,
+        "priceLabel": "+ ₹1500 / person"
+      }
+    ],
+    "metaTitle": "SIKKIM & DARJEELING",
+    "metaDescription": "SIKKIM & DARJEELING",
+    "metaKeywords": [
+      "SIKKIM & DARJEELING"
+    ],
+    "itinerary": [
+      {
+        "id": "1789804544913",
+        "dayNumber": 1,
+        "title": "IXB TO GANGTOK",
+        "activities": "Check-in and local sightseeing",
+        "points": [
+          {
+            "title": "Arrival at IXB Airport",
+            "description": "Arrival at IXB Airport",
+            "hasHotelActions": false,
+            "selectedHotelId": "h1",
+            "hasActivityActions": false,
+            "selectedActivityId": "6aacd7f70031a4b1ddf0"
+          },
+          {
+            "title": "Transfer to Gangtok",
+            "description": "Transfer to Gangtok",
+            "hasHotelActions": false
+          },
+          {
+            "title": "Check-in at hotel",
+            "description": "Check-in at hotel",
+            "hasHotelActions": false,
+            "selectedHotelId": "6aa79dde00272702c418",
+            "hasActivityActions": false,
+            "selectedActivityId": "6a69abfa00163684a891"
+          },
+          {
+            "title": "Evening at leisure",
+            "description": "Evening at leisure",
+            "hasHotelActions": false
+          }
+        ]
+      },
+      {
+        "id": "1789804818889",
+        "dayNumber": 2,
+        "title": "GANGTOK EXCURSION TO TSOMGO LAKE & BABA MANDIR",
+        "activities": "",
+        "points": [
+          {
+            "title": "Excursion to Tsomgo Lake",
+            "description": "Excursion to Tsomgo Lake",
+            "hasHotelActions": false
+          },
+          {
+            "title": "Visit Baba Mandir",
+            "description": "Visit Baba Mandir",
+            "hasHotelActions": false
+          },
+          {
+            "title": "Return to Gangtok",
+            "description": "Return to Gangtok",
+            "hasHotelActions": false
+          }
+        ]
+      },
+      {
+        "id": "1789804857720",
+        "dayNumber": 3,
+        "title": "GANGTOK TO DARJEELING TRANSFER",
+        "activities": "",
+        "points": [
+          {
+            "title": "Transfer to Darjeeling",
+            "description": "Transfer to Darjeeling",
+            "hasHotelActions": false
+          },
+          {
+            "title": "Check-in at hotel",
+            "description": "Check-in at hotel",
+            "hasHotelActions": false,
+            "selectedHotelId": "6aae2136001f40e1ed14"
+          },
+          {
+            "title": "Evening at leisure",
+            "description": "Evening at leisure",
+            "hasHotelActions": false
+          }
+        ]
+      },
+      {
+        "id": "1789804861631",
+        "dayNumber": 4,
+        "title": "DARJEELING LOCAL SIGHTSEEING",
+        "activities": "",
+        "points": [
+          {
+            "title": "Local sightseeing in Darjeeling",
+            "description": "Local sightseeing in Darjeeling",
+            "hasHotelActions": false
+          },
+          {
+            "title": "Visit key attractions",
+            "description": "Visit key attractions",
+            "hasHotelActions": false
+          },
+          {
+            "title": "Evening at leisure",
+            "description": "Evening at leisure",
+            "hasHotelActions": false
+          }
+        ]
+      },
+      {
+        "id": "1789804934763",
+        "dayNumber": 5,
+        "title": "DARJEELING TO IXB DROP",
+        "activities": "",
+        "points": [
+          {
+            "title": "Transfer to IXB Airport",
+            "description": "Transfer to IXB Airport",
+            "hasHotelActions": false
+          },
+          {
+            "title": "Onward journey",
+            "description": "Onward journey",
+            "hasHotelActions": false
+          }
+        ]
+      }
+    ],
+    "status": "published"
+  },
+  {
+    "id": "1789801431039",
+    "title": "Kashmir Paradise Escape",
+    "location": "Srinagar – Gulmarg – Pahalgam – Sonamarg",
+    "duration": "6 Days / 5 Nights",
+    "features": "Meals | Stay | Transfer",
+    "badge": "Bestseller",
+    "images": [
+      "https://sgp.cloud.appwrite.io/v1/storage/buckets/6a3e398000280b2b3d20/files/6aae33e7001d31745c91/view?project=6a3bce6900381359c3ce",
+      "https://sgp.cloud.appwrite.io/v1/storage/buckets/6a3e398000280b2b3d20/files/6aae33e80015011fb72e/view?project=6a3bce6900381359c3ce",
+      "https://sgp.cloud.appwrite.io/v1/storage/buckets/6a3e398000280b2b3d20/files/6aae33f00009195ae0cc/view?project=6a3bce6900381359c3ce",
+      "https://sgp.cloud.appwrite.io/v1/storage/buckets/6a3e398000280b2b3d20/files/6aae33f0003607ef2156/view?project=6a3bce6900381359c3ce",
+      "https://sgp.cloud.appwrite.io/v1/storage/buckets/6a3e398000280b2b3d20/files/6aae33f10022c807595b/view?project=6a3bce6900381359c3ce"
+    ],
+    "pricing": [
+      {
+        "id": "1789801425061",
+        "minPersons": 1,
+        "maxPersons": 2,
+        "pricePerPerson": 18999
+      }
+    ],
+    "hotelOptions": [
+      {
+        "id": "h1",
+        "title": "Premium Hotel Stay",
+        "description": "Experience maximum comfort in our handpicked 3 or 4-star properties.",
+        "image": "https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=600&auto=format&fit=crop",
+        "tags": [
+          "AC Rooms",
+          "Breakfast Included"
+        ],
+        "pricePerNight": 3500,
+        "isDefault": true
+      },
+      {
+        "id": "h2",
+        "title": "Experiential Swiss Camps",
+        "description": "For applicable locations, enjoy a night under the stars in our luxury swiss tents.",
+        "image": "https://images.unsplash.com/photo-1523987355523-c7b5b0dd90a7?q=80&w=600&auto=format&fit=crop",
+        "tags": [
+          "Luxury Tents",
+          "All Meals"
+        ],
+        "pricePerNight": 4200,
+        "isDefault": false
+      },
+      {
+        "id": "6aa52d130005b3aba844",
+        "title": "Himdarshan home stay ",
+        "description": "Stay at Himdarshan home stay  situated in Almora, Uttarakhand, Almora, Uttarakhand.",
+        "image": "https://sgp.cloud.appwrite.io/v1/storage/buckets/6a3e398000280b2b3d20/files/6aa535a8000b209f23b1/view?project=6a3bce6900381359c3ce",
+        "tags": [
+          "AC Rooms",
+          "Breakfast Included"
+        ],
+        "pricePerNight": 3500,
+        "isDefault": false,
+        "location": "Almora, Uttarakhand, Almora, Uttarakhand",
+        "city": "Almora",
+        "price": 3500
+      },
+      {
+        "id": "6aa7ac9600174575a40c",
+        "title": "Nihara hotel",
+        "description": "Stay at Nihara hotel situated in Dehradun, Uttarakhand, Dehradun, Uttarakhand.",
+        "image": "https://sgp.cloud.appwrite.io/v1/storage/buckets/6a3e398000280b2b3d20/files/6aa7acbd003311f190ea/view?project=6a3bce6900381359c3ce",
+        "tags": [
+          "AC Rooms",
+          "Breakfast Included"
+        ],
+        "pricePerNight": 3500,
+        "isDefault": false,
+        "location": "Dehradun, Uttarakhand, Dehradun, Uttarakhand",
+        "city": "Dehradun",
+        "price": 3500
+      },
+      {
+        "id": "6aa79b7b002b15f3b037",
+        "title": "Verma's Hotel",
+        "description": "Stay at Verma's Hotel situated in Dewalchaurh kham, Haldwani, Uttarakhand [GEO: 29.214275, 79.528070], Haldwani, Uttarakhand.",
+        "image": "https://sgp.cloud.appwrite.io/v1/storage/buckets/6a3e398000280b2b3d20/files/6aa79be9000820128f91/view?project=6a3bce6900381359c3ce",
+        "tags": [
+          "AC Rooms",
+          "Breakfast Included"
+        ],
+        "pricePerNight": 3500,
+        "isDefault": false,
+        "location": "Dewalchaurh kham, Haldwani, Uttarakhand [GEO: 29.214275, 79.528070], Haldwani, Uttarakhand",
+        "city": "Haldwani",
+        "price": 3500
+      },
+      {
+        "id": "6aa79dde00272702c418",
+        "title": "Hotel Grand ",
+        "description": "Stay at Hotel Grand  situated in Dewalchaurh kham, Haldwani, Uttarakhand [GEO: 29.214275, 79.528070], Haldwani, Uttarakhand.",
+        "image": "https://sgp.cloud.appwrite.io/v1/storage/buckets/6a3e398000280b2b3d20/files/6aa79df90011eb5ebbc8/view?project=6a3bce6900381359c3ce",
+        "tags": [
+          "AC Rooms",
+          "Breakfast Included"
+        ],
+        "pricePerNight": 3500,
+        "isDefault": false,
+        "location": "Dewalchaurh kham, Haldwani, Uttarakhand [GEO: 29.214275, 79.528070], Haldwani, Uttarakhand",
+        "city": "Haldwani",
+        "price": 3500
+      },
+      {
+        "id": "6aa53d930005d015e972",
+        "title": "Royal Angel",
+        "description": "Stay at Royal Angel situated in Dewalchaurh kham manpur paschim , Haldwani, Uttarakhand [GEO: 29.185246, 79.507160], Haldwani, Uttarakhand.",
+        "image": "https://sgp.cloud.appwrite.io/v1/storage/buckets/6a3e398000280b2b3d20/files/6aa53dbd001d10a3b4e5/view?project=6a3bce6900381359c3ce",
+        "tags": [
+          "AC Rooms",
+          "Breakfast Included"
+        ],
+        "pricePerNight": 3500,
+        "isDefault": false,
+        "location": "Dewalchaurh kham manpur paschim , Haldwani, Uttarakhand [GEO: 29.185246, 79.507160], Haldwani, Uttarakhand",
+        "city": "Haldwani",
+        "price": 3500
+      }
+    ],
+    "activityOptions": [
+      {
+        "id": "6aacd7f70031a4b1ddf0",
+        "title": "Latest Activity",
+        "description": "Latest Activity",
+        "image": "https://sgp.cloud.appwrite.io/v1/storage/buckets/6a3e398000280b2b3d20/files/6aacd7f6002a1af92a4a/view?project=6a3bce6900381359c3ce",
+        "pricePerPerson": 20000,
+        "priceLabel": "+ ₹20000 / person"
+      },
+      {
+        "id": "6a69abfa00163684a891",
+        "title": "Testing",
+        "description": "Elevate your travel experience with curated adventures and memorable local activities.\nElevate your travel experience with curated adventures and memorable local activities.\n",
+        "image": "https://sgp.cloud.appwrite.io/v1/storage/buckets/6a3e398000280b2b3d20/files/6a69abf90010ec46ba4b/view?project=6a3bce6900381359c3ce",
+        "pricePerPerson": 1500,
+        "priceLabel": "+ ₹1500 / person"
+      }
+    ],
+    "metaTitle": "Srinagar – Gulmarg – Pahalgam – Sonamarg",
+    "metaDescription": "Srinagar – Gulmarg – Pahalgam – Sonamarg",
+    "metaKeywords": [
+      "Srinagar – Gulmarg – Pahalgam – Sonamarg"
+    ],
+    "itinerary": [
+      {
+        "id": "1789801425061",
+        "dayNumber": 1,
+        "title": "Arrival in Srinagar",
+        "activities": "Check-in and local sightseeing",
+        "points": [
+          {
+            "title": " Arrival & Srinagar Welcome ",
+            "description": "Arrive at Srinagar Airport, meet our representative and transfer to your hotel. Complete check-in and spend the evening relaxing and exploring the nearby area.",
+            "hasHotelActions": true,
+            "selectedHotelId": "6aa53d930005d015e972",
+            "hasActivityActions": true,
+            "selectedActivityId": "6aacd7f70031a4b1ddf0"
+          },
+          {
+            "title": "Airport Pickup",
+            "description": "Our representative will meet you at Srinagar Airport and transfer you to your hotel.",
+            "hasHotelActions": false,
+            "selectedHotelId": "6aa53d930005d015e972",
+            "hasActivityActions": false,
+            "selectedActivityId": "6a69abfa00163684a891"
+          },
+          {
+            "title": "Hotel Check-in",
+            "description": "Check in to your hotel and settle into your room. Take some time to relax after your journey.",
+            "hasHotelActions": false,
+            "selectedHotelId": "6aa52d130005b3aba844",
+            "hasActivityActions": false,
+            "selectedActivityId": "6aacd7f70031a4b1ddf0"
+          },
+          {
+            "title": "Mughal Garden Visit",
+            "description": "Visit the beautiful Mughal Gardens and enjoy the peaceful surroundings.",
+            "hasHotelActions": false,
+            "hasActivityActions": true,
+            "selectedActivityId": "6a69abfa00163684a891"
+          }
+        ]
+      },
+      {
+        "id": "1789802208129",
+        "dayNumber": 2,
+        "title": "Gulmarg",
+        "activities": "",
+        "points": [
+          {
+            "title": "Gulmarg Mountain Adventure",
+            "description": "After breakfast, travel to Gulmarg, one of Kashmir's most beautiful destinations. Enjoy mountain views and optional adventure activities before returning to Srinagar.",
+            "hasHotelActions": false,
+            "hasActivityActions": true,
+            "selectedActivityId": "6aacd7f70031a4b1ddf0"
+          },
+          {
+            "title": "Breakfast at Hotel",
+            "description": "Enjoy breakfast at the hotel before starting your journey to Gulmarg.",
+            "hasHotelActions": true,
+            "selectedHotelId": "6aa53d930005d015e972"
+          },
+          {
+            "title": "Transfer to Gulmarg",
+            "description": "Depart from Srinagar and travel through the scenic Kashmir Valley towards Gulmarg.",
+            "hasHotelActions": false
+          },
+          {
+            "title": "Gulmarg Exploration",
+            "description": "Explore Gulmarg and enjoy the beautiful mountain landscapes.",
+            "hasHotelActions": false,
+            "hasActivityActions": true,
+            "selectedActivityId": "6aacd7f70031a4b1ddf0"
+          }
+        ]
+      },
+      {
+        "id": "1789802323540",
+        "dayNumber": 3,
+        "title": "Pahalgam",
+        "activities": "",
+        "points": [
+          {
+            "title": "Pahalgam Valley Exploration",
+            "description": "Travel to Pahalgam after breakfast and explore its beautiful valleys, rivers and surrounding landscapes.",
+            "hasHotelActions": false
+          },
+          {
+            "title": "Drive to Pahalgam",
+            "description": "Enjoy a scenic drive through the Kashmir countryside towards Pahalgam.",
+            "hasHotelActions": false
+          }
+        ]
+      }
+    ],
+    "status": "published"
+  },
+  {
+    "id": "1785145668490",
+    "title": "Char Dham Yatra",
+    "images": [
+      "https://images.unsplash.com/photo-1519681393784-d120267933ba",
+      "https://images.unsplash.com/photo-1519681393784-d120267933ba",
+      "https://images.unsplash.com/photo-1519681393784-d120267933ba",
+      "https://images.unsplash.com/photo-1519681393784-d120267933ba",
+      "https://images.unsplash.com/photo-1519681393784-d120267933ba"
+    ],
+    "pricing": [
+      {
+        "id": "1785145728100",
+        "minPersons": 1,
+        "maxPersons": 2,
+        "pricePerPerson": 5000
+      },
+      {
+        "id": "1789708018439",
+        "minPersons": 4,
+        "maxPersons": 8,
+        "pricePerPerson": 8800
+      },
+      {
+        "id": "1789708036322",
+        "minPersons": 10,
+        "maxPersons": 12,
+        "pricePerPerson": 28000
+      }
+    ],
+    "metaTitle": "Char Dham Yatra",
+    "metaDescription": "Char Dham Yatra\n",
+    "metaKeywords": [
+      "Char Dham Yatra"
+    ],
+    "itinerary": [
+      {
+        "id": "1785145622980",
+        "dayNumber": 1,
+        "title": "Testing",
+        "activities": "",
+        "points": [
+          {
+            "title": "Testing",
+            "description": "testing",
+            "hasHotelActions": false,
+            "hasActivityActions": false,
+            "selectedActivityId": "6aacd7f70031a4b1ddf0",
+            "selectedHotelId": "6a841cf5002eda68b16f"
+          }
+        ]
+      },
+      {
+        "id": "1789715610215",
+        "dayNumber": 2,
+        "title": "Testing 2",
+        "activities": "",
+        "points": [
+          {
+            "title": "Testing 2",
+            "description": "Testing 2",
+            "hasHotelActions": false,
+            "selectedHotelId": "6a868a860030fc3f495d",
+            "hasActivityActions": false,
+            "selectedActivityId": "6aacd7f70031a4b1ddf0"
+          }
+        ]
+      }
+    ],
+    "status": "published",
+    "hotelOptions": [],
+    "activityOptions": [],
+    "location": "Uttarakhand",
+    "duration": "2 Days / 1 Night",
+    "badge": "Bestseller"
+  }
+]

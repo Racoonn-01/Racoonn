@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 export const fetchCache = "force-no-store";
 export const revalidate = 0;
 import { NextResponse } from "next/server";
+import { unstable_noStore as noStore } from "next/cache";
 import fs from "fs";
 import { databases } from "@/lib/appwrite/config";
 
@@ -11,6 +12,7 @@ const COLLECTION_ID = process.env.NEXT_PUBLIC_APPWRITE_PROPERTY_COLLECTION_ID ||
 const DOC_ID = "cms_packages_v1";
 
 export async function GET() {
+  noStore();
   try {
     // 1. Try reading from shared file (prefer in dev or if available)
     if (fs.existsSync(SHARED_FILE_PATH)) {

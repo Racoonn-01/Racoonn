@@ -691,22 +691,7 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
                                           <div className="absolute -left-9.5 top-1.5 w-3 h-3 rounded-full bg-brand-coral ring-4 ring-white" />
                                           <h5 className="font-bold text-gray-900 text-[15px]">{pt.title}</h5>
                                           <p className="text-gray-600 text-[14px] mt-1">{pt.description}</p>
-                                          {(pt.hasHotelActions || pt.title?.toLowerCase().includes('hotel') || pt.title?.toLowerCase().includes('check-in')) && (
-                                            <div className="flex flex-wrap gap-2 sm:gap-3 mt-3">
-                                              <button 
-                                                onClick={() => setIsHotelModalOpen(true)}
-                                                className="flex items-center justify-center gap-2 px-3 py-1.5 border border-brand-coral text-brand-coral rounded-lg text-[13px] font-semibold hover:bg-brand-coral hover:text-white transition-colors whitespace-nowrap flex-1 sm:flex-none"
-                                              >
-                                                <Hotel size={14} /> View Hotel
-                                              </button>
-                                              <button 
-                                                onClick={() => setActiveTab('stays')}
-                                                className="flex items-center justify-center gap-2 px-3 py-1.5 border border-gray-300 text-gray-600 rounded-lg text-[13px] font-semibold hover:bg-gray-50 transition-colors whitespace-nowrap flex-1 sm:flex-none"
-                                              >
-                                                <Pencil size={14} /> Change Hotel
-                                              </button>
-                                            </div>
-                                          )}
+
                                           {pt.hasActivityActions && (
                                             <div className="flex flex-wrap gap-2 sm:gap-3 mt-3">
                                               <button 

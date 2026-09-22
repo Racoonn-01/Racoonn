@@ -10,6 +10,7 @@ import PricePopover from '@/components/search/PricePopover';
 import { isActiveProperty, parseLocationGeo } from '@/lib/utils';
 import { getProperties } from '@/lib/appwrite/api';
 import { databases } from '@/lib/appwrite/config';
+import { Query } from 'appwrite';
 
 const DATABASE_ID = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID!;
 
@@ -225,6 +226,30 @@ function SearchContent() {
         console.warn('Failed to load rooms for price mapping:', err);
       }
 
+      // Fetch reviews to calculate accurate rating and review counts per property
+      const reviewsMap: Record<string, { totalRating: number; count: number }> = {};
+      try {
+        const reviewColId = process.env.NEXT_PUBLIC_APPWRITE_REVIEW_COLLECTION_ID;
+        if (reviewColId) {
+          const reviewsRes = await databases.listDocuments(
+            DATABASE_ID,
+            reviewColId,
+            [Query.limit(5000)]
+          );
+          reviewsRes.documents.forEach((review: Record<string, unknown>) => {
+            if (review.propertyId) {
+              if (!reviewsMap[review.propertyId]) {
+                reviewsMap[review.propertyId] = { totalRating: 0, count: 0 };
+              }
+              reviewsMap[review.propertyId].totalRating += Number(review.rating || 0);
+              reviewsMap[review.propertyId].count += 1;
+            }
+          });
+        }
+      } catch (err) {
+        console.warn('Failed to load reviews for rating mapping:', err);
+      }
+
       if (data) {
         const mappedProperties: Property[] = data.map((doc: AppwriteDoc) => {
           const rawPrice = Number(doc.price || doc.startingPrice || doc.minPrice || doc.basePrice || doc.pricePerNight || roomsMap[doc.$id] || 0);
@@ -240,6 +265,12 @@ function SearchContent() {
             ? rawAmenities.split(',').map((a: string) => a.trim().toLowerCase())
             : [];
 
+          const pReviews = reviewsMap[doc.$id];
+          const computedRating = pReviews && pReviews.count > 0 
+            ? Number((pReviews.totalRating / pReviews.count).toFixed(2)) 
+            : (doc.rating || 0);
+          const computedReviewsCount = pReviews ? pReviews.count : (doc.reviewsCount || 0);
+
           return {
             id: doc.$id,
             title: doc.propertyName || doc.title || 'Unknown Property',
@@ -250,8 +281,8 @@ function SearchContent() {
             state: doc.state || '',
             lat: doc.lat || geoLat,
             lng: doc.lng || geoLng,
-            rating: doc.rating || 0,
-            reviews: doc.reviewsCount || 0,
+            rating: computedRating,
+            reviews: computedReviewsCount,
             price: rawPrice > 0 ? rawPrice : 3500,
             images: (doc.photos && doc.photos.length > 0) ? doc.photos : ['https://images.unsplash.com/photo-1542314831-c6a4d14d837e?q=80&w=800&auto=format&fit=crop'],
             status: doc.status?.toLowerCase() || 'active',
@@ -450,7 +481,7 @@ function SearchContent() {
   return (
     <div className="flex flex-col h-[calc(100vh-92px)] overflow-hidden">
       {/* Top Filter Bar */}
-      <div className="relative shrink-0 hidden lg:block">
+      <div className="relative shrink-0 hidden lg:block z-40">
         <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center gap-3 overflow-x-auto hide-scrollbar">
           <button 
             className="flex items-center gap-2 border border-gray-300 hover:border-gray-900 rounded-full px-4 py-2 transition-colors shrink-0 font-medium text-[14px] text-gray-700"
@@ -517,7 +548,7 @@ function SearchContent() {
           className="absolute left-0 right-0 flex flex-col bg-slate-50 rounded-t-[32px]
             lg:static lg:h-full lg:min-h-0 lg:w-[55%] xl:w-[60%]
             lg:rounded-2xl lg:border border-gray-200 lg:order-1
-            lg:shadow-[0_4px_24px_rgba(0,0,0,0.06)]"
+            lg:shadow-[0_4px_24px_rgba(0,0,0,0.06)] z-[100] lg:z-auto"
           style={{
             // Mobile: top slides between 50% (peek) and 0 (full screen)
             top: isListExpanded ? '0' : '50%',
@@ -525,7 +556,6 @@ function SearchContent() {
             bottom: 0,
             boxShadow: '0 -8px 30px rgba(0,0,0,0.14)',
             transition: dragOffset === 0 ? 'top 0.35s cubic-bezier(0.4,0,0.2,1), transform 0.35s cubic-bezier(0.4,0,0.2,1)' : 'none',
-            zIndex: 100,
           }}
         >
           {/* ── Pull bar / drag handle (mobile only) ── */}

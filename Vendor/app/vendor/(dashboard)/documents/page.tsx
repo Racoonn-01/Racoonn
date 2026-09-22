@@ -32,9 +32,14 @@ export const INITIAL_DOC_TEMPLATES: { id: string; title: string; description: st
     description: "Permanent Account Number card of business entity or proprietor."
   },
   {
-    id: "aadhaar_card",
-    title: "Aadhaar Card",
-    description: "Government identity card of the primary registered owner."
+    id: "aadhaar_card_front",
+    title: "Aadhaar Card (Front Side)",
+    description: "Government identity card of the primary registered owner (Front Side)."
+  },
+  {
+    id: "aadhaar_card_back",
+    title: "Aadhaar Card (Back Side)",
+    description: "Government identity card of the primary registered owner (Back Side)."
   },
   {
     id: "business_registration",
@@ -76,6 +81,14 @@ export default function DocumentsPage() {
     status: "Approved" | "Rejected" | "Under Review" | "Pending";
     reason?: string;
   } | null>(null);
+  const [showApprovedBanner, setShowApprovedBanner] = useState(true);
+
+  useEffect(() => {
+    if (verificationBanner?.status === 'Approved') {
+      const timer = setTimeout(() => setShowApprovedBanner(false), 10000);
+      return () => clearTimeout(timer);
+    }
+  }, [verificationBanner?.status]);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const activeDocIdRef = useRef<string | null>(null);
@@ -92,12 +105,61 @@ export default function DocumentsPage() {
         try { savedDocs = JSON.parse(savedDocsStr); } catch {}
       }
 
+      if (savedDocs.length === 0) {
+        const globalDocsStr = localStorage.getItem('racoonn_global_vendor_docs');
+        if (globalDocsStr) {
+          try { 
+             const parsedGlobal = JSON.parse(globalDocsStr);
+             if (parsedGlobal.vendorId === vendorId && Array.isArray(parsedGlobal.docs)) {
+                savedDocs = parsedGlobal.docs;
+             }
+          } catch {}
+        }
+      }
+
+      const formattedDate = new Date().toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
+
       // Merge templates: preserve uploaded files, default rest to clean Missing state
       const mergedList = INITIAL_DOC_TEMPLATES.map((t) => {
         const existing = savedDocs.find(d => d.id === t.id || d.title?.toLowerCase() === t.title.toLowerCase());
         if (existing && existing.fileName) {
           return existing;
         }
+
+        let fileIdFromProfile = null;
+        let fileNameFromProfile = null;
+
+        if (profile) {
+          if (t.id === "pan_card" && profile.idProofFront) {
+             fileIdFromProfile = profile.idProofFront;
+             fileNameFromProfile = "PAN Card (Uploaded)";
+          } else if (t.id === "aadhaar_card_front" && profile.idProofBack) {
+             fileIdFromProfile = profile.idProofBack;
+             fileNameFromProfile = "Aadhaar Card Front (Uploaded)";
+          } else if (t.id === "property_proof" && profile.businessProof) {
+             fileIdFromProfile = profile.businessProof;
+             fileNameFromProfile = "Property Proof (Uploaded)";
+          }
+        }
+
+        if (fileIdFromProfile) {
+           let generatedFileUrl = null;
+           try {
+             generatedFileUrl = storage.getFileView(appwriteConfig.vendorDocumentsBucketId, fileIdFromProfile).toString();
+           } catch (e) {
+             console.warn("Could not generate file URL for", fileIdFromProfile, e);
+           }
+
+           return {
+             ...t,
+             status: "Pending", // Default new DB-detected documents to Pending until explicitly Verified
+             fileName: fileNameFromProfile,
+             fileId: fileIdFromProfile,
+             fileUrl: generatedFileUrl,
+             updatedAt: formattedDate
+           };
+        }
+
         return {
           ...t,
           status: "Missing" as const,
@@ -149,25 +211,30 @@ export default function DocumentsPage() {
 
         if (verStatus) {
           setVerificationBanner({ status: verStatus, reason: verReason || undefined });
-
-          setDocuments(prevDocs => {
-            const targetStatus = 
-              verStatus === 'Approved' ? ('Verified' as const) : 
-              verStatus === 'Rejected' ? ('Rejected' as const) : 
-              verStatus === 'Under Review' ? ('Under Review' as const) : null;
-
-            if (!targetStatus) return prevDocs;
-            
-            let changed = false;
-            const updated = prevDocs.map(doc => {
-              if (doc.fileName && doc.status !== targetStatus) {
-                changed = true;
-                return { ...doc, status: targetStatus };
-              }
-              return doc;
-            });
-            return changed ? updated : prevDocs;
-          });
+        }
+        
+        // Also sync independent document statuses from the cookie updated by Admin
+        const docsCookieMatch = typeof document !== 'undefined' ? document.cookie.match(new RegExp(`(?:^|; )racoonn_vendor_docs_${vendorKey}=([^;]*)`)) : null;
+        if (docsCookieMatch && docsCookieMatch[1]) {
+          try {
+            const parsedDocsPayload = JSON.parse(decodeURIComponent(docsCookieMatch[1]));
+            if (parsedDocsPayload && Array.isArray(parsedDocsPayload.docs)) {
+              setDocuments(prevDocs => {
+                let changed = false;
+                const newDocs = prevDocs.map(prevDoc => {
+                  const syncedDoc = parsedDocsPayload.docs.find((d: any) => d.id === prevDoc.id);
+                  if (syncedDoc && syncedDoc.status !== prevDoc.status) {
+                    changed = true;
+                    return { ...prevDoc, status: syncedDoc.status };
+                  }
+                  return prevDoc;
+                });
+                return changed ? newDocs : prevDocs;
+              });
+            }
+          } catch (e) {
+            console.warn("Failed to parse docs cookie sync:", e);
+          }
         }
       } catch (err) {
         console.warn("Live status check error:", err);
@@ -226,6 +293,13 @@ export default function DocumentsPage() {
     const address = [profile?.address, profile?.city, profile?.state].filter(Boolean).join(', ') || "Registered Business Address";
 
     try {
+      const strippedDocs = updated.map(d => {
+        if (d.fileUrl && d.fileUrl.startsWith('data:')) {
+          return { ...d, fileUrl: null };
+        }
+        return d;
+      });
+
       const payload = {
         vendorId,
         vendorName,
@@ -233,7 +307,7 @@ export default function DocumentsPage() {
         email,
         phone,
         address,
-        docs: updated,
+        docs: strippedDocs,
         updatedAt: new Date().toISOString()
       };
 
@@ -284,20 +358,6 @@ export default function DocumentsPage() {
     try {
       let uploadedFileId: string | null = null;
       let uploadedFileUrl: string | null = null;
-
-      const readDataUrl = (file: File): Promise<string> => {
-        return new Promise((resolve) => {
-          const reader = new FileReader();
-          reader.onloadend = () => resolve(reader.result as string);
-          reader.readAsDataURL(file);
-        });
-      };
-
-      try {
-        uploadedFileUrl = await readDataUrl(file);
-      } catch (readErr) {
-        console.warn("FileReader error:", readErr);
-      }
 
       if (appwriteConfig.vendorDocumentsBucketId) {
         try {
@@ -382,7 +442,7 @@ export default function DocumentsPage() {
       </motion.div>
 
       {/* REALTIME SYSTEM STATUS ALERT BANNER */}
-      {verificationBanner && (
+      {verificationBanner && (verificationBanner.status !== 'Approved' || showApprovedBanner) && (
         <motion.div 
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -472,8 +532,24 @@ export default function DocumentsPage() {
                           <Button 
                             variant="outline" 
                             size="sm" 
-                            onClick={() => {
-                              setViewingDoc(doc);
+                            onClick={async () => {
+                              let docToView = { ...doc };
+                              if (doc.fileName && doc.fileName.includes("(Uploaded)") && doc.fileId) {
+                                try {
+                                  const meta = await storage.getFile(appwriteConfig.vendorDocumentsBucketId, doc.fileId);
+                                  docToView.fileName = meta.name;
+                                } catch (e: any) {
+                                  console.error("Could not fetch file metadata:", e);
+                                  // If file is deleted from server but still linked in DB
+                                  if (e?.code === 404 || e?.message?.includes("not be found")) {
+                                    toast.error("This document is missing from the server vault.", {
+                                      description: "Please re-upload the document using the Replace button."
+                                    });
+                                    docToView.fileUrl = null;
+                                  }
+                                }
+                              }
+                              setViewingDoc(docToView);
                               setZoomLevel(1);
                               setRotation(0);
                             }}

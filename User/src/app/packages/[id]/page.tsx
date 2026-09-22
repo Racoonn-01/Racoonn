@@ -27,14 +27,13 @@ import {
   User
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { getProperties, getReviews, createReview } from '@/lib/appwrite/api';
-import { Models } from 'appwrite';
+import { getReviews, createReview } from '@/lib/appwrite/api';
 import { format, addDays, differenceInDays } from 'date-fns';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import AuthModal from '@/components/auth/AuthModal';
-import { Navigation, Pagination, Autoplay } from 'swiper/modules';
+import { Navigation, Pagination } from 'swiper/modules';
 import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/pagination';
@@ -48,20 +47,49 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
   const resolvedParams = use(params);
   const rawPkgId = resolvedParams.id || '1';
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [pkg, setPkg] = useState<Record<string, any> | null>(null);
+  const [pkg, setPkg] = useState<Record<string, unknown> | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [itinerary, setItinerary] = useState<Record<string, any>[]>([]);
+  const [itinerary, setItinerary] = useState<Record<string, unknown>[]>([]);
 
   // Available Hotel Options
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [hotelOptions, setHotelOptions] = useState<Record<string, any>[]>([]);
+  const [hotelOptions, setHotelOptions] = useState<Record<string, unknown>[]>([]);
 
   // Available Activity Options
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [activityOptions, setActivityOptions] = useState<Record<string, any>[]>([]);
+  const [activityOptions, setActivityOptions] = useState<Record<string, unknown>[]>([]);
   
-  const [reviewsData, setReviewsData] = useState<Record<string, any>[]>([]);
+  const [reviewsData, setReviewsData] = useState<Record<string, unknown>[]>([]);
+
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState('plan');
+  const [openDay, setOpenDay] = useState<number>(1);
+  const [selectedHotel, setSelectedHotel] = useState<number>(0);
+  const [selectedActivities, setSelectedActivities] = useState<number[]>([]);
+  const [adultsCount, setAdultsCount] = useState<number>(1);
+  const [isHotelModalOpen, setIsHotelModalOpen] = useState(false);
+  const [isActivityModalOpen, setIsActivityModalOpen] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [selectedActivityForModal, setSelectedActivityForModal] = useState<unknown>(null);
+  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
+  const [isAllReviewsModalOpen, setIsAllReviewsModalOpen] = useState(false);
+  const [activeReviewFilter, setActiveReviewFilter] = useState('All');
+  const [newRating, setNewRating] = useState<number>(0);
+  const [newReviewName, setNewReviewName] = useState('');
+  const [newReviewCategory, setNewReviewCategory] = useState('Experience');
+  const [newReviewText, setNewReviewText] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isCopied, setIsCopied] = useState(false);
+
+  const { profile, toggleSavedHotel, isAuthenticated } = useAuthStore();
+  const isSaved = profile?.savedHotels?.includes(rawPkgId) || false;
+
+  // Date selection state
+  const [startDate, setStartDate] = useState<Date | undefined>(undefined);
+  const [endDate, setEndDate] = useState<Date | undefined>(undefined);
+  const [isStartOpen, setIsStartOpen] = useState(false);
+
 
   // Force scroll to top on mount to prevent showing footer first
   useEffect(() => {
@@ -97,8 +125,8 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
             }
 
             // Fetch fresh global activities and properties to keep names synced without requiring a package re-save
-            let freshActivities: any[] = [];
-            let freshProperties: any[] = [];
+            let freshActivities: unknown[] = [];
+            let freshProperties: unknown[] = [];
             try {
               const [actRes, propRes] = await Promise.all([
                 fetch("/api/cms/activities").catch(() => null),
@@ -121,19 +149,22 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
             }
 
             if (cmsFound.hotelOptions && Array.isArray(cmsFound.hotelOptions) && cmsFound.hotelOptions.length > 0) {
-              const updatedHotels = cmsFound.hotelOptions.map((h: any) => {
-                const fresh = freshProperties.find((fp: any) => fp.id === h.id);
-                return fresh ? { ...h, ...fresh } : h;
-              });
-              setHotelOptions(updatedHotels);
+              const legacyHotelIds = ["h1", "h2"];
+              const filteredHotels = cmsFound.hotelOptions
+                .filter((h: Record<string, unknown>) => !legacyHotelIds.includes(h.id))
+                .map((h: Record<string, unknown>) => {
+                  const fresh = freshProperties.find((fp: Record<string, unknown>) => fp.id === h.id);
+                  return fresh ? { ...h, ...fresh } : h;
+                });
+              setHotelOptions(filteredHotels);
             }
 
             if (cmsFound.activityOptions && Array.isArray(cmsFound.activityOptions) && cmsFound.activityOptions.length > 0) {
               const legacyDummyIds = ["act-1", "act-2", "act-3", "act-4", "act-5"];
               const filteredActivities = cmsFound.activityOptions
-                .filter((act: any) => !legacyDummyIds.includes(act.id))
-                .map((act: any) => {
-                  const fresh = freshActivities.find((fa: any) => fa.id === act.id);
+                .filter((act: Record<string, unknown>) => !legacyDummyIds.includes(act.id))
+                .map((act: Record<string, unknown>) => {
+                  const fresh = freshActivities.find((fa: Record<string, unknown>) => fa.id === act.id);
                   return fresh ? { ...act, ...fresh } : act;
                 });
               setActivityOptions(filteredActivities);
@@ -158,44 +189,19 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
     }
     loadCMSPackage();
   }, [rawPkgId]);
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState('plan');
-  const [openDay, setOpenDay] = useState<number>(1);
-  const [selectedHotel, setSelectedHotel] = useState<number>(0);
-  const [selectedActivities, setSelectedActivities] = useState<number[]>([]);
-  const [adultsCount, setAdultsCount] = useState<number>(1);
-  const [isHotelModalOpen, setIsHotelModalOpen] = useState(false);
-  const [isActivityModalOpen, setIsActivityModalOpen] = useState(false);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [selectedActivityForModal, setSelectedActivityForModal] = useState<any>(null);
-  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
-  const [isAllReviewsModalOpen, setIsAllReviewsModalOpen] = useState(false);
-  const [activeReviewFilter, setActiveReviewFilter] = useState('All');
-  const [newRating, setNewRating] = useState<number>(0);
-  const [newReviewName, setNewReviewName] = useState('');
-  const [newReviewCategory, setNewReviewCategory] = useState('Experience');
-  const [newReviewText, setNewReviewText] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isCopied, setIsCopied] = useState(false);
-
-  const { profile, toggleSavedHotel, isAuthenticated } = useAuthStore();
-  const isSaved = profile?.savedHotels?.includes(rawPkgId) || false;
 
   useEffect(() => {
     if (isAuthenticated && searchParams.get('action') === 'review') {
-      setActiveTab('reviews');
-      setIsReviewModalOpen(true);
+      setTimeout(() => {
+        setActiveTab('reviews');
+        setIsReviewModalOpen(true);
+      }, 0);
       // Clean up the URL without triggering a full page reload
       router.replace(`/packages/${rawPkgId}`, { scroll: false });
     }
   }, [isAuthenticated, searchParams, router, rawPkgId]);
 
-  // Date selection state
-  const [startDate, setStartDate] = useState<Date | undefined>(undefined);
-  const [endDate, setEndDate] = useState<Date | undefined>(undefined);
-  const [isStartOpen, setIsStartOpen] = useState(false);
-  const [isEndOpen, setIsEndOpen] = useState(false);
-
+  
   // Removed fallback fetching of properties, rely only on CMS data
 
   if (isLoading) {
@@ -247,14 +253,9 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
     setIsStartOpen(false);
   };
 
-  const handleEndDateSelect = (date: Date | undefined) => {
-    if (!date) return;
-    setEndDate(date);
-    setIsEndOpen(false);
-  };
-
+  
   // Calculate base price from pricing slabs based on adults count, fallback to default price
-  let defaultBasePriceNum = parseInt(pkg.price.replace(/[^\d]/g, ''), 10) || 0;
+  const defaultBasePriceNum = parseInt(pkg.price.replace(/[^\d]/g, ''), 10) || 0;
   let groupBasePrice = defaultBasePriceNum * adultsCount;
 
   if (pkg.pricing && Array.isArray(pkg.pricing) && pkg.pricing.length > 0) {
@@ -277,7 +278,7 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
     }
 
     if (applicableSlab) {
-      groupBasePrice = applicableSlab.pricePerPerson || 0; // This is actually the TOTAL price for the slab
+      groupBasePrice = (applicableSlab.pricePerPerson || 0) * adultsCount;
     }
   }
 
@@ -531,13 +532,13 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
               </div>
 
               {/* Booking Inputs */}
-              <div className="flex w-full flex-col sm:flex-row border border-gray-300 rounded-xl overflow-hidden divide-y sm:divide-y-0 sm:divide-x divide-gray-300">
-                <div className="flex w-full sm:w-2/3 divide-x divide-gray-300">
+              <div className="flex w-full flex-row border border-gray-300 rounded-xl overflow-hidden divide-x divide-gray-300">
+                <div className="flex w-1/2">
                   {/* Start Date Popover */}
                   <Popover open={isStartOpen} onOpenChange={setIsStartOpen}>
-                    <PopoverTrigger className="w-full p-2.5 cursor-pointer hover:bg-gray-50 transition-colors text-left outline-none group">
+                    <PopoverTrigger className="w-full p-2.5 sm:p-3 cursor-pointer hover:bg-gray-50 transition-colors text-left outline-none group">
                       <div className="text-[10px] font-bold uppercase tracking-wider text-gray-900 group-hover:text-brand-coral transition-colors">Start Date</div>
-                      <div className="text-[13px] font-semibold text-gray-800 mt-0.5 whitespace-nowrap overflow-hidden text-ellipsis">
+                      <div className="text-[12px] sm:text-[13px] font-semibold text-gray-800 mt-0.5 whitespace-nowrap overflow-hidden text-ellipsis">
                         {startDate ? format(startDate, 'dd/MM/yyyy') : 'Add date'}
                       </div>
                     </PopoverTrigger>
@@ -560,20 +561,20 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
                     </PopoverContent>
                   </Popover>
                 </div>
-                <div className="w-full sm:w-1/3 p-2.5 transition-colors flex flex-col justify-center">
+                <div className="w-1/2 p-2.5 sm:p-3 transition-colors flex flex-col justify-center">
                   <div className="text-[10px] font-bold uppercase tracking-wider text-gray-900 mb-0.5">Travelers</div>
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-1 sm:gap-3">
                     <button 
                       onClick={() => setAdultsCount(Math.max(1, adultsCount - 1))} 
-                      className="w-5 h-5 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 hover:bg-gray-300 hover:text-gray-900 transition-colors"
+                      className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 hover:bg-gray-300 hover:text-gray-900 transition-colors shrink-0"
                     >
                       -
                     </button>
-                    <span className="text-[14px] text-gray-900 font-medium min-w-12.5 text-center">{adultsCount} {adultsCount === 1 ? 'adult' : 'adults'}</span>
+                    <span className="text-[12px] sm:text-[14px] text-gray-900 font-medium min-w-10 sm:min-w-12.5 text-center truncate">{adultsCount} {adultsCount === 1 ? 'adult' : 'adults'}</span>
                     <button 
                       onClick={() => setAdultsCount(Math.min(maxTravelersLimit, adultsCount + 1))} 
                       disabled={adultsCount >= maxTravelersLimit}
-                      className={`w-5 h-5 rounded-full flex items-center justify-center transition-colors ${
+                      className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center transition-colors shrink-0 ${
                         adultsCount >= maxTravelersLimit 
                           ? 'bg-gray-100 text-gray-300 cursor-not-allowed' 
                           : 'bg-gray-200 text-gray-600 hover:bg-gray-300 hover:text-gray-900'
@@ -662,18 +663,18 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
                           <div key={day.id || dIdx} className="border border-gray-200 rounded-xl overflow-hidden bg-white">
                             <button 
                               onClick={() => setOpenDay(isDayOpen ? 0 : dayNum)}
-                              className={`w-full flex items-center justify-between p-5 bg-white hover:bg-gray-50 transition-colors ${isDayOpen ? 'border-b border-gray-100' : ''}`}
+                              className={`w-full flex items-center p-4 sm:p-5 gap-3 bg-white hover:bg-gray-50 transition-colors ${isDayOpen ? 'border-b border-gray-100' : ''}`}
                             >
-                              <div className="flex items-center gap-4">
-                                <div className="w-12 h-12 rounded-full bg-brand-coral/10 flex items-center justify-center shrink-0">
-                                  <CalendarDays className="text-brand-coral" size={24} />
-                                </div>
-                                <div className="text-left">
-                                  <h4 className="font-bold text-[18px] text-brand-coral">Day {dayNum}</h4>
-                                  <p className="text-gray-600 text-[15px] font-medium mt-0.5">{day.title || day.activities || `Day ${dayNum} Overview`}</p>
-                                </div>
+                              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-brand-coral/10 flex items-center justify-center shrink-0">
+                                <CalendarDays className="text-brand-coral w-5 h-5 sm:w-6 sm:h-6" />
                               </div>
-                              {isDayOpen ? <ChevronUp className="text-brand-coral" size={24} /> : <ChevronDown className="text-brand-coral" size={24} />}
+                              <div className="text-left flex-1 min-w-0 pr-2">
+                                <h4 className="font-bold text-[16px] sm:text-[18px] text-brand-coral">Day {dayNum}</h4>
+                                <p className="text-gray-600 text-[14px] sm:text-[15px] font-medium mt-0.5 break-words line-clamp-2 sm:line-clamp-none">{day.title || day.activities || `Day ${dayNum} Overview`}</p>
+                              </div>
+                              <div className="shrink-0 ml-auto flex items-center justify-center">
+                                {isDayOpen ? <ChevronUp className="text-brand-coral w-5 h-5 sm:w-6 sm:h-6" /> : <ChevronDown className="text-brand-coral w-5 h-5 sm:w-6 sm:h-6" />}
+                              </div>
                             </button>
                             
                             <div className={`grid transition-all duration-300 ease-in-out ${isDayOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
@@ -688,23 +689,23 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
                                           <h5 className="font-bold text-gray-900 text-[15px]">{pt.title}</h5>
                                           <p className="text-gray-600 text-[14px] mt-1">{pt.description}</p>
                                           {(pt.hasHotelActions || pt.title?.toLowerCase().includes('hotel') || pt.title?.toLowerCase().includes('check-in')) && (
-                                            <div className="flex gap-3 mt-3">
+                                            <div className="flex flex-wrap gap-2 sm:gap-3 mt-3">
                                               <button 
                                                 onClick={() => setIsHotelModalOpen(true)}
-                                                className="flex items-center gap-2 px-3 py-1.5 border border-brand-coral text-brand-coral rounded-lg text-[13px] font-semibold hover:bg-brand-coral hover:text-white transition-colors"
+                                                className="flex items-center justify-center gap-2 px-3 py-1.5 border border-brand-coral text-brand-coral rounded-lg text-[13px] font-semibold hover:bg-brand-coral hover:text-white transition-colors whitespace-nowrap flex-1 sm:flex-none"
                                               >
                                                 <Hotel size={14} /> View Hotel
                                               </button>
                                               <button 
                                                 onClick={() => setActiveTab('stays')}
-                                                className="flex items-center gap-2 px-3 py-1.5 border border-gray-300 text-gray-600 rounded-lg text-[13px] font-semibold hover:bg-gray-50 transition-colors"
+                                                className="flex items-center justify-center gap-2 px-3 py-1.5 border border-gray-300 text-gray-600 rounded-lg text-[13px] font-semibold hover:bg-gray-50 transition-colors whitespace-nowrap flex-1 sm:flex-none"
                                               >
                                                 <Pencil size={14} /> Change Hotel
                                               </button>
                                             </div>
                                           )}
                                           {pt.hasActivityActions && (
-                                            <div className="flex gap-3 mt-3">
+                                            <div className="flex flex-wrap gap-2 sm:gap-3 mt-3">
                                               <button 
                                                 onClick={() => {
                                                   const selectedActIndex = selectedActivities.length > 0 ? selectedActivities[0] : 0;
@@ -714,13 +715,13 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
                                                     setIsActivityModalOpen(true);
                                                   }
                                                 }}
-                                                className="flex items-center gap-2 px-3 py-1.5 border border-brand-navy text-brand-navy rounded-lg text-[13px] font-semibold hover:bg-brand-navy hover:text-white transition-colors"
+                                                className="flex items-center justify-center gap-2 px-3 py-1.5 border border-brand-navy text-brand-navy rounded-lg text-[13px] font-semibold hover:bg-brand-navy hover:text-white transition-colors whitespace-nowrap flex-1 sm:flex-none"
                                               >
                                                 <Compass size={14} /> View Activities
                                               </button>
                                               <button 
                                                 onClick={() => setActiveTab('activities')}
-                                                className="flex items-center gap-2 px-3 py-1.5 border border-gray-300 text-gray-600 rounded-lg text-[13px] font-semibold hover:bg-gray-50 transition-colors"
+                                                className="flex items-center justify-center gap-2 px-3 py-1.5 border border-gray-300 text-gray-600 rounded-lg text-[13px] font-semibold hover:bg-gray-50 transition-colors whitespace-nowrap flex-1 sm:flex-none"
                                               >
                                                 <Pencil size={14} /> Change Activity
                                               </button>
@@ -774,10 +775,10 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
                               : 'border-gray-200 hover:border-gray-300 bg-white hover:bg-gray-50/40'
                           }`}
                         >
-                          <div className="w-full sm:w-50 h-35 relative rounded-xl overflow-hidden shrink-0">
+                          <div className="w-full sm:w-56 h-48 sm:h-40 relative rounded-xl overflow-hidden shrink-0">
                             <Image src={hotel.image} alt={hotel.title} fill className="object-cover transition-transform duration-500 hover:scale-105" />
                           </div>
-                          <div className="flex flex-col justify-between grow">
+                          <div className="flex flex-col justify-between grow min-w-0">
                             <div>
                               <div className="flex justify-between items-start gap-2">
                                 <h4 className="font-bold text-[18px] text-gray-900">{hotel.title}</h4>
@@ -853,10 +854,10 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
                               : 'border-gray-200 hover:border-gray-300 bg-white hover:bg-gray-50/40'
                           }`}
                         >
-                          <div className="w-full sm:w-37.5 h-30 relative rounded-xl overflow-hidden shrink-0">
+                          <div className="w-full sm:w-48 h-48 sm:h-32 relative rounded-xl overflow-hidden shrink-0">
                             <Image src={act.image} alt={act.title} fill className="object-cover transition-transform duration-500 hover:scale-105" />
                           </div>
-                          <div className="flex flex-col justify-between grow">
+                          <div className="flex flex-col justify-between grow min-w-0">
                             <div>
                               <div className="flex justify-between items-start gap-2">
                                 <h4 className="font-bold text-[18px] text-gray-900">{act.title}</h4>

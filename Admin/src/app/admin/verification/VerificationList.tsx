@@ -115,7 +115,9 @@ export default function VerificationList({ type }: { type?: string }) {
         } else if (type === 'rejected') {
           filtered = vendorList.filter(r => r.status === 'rejected');
         } else if (type === 'pending') {
-          filtered = vendorList.filter(r => r.status === 'pending' || r.status === 'under review');
+          filtered = vendorList.filter(r => r.status === 'pending');
+        } else if (type === 'under-review') {
+          filtered = vendorList.filter(r => r.status === 'under review');
         }
 
         setRequests(filtered);

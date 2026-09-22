@@ -128,7 +128,6 @@ export default function PopularDestinations() {
                     src={dest.image || "https://images.unsplash.com/photo-1626621341517-bbf3d9990a23?q=80&w=800&auto=format&fit=crop"}
                     alt={dest.city}
                     fill
-                    unoptimized
                     className="object-cover group-hover/card:scale-110 transition-transform duration-700"
                     sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 25vw"
                   />
@@ -177,7 +176,7 @@ export default function PopularDestinations() {
       {/* View All Button */}
       <div className="mt-8 flex justify-center">
         <Link
-          href="/search"
+          href="/destinations"
           className="bg-white border-2 border-brand-coral text-brand-coral hover:bg-brand-coral hover:text-white px-8 py-3 rounded-full font-bold transition-colors shadow-sm flex items-center gap-2"
         >
           View all destinations <ArrowRight size={18} />

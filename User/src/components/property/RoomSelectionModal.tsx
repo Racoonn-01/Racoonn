@@ -59,8 +59,10 @@ export default function RoomSelectionModal({
       // Small delay ensures DOM is fully painted with the initial (hidden) state before transitioning
       timer = setTimeout(() => setIsShowing(true), 10);
     } else {
-      setIsShowing(false);
-      timer = setTimeout(() => setRender(false), 300);
+      setTimeout(() => {
+        setIsShowing(false);
+        timer = setTimeout(() => setRender(false), 300);
+      }, 0);
     }
     return () => clearTimeout(timer);
   }, [isOpen]);

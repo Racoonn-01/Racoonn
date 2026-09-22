@@ -111,7 +111,6 @@ export default function PropertyCard({
           </div>
         </div>
         <p className="text-[14px] text-gray-500 truncate mt-0.5">{property.subtitle}</p>
-        <p className="text-[14px] text-gray-500 truncate">{property.details}</p>
         <p className="text-[14px] text-gray-500 mt-0.5">{property.dates}</p>
         
         <div className="mt-2 flex items-baseline gap-1">

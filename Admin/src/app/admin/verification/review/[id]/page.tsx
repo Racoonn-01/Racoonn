@@ -153,13 +153,16 @@ export default function VendorFullPageReviewScreen({ params }: { params: Promise
           let fileUrl = null;
           let fileName = null;
 
+          let fallbackDoc: ReviewDoc | undefined = undefined;
+
           // 1. First priority: Realtime/dashboard uploaded documents (rawDocs)
           if (rawDocs && rawDocs.length > 0) {
             let searchId = template.id;
-            if (template.id === "aadhaar_card_front") searchId = "aadhaar_card";
+            let legacySearchId = template.id;
+            if (template.id === "aadhaar_card_front") legacySearchId = "aadhaar_card";
             
             // For aadhaar_card_back, if it's not explicitly in rawDocs, we won't find it here and it will fall back to Appwrite
-            const fallbackDoc = rawDocs.find((d: ReviewDoc) => d.id === searchId || d.title?.toLowerCase() === template.title.toLowerCase());
+            fallbackDoc = rawDocs.find((d: ReviewDoc) => d.id === searchId || d.id === legacySearchId || d.title?.toLowerCase() === template.title.toLowerCase());
             
             if (fallbackDoc && (fallbackDoc.fileUrl || fallbackDoc.fileName)) {
               // Don't duplicate the dashboard file into the Back slot if they only uploaded one file for Aadhaar
@@ -190,7 +193,7 @@ export default function VendorFullPageReviewScreen({ params }: { params: Promise
               id: template.id,
               title: template.title,
               description: template.description,
-              status: docStatus === "Approved" ? "Verified" : (docStatus === "Rejected" ? "Rejected" : "Pending"),
+              status: fallbackDoc?.status || "Pending",
               fileName: fileName,
               fileUrl: fileUrl,
               updatedAt: new Date(doc.$updatedAt).toLocaleDateString()
@@ -243,10 +246,9 @@ export default function VendorFullPageReviewScreen({ params }: { params: Promise
     setIsSubmitting(true);
     const activeReason = rejectionReason.trim() || "Compliance documents require clarification or re-upload.";
 
-    const updatedDocs = documents.map(d => ({
-      ...d,
-      status: newStatus === "Approved" ? ("Verified" as const) : newStatus === "Rejected" ? ("Rejected" as const) : ("Under Review" as const)
-    }));
+    // DO NOT override individual document statuses when approving/rejecting the overall vendor profile.
+    // Admin should verify documents individually.
+    const updatedDocs = documents;
 
     setDocuments(updatedDocs);
     setVendorInfo(prev => ({ ...prev, status: newStatus }));
@@ -343,7 +345,29 @@ export default function VendorFullPageReviewScreen({ params }: { params: Promise
     setIsSubmitting(false);
   };
 
+  const updateSingleDocumentStatus = async (docId: string, newStatus: "Verified" | "Rejected" | "Under Review" | "Pending") => {
+    const updatedDocs = documents.map(d => d.id === docId ? { ...d, status: newStatus } : d);
+    setDocuments(updatedDocs);
+    
+    if (selectedDoc?.id === docId) {
+      setSelectedDoc(updatedDocs.find(d => d.id === docId) || selectedDoc);
+    }
 
+    // Sync to cookie for vendor cross-port sync
+    document.cookie = `racoonn_vendor_docs_${vendorId}=${encodeURIComponent(JSON.stringify({ vendorId, docs: updatedDocs, updatedAt: new Date().toISOString() }))}; path=/; max-age=31536000; SameSite=Lax`;
+
+    if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
+      try {
+        const bc = new BroadcastChannel('racoonn_realtime_verification');
+        bc.postMessage({
+          type: 'VERIFICATION_UPDATED',
+          vendorId,
+          timestamp: Date.now()
+        });
+        bc.close();
+      } catch {}
+    }
+  };
 
   const handleOpenNewTab = () => {
     if (selectedDoc?.fileUrl) {
@@ -415,29 +439,6 @@ export default function VendorFullPageReviewScreen({ params }: { params: Promise
           </div>
         </div>
 
-        {/* AUTOMATED EMAIL DISPATCH STATUS BANNER */}
-        {vendorInfo.status === 'Approved' && (
-          <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 flex items-center justify-between gap-4 animate-in fade-in">
-            <div className="flex items-center gap-3">
-              <div className="h-9 w-9 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-bold">
-                <Mail className="w-5 h-5" />
-              </div>
-              <div>
-                <p className="text-xs font-bold font-heading">Automated Approval Email Sent</p>
-                <p className="text-[11px] text-emerald-700 font-medium mt-0.5">
-                  Approval notification successfully dispatched to vendor registered email address: <span className="font-mono font-bold text-emerald-950">{vendorInfo.email}</span>
-                </p>
-              </div>
-            </div>
-            <Button 
-              size="sm" 
-              onClick={() => updateVendorStatus("Approved")} 
-              className="h-8 px-3 rounded-xl bg-emerald-600 text-white font-bold text-xs hover:bg-emerald-700 cursor-pointer shrink-0"
-            >
-              View Sent Email
-            </Button>
-          </div>
-        )}
 
         {/* Vendor Essential Information Bar */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -571,6 +572,38 @@ export default function VendorFullPageReviewScreen({ params }: { params: Promise
                 </div>
               )}
             </CardContent>
+            
+            {/* Individual Document Verification Actions */}
+            {selectedDoc && selectedDoc.fileName && (
+              <div className="bg-white border-t border-slate-200 p-4 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-bold text-slate-700">Document Status:</span>
+                  <span className={`px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
+                    selectedDoc.status === 'Verified' ? 'bg-emerald-100 text-emerald-700 border border-emerald-300' :
+                    selectedDoc.status === 'Rejected' ? 'bg-rose-100 text-rose-700 border border-rose-300' :
+                    selectedDoc.status === 'Under Review' ? 'bg-blue-100 text-blue-700 border border-blue-300' :
+                    'bg-amber-100 text-amber-700 border border-amber-300'
+                  }`}>
+                    {selectedDoc.status}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button 
+                    variant="outline"
+                    onClick={() => updateSingleDocumentStatus(selectedDoc.id, "Rejected")}
+                    className="h-9 px-4 rounded-xl text-rose-600 hover:bg-rose-50 border-rose-200 hover:border-rose-300 text-xs font-bold"
+                  >
+                    Reject Doc
+                  </Button>
+                  <Button 
+                    onClick={() => updateSingleDocumentStatus(selectedDoc.id, "Verified")}
+                    className="h-9 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm text-xs font-bold"
+                  >
+                    Verify Doc
+                  </Button>
+                </div>
+              </div>
+            )}
           </Card>
 
           {/* Compliance Checklist & Audit Form Pane (5 cols) */}

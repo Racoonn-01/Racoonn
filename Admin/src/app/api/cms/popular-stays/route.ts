@@ -69,6 +69,7 @@ export async function POST(request: Request) {
               propertyName: "CMS Popular Stays Configuration",
               title: "CMS Popular Stays Configuration",
               details: jsonStr,
+              vendorId: "admin_cms",
             }
           );
         } catch (createErr) {

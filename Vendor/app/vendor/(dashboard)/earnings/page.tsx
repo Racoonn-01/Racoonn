@@ -16,6 +16,7 @@ import { jsPDF } from "jspdf";
 export default function EarningsPage() {
   const { user } = useAuthStore();
   const [dateFilter, setDateFilter] = useState("");
+  const [timeRangeFilter, setTimeRangeFilter] = useState("Today");
   const [netEarnings, setNetEarnings] = useState(0);
   const [upcomingPayout, setUpcomingPayout] = useState(0);
   const [pendingClearance, setPendingClearance] = useState(0);
@@ -78,15 +79,22 @@ export default function EarningsPage() {
           
           const checkInDate = new Date(b.checkIn);
           const checkOutDate = new Date(b.checkOut);
-          const isCurrentMonth = checkInDate.getMonth() === currentMonth && checkInDate.getFullYear() === currentYear;
+          
+          // Use checkout date for current month since revenue is recognized post-stay
+          const isCurrentMonth = checkOutDate.getMonth() === currentMonth && checkOutDate.getFullYear() === currentYear;
           
           if (b.status === 'Completed' && isCurrentMonth) {
             net += netAmt;
           }
-          if (b.status === 'Confirmed' && checkInDate > now) {
+          
+          // Upcoming payout: Confirmed bookings that haven't checked out yet
+          if (b.status === 'Confirmed' && checkOutDate > now) {
             upcoming += netAmt;
           }
-          if (b.status === 'Completed' && checkOutDate <= now) {
+          
+          // Pending clearance: Completed bookings checked out within the last 7 days
+          const daysSinceCheckout = (now.getTime() - checkOutDate.getTime()) / (1000 * 3600 * 24);
+          if (b.status === 'Completed' && checkOutDate <= now && daysSinceCheckout <= 7) {
             pending += netAmt;
           }
 
@@ -98,54 +106,189 @@ export default function EarningsPage() {
             commission: `₹${commission.toLocaleString()}`,
             net: `₹${netAmt.toLocaleString()}`,
             rawNet: netAmt,
-            createdAt: b.$createdAt
+            createdAt: b.$createdAt,
+            status: b.status,
+            checkOut: b.checkOut
           };
         });
 
-        // Map to charts (last 7 months)
-        const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-        const newChartData: Array<{ name: string; amount: number; month: number; year: number }> = [];
-        for (let i = 6; i >= 0; i--) {
-          const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-          newChartData.push({ name: monthNames[d.getMonth()], amount: 0, month: d.getMonth(), year: d.getFullYear() });
+        let newChartData: Array<{ name: string; amount: number; value?: number }> = [];
+        
+        if (timeRangeFilter === "Today") {
+           newChartData = [
+             { name: "12 AM", amount: 0, value: 0 }, { name: "4 AM", amount: 0, value: 4 }, 
+             { name: "8 AM", amount: 0, value: 8 }, { name: "12 PM", amount: 0, value: 12 }, 
+             { name: "4 PM", amount: 0, value: 16 }, { name: "8 PM", amount: 0, value: 20 }
+           ];
+           allBookings.forEach((b: any) => {
+             if (b.status !== 'Cancelled') {
+               const payment = paymentsRes.documents.find(p => p.bookingId === b.$id);
+               if (payment) {
+                 const date = new Date(b.checkOut);
+                 if (date.toDateString() === now.toDateString()) {
+                   const hour = date.getHours();
+                   const bin = Math.floor(hour / 4) * 4;
+                   const chartItem = newChartData.find(item => item.value === bin);
+                   if (chartItem) chartItem.amount += Number(payment.totalAmount);
+                 }
+               }
+             }
+           });
+        } else if (timeRangeFilter === "Weekly") {
+           const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+           newChartData = days.map((d, i) => ({ name: d, amount: 0, value: i }));
+           const startOfWeek = new Date(now);
+           startOfWeek.setDate(now.getDate() - now.getDay());
+           startOfWeek.setHours(0,0,0,0);
+           
+           allBookings.forEach((b: any) => {
+             if (b.status !== 'Cancelled') {
+               const payment = paymentsRes.documents.find(p => p.bookingId === b.$id);
+               if (payment) {
+                 const date = new Date(b.checkOut);
+                 if (date >= startOfWeek) {
+                   const chartItem = newChartData.find(item => item.value === date.getDay());
+                   if (chartItem) chartItem.amount += Number(payment.totalAmount);
+                 }
+               }
+             }
+           });
+        } else if (timeRangeFilter === "Monthly") {
+           newChartData = [
+             { name: "Week 1", amount: 0, value: 1 }, { name: "Week 2", amount: 0, value: 2 }, 
+             { name: "Week 3", amount: 0, value: 3 }, { name: "Week 4", amount: 0, value: 4 }
+           ];
+           allBookings.forEach((b: any) => {
+             if (b.status !== 'Cancelled') {
+               const payment = paymentsRes.documents.find(p => p.bookingId === b.$id);
+               if (payment) {
+                 const date = new Date(b.checkOut);
+                 if (date.getMonth() === currentMonth && date.getFullYear() === currentYear) {
+                   const week = Math.min(4, Math.ceil(date.getDate() / 7));
+                   const chartItem = newChartData.find(item => item.value === week);
+                   if (chartItem) chartItem.amount += Number(payment.totalAmount);
+                 }
+               }
+             }
+           });
+        } else if (timeRangeFilter === "Yearly") {
+           const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+           newChartData = monthNames.map((m, i) => ({ name: m, amount: 0, value: i }));
+           allBookings.forEach((b: any) => {
+             if (b.status !== 'Cancelled') {
+               const payment = paymentsRes.documents.find(p => p.bookingId === b.$id);
+               if (payment) {
+                 const date = new Date(b.checkOut);
+                 if (date.getFullYear() === currentYear) {
+                   const chartItem = newChartData.find(item => item.value === date.getMonth());
+                   if (chartItem) chartItem.amount += Number(payment.totalAmount);
+                 }
+               }
+             }
+           });
+        } else if (timeRangeFilter === "Lifetime") {
+           let minYear = currentYear;
+           allBookings.forEach((b:any) => {
+              const y = new Date(b.checkOut).getFullYear();
+              if (y < minYear) minYear = y;
+           });
+           for (let y = minYear; y <= currentYear; y++) {
+              newChartData.push({ name: y.toString(), amount: 0, value: y });
+           }
+           allBookings.forEach((b: any) => {
+             if (b.status !== 'Cancelled') {
+               const payment = paymentsRes.documents.find(p => p.bookingId === b.$id);
+               if (payment) {
+                 const date = new Date(b.checkOut);
+                 const chartItem = newChartData.find(item => item.value === date.getFullYear());
+                 if (chartItem) chartItem.amount += Number(payment.totalAmount);
+               }
+             }
+           });
         }
 
-        allBookings.forEach((b: any) => {
-          if (b.status !== 'Cancelled') {
-            const payment = paymentsRes.documents.find(p => p.bookingId === b.$id);
-            if (payment) {
-              const date = new Date(b.$createdAt);
-              const chartItem = newChartData.find(item => item.month === date.getMonth() && item.year === date.getFullYear());
-              if (chartItem) {
-                chartItem.amount += Number(payment.totalAmount);
-              }
-            }
+        let filteredEarnings = 0;
+        let fetchedInvoices: any[] = [];
+        try {
+          const invRes = await fetch("/api/invoices");
+          const invJson = await invRes.json();
+          if (invJson.success && Array.isArray(invJson.invoices)) {
+            fetchedInvoices = invJson.invoices.filter((inv: any) => inv.vendorId === user.$id && inv.type === "withdrawal");
+            
+            const startOfWeek = new Date(now);
+            startOfWeek.setDate(now.getDate() - now.getDay());
+            startOfWeek.setHours(0,0,0,0);
+            
+            filteredEarnings = fetchedInvoices
+              .filter((inv: any) => {
+                if (inv.status !== "Paid") return false;
+                const date = new Date(inv.updatedAt || inv.createdAt || inv.$createdAt);
+                
+                if (timeRangeFilter === "Today") {
+                   return date.toDateString() === now.toDateString();
+                } else if (timeRangeFilter === "Weekly") {
+                   return date >= startOfWeek;
+                } else if (timeRangeFilter === "Monthly") {
+                   return date.getMonth() === currentMonth && date.getFullYear() === currentYear;
+                } else if (timeRangeFilter === "Yearly") {
+                   return date.getFullYear() === currentYear;
+                }
+                return true; // Lifetime
+              })
+              .reduce((sum: number, inv: any) => sum + inv.totalAmount, 0);
           }
-        });
+        } catch (invErr) {
+          console.warn("Failed to fetch invoices for earnings page:", invErr);
+        }
 
-        setNetEarnings(net);
-        setUpcomingPayout(upcoming);
-        setPendingClearance(pending);
+        setNetEarnings(filteredEarnings);
+        setUpcomingPayout(0);
+        setPendingClearance(0);
         setBookings(mappedBookings.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
         
         // Ensure chart data matches Recharts expectation
         setRevenueData(newChartData.map(d => ({ name: d.name, amount: d.amount })));
         
-        // Payouts (mocked from bookings since no payouts collection exists)
-        setPayouts(mappedBookings.filter(b => b.rawNet > 0).slice(0, 5).map(b => ({
-          id: `PO-${b.id.substring(0, 6).toUpperCase()}`,
-          date: new Date(b.createdAt).toLocaleDateString(),
-          period: 'Weekly',
-          amount: b.net,
-          status: 'Processed'
-        })));
+        const withdrawnBookingIds = new Set<string>();
+        fetchedInvoices.forEach(inv => {
+           if (inv.bookingIds && Array.isArray(inv.bookingIds)) {
+              inv.bookingIds.forEach((id: string) => withdrawnBookingIds.add(id));
+           }
+        });
+
+        const invoicePayouts = fetchedInvoices.map(inv => {
+          const safeId = inv.invoiceId || inv.id || inv.$id || "UNKNOWN";
+          return {
+            id: safeId.startsWith("PO-") || safeId.startsWith("INV-") ? safeId : `PO-${safeId.substring(Math.max(0, safeId.length - 6)).toUpperCase()}`,
+            date: new Date(inv.createdAt || inv.$createdAt).toLocaleDateString(),
+            rawDate: inv.createdAt || inv.$createdAt,
+            period: 'Withdrawal',
+            amount: `₹${inv.totalAmount.toLocaleString()}`,
+            status: inv.status === "Sent" ? "Pending Admin Approval" : inv.status
+          };
+        });
+
+        const legacyPayouts = mappedBookings
+           .filter((b: any) => b.rawNet > 0 && b.status === 'Completed' && new Date(b.checkOut) <= now && !withdrawnBookingIds.has(b.id))
+           .map((b: any) => ({
+              id: `PO-${b.id.substring(b.id.length - 6).toUpperCase()}`,
+              date: new Date(b.createdAt).toLocaleDateString(),
+              rawDate: b.createdAt,
+              period: 'Legacy Booking',
+              amount: b.net,
+              status: 'Processed'
+           }));
+
+        const allPayouts = [...invoicePayouts, ...legacyPayouts];
+        allPayouts.sort((a, b) => new Date(b.rawDate).getTime() - new Date(a.rawDate).getTime());
+        setPayouts(allPayouts);
 
       } catch (err) {
         console.error("Failed to load earnings data", err);
       }
     };
     fetchEarningsData();
-  }, [user]);
+  }, [user, timeRangeFilter]);
 
   const handleDownloadStatement = () => {
     // Generate CSV
@@ -285,13 +428,17 @@ export default function EarningsPage() {
             <p className="text-slate-500 mt-1">Track your revenue, view payouts, and download invoices.</p>
           </div>
           <div className="flex items-center gap-3 w-full md:w-auto">
-            <input
-              type="date"
-              value={dateFilter}
-              onChange={(e) => setDateFilter(e.target.value)}
-              className="px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-slate-200 w-full md:w-auto"
-              title="Filter by Date"
-            />
+            <select
+              value={timeRangeFilter}
+              onChange={(e) => setTimeRangeFilter(e.target.value)}
+              className="px-3 py-2 border border-slate-200 bg-white rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-slate-200 w-full md:w-auto font-medium text-slate-600"
+            >
+              <option value="Today">Today</option>
+              <option value="Weekly">Weekly</option>
+              <option value="Monthly">Monthly</option>
+              <option value="Yearly">Yearly</option>
+              <option value="Lifetime">Lifetime</option>
+            </select>
             <Button onClick={handleDownloadStatement} className="bg-brand-navy hover:bg-[#151E2D] text-white rounded-xl shadow-sm gap-2 whitespace-nowrap">
               <Download className="w-4 h-4" /> Download Statement
             </Button>
@@ -299,52 +446,17 @@ export default function EarningsPage() {
         </div>
       </motion.div>
 
-      <div className="grid gap-6 md:grid-cols-3">
-        <Card className="border-0 shadow-sm ring-1 ring-slate-100 rounded-2xl relative overflow-hidden group">
+      <div className="flex gap-6 mb-8">
+        <Card className="border-0 shadow-sm ring-1 ring-slate-100 rounded-2xl relative overflow-hidden group w-full max-w-sm">
           <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/10 rounded-full blur-2xl -mr-8 -mt-8" />
           <CardContent className="p-6">
             <div className="flex justify-between items-start mb-4">
               <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
                 <Wallet className="w-6 h-6" />
               </div>
-              <span className="flex items-center text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md font-medium text-xs">
-                <ArrowUpRight className="w-3 h-3 mr-1" /> 14%
-              </span>
             </div>
-            <h3 className="text-slate-500 font-medium text-sm">Net Earnings (This Month)</h3>
+            <h3 className="text-slate-500 font-medium text-sm">Net Earnings ({timeRangeFilter})</h3>
             <p className="text-3xl font-heading font-bold text-secondary mt-1">₹{netEarnings.toLocaleString()}</p>
-          </CardContent>
-        </Card>
-
-        <Card className="border-0 shadow-sm ring-1 ring-slate-100 rounded-2xl relative overflow-hidden group">
-          <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/10 rounded-full blur-2xl -mr-8 -mt-8" />
-          <CardContent className="p-6">
-            <div className="flex justify-between items-start mb-4">
-              <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
-                <TrendingUp className="w-6 h-6" />
-              </div>
-            </div>
-            <h3 className="text-slate-500 font-medium text-sm">Upcoming Payout</h3>
-            <p className="text-3xl font-heading font-bold text-secondary mt-1">₹{upcomingPayout.toLocaleString()}</p>
-            <p className="text-xs text-slate-400 mt-2 flex items-center gap-1">
-              <CalendarIcon className="w-3 h-3" /> Scheduled for Nov 01
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="border-0 shadow-sm ring-1 ring-slate-100 rounded-2xl relative overflow-hidden group">
-          <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/10 rounded-full blur-2xl -mr-8 -mt-8" />
-          <CardContent className="p-6">
-            <div className="flex justify-between items-start mb-4">
-              <div className="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
-                <IndianRupee className="w-6 h-6" />
-              </div>
-            </div>
-            <h3 className="text-slate-500 font-medium text-sm">Pending Clearance</h3>
-            <p className="text-3xl font-heading font-bold text-secondary mt-1">₹{pendingClearance.toLocaleString()}</p>
-            <p className="text-xs text-slate-400 mt-2 flex items-center gap-1">
-              <Clock className="w-3 h-3" /> From recently checked-out guests
-            </p>
           </CardContent>
         </Card>
       </div>
@@ -357,9 +469,6 @@ export default function EarningsPage() {
           <TabsTrigger value="payouts" className="data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-sm text-slate-500 rounded-lg py-2.5 px-5 flex items-center gap-2.5 font-medium transition-all">
             <Wallet className="w-4 h-4" /> Payout History
           </TabsTrigger>
-          <TabsTrigger value="bookings" className="data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-sm text-slate-500 rounded-lg py-2.5 px-5 flex items-center gap-2.5 font-medium transition-all">
-            <FileText className="w-4 h-4" /> Booking Earnings
-          </TabsTrigger>
         </TabsList>
 
         <div className="mt-6">
@@ -367,7 +476,7 @@ export default function EarningsPage() {
             <Card className="border-0 shadow-sm ring-1 ring-slate-100 rounded-2xl overflow-hidden">
               <CardHeader className="bg-slate-50/50 border-b border-slate-100 pb-4 pt-6 px-6">
                 <CardTitle className="font-heading text-xl">Revenue Trend</CardTitle>
-                <CardDescription className="text-slate-500">Your net earnings over the last 7 months.</CardDescription>
+                <CardDescription className="text-slate-500">Your revenue trend for the selected period.</CardDescription>
               </CardHeader>
               <CardContent className="pt-6">
                 <div className="h-72 w-full">
@@ -402,12 +511,11 @@ export default function EarningsPage() {
                       <th className="p-4 font-medium">Period</th>
                       <th className="p-4 font-medium">Amount</th>
                       <th className="p-4 font-medium">Status</th>
-                      <th className="p-4 pr-6 font-medium text-right">Invoice</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 text-sm">
-                    {payouts.filter(p => !dateFilter || (new Date(p.date).toISOString().startsWith(dateFilter))).length > 0 ? (
-                      payouts.filter(p => !dateFilter || (new Date(p.date).toISOString().startsWith(dateFilter))).map((payout) => (
+                    {payouts.filter(p => !dateFilter || (new Date(p.rawDate).toISOString().startsWith(dateFilter))).length > 0 ? (
+                      payouts.filter(p => !dateFilter || (new Date(p.rawDate).toISOString().startsWith(dateFilter))).map((payout) => (
                         <tr key={payout.id} className="hover:bg-slate-50/80 transition-colors">
                           <td className="p-4 pl-6 font-mono font-medium text-slate-600">{payout.id}</td>
                           <td className="p-4 text-slate-600 font-medium">{payout.date}</td>
@@ -419,16 +527,11 @@ export default function EarningsPage() {
                               {payout.status}
                             </span>
                           </td>
-                          <td className="p-4 pr-6 text-right">
-                            <Button onClick={() => handleDownloadInvoice(payout)} variant="ghost" size="sm" className="text-primary hover:text-primary hover:bg-primary/10">
-                              <Download className="w-4 h-4 mr-1.5" /> PDF
-                            </Button>
-                          </td>
                         </tr>
                       ))
                     ) : (
                       <tr>
-                        <td colSpan={6} className="p-16 text-center">
+                        <td colSpan={5} className="p-16 text-center">
                           <div className="flex flex-col items-center justify-center">
                             <div className="h-16 w-16 bg-slate-100 rounded-full flex items-center justify-center mb-4">
                               <Wallet className="h-8 w-8 text-slate-300" />
@@ -445,50 +548,7 @@ export default function EarningsPage() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="bookings" className="space-y-6 outline-none">
-            <Card className="border-0 shadow-sm ring-1 ring-slate-100 rounded-2xl overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="bg-slate-50/80 border-b border-slate-100 text-xs uppercase tracking-wider font-semibold text-slate-500">
-                      <th className="p-4 pl-6 font-medium">Booking ID</th>
-                      <th className="p-4 font-medium">Guest</th>
-                      <th className="p-4 font-medium">Dates</th>
-                      <th className="p-4 font-medium">Total Price</th>
-                      <th className="p-4 font-medium">Platform Fee</th>
-                      <th className="p-4 font-medium">Your Earnings</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 text-sm">
-                    {bookings.filter((b) => !dateFilter || b.createdAt.startsWith(dateFilter)).length > 0 ? (
-                      bookings.filter((b) => !dateFilter || b.createdAt.startsWith(dateFilter)).map((booking) => (
-                        <tr key={booking.id} className="hover:bg-slate-50/80 transition-colors">
-                          <td className="p-4 pl-6 font-mono font-medium text-slate-600">{booking.id}</td>
-                          <td className="p-4 font-semibold text-secondary">{booking.guest}</td>
-                          <td className="p-4 text-slate-500">{booking.dates}</td>
-                          <td className="p-4 text-slate-600">{booking.total}</td>
-                          <td className="p-4 text-slate-500">{booking.commission}</td>
-                          <td className="p-4 font-bold text-secondary">{booking.net}</td>
-                        </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td colSpan={6} className="p-16 text-center">
-                          <div className="flex flex-col items-center justify-center">
-                            <div className="h-16 w-16 bg-slate-100 rounded-full flex items-center justify-center mb-4">
-                              <FileText className="h-8 w-8 text-slate-300" />
-                            </div>
-                            <h3 className="text-lg font-heading font-semibold text-secondary">No earnings yet</h3>
-                            <p className="text-slate-500 mt-1">Earnings from bookings will appear here after guests check out.</p>
-                          </div>
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </Card>
-          </TabsContent>
+
         </div>
       </Tabs>
     </div>

@@ -56,15 +56,16 @@ interface UploadedDoc {
 
 export function Step9KYC({ onNext, onBack }: { onNext: () => void, onBack: () => void }) {
   const { user, profile } = useAuthStore();
-  const [docs, setDocs] = useState<{ pan: UploadedDoc | null, aadhaar: UploadedDoc | null, lease: UploadedDoc | null }>({ pan: null, aadhaar: null, lease: null });
-  const [uploadingState, setUploadingState] = useState({ pan: false, aadhaar: false, lease: false });
+  const [docs, setDocs] = useState<{ pan: UploadedDoc | null, aadhaarFront: UploadedDoc | null, aadhaarBack: UploadedDoc | null, lease: UploadedDoc | null }>({ pan: null, aadhaarFront: null, aadhaarBack: null, lease: null });
+  const [uploadingState, setUploadingState] = useState({ pan: false, aadhaarFront: false, aadhaarBack: false, lease: false });
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     if (profile) {
       setDocs({
         pan: profile.idProofFront ? { fileId: profile.idProofFront, fileUrl: "", fileName: "PAN Card" } : null,
-        aadhaar: profile.idProofBack ? { fileId: profile.idProofBack, fileUrl: "", fileName: "Aadhaar Card" } : null,
+        aadhaarFront: profile.idProofBack ? { fileId: profile.idProofBack, fileUrl: "", fileName: "Aadhaar Card (Front)" } : null,
+        aadhaarBack: null, // Note: We do not have a dedicated DB column for the back side, it will be saved in localStorage docs array
         lease: profile.businessProof ? { fileId: profile.businessProof, fileUrl: "", fileName: "Property Proof" } : null
       });
     }
@@ -124,7 +125,7 @@ export function Step9KYC({ onNext, onBack }: { onNext: () => void, onBack: () =>
         profile.$id,
         {
           idProofFront: docs.pan?.fileId || "",
-          idProofBack: docs.aadhaar?.fileId || "",
+          idProofBack: docs.aadhaarFront?.fileId || "",
           businessProof: docs.lease?.fileId || ""
         }
       );
@@ -156,7 +157,8 @@ export function Step9KYC({ onNext, onBack }: { onNext: () => void, onBack: () =>
       // Map our keys to the template IDs expected by documents/page.tsx
       const docMappings = [
         { key: "pan" as const, templateId: "pan_card", title: "PAN Card", desc: "Permanent Account Number card of business entity or proprietor." },
-        { key: "aadhaar" as const, templateId: "aadhaar_card", title: "Aadhaar Card", desc: "Government identity card of the primary registered owner." },
+        { key: "aadhaarFront" as const, templateId: "aadhaar_card_front", title: "Aadhaar Card (Front Side)", desc: "Government identity card of the primary registered owner (Front Side)." },
+        { key: "aadhaarBack" as const, templateId: "aadhaar_card_back", title: "Aadhaar Card (Back Side)", desc: "Government identity card of the primary registered owner (Back Side)." },
         { key: "lease" as const, templateId: "property_proof", title: "Property Images & Address Proof", desc: "Property ownership deed, lease agreement, or utility bills." }
       ];
 
@@ -246,11 +248,20 @@ export function Step9KYC({ onNext, onBack }: { onNext: () => void, onBack: () =>
         />
         
         <DocUploader 
-          title="Aadhaar Card / Passport" 
-          desc="Front and back in a single PDF" 
-          docKey="aadhaar" 
-          isUploaded={!!docs.aadhaar}
-          isUploading={uploadingState.aadhaar}
+          title="Aadhaar Card (Front Side)" 
+          desc="JPG, PNG or PDF (Max 5MB)" 
+          docKey="aadhaarFront" 
+          isUploaded={!!docs.aadhaarFront}
+          isUploading={uploadingState.aadhaarFront}
+          onFileSelect={handleFileSelect}
+        />
+
+        <DocUploader 
+          title="Aadhaar Card (Back Side)" 
+          desc="JPG, PNG or PDF (Max 5MB)" 
+          docKey="aadhaarBack" 
+          isUploaded={!!docs.aadhaarBack}
+          isUploading={uploadingState.aadhaarBack}
           onFileSelect={handleFileSelect}
         />
 

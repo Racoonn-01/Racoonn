@@ -26,6 +26,7 @@ function VerificationLayoutContent({ children }: { children: React.ReactNode }) 
   const tabs = [
     { label: "KYC Verification", value: "kyc" },
     { label: "Pending", value: "pending" },
+    { label: "Under Review", value: "under-review" },
     { label: "Approved", value: "approved" },
     { label: "Rejected", value: "rejected" },
   ]

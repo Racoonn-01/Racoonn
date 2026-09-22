@@ -38,10 +38,12 @@ export default function PricePopover({
   // Sync state when popover opens or initial values change
   useEffect(() => {
     if (isOpen) {
-      setMinPrice(initialMin);
-      setMaxPrice(initialMax);
-      setMinInputVal(String(initialMin));
-      setMaxInputVal(String(initialMax));
+      setTimeout(() => {
+        setMinPrice(initialMin);
+        setMaxPrice(initialMax);
+        setMinInputVal(String(initialMin));
+        setMaxInputVal(String(initialMax));
+      }, 0);
     }
   }, [isOpen, initialMin, initialMax]);
 

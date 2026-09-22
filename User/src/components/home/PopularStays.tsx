@@ -104,7 +104,7 @@ export default function PopularStays() {
         >
           {loading ? (
             [1, 2, 3, 4].map((n) => (
-              <div key={n} className="w-72 sm:w-80 min-w-72 sm:min-w-80 max-w-72 sm:max-w-80 shrink-0">
+              <div key={n} className="w-full min-w-full md:min-w-0 md:w-[calc(50%-12px)] lg:w-[calc(25%-18px)] shrink-0 snap-center md:snap-start">
                 <PropertyCardSkeleton />
               </div>
             ))
@@ -117,11 +117,11 @@ export default function PopularStays() {
                   initial={{ opacity: 0, y: 24 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.45, delay: index * 0.08, ease: "easeOut" }}
-                  className="w-72 sm:w-80 min-w-72 sm:min-w-80 max-w-72 sm:max-w-80 shrink-0"
+                  className="w-full min-w-full md:min-w-0 md:w-[calc(50%-12px)] lg:w-[calc(25%-18px)] shrink-0 snap-center md:snap-start"
                 >
                   <Link 
                     href={`/property/${stay.id}`} 
-                    className="bg-white rounded-2xl p-3 shadow-[0_2px_15px_rgb(0,0,0,0.05)] border border-brand-sky/30 group/card cursor-pointer transition-all duration-300 hover:-translate-y-1.5 hover:shadow-lg snap-center md:snap-start flex flex-col h-full overflow-hidden w-full"
+                    className="bg-white rounded-2xl p-3 shadow-[0_2px_15px_rgb(0,0,0,0.05)] border border-brand-sky/30 group/card cursor-pointer transition-all duration-300 hover:-translate-y-1.5 hover:shadow-lg flex flex-col h-full overflow-hidden w-full"
                   >
                     {/* Image */}
                     <div className="relative w-full h-48 shrink-0 rounded-xl overflow-hidden mb-4 bg-gray-100">
@@ -129,7 +129,6 @@ export default function PopularStays() {
                         src={stay.image}
                         alt={stay.name}
                         fill
-                        unoptimized
                         sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                         className="object-cover group-hover/card:scale-105 transition-transform duration-500"
                       />

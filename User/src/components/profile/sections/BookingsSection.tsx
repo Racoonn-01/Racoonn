@@ -62,6 +62,11 @@ export default function BookingsSection() {
           databases.updateDocument(DATABASE_ID, 'bookings', String(doc.$id), { status: 'Completed' }).catch(console.error);
         }
 
+        const rawImg = String(doc.roomImage || doc.hotelImage || '').trim();
+        const finalImg = (rawImg.startsWith('http') || rawImg.startsWith('/')) 
+          ? rawImg 
+          : 'https://images.unsplash.com/photo-1542314831-c6a4d14d837e?q=80&w=800&auto=format&fit=crop';
+
         return {
           id: String(doc.$id).substring(0, 8).toUpperCase(),
           rawId: String(doc.$id),
@@ -75,7 +80,7 @@ export default function BookingsSection() {
           guests: `${doc.adults} Adults${doc.children ? `, ${doc.children} Child` : ''}`,
           amount: payment ? `₹${Number((payment as Record<string, unknown>).totalAmount).toLocaleString()}` : `₹${(doc.priceAfterTax ? Number(doc.priceAfterTax) : (doc.totalAmount ? Number(doc.totalAmount) : (Number(doc.nights) * Number(doc.roomPricePerNight || 0)))).toLocaleString()}`,
           status: currentStatus === 'Confirmed' ? 'Upcoming' : currentStatus,
-          image: String(doc.roomImage || doc.hotelImage),
+          image: finalImg,
         };
       });
       setBookings(formatted);

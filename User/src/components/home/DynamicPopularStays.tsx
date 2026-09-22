@@ -8,7 +8,7 @@ import { motion } from "framer-motion";
 import { PopularStaySection } from "@/lib/cms/popularStaysStore";
 import { getProperties } from "@/lib/appwrite/api";
 import { isActiveProperty } from "@/lib/utils";
-
+import { PropertyCardSkeleton } from "@/components/skeletons/PageSkeletons";
 import { Models } from "appwrite";
 
 interface Property {
@@ -150,7 +150,29 @@ export default function DynamicPopularStays() {
   // Filter sections that are marked active by CMS Admin
   const activeSections = sections.filter((s) => s.isActive);
 
-  if (!loading && activeSections.length === 0) {
+  if (loading) {
+    return (
+      <div className="space-y-12">
+        <section className="container mx-auto px-4 lg:px-8 max-w-7xl">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-8 gap-4">
+            <div>
+              <div className="h-8 w-64 bg-gray-200 rounded-md animate-pulse mb-3"></div>
+              <div className="h-5 w-96 max-w-full bg-gray-100 rounded-md animate-pulse"></div>
+            </div>
+            <div className="h-10 w-32 bg-gray-100 rounded-full animate-pulse"></div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <PropertyCardSkeleton />
+            <PropertyCardSkeleton />
+            <PropertyCardSkeleton />
+            <PropertyCardSkeleton />
+          </div>
+        </section>
+      </div>
+    );
+  }
+
+  if (activeSections.length === 0) {
     return null;
   }
 
@@ -236,7 +258,6 @@ export default function DynamicPopularStays() {
                         src={stay.image}
                         alt={stay.title}
                         fill
-                        unoptimized
                         sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
                         className="object-cover group-hover/card:scale-105 transition-transform duration-500"
                       />

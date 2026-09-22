@@ -5,6 +5,7 @@ import QueryProvider from "@/providers/QueryProvider";
 import Navbar from "@/components/shared/Navbar";
 import ConditionalFooter from "@/components/shared/ConditionalFooter";
 import PromoPopup from "@/components/shared/PromoPopup";
+import ScrollToTop from "@/components/shared/ScrollToTop";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -35,6 +36,7 @@ export default function RootLayout({
     >
       <body className="min-h-screen flex flex-col" suppressHydrationWarning>
         <QueryProvider>
+          <ScrollToTop />
           <Navbar />
           <main className="flex-1 flex flex-col">{children}</main>
           <ConditionalFooter />

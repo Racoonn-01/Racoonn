@@ -22,6 +22,16 @@ export default function BookingsPage() {
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
   const [cancellationSummary, setCancellationSummary] = useState<any>(null);
   const [isCancelling, setIsCancelling] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("All");
+
+  const filteredBookings = bookings.filter((booking) => {
+    const matchesSearch = 
+      booking.guest.toLowerCase().includes(searchQuery.toLowerCase()) || 
+      booking.id.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesStatus = statusFilter === "All" || booking.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
 
   useEffect(() => {
     async function fetchBookings() {
@@ -177,13 +187,22 @@ export default function BookingsPage() {
             <Input 
               placeholder="Search by guest name or booking ID..." 
               className="pl-9 bg-white border-slate-200"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
           <div className="flex gap-2 w-full sm:w-auto">
-            <Button variant="outline" className="border-slate-200 text-slate-600 gap-2 w-full sm:w-auto">
-              <Filter className="w-4 h-4" />
-              Filter Status
-            </Button>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="px-3 py-2 border border-slate-200 bg-white rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-slate-200 w-full sm:w-auto text-slate-600 font-medium h-10"
+            >
+              <option value="All">Filter Status: All</option>
+              <option value="Confirmed">Confirmed</option>
+              <option value="Completed">Completed</option>
+              <option value="Cancelled">Cancelled</option>
+              <option value="Pending">Pending</option>
+            </select>
           </div>
         </div>
         <CardContent className="p-0 overflow-x-auto">
@@ -210,8 +229,8 @@ export default function BookingsPage() {
                     </div>
                   </td>
                 </tr>
-              ) : bookings.length > 0 ? (
-                bookings.map((booking, i) => (
+              ) : filteredBookings.length > 0 ? (
+                filteredBookings.map((booking, i) => (
                   <motion.tr 
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}

@@ -53,7 +53,17 @@ export async function POST(request: Request) {
         DATABASE_ID,
         COLLECTION_ID,
         DOC_ID,
-        { details: jsonStr }
+        { 
+          details: jsonStr,
+          vendorId: "cms_admin",
+          propertyType: "CMS",
+          description: "CMS System Document",
+          city: "CMS",
+          state: "CMS",
+          location: "CMS",
+          status: "Published",
+          price: 0
+        }
       );
     } catch (err: unknown) {
       const error = err as { code?: number };
@@ -67,6 +77,14 @@ export async function POST(request: Request) {
               propertyName: "CMS Packages Configuration",
               title: "CMS Packages Configuration",
               details: jsonStr,
+              vendorId: "cms_admin",
+              propertyType: "CMS",
+              description: "CMS System Document",
+              city: "CMS",
+              state: "CMS",
+              location: "CMS",
+              status: "Published",
+              price: 0
             }
           );
         } catch (createErr) {

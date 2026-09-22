@@ -47,15 +47,17 @@ export default function FilterModal({ isOpen, onClose, onApply, initialFilters, 
   // Sync internal state when modal opens or initialFilters changes
   useEffect(() => {
     if (isOpen) {
-      setBedrooms(initialFilters?.bedrooms ?? 'Any');
-      setBeds(initialFilters?.beds ?? 'Any');
-      setBathrooms(initialFilters?.bathrooms ?? 'Any');
-      const minP = initialFilters?.minPrice ?? 1000;
-      const maxP = initialFilters?.maxPrice ?? 100000;
-      setMinPrice(minP);
-      setMaxPrice(maxP);
-      setMinInputVal(String(minP));
-      setMaxInputVal(String(maxP));
+      setTimeout(() => {
+        setBedrooms(initialFilters?.bedrooms ?? 'Any');
+        setBeds(initialFilters?.beds ?? 'Any');
+        setBathrooms(initialFilters?.bathrooms ?? 'Any');
+        const minP = initialFilters?.minPrice ?? 1000;
+        const maxP = initialFilters?.maxPrice ?? 100000;
+        setMinPrice(minP);
+        setMaxPrice(maxP);
+        setMinInputVal(String(minP));
+        setMaxInputVal(String(maxP));
+      }, 0);
       setSelectedAmenities(initialFilters?.selectedAmenities ?? []);
       setSelectedPropertyTypes(initialFilters?.selectedPropertyTypes ?? []);
       setSelectedBookingOptions(initialFilters?.selectedBookingOptions ?? []);

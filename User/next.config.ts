@@ -10,6 +10,10 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: 'https',
+        hostname: 'plus.unsplash.com',
+      },
+      {
+        protocol: 'https',
         hostname: 'upload.wikimedia.org',
       },
       {
@@ -25,3 +29,6 @@ const nextConfig: NextConfig = {
 };
 
 export default nextConfig;
+
+// Trigger Next.js reload for env vars
+

@@ -354,7 +354,7 @@ export function CheckoutFlow() {
           <div className="space-y-8">
             <GuestDetailsForm />
             <TravelersForm />
-            <AdditionalRequestsForm />
+            {!isPackage && <AdditionalRequestsForm />}
             {!isPackage && (
               propertyAddons === null ? (
                 <div className="bg-white rounded-xl shadow-sm border border-brand-sky p-6 md:p-8 animate-pulse">

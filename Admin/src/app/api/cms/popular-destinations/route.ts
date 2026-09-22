@@ -64,6 +64,7 @@ export async function POST(request: Request) {
               propertyName: "CMS Popular Destinations Configuration",
               title: "CMS Popular Destinations Configuration",
               details: jsonStr,
+              vendorId: "admin_cms",
             }
           );
         } catch (createErr) {

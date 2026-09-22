@@ -45,15 +45,18 @@ export default function TourPackages() {
   const fetchCMSPackages = async () => {
     try {
       setLoading(true);
-      const res = await fetch("/api/cms/packages");
+      const res = await fetch("/api/cms/packages", { cache: 'no-store' });
       const json = await res.json();
+      console.log('CMS Packages API response:', json);
       if (json.success && Array.isArray(json.packages)) {
+        console.log('[DEBUG] Fetched packages:', json.packages.length, json.packages.map((p: any) => p.title));
         const publishedOnly = json.packages.filter((p: Record<string, unknown>) => {
           if (p.status !== 'published') return false;
           const title = String(p.title || p.metaTitle || '').toLowerCase();
           if (title.startsWith('cms ')) return false;
           return true;
         });
+        console.log('[DEBUG] Published packages:', publishedOnly.length, publishedOnly.map((p: any) => p.title));
         const mapped: MappedPackage[] = publishedOnly.map((cmsPkg: Record<string, unknown>) => {
           const pricing = Array.isArray(cmsPkg.pricing) ? cmsPkg.pricing : [];
           const itinerary = Array.isArray(cmsPkg.itinerary) ? cmsPkg.itinerary : [];
@@ -78,8 +81,10 @@ export default function TourPackages() {
               : ["https://images.unsplash.com/photo-1595815771614-ade9d652a65d?w=800&q=80"]
           };
         });
+        console.log('[DEBUG] Mapped packages:', mapped);
         setPackageList(mapped);
       } else {
+        console.error('[DEBUG] Failed condition:', json);
         setPackageList([]);
       }
     } catch (err) {
@@ -185,11 +190,13 @@ export default function TourPackages() {
           className="flex overflow-x-auto hide-scrollbar gap-4 md:gap-6 snap-x snap-mandatory pb-8"
         >
           {loading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full">
-              <PackageCardSkeleton />
-              <PackageCardSkeleton />
-              <PackageCardSkeleton />
-            </div>
+            <>
+              {[1, 2, 3, 4].map((i) => (
+                <div key={`skeleton-${i}`} className="w-full min-w-full md:min-w-0 md:w-[calc(50%-12px)] lg:w-[calc(25%-18px)] shrink-0 snap-center md:snap-start">
+                  <PackageCardSkeleton />
+                </div>
+              ))}
+            </>
           ) : packageList.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 w-full text-center border border-dashed border-gray-200 rounded-3xl bg-slate-50/50">
               <p className="text-gray-500 font-medium text-sm">No published tour packages available right now.</p>

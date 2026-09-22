@@ -14,5 +14,19 @@
       "6aa53d930005d015e972",
       "6aa52d130005b3aba844"
     ]
+  },
+  {
+    "id": "sec-1790059106869",
+    "title": "Nainital",
+    "subtitle": "Popular Stay in Nainital",
+    "location": "Nainital",
+    "isActive": true,
+    "order": 2,
+    "propertyIds": [
+      "6aae5d47001d8d574baf",
+      "6aae2136001f40e1ed14",
+      "6aa79b7b002b15f3b037",
+      "6aa79dde00272702c418"
+    ]
   }
 ]

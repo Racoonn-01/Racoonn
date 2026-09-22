@@ -142,11 +142,11 @@ function PropertyOverlay({ property, position, containerW, containerH, onClose }
   return (
     <>
       {/* Transparent backdrop — clicking dismisses the card */}
-      <div className="absolute inset-0 z-9990" onClick={onClose} />
+      <div className="absolute inset-0 z-[9990]" onClick={onClose} />
 
       {/* Card positioned absolutely within the map container */}
       <div
-        className="absolute z-9999"
+        className="absolute z-[9999]"
         style={{
           left,
           top,
@@ -295,6 +295,7 @@ export default function MapMockup({
   selectedPropertyId = null,
   onSelectProperty,
 }: MapMockupProps) {
+  const [mapError, setMapError] = useState(false);
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<{ id: string; marker: mapboxgl.Marker; coords: [number, number] }[]>([]);
@@ -356,19 +357,24 @@ export default function MapMockup({
       initialCenter = getPropertyCoordinates(properties[0], 0, geocodedMap);
     }
 
-    const map = new mapboxgl.Map({
-      container: mapContainerRef.current,
-      style: 'mapbox://styles/mapbox/outdoors-v12',
-      center: initialCenter,
-      zoom: 11,
-    });
+    try {
+      const map = new mapboxgl.Map({
+        container: mapContainerRef.current,
+        style: 'mapbox://styles/mapbox/outdoors-v12',
+        center: initialCenter,
+        zoom: 11,
+      });
 
-    map.addControl(new mapboxgl.NavigationControl(), 'bottom-right');
-    // Close overlay on map canvas click
-    map.on('click', () => setOverlay(null));
+      map.addControl(new mapboxgl.NavigationControl(), 'bottom-right');
+      // Close overlay on map canvas click
+      map.on('click', () => setOverlay(null));
 
-    mapRef.current = map;
-    return () => { map.remove(); };
+      mapRef.current = map;
+      return () => { map.remove(); };
+    } catch (e) {
+      console.error("Failed to initialize Mapbox WebGL context:", e);
+      setTimeout(() => setMapError(true), 0);
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -490,6 +496,16 @@ export default function MapMockup({
 
   return (
     <div className="relative w-full h-full bg-gray-100 overflow-hidden">
+      {mapError ? (
+        <div className="absolute inset-0 bg-gray-100 flex flex-col items-center justify-center p-6 text-center z-10 rounded-2xl">
+          <MapPin size={48} className="text-gray-300 mb-4" />
+          <h3 className="text-lg font-bold text-gray-800 mb-2">Map Unavailable</h3>
+          <p className="text-sm text-gray-500 max-w-sm">
+            Your browser doesn&apos;t support WebGL or hardware acceleration is disabled. The map cannot be displayed.
+          </p>
+        </div>
+      ) : null}
+      
       {/* Mapbox canvas */}
       <div ref={mapContainerRef} className="w-full h-full" />
 

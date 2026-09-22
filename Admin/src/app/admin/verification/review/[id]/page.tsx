@@ -192,11 +192,14 @@ export default function VendorFullPageReviewScreen({ params }: { params: Promise
           }
           
           if (fileUrl) {
+            let docStatus = fallbackDoc?.status || "Pending";
+            if (docStatus === "Missing") docStatus = "Pending";
+            
             return {
               id: template.id,
               title: template.title,
               description: template.description,
-              status: fallbackDoc?.status || "Pending",
+              status: docStatus,
               fileName: fileName,
               fileUrl: fileUrl,
               updatedAt: new Date(doc.$updatedAt).toLocaleDateString()

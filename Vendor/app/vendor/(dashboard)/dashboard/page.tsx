@@ -169,7 +169,8 @@ export default function DashboardOverview() {
         // Fetch bookings
         const bookingsRes = await databases.listDocuments(
           appwriteConfig.databaseId,
-          "bookings"
+          "bookings",
+          [Query.orderDesc('$createdAt'), Query.limit(1000)]
         );
         const bookings = bookingsRes.documents.filter((b: any) => vendorPropertyIds.includes(b.hotelId) && isWithinTimeframe(b.$createdAt, timeframe));
         setTotalBookings(bookings.length);
@@ -177,20 +178,22 @@ export default function DashboardOverview() {
         // Fetch payments
         const paymentsRes = await databases.listDocuments(
           appwriteConfig.databaseId,
-          "booking_payments"
+          "booking_payments",
+          [Query.orderDesc('$createdAt'), Query.limit(1000)]
         );
 
         // Fetch guests
         const guestsRes = await databases.listDocuments(
           appwriteConfig.databaseId,
-          "booking_guests"
+          "booking_guests",
+          [Query.orderDesc('$createdAt'), Query.limit(1000)]
         );
 
         // Fetch reviews
         const reviewsRes = await databases.listDocuments(
           appwriteConfig.databaseId,
           appwriteConfig.reviewCollectionId || "reviews",
-          [Query.equal("vendorId", user.$id)]
+          [Query.equal("vendorId", user.$id), Query.limit(1000)]
         );
         const reviews = reviewsRes.documents.filter((r: any) => isWithinTimeframe(r.$createdAt, timeframe));
         let avgRating = 0;

@@ -43,11 +43,10 @@ export default async function DashboardPage({ searchParams }: { searchParams?: P
     const db = appwriteServer.databases;
 
     // Fetch properties
-    const properties = await db.listDocuments(DATABASE_ID, 'properties', [Query.limit(100), Query.orderDesc('$createdAt')]);
+    const properties = await db.listDocuments(DATABASE_ID, 'properties', [Query.limit(1000), Query.orderDesc('$createdAt')]);
     const activeProperties = properties.documents.filter(p => p.status?.toLowerCase() === 'approved' || p.status?.toLowerCase() === 'active').length;
 
-    // Fetch bookings
-    const bookings = await db.listDocuments(DATABASE_ID, 'bookings', [Query.limit(100), Query.orderDesc('$createdAt')]);
+    const bookings = await db.listDocuments(DATABASE_ID, 'bookings', [Query.limit(1000), Query.orderDesc('$createdAt')]);
     
     // Fetch payments
     const payments = await db.listDocuments(DATABASE_ID, 'booking_payments', [Query.limit(1000), Query.orderDesc('$createdAt')]);

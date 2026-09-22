@@ -46,20 +46,23 @@ export default function EarningsPage() {
 
         const bookingsRes = await databases.listDocuments(
           appwriteConfig.databaseId,
-          "bookings"
+          "bookings",
+          [Query.orderDesc('$createdAt'), Query.limit(1000)]
         );
         const allBookings = bookingsRes.documents.filter(b => vendorPropertyIds.includes(b.hotelId));
         
         // Fetch payments
         const paymentsRes = await databases.listDocuments(
           appwriteConfig.databaseId,
-          "booking_payments"
+          "booking_payments",
+          [Query.orderDesc('$createdAt'), Query.limit(1000)]
         );
         
         // Fetch guests
         const guestsRes = await databases.listDocuments(
           appwriteConfig.databaseId,
-          "booking_guests"
+          "booking_guests",
+          [Query.orderDesc('$createdAt'), Query.limit(1000)]
         );
 
         const now = new Date();

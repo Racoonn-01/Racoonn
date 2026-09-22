@@ -58,6 +58,31 @@ export async function createReview(data: { propertyId: string, vendorId: string,
       ID.unique(),
       data
     );
+    
+    // Recalculate average rating for the property
+    try {
+      const allReviews = await getReviews(data.propertyId);
+      const reviewsCount = allReviews.length;
+      let newRating = 0;
+      if (reviewsCount > 0) {
+        const total = allReviews.reduce((sum, r) => sum + (r.rating || 0), 0);
+        newRating = Math.round((total / reviewsCount) * 10) / 10;
+      }
+      
+      // Update property document
+      await databases.updateDocument(
+        DATABASE_ID,
+        PROPERTY_COLLECTION_ID,
+        data.propertyId,
+        {
+          rating: newRating,
+          reviewsCount: reviewsCount
+        }
+      );
+    } catch (updateError) {
+      console.error('Failed to update property rating after review creation:', updateError);
+    }
+
     return response;
   } catch (error) {
     console.error('Error creating review:', error);

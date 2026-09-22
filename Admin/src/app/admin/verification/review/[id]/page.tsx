@@ -179,7 +179,11 @@ export default function VendorFullPageReviewScreen({ params }: { params: Promise
             // Map Appwrite database fields based on what Step9KYC.tsx actually saves:
             if (template.id === "pan_card") fileId = doc.idProofFront;
             if (template.id === "aadhaar_card_front") fileId = doc.idProofBack;
-            if (template.id === "property_proof") fileId = doc.businessProof;
+            if (template.id === "aadhaar_card_back") fileId = doc.aadhaarCardBack;
+            if (template.id === "property_proof" || template.id === "business_registration") fileId = doc.businessProof;
+            if (template.id === "gst_certificate") fileId = doc.gstCertificate;
+            if (template.id === "bank_cheque") fileId = doc.bankCheque;
+            if (template.id === "fssai_license") fileId = doc.fssaiLicense;
             
             if (fileId) {
               fileUrl = getFileUrl(fileId);

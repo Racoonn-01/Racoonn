@@ -404,7 +404,11 @@ export default function DocumentsPage() {
           const updatePayload: any = {};
           if (docId === "pan_card") updatePayload.idProofFront = uploadedFileId;
           if (docId === "aadhaar_card_front") updatePayload.idProofBack = uploadedFileId;
-          if (docId === "property_proof") updatePayload.businessProof = uploadedFileId;
+          if (docId === "aadhaar_card_back") updatePayload.aadhaarCardBack = uploadedFileId;
+          if (docId === "property_proof" || docId === "business_registration") updatePayload.businessProof = uploadedFileId;
+          if (docId === "gst_certificate") updatePayload.gstCertificate = uploadedFileId;
+          if (docId === "bank_cheque") updatePayload.bankCheque = uploadedFileId;
+          if (docId === "fssai_license") updatePayload.fssaiLicense = uploadedFileId;
           
           if (Object.keys(updatePayload).length > 0) {
              const { databases } = await import("@/lib/appwrite/client");

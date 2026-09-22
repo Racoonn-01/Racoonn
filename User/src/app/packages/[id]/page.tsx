@@ -151,9 +151,9 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
             if (cmsFound.hotelOptions && Array.isArray(cmsFound.hotelOptions) && cmsFound.hotelOptions.length > 0) {
               const legacyHotelIds = ["h1", "h2"];
               const filteredHotels = cmsFound.hotelOptions
-                .filter((h: Record<string, unknown>) => !legacyHotelIds.includes(h.id))
+                .filter((h: Record<string, unknown>) => !legacyHotelIds.includes(h.id as string))
                 .map((h: Record<string, unknown>) => {
-                  const fresh = freshProperties.find((fp: Record<string, unknown>) => fp.id === h.id);
+                  const fresh = freshProperties.find((fp: Record<string, unknown>) => (fp.id as string) === (h.id as string));
                   return fresh ? { ...h, ...fresh } : h;
                 });
               setHotelOptions(filteredHotels);

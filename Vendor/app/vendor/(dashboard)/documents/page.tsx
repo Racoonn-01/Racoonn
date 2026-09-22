@@ -168,18 +168,18 @@ export default function DocumentsPage() {
           fileUrl: null,
           updatedAt: null
         };
-      });
+      }) as VendorDoc[];
 
       setDocuments(mergedList);
     } catch {
       setDocuments(INITIAL_DOC_TEMPLATES.map(t => ({
         ...t,
-        status: "Missing",
+        status: 'Missing' as const,
         fileName: null,
-        fileId: null,
+        fileId: '',
         fileUrl: null,
-        updatedAt: null
-      })));
+        updatedAt: new Date().toISOString()
+      })) as VendorDoc[]);
     }
   }, [user, profile]);
 

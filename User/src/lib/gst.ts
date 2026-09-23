@@ -46,9 +46,9 @@ export function calculateRoomGst(
       gstStatus = "GST @ 0%";
       itcNote = "GST Exempt";
     } else if (taxableBase <= 7500) {
-      gstRate = 12; // Typical standard slab, or 5% depending on previous commit. Let's use 12% as it's standard for hotels, wait, the commit says 5%. Let me use 12% for up to 7500.
-      gstStatus = "GST @ 12%";
-      itcNote = "GST @ 12% (Input Tax Credit Not Allowed)";
+      gstRate = 5;
+      gstStatus = "GST @ 5%";
+      itcNote = "GST @ 5% (Input Tax Credit Not Allowed)";
     } else {
       gstRate = 18;
       gstStatus = "GST @ 18%";

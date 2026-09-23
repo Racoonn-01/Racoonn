@@ -81,7 +81,7 @@ interface CheckoutState {
   nextStep: () => void;
   prevStep: () => void;
   toggleAddon: (id: string) => void;
-  applyCoupon: (code: string) => { success: boolean; message: string };
+  applyCoupon: (code: string) => Promise<{ success: boolean; message: string }>;
   removeCoupon: () => void;
   updateGuestDetails: (details: Partial<GuestDetails>) => void;
   initTravelers: (count: number) => void;
@@ -128,7 +128,7 @@ export const useCheckoutStore = create<CheckoutState>((set, get) => ({
       ? state.selectedAddons.filter(addonId => addonId !== id)
       : [...state.selectedAddons, id]
   })),
-  applyCoupon: (code) => {
+  applyCoupon: async (code) => {
     const searchCode = code.trim().toUpperCase();
     if (!searchCode) {
       return { success: false, message: 'Please enter a coupon code.' };
@@ -283,6 +283,38 @@ export const useCheckoutStore = create<CheckoutState>((set, get) => ({
       } catch (err) {
         console.error("Error looking up vendor coupon:", err);
       }
+    }
+
+    // 4. Check global Admin marketing coupons in 'promotions' collection
+    try {
+      const response = await databases.listDocuments(DATABASE_ID, 'promotions', [
+        Query.equal('code', searchCode),
+        Query.equal('status', 'Active'),
+        Query.limit(1)
+      ]);
+      
+      if (response.documents.length > 0) {
+        const promo = response.documents[0] as unknown as Record<string, unknown>;
+        const todayStr = new Date().toISOString().split('T')[0];
+        
+        if (promo.validUntil && String(promo.validUntil) < todayStr) {
+          return { success: false, message: 'This coupon code has expired.' };
+        }
+        
+        const isPercentage = promo.discountType === 'percentage' || promo.type === 'percentage';
+        const discountVal = Number(promo.discountValue || promo.discount || 0);
+
+        const couponObj: Coupon = {
+          code: searchCode,
+          type: isPercentage ? 'percentage' : 'fixed',
+          value: discountVal
+        };
+
+        set({ appliedCoupon: couponObj });
+        return { success: true, message: `Coupon ${couponObj.code} applied successfully!` };
+      }
+    } catch (err) {
+      console.warn("Error looking up global promotions (may not be provisioned yet):", err);
     }
 
     return { success: false, message: 'Invalid or expired coupon code.' };

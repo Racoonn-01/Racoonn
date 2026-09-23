@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { MapPin, Calendar, Users, BedDouble, Tag, X } from "lucide-react";
+import { MapPin, Calendar, Users, BedDouble, Tag, X, Loader2 } from "lucide-react";
 import Image from "next/image";
 import { useCheckoutStore } from "@/store/checkoutStore";
 
@@ -52,16 +52,19 @@ export function BookingSummary({
   const { appliedCoupon, applyCoupon, removeCoupon } = useCheckoutStore();
   const [couponInput, setCouponInput] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
+  const [isApplying, setIsApplying] = useState(false);
 
-  const handleApplyCoupon = () => {
-    if (!couponInput.trim()) return;
-    const res = applyCoupon(couponInput.trim());
+  const handleApplyCoupon = async () => {
+    if (!couponInput.trim() || isApplying) return;
+    setIsApplying(true);
+    const res = await applyCoupon(couponInput.trim());
     if (!res.success) {
       setErrorMsg(res.message);
     } else {
       setErrorMsg("");
       setCouponInput("");
     }
+    setIsApplying(false);
   };
 
   return (
@@ -154,9 +157,10 @@ export function BookingSummary({
               />
               <button 
                 onClick={handleApplyCoupon}
-                className="bg-brand-navy hover:bg-brand-navy/90 text-white font-bold px-5 py-2.5 rounded-xl text-sm transition-transform active:scale-[0.98] shadow-sm"
+                disabled={isApplying}
+                className="bg-brand-navy hover:bg-brand-navy/90 text-white font-bold px-5 py-2.5 rounded-xl text-sm transition-transform active:scale-[0.98] shadow-sm disabled:opacity-70 flex items-center gap-2"
               >
-                Apply
+                {isApplying ? <Loader2 className="w-4 h-4 animate-spin" /> : "Apply"}
               </button>
             </div>
             {errorMsg && <p className="text-xs text-red-500 mt-2 font-medium ml-1">{errorMsg}</p>}

@@ -38,7 +38,7 @@ export default function AuthModal({ isOpen, onClose, initialView = 'signin', onS
   
   const { checkAuth } = useAuthStore();
 
-  const { register, handleSubmit, formState: { errors }, reset, clearErrors } = useForm<AuthFormData>({
+  const { register, handleSubmit, formState: { errors }, reset, clearErrors, watch, setError } = useForm<AuthFormData>({
     resolver: zodResolver(authSchema),
     mode: "onTouched"
   });
@@ -64,7 +64,7 @@ export default function AuthModal({ isOpen, onClose, initialView = 'signin', onS
         }
         await authService.register(
             data.email, 
-            data.password, 
+            data.password!, 
             `${data.firstName} ${data.lastName}`
         );
         toast.success('Account Created Successfully');
@@ -72,15 +72,11 @@ export default function AuthModal({ isOpen, onClose, initialView = 'signin', onS
         if (onSuccess) onSuccess();
         onClose();
       } else if (view === 'signin') {
-        await authService.login(data.email, data.password);
+        await authService.login(data.email, data.password!);
         toast.success('Login Successful');
         await checkAuth();
         if (onSuccess) onSuccess();
         onClose();
-      } else if (view === 'forgot') {
-        await authService.forgotPassword(data.email);
-        toast.success('Password Reset Email Sent');
-        setView('signin');
       }
     } catch (error: unknown) {
       const err = error as Error & { code?: number };
@@ -89,6 +85,28 @@ export default function AuthModal({ isOpen, onClose, initialView = 'signin', onS
       } else {
         toast.error(err?.message || "Authentication failed. Please try again.");
       }
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleForgot = async () => {
+    setIsSubmitting(true);
+    try {
+      const emailVal = watch('email');
+      const emailCheck = z.string().email().safeParse(emailVal);
+      if (!emailCheck.success) {
+        setError('email', { type: 'manual', message: 'Please enter a valid email address' });
+        setIsSubmitting(false);
+        return;
+      }
+      clearErrors('email');
+      await authService.forgotPassword(emailVal);
+      toast.success('Password Reset Email Sent');
+      setView('signin');
+    } catch (error: unknown) {
+      const err = error as Error;
+      toast.error(err?.message || "Failed to send reset email");
     } finally {
       setIsSubmitting(false);
     }
@@ -150,7 +168,14 @@ export default function AuthModal({ isOpen, onClose, initialView = 'signin', onS
                   </p>
                 </div>
 
-                <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
+                <form className="space-y-4" onSubmit={(e) => {
+                  if (view === 'forgot') {
+                    e.preventDefault();
+                    handleForgot();
+                  } else {
+                    handleSubmit(onSubmit)(e);
+                  }
+                }}>
                   {view === 'signup' && (
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-1.5">

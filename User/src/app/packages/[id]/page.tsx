@@ -34,6 +34,9 @@ import { getReviews, createReview } from '@/lib/appwrite/api';
 import { format, addDays, differenceInDays } from 'date-fns';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import AuthModal from '@/components/auth/AuthModal';
 import { Navigation, Pagination } from 'swiper/modules';
@@ -68,6 +71,10 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('plan');
   const [openDay, setOpenDay] = useState<number>(1);
+  const [selectedDay, setSelectedDay] = useState(0);
+  const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
+  const [quoteForm, setQuoteForm] = useState({ name: '', phone: '', email: '', message: '' });
+  const [isQuoteSubmitting, setIsQuoteSubmitting] = useState(false);
   const [selectedHotel, setSelectedHotel] = useState<number>(0);
   const [selectedActivities, setSelectedActivities] = useState<number[]>([]);
   const [adultsCount, setAdultsCount] = useState<number>(1);
@@ -379,6 +386,17 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
     router.push(`/checkout?${query.toString()}`);
   };
 
+  const handleQuoteSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsQuoteSubmitting(true);
+    // In a real app, send this to an API or email service
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    setIsQuoteSubmitting(false);
+    setIsQuoteModalOpen(false);
+    alert("Quote request sent! Our team will contact you shortly.");
+    setQuoteForm({ name: '', phone: '', email: '', message: '' });
+  };
+
   return (
     <div className="min-h-screen bg-white text-[#222222]">
       
@@ -593,15 +611,21 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
             </div>
 
             {/* Book Button */}
-            <div className="w-full md:w-auto shrink-0">
+            <div className="w-full md:w-auto shrink-0 flex gap-3">
+              <button 
+                onClick={() => setIsQuoteModalOpen(true)}
+                className="flex-1 md:w-auto bg-white border border-brand-coral text-brand-coral hover:bg-brand-coral/5 font-bold text-[15px] px-6 sm:px-8 py-3.5 rounded-xl transition-all shadow-sm active:scale-[0.98] whitespace-nowrap cursor-pointer"
+              >
+                Get a Quote
+              </button>
               <button 
                 onClick={handleBookPackage} 
-                className="w-full md:w-auto bg-brand-coral hover:bg-brand-coral/90 text-white font-bold text-[15px] px-8 py-3.5 rounded-xl transition-all shadow-sm active:scale-[0.98] whitespace-nowrap cursor-pointer"
+                className="flex-1 md:w-auto bg-brand-coral hover:bg-brand-coral/90 text-white font-bold text-[15px] px-6 sm:px-8 py-3.5 rounded-xl transition-all shadow-sm active:scale-[0.98] whitespace-nowrap cursor-pointer"
               >
                 Book Now
               </button>
-              <p className="text-center text-gray-500 text-[11px] mt-2 font-medium md:hidden">You won&apos;t be charged yet</p>
             </div>
+            <p className="text-center text-gray-500 text-[11px] mt-2 font-medium md:hidden">You won&apos;t be charged yet</p>
           </div>
 
           <div className="pb-6 border-b border-gray-200">
@@ -1315,6 +1339,79 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
             }, 300);
           }}
         />
+
+      {/* Quote Request Modal */}
+      <Dialog open={isQuoteModalOpen} onOpenChange={setIsQuoteModalOpen}>
+        <DialogContent className="sm:max-w-md bg-white rounded-2xl p-0 overflow-hidden">
+          <div className="p-6 border-b border-gray-100 bg-gray-50/50">
+            <DialogHeader>
+              <DialogTitle className="text-xl font-bold text-gray-900">Request a Custom Quote</DialogTitle>
+              <DialogDescription className="text-sm text-gray-500">
+                Interested in this package? Fill out this form and our travel experts will get back to you with a personalized quote.
+              </DialogDescription>
+            </DialogHeader>
+          </div>
+          <form onSubmit={handleQuoteSubmit} className="p-6 space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="quote-name" className="text-xs font-bold uppercase text-gray-600">Full Name</Label>
+              <Input 
+                id="quote-name" 
+                placeholder="John Doe" 
+                required 
+                value={quoteForm.name}
+                onChange={(e) => setQuoteForm({...quoteForm, name: e.target.value})}
+                className="rounded-xl border-gray-200 focus:border-brand-coral focus:ring-brand-coral/20"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="quote-phone" className="text-xs font-bold uppercase text-gray-600">Phone Number</Label>
+                <Input 
+                  id="quote-phone" 
+                  type="tel"
+                  placeholder="+91 9876543210" 
+                  required 
+                  value={quoteForm.phone}
+                  onChange={(e) => setQuoteForm({...quoteForm, phone: e.target.value})}
+                  className="rounded-xl border-gray-200 focus:border-brand-coral focus:ring-brand-coral/20"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="quote-email" className="text-xs font-bold uppercase text-gray-600">Email Address</Label>
+                <Input 
+                  id="quote-email" 
+                  type="email"
+                  placeholder="john@example.com" 
+                  required 
+                  value={quoteForm.email}
+                  onChange={(e) => setQuoteForm({...quoteForm, email: e.target.value})}
+                  className="rounded-xl border-gray-200 focus:border-brand-coral focus:ring-brand-coral/20"
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="quote-message" className="text-xs font-bold uppercase text-gray-600">Additional Requirements (Optional)</Label>
+              <textarea 
+                id="quote-message" 
+                placeholder="Tell us about any specific customization, number of travelers, or special requests..." 
+                rows={4}
+                value={quoteForm.message}
+                onChange={(e) => setQuoteForm({...quoteForm, message: e.target.value})}
+                className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-coral/20 focus:border-brand-coral resize-none"
+              />
+            </div>
+            <div className="pt-2">
+              <button 
+                type="submit" 
+                disabled={isQuoteSubmitting}
+                className="w-full bg-brand-coral hover:bg-brand-coral/90 text-white font-bold py-3 rounded-xl transition-all shadow-md active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed"
+              >
+                {isQuoteSubmitting ? 'Sending Request...' : 'Send Request'}
+              </button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
       </div>
   );
 }

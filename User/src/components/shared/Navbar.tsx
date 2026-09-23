@@ -31,6 +31,17 @@ export default function Navbar() {
     checkAuth();
   }, [checkAuth]);
 
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('login') === 'true') {
+        setAuthModalView('signin');
+        setIsAuthModalOpen(true);
+        window.history.replaceState(null, '', window.location.pathname);
+      }
+    }
+  }, [pathname]);
+
   const isAuthPage = ['/signin', '/signup', '/forgot-password', '/reset-password', '/developers'].includes(pathname);
   const isCheckoutPage = pathname.startsWith('/checkout');
   if (isAuthPage || isCheckoutPage) return null;

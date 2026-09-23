@@ -31,7 +31,7 @@ export default function Navbar() {
     checkAuth();
   }, [checkAuth]);
 
-  const isAuthPage = ['/signin', '/signup', '/forgot-password', '/developers'].includes(pathname);
+  const isAuthPage = ['/signin', '/signup', '/forgot-password', '/reset-password', '/developers'].includes(pathname);
   const isCheckoutPage = pathname.startsWith('/checkout');
   if (isAuthPage || isCheckoutPage) return null;
 

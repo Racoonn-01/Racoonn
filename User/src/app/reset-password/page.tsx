@@ -59,8 +59,8 @@ function ResetPasswordForm() {
   return (
     <div className="w-full max-w-md bg-white rounded-3xl shadow-xl overflow-hidden p-8 border border-gray-100">
       <div className="text-center mb-8">
-        <div className="w-12 h-12 bg-brand-sand rounded-full flex items-center justify-center mx-auto mb-4">
-          <Lock className="w-6 h-6 text-brand-coral" />
+        <div className="w-12 h-12 bg-[#E86A6F]/10 rounded-full flex items-center justify-center mx-auto mb-4">
+          <Lock className="w-5 h-5 text-[#E86A6F]" />
         </div>
         <h1 className="text-[28px] font-heading font-bold text-[#222] mb-2 tracking-tight">
           Reset Password
@@ -82,7 +82,7 @@ function ResetPasswordForm() {
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
               required
-              className="w-full px-4 py-3 rounded-xl border bg-gray-50/50 focus:bg-white focus:outline-none focus:border-brand-coral focus:ring-4 focus:ring-brand-coral/10 transition-all text-[15px] tracking-widest border-gray-200"
+              className="w-full px-4 py-3 rounded-xl border bg-gray-50/50 focus:bg-white focus:outline-none focus:border-[#E86A6F] focus:ring-4 focus:ring-[#E86A6F]/10 transition-all text-[15px] tracking-widest border-gray-200"
             />
             <button
               type="button"
@@ -105,7 +105,7 @@ function ResetPasswordForm() {
               onChange={(e) => setConfirmPassword(e.target.value)}
               placeholder="••••••••"
               required
-              className="w-full px-4 py-3 rounded-xl border bg-gray-50/50 focus:bg-white focus:outline-none focus:border-brand-coral focus:ring-4 focus:ring-brand-coral/10 transition-all text-[15px] tracking-widest border-gray-200"
+              className="w-full px-4 py-3 rounded-xl border bg-gray-50/50 focus:bg-white focus:outline-none focus:border-[#E86A6F] focus:ring-4 focus:ring-[#E86A6F]/10 transition-all text-[15px] tracking-widest border-gray-200"
             />
           </div>
         </div>
@@ -125,8 +125,8 @@ function ResetPasswordForm() {
 
 export default function ResetPasswordPage() {
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
-      <Suspense fallback={<Loader2 className="w-8 h-8 animate-spin text-brand-coral" />}>
+    <div className="h-screen w-full bg-gray-50 flex flex-col items-center justify-center p-4">
+      <Suspense fallback={<Loader2 className="w-8 h-8 animate-spin text-[#E86A6F]" />}>
         <ResetPasswordForm />
       </Suspense>
     </div>

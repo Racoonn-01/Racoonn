@@ -59,7 +59,7 @@ export async function POST(req: Request) {
       subject: 'Reset Your Racoonn Password',
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #eaeaea; border-radius: 8px; overflow: hidden; color: #333;">
-          <div style="background-color: #DE1B54; color: white; padding: 24px; text-align: center;">
+          <div style="background-color: #E86A6F; color: white; padding: 24px; text-align: center;">
             <h1 style="margin: 0; font-size: 26px;">Reset Password</h1>
           </div>
           <div style="padding: 30px 20px;">
@@ -67,9 +67,9 @@ export async function POST(req: Request) {
             <p>We received a request to reset the password for your Racoonn account.</p>
             
             <div style="background-color: #f9fafb; padding: 20px; border-radius: 6px; margin: 25px 0;">
-              <h3 style="color: #DE1B54; margin-top: 0; margin-bottom: 15px; font-size: 18px;">Password Reset Link</h3>
+              <h3 style="color: #E86A6F; margin-top: 0; margin-bottom: 15px; font-size: 18px;">Password Reset Link</h3>
               <p style="margin-bottom: 20px;">Click the button below to securely set a new password for your account. This link will expire in 15 minutes.</p>
-              <a href="${resetUrl}" style="background-color: #DE1B54; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">Set New Password</a>
+              <a href="${resetUrl}" style="background-color: #E86A6F; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">Set New Password</a>
             </div>
 
             <p>If you didn't ask to reset your password, you can safely ignore this email.</p>

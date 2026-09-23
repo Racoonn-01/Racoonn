@@ -10,7 +10,8 @@ import {
   Package, 
   ChevronLeft,
   FileText,
-  Tent
+  Tent,
+  Image as ImageIcon
 } from "lucide-react"
 
 import {
@@ -25,6 +26,7 @@ import {
 import Image from "next/image"
 
 const navItems = [
+  { title: "Hero Section", url: "/cms/hero", icon: ImageIcon },
   { title: "Blog Management", url: "/cms/blogs", icon: FileText },
   { title: "Popular Stay", url: "/cms/popular-stays", icon: Home },
   { title: "Popular Destinations", url: "/cms/popular-destinations", icon: Map },

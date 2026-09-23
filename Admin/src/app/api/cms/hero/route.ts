@@ -1,0 +1,112 @@
+export const dynamic = "force-dynamic";
+export const fetchCache = "force-no-store";
+export const revalidate = 0;
+
+import { NextResponse } from "next/server";
+import { unstable_noStore as noStore } from "next/cache";
+import fs from "fs";
+import { appwriteServer } from "@/lib/appwrite/server";
+
+const SHARED_FILE_PATH = "/Users/haldwani/Documents/Working/Working/Racoonn/hero_section_cms.json";
+const DATABASE_ID = process.env.APPWRITE_DATABASE_ID || process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID || "6a3cec630035d63ea963";
+const COLLECTION_ID = process.env.NEXT_PUBLIC_APPWRITE_PROPERTY_COLLECTION_ID || "properties";
+const DOC_ID = "cms_hero_section_v1";
+
+export async function GET() {
+  noStore();
+  try {
+    // 1. Try reading from shared file
+    if (fs.existsSync(SHARED_FILE_PATH)) {
+      const fileData = fs.readFileSync(SHARED_FILE_PATH, "utf-8");
+      const images = JSON.parse(fileData);
+      return NextResponse.json({ success: true, images });
+    }
+  } catch (err) {
+    console.warn("File read failed, trying Appwrite DB:", err);
+  }
+
+  try {
+    // 2. Fallback to Appwrite DB
+    const doc = await appwriteServer.databases.getDocument(
+      DATABASE_ID,
+      COLLECTION_ID,
+      DOC_ID
+    );
+    const images = doc.details ? JSON.parse(doc.details) : [];
+    return NextResponse.json({ success: true, images });
+  } catch {
+    return NextResponse.json({ success: true, images: [] });
+  }
+}
+
+export async function POST(request: Request) {
+  try {
+    const body = await request.json();
+    const images = body.images || [];
+    const jsonStr = JSON.stringify(images, null, 2);
+
+    // 1. Save to shared file
+    try {
+      fs.writeFileSync(SHARED_FILE_PATH, jsonStr, "utf-8");
+    } catch (fileErr) {
+      console.warn("Shared file write warning:", fileErr);
+    }
+
+    // 2. Sync to Appwrite DB
+    try {
+      await appwriteServer.databases.updateDocument(
+        DATABASE_ID,
+        COLLECTION_ID,
+        DOC_ID,
+        { 
+          propertyName: "CMS Hero Section Configuration",
+          title: "CMS Hero Section Configuration",
+          details: jsonStr,
+          vendorId: "cms_admin",
+          propertyType: "CMS",
+          description: "CMS System Document",
+          city: "CMS",
+          state: "CMS",
+          location: "CMS",
+          status: "Published",
+          price: 0
+        }
+      );
+    } catch (err: unknown) {
+      const error = err as { code?: number };
+      if (error?.code === 404) {
+        try {
+          await appwriteServer.databases.createDocument(
+            DATABASE_ID,
+            COLLECTION_ID,
+            DOC_ID,
+            {
+              propertyName: "CMS Hero Section Configuration",
+              title: "CMS Hero Section Configuration",
+              details: jsonStr,
+              vendorId: "cms_admin",
+              propertyType: "CMS",
+              description: "CMS System Document",
+              city: "CMS",
+              state: "CMS",
+              location: "CMS",
+              status: "Published",
+              price: 0
+            }
+          );
+        } catch (createErr) {
+          console.warn("Appwrite DB doc create warning:", createErr);
+          throw createErr;
+        }
+      } else {
+        throw err;
+      }
+    }
+
+    return NextResponse.json({ success: true, images });
+  } catch (err: unknown) {
+    const error = err as Error;
+    console.error("Error saving CMS hero section:", error);
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  }
+}

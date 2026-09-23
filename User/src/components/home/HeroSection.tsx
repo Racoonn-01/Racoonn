@@ -30,14 +30,14 @@ const tabs = [
   { id: 'activities', label: 'Activities', icon: Ticket },
 ];
 
-const heroImages = [
-  "https://images.unsplash.com/photo-1499793983690-e29da59ef1c2?q=80&w=1920&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1514282401047-d79a71a590e8?q=80&w=1920&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1540541338287-41700207dee6?q=80&w=1920&auto=format&fit=crop"
-];
 
 export default function HeroSection() {
   const router = useRouter();
+  const [heroImages, setHeroImages] = useState<string[]>([
+    "https://images.unsplash.com/photo-1499793983690-e29da59ef1c2?q=80&w=1920&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1514282401047-d79a71a590e8?q=80&w=1920&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1540541338287-41700207dee6?q=80&w=1920&auto=format&fit=crop"
+  ]);
   const [activeTab, setActiveTab] = useState('stays');
   const [checkIn, setCheckIn] = useState<Date>();
   const [checkOut, setCheckOut] = useState<Date>();
@@ -129,11 +129,34 @@ export default function HeroSection() {
   };
 
   useEffect(() => {
+    async function loadHeroImages() {
+      try {
+        const res = await fetch(`/api/cms/hero?t=${Date.now()}`);
+        const json = await res.json();
+        if (json.success && Array.isArray(json.images) && json.images.length > 0) {
+          const activeImages = json.images
+            .filter((img: any) => img.isActive)
+            .sort((a: any, b: any) => a.order - b.order)
+            .map((img: any) => img.url);
+          if (activeImages.length > 0) {
+            setHeroImages(activeImages);
+            setCurrentImageIndex(0);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load dynamic hero images", err);
+      }
+    }
+    loadHeroImages();
+  }, []);
+
+  useEffect(() => {
+    if (heroImages.length === 0) return;
     const timer = setInterval(() => {
       setCurrentImageIndex((prev) => (prev + 1) % heroImages.length);
     }, 5000);
     return () => clearInterval(timer);
-  }, []);
+  }, [heroImages.length]);
 
   useEffect(() => {
     if (destination.length > 2) {
@@ -177,6 +200,7 @@ export default function HeroSection() {
             src={src}
             alt={`Beautiful tropical destination ${index + 1}`}
             fill
+            unoptimized
             priority={index === 0}
             className={`object-cover transition-opacity duration-1000 ease-in-out transform-gpu will-change-opacity ${
               index === currentImageIndex ? 'opacity-100' : 'opacity-0'

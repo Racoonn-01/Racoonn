@@ -10,7 +10,7 @@ const client = new Client()
 const databases = new Databases(client);
 
 async function updateMissingSchema() {
-    console.log("Updating Appwrite database attributes for Bookings GST fields...");
+    console.log("Updating Appwrite database attributes for Bookings   fields...");
     
     const dbId = process.env.APPWRITE_DATABASE_ID || process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID;
     const bookingColId = 'bookings';

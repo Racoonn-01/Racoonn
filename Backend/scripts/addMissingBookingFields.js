@@ -1,5 +1,5 @@
 const { Client, Databases } = require('node-appwrite');
-require('dotenv').config({ path: '../User/.env.local' });
+require('dotenv').config({ path: '../../User/.env.local' });
 require('dotenv').config();
 
 const client = new Client()

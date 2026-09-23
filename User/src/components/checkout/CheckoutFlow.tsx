@@ -130,7 +130,7 @@ export function CheckoutFlow() {
   }
 
   const effectivePerNightPrice = roomTotal / (nights * rooms);
-  const gstResult = calculateRoomGst(effectivePerNightPrice, nights, rooms, dynamicAddonsTotal, isPackage);
+  const gstResult = calculateRoomGst(effectivePerNightPrice, nights, rooms, dynamicAddonsTotal, dynamicDiscount, isPackage);
   const finalTaxes = gstResult.gstAmount;
   const finalTotalAmount = roomTotal + finalTaxes + dynamicAddonsTotal - dynamicDiscount;
 

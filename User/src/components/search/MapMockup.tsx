@@ -223,18 +223,7 @@ function PropertyOverlay({ property, position, containerW, containerH, onClose }
 
             {/* Room details row */}
             <div className="flex items-center gap-3 text-[11px] text-gray-500 mb-3.5">
-              {(property.bedrooms ?? 0) > 0 && (
-                <span className="flex items-center gap-1">
-                  <Bed size={11} className="text-gray-400" />
-                  {property.bedrooms} bed{property.bedrooms !== 1 ? 's' : ''}
-                </span>
-              )}
-              {(property.bathrooms ?? 0) > 0 && (
-                <span className="flex items-center gap-1">
-                  <Bath size={11} className="text-gray-400" />
-                  {property.bathrooms} bath{property.bathrooms !== 1 ? 's' : ''}
-                </span>
-              )}
+
               {property.freeCancellation && (
                 <span className="text-emerald-600 font-semibold">Free cancel</span>
               )}

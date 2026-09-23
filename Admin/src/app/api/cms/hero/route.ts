@@ -7,7 +7,7 @@ import { unstable_noStore as noStore } from "next/cache";
 import fs from "fs";
 import { appwriteServer } from "@/lib/appwrite/server";
 
-const SHARED_FILE_PATH = "/Users/haldwani/Documents/Working/Working/Racoonn/hero_section_cms.json";
+const SHARED_FILE_PATH = "/tmp/racoonn_hero_section_cms.json";
 const DATABASE_ID = process.env.APPWRITE_DATABASE_ID || process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID || "6a3cec630035d63ea963";
 const COLLECTION_ID = process.env.NEXT_PUBLIC_APPWRITE_PROPERTY_COLLECTION_ID || "properties";
 const DOC_ID = "cms_hero_section_v1";

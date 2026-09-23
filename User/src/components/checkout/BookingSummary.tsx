@@ -19,6 +19,7 @@ export function BookingSummary({
   taxes = 2400,
   addons = 1500,
   discount = 0,
+  welcomeDiscount = 0,
   roomImage,
   baseRoomAmount = 0,
   extraGuestAmount = 0
@@ -37,6 +38,7 @@ export function BookingSummary({
   taxes?: number;
   addons?: number;
   discount?: number;
+  welcomeDiscount?: number;
   roomImage?: string;
   baseRoomAmount?: number;
   extraGuestAmount?: number;
@@ -45,7 +47,7 @@ export function BookingSummary({
   const roomPrice = isPackage ? pricePerNight : baseRoomAmount + extraGuestAmount;
   const computedGst = Math.round((roomPrice * gstRate) / 100);
   const actualTaxes = taxes > 0 ? taxes : computedGst;
-  const total = roomPrice + actualTaxes + addons - discount;
+  const total = roomPrice + actualTaxes + addons - discount - welcomeDiscount;
   
   const { appliedCoupon, applyCoupon, removeCoupon } = useCheckoutStore();
   const [couponInput, setCouponInput] = useState("");
@@ -183,20 +185,26 @@ export function BookingSummary({
               <span className="font-medium text-brand-navy">₹{addons.toLocaleString('en-IN')}</span>
             </div>
           )}
-          <div className="flex justify-between items-center">
-            <span className="text-gray-600 flex items-center gap-1.5">
-              GST ({gstRate}%)
-              <span className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-1.5 py-0.5 rounded">GST Extra</span>
-            </span>
-            <span className="font-medium text-brand-navy">₹{actualTaxes.toLocaleString('en-IN')}</span>
-          </div>
-          {discount > 0 && (
-            <div className="flex justify-between text-green-600">
-              <span>Coupon Discount</span>
-              <span className="font-medium">-₹{discount.toLocaleString('en-IN')}</span>
+            <div className="flex justify-between items-center">
+              <span className="text-gray-600 flex items-center gap-1.5">
+                GST ({gstRate}%)
+                <span className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-1.5 py-0.5 rounded">GST Extra</span>
+              </span>
+              <span className="font-medium text-brand-navy">₹{actualTaxes.toLocaleString('en-IN')}</span>
             </div>
-          )}
-        </div>
+            {welcomeDiscount > 0 && (
+              <div className="flex justify-between text-brand-coral font-medium">
+                <span>First Booking Discount (10%)</span>
+                <span>-₹{welcomeDiscount.toLocaleString('en-IN')}</span>
+              </div>
+            )}
+            {discount > 0 && (
+              <div className="flex justify-between text-green-600">
+                <span>Coupon Discount</span>
+                <span className="font-medium">-₹{discount.toLocaleString('en-IN')}</span>
+              </div>
+            )}
+          </div>
 
         <div className="pt-4 border-t border-brand-sky flex justify-between items-end">
           <div>

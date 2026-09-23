@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, { useEffect } from "react";
 import { useCheckoutStore } from "@/store/checkoutStore";
 import { BookingSummary } from "@/components/checkout/BookingSummary";
 import { CancellationPolicy } from "@/components/checkout/CancellationPolicy";
@@ -30,6 +30,13 @@ export function CheckoutSidebar({
 
   const searchParams = useSearchParams();
   const hotelId = searchParams.get('hotelId') || useCheckoutStore.getState().selectedHotelId || 'hotel-123';
+
+  const checkFirstBooking = useCheckoutStore(state => state.checkFirstBooking);
+  const isFirstBooking = useCheckoutStore(state => state.isFirstBooking);
+
+  useEffect(() => {
+    checkFirstBooking();
+  }, [checkFirstBooking]);
 
   const displayAddons = propertyAddons === null ? [] : (propertyAddons.length > 0 ? propertyAddons : DEFAULT_ADDONS);
 
@@ -104,6 +111,11 @@ export function CheckoutSidebar({
     }
   }
 
+  let welcomeDiscount = 0;
+  if (isFirstBooking) {
+    welcomeDiscount = Math.floor(roomTotal * 0.10);
+  }
+
   const calcNights = isPackage ? 1 : nights;
   const calcRooms = isPackage ? 1 : rooms;
   const gstResult = calculateRoomGst(effectivePerNightPrice, calcNights, calcRooms, dynamicAddonsTotal, isPackage);
@@ -131,6 +143,7 @@ export function CheckoutSidebar({
           taxes={finalTaxes}
           addons={dynamicAddonsTotal}
           discount={dynamicDiscount}
+          welcomeDiscount={welcomeDiscount}
           baseRoomAmount={totalBaseRoomAmount}
           extraGuestAmount={totalExtraGuestAmount}
         />

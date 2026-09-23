@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { calculateRoomPricing } from '@/lib/pricing';
 import { databases } from '@/lib/appwrite/config';
-import { ID } from 'appwrite';
+import { ID, Query } from 'appwrite';
 import { useAuthStore } from './authStore';
 import { calculateRoomGst } from "@/lib/gst";
 
@@ -76,6 +76,7 @@ interface CheckoutState {
   selectedAddons: string[];
   propertyAddons: PropertyAddon[] | null; // null means loading, [] means empty
   appliedCoupon: Coupon | null;
+  isFirstBooking: boolean;
   setStep: (step: number) => void;
   nextStep: () => void;
   prevStep: () => void;
@@ -88,6 +89,7 @@ interface CheckoutState {
   setRoomDetails: (hotelId: string, roomName: string, price: number, hotelName?: string, hotelImage?: string, hotelLocation?: string, stdCap?: number, maxCap?: number, epc?: number, eba?: boolean) => void;
   fetchPropertyAddons: (hotelId: string) => Promise<void>;
   submitBooking: (bookingData: { hotelId?: string; hotelName: string; hotelLocation?: string; hotelImage?: string; price: number; nights: number; rooms: number; roomName?: string; checkIn: string; checkOut: string; adults?: number; gstRate?: number; }) => Promise<void>;
+  checkFirstBooking: () => Promise<void>;
 }
 
 export const useCheckoutStore = create<CheckoutState>((set, get) => ({
@@ -103,6 +105,7 @@ export const useCheckoutStore = create<CheckoutState>((set, get) => ({
   additionalTravelers: [],
   isSubmitting: false,
   bookingError: null,
+  isFirstBooking: false,
   confirmedBookingId: null,
   selectedHotelId: null,
   selectedRoomName: null,
@@ -284,6 +287,20 @@ export const useCheckoutStore = create<CheckoutState>((set, get) => ({
 
     return { success: false, message: 'Invalid or expired coupon code.' };
   },
+  checkFirstBooking: async () => {
+    const user = useAuthStore.getState().user;
+    if (!user) return;
+    try {
+      const response = await databases.listDocuments(DATABASE_ID, 'bookings', [
+        Query.equal('userId', user.$id),
+        Query.limit(1)
+      ]);
+      set({ isFirstBooking: response.total === 0 });
+    } catch (error) {
+      console.error("Error checking first booking:", error);
+      set({ isFirstBooking: false });
+    }
+  },
   removeCoupon: () => set({ appliedCoupon: null }),
   updateGuestDetails: (details) => set((state) => ({ 
     guestDetails: { ...state.guestDetails, ...details } 
@@ -396,7 +413,12 @@ export const useCheckoutStore = create<CheckoutState>((set, get) => ({
         }
       }
       
-      const totalAmount = Math.max(0, gstCalc.totalAmount - discount);
+      let welcomeDiscount = 0;
+      if (get().isFirstBooking) {
+        welcomeDiscount = Math.floor(roomAmount * 0.10);
+      }
+      
+      const totalAmount = Math.max(0, gstCalc.totalAmount - discount - welcomeDiscount);
       const platformCommissionRate = 18;
       const platformCommissionAmount = Math.round((roomAmount * (platformCommissionRate / 100)) * 100) / 100;
       const vendorSettlement = Math.round((totalAmount - platformCommissionAmount) * 100) / 100;

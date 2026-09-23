@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useRef } from 'react';
-import { CalendarCheck, BadgePercent, RefreshCw, Headset, Flame, Star, CheckCircle2, ChevronLeft, ChevronRight } from 'lucide-react';
+import React from 'react';
+import { CalendarCheck, BadgePercent, RefreshCw, Headset, Flame, Star, CheckCircle2 } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 const features = [
   {
@@ -51,15 +52,6 @@ const reviews = [
 ];
 
 export default function WhyBookWithUs() {
-  const scrollRef = useRef<HTMLDivElement>(null);
-
-  const scroll = (direction: 'left' | 'right') => {
-    if (scrollRef.current) {
-      const { scrollLeft, clientWidth } = scrollRef.current;
-      const scrollTo = direction === 'left' ? scrollLeft - clientWidth / 2 : scrollLeft + clientWidth / 2;
-      scrollRef.current.scrollTo({ left: scrollTo, behavior: 'smooth' });
-    }
-  };
 
   return (
     <section className="bg-white py-12 border-t border-gray-100">
@@ -86,32 +78,16 @@ export default function WhyBookWithUs() {
         </div>
 
         {/* Reviews Carousel */}
-        <div className="relative group">
-          {/* Nav Buttons */}
-          <button 
-            onClick={() => scroll('left')}
-            className="absolute left-0 top-1/2 -translate-y-1/2 -ml-4 lg:-ml-6 w-12 h-12 bg-white border border-gray-100 rounded-full shadow-lg flex items-center justify-center z-10 text-brand-navy hover:text-brand-coral hover:scale-110 transition-all opacity-0 group-hover:opacity-100"
+        <div className="relative group overflow-hidden before:absolute before:left-0 before:top-0 before:z-10 before:h-full before:w-16 before:bg-linear-to-r before:from-white before:to-transparent after:absolute after:right-0 after:top-0 after:z-10 after:h-full after:w-16 after:bg-linear-to-l after:from-white after:to-transparent">
+          <motion.div 
+            className="flex gap-4 pb-6 pt-2 w-max"
+            animate={{ x: ["0%", "-50%"] }}
+            transition={{ duration: 30, ease: "linear", repeat: Infinity }}
           >
-            <ChevronLeft className="w-6 h-6" />
-          </button>
-          
-          <button 
-            onClick={() => scroll('right')}
-            className="absolute right-0 top-1/2 -translate-y-1/2 -mr-4 lg:-mr-6 w-12 h-12 bg-white border border-gray-100 rounded-full shadow-lg flex items-center justify-center z-10 text-brand-navy hover:text-brand-coral hover:scale-110 transition-all opacity-0 group-hover:opacity-100"
-          >
-            <ChevronRight className="w-6 h-6" />
-          </button>
-
-          {/* Scrolling Container */}
-          <div 
-            ref={scrollRef}
-            className="flex overflow-x-auto gap-4 pb-6 pt-2 px-2 snap-x snap-mandatory scrollbar-hide"
-            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-          >
-            {reviews.map((review, idx) => (
+            {[...reviews, ...reviews].map((review, idx) => (
               <div 
                 key={idx} 
-                className="min-w-65 md:min-w-70 bg-white border border-gray-100 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow snap-start flex flex-col"
+                className="w-72 bg-white border border-gray-100 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col shrink-0"
               >
                 <div className="flex items-center gap-2 mb-3">
                   <div className="flex gap-0.5">
@@ -132,11 +108,10 @@ export default function WhyBookWithUs() {
                 
                 <div className="flex items-center gap-2 text-xs">
                   <span className="font-bold text-gray-700">{review.author}</span>
-                  <span className="text-gray-400">, {review.time}</span>
                 </div>
               </div>
             ))}
-          </div>
+          </motion.div>
         </div>
 
       </div>

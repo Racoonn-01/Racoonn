@@ -72,9 +72,9 @@ export default function TourPackages() {
             duration: itinerary.length > 0 
               ? `${itinerary.length + 1} Days / ${itinerary.length} Nights` 
               : '5 Days / 4 Nights',
-            features: 'Meals | Stay | Transfer',
+            features: String(cmsPkg.features || 'Meals | Stay | Transfer'),
             price: `₹${minPrice.toLocaleString('en-IN')}`,
-            badge: 'Featured',
+            badge: String(cmsPkg.badge || 'Featured'),
             badgeColor: 'text-brand-coral',
             images: images.length > 0 
               ? images.map(String) 

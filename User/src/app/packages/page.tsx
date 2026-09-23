@@ -37,9 +37,9 @@ function PackagesContent() {
             duration: cmsPkg.itinerary && cmsPkg.itinerary.length > 0 
               ? `${cmsPkg.itinerary.length + 1} Days / ${cmsPkg.itinerary.length} Nights` 
               : '5 Days / 4 Nights',
-            features: 'Meals | Stay | Transfer',
+            features: String(cmsPkg.features || 'Meals | Stay | Transfer'),
             price: `₹${minPrice.toLocaleString('en-IN')}`,
-            badge: 'Featured',
+            badge: String(cmsPkg.badge || 'Featured'),
             badgeColor: 'text-brand-coral',
             images: cmsPkg.images && cmsPkg.images.length > 0 
               ? cmsPkg.images 

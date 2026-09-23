@@ -142,11 +142,11 @@ function PropertyOverlay({ property, position, containerW, containerH, onClose }
   return (
     <>
       {/* Transparent backdrop — clicking dismisses the card */}
-      <div className="absolute inset-0 z-[9990]" onClick={onClose} />
+      <div className="absolute inset-0 z-50" onClick={onClose} />
 
       {/* Card positioned absolutely within the map container */}
       <div
-        className="absolute z-[9999]"
+        className="absolute z-50"
         style={{
           left,
           top,

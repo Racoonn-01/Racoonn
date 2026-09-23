@@ -51,8 +51,9 @@ function ResetPasswordForm() {
       await authService.resetPassword(userId, secret, password);
       toast.success("Password reset successfully! You can now log in.");
       router.push("/?login=true");
-    } catch (error: any) {
-      toast.error(error?.message || "Failed to reset password. The link might be expired.");
+    } catch (error: unknown) {
+      const err = error as Error;
+      toast.error(err?.message || "Failed to reset password. The link might be expired.");
     } finally {
       setIsSubmitting(false);
     }

@@ -441,23 +441,25 @@ export const useCheckoutStore = create<CheckoutState>((set, get) => ({
       const totalBaseRoomAmount = isPackage ? perNightPrice : (pricing.baseRoomAmount * roomsCount);
       const effectivePerNightPrice = isPackage ? perNightPrice : (totalRoomSubtotal / (nightsCount * roomsCount));
 
-      const gstCalc = calculateRoomGst(effectivePerNightPrice, calcNights, calcRooms, addons, isPackage);
-
-      const roomAmount = gstCalc.roomAmount;
-      const gstRate = gstCalc.gstRate;
-      const gstAmount = gstCalc.gstAmount;
-
       const { appliedCoupon } = get();
+      const initialRoomAmount = effectivePerNightPrice * calcNights * calcRooms;
+      
       let discount = 0;
       if (appliedCoupon) {
         if (appliedCoupon.type === 'fixed') {
           discount = appliedCoupon.value;
         } else if (appliedCoupon.type === 'percentage') {
-          discount = Math.floor(roomAmount * (appliedCoupon.value / 100));
+          discount = Math.floor(initialRoomAmount * (appliedCoupon.value / 100));
         }
       }
-      
-      const totalAmount = Math.max(0, gstCalc.totalAmount - discount);
+
+      const gstCalc = calculateRoomGst(effectivePerNightPrice, calcNights, calcRooms, addons, discount, isPackage);
+
+      const roomAmount = gstCalc.roomAmount;
+      const gstRate = gstCalc.gstRate;
+      const gstAmount = gstCalc.gstAmount;
+
+      const totalAmount = Math.max(0, gstCalc.totalAmount);
       const platformCommissionRate = 18;
       const platformCommissionAmount = Math.round((roomAmount * (platformCommissionRate / 100)) * 100) / 100;
       const vendorSettlement = Math.round((totalAmount - platformCommissionAmount) * 100) / 100;

@@ -113,7 +113,7 @@ export function CheckoutSidebar({
 
   const calcNights = isPackage ? 1 : nights;
   const calcRooms = isPackage ? 1 : rooms;
-  const gstResult = calculateRoomGst(effectivePerNightPrice, calcNights, calcRooms, dynamicAddonsTotal, isPackage);
+  const gstResult = calculateRoomGst(effectivePerNightPrice, calcNights, calcRooms, dynamicAddonsTotal, dynamicDiscount, isPackage);
   const finalTaxes = gstResult.gstAmount;
   const currentGstRate = gstResult.gstRate;
 

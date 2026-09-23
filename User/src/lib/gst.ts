@@ -21,15 +21,17 @@ export function calculateRoomGst(
   nights: number = 1, 
   rooms: number = 1,
   addonsAmount: number = 0,
+  discountAmount: number = 0,
   isPackage: boolean = false
 ): GstCalculationResult {
   const cleanPrice = Math.max(0, pricePerNight);
   const cleanNights = Math.max(1, nights);
   const cleanRooms = Math.max(1, rooms);
   const cleanAddons = Math.max(0, addonsAmount);
+  const cleanDiscount = Math.max(0, discountAmount);
 
   const roomAmount = cleanPrice * cleanNights * cleanRooms;
-  const taxableBase = roomAmount + cleanAddons;
+  const taxableBase = Math.max(0, roomAmount + cleanAddons - cleanDiscount);
 
   let gstRate = 0;
   let gstStatus = "GST @ 0%";

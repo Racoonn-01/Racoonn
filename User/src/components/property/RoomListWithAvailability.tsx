@@ -193,7 +193,7 @@ export default function RoomListWithAvailability({
                     <span className="text-gray-300 hidden sm:inline">|</span>
                     <span className={`flex flex-col gap-1 ${availableRooms > 0 ? 'text-[#10b981]' : 'text-red-500'}`}>
                       <span className="flex items-center gap-1.5"><Bed size={16} className="shrink-0" /> {availableRooms} {availableRooms === 1 ? 'room' : 'rooms'} left</span>
-                      <span className="text-xs text-gray-400">DB Total: {roomTotalRooms} | Occupied: {roomOccupiedCount}</span>
+
                     </span>
                   </div>
 

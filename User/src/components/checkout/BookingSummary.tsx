@@ -19,7 +19,6 @@ export function BookingSummary({
   taxes = 2400,
   addons = 1500,
   discount = 0,
-  welcomeDiscount = 0,
   roomImage,
   baseRoomAmount = 0,
   extraGuestAmount = 0
@@ -38,7 +37,6 @@ export function BookingSummary({
   taxes?: number;
   addons?: number;
   discount?: number;
-  welcomeDiscount?: number;
   roomImage?: string;
   baseRoomAmount?: number;
   extraGuestAmount?: number;
@@ -47,7 +45,7 @@ export function BookingSummary({
   const roomPrice = isPackage ? pricePerNight : baseRoomAmount + extraGuestAmount;
   const computedGst = Math.round((roomPrice * gstRate) / 100);
   const actualTaxes = taxes > 0 ? taxes : computedGst;
-  const total = roomPrice + actualTaxes + addons - discount - welcomeDiscount;
+  const total = roomPrice + actualTaxes + addons - discount;
   
   const { appliedCoupon, applyCoupon, removeCoupon } = useCheckoutStore();
   const [couponInput, setCouponInput] = useState("");
@@ -196,12 +194,6 @@ export function BookingSummary({
               </span>
               <span className="font-medium text-brand-navy">₹{actualTaxes.toLocaleString('en-IN')}</span>
             </div>
-            {welcomeDiscount > 0 && (
-              <div className="flex justify-between text-brand-coral font-medium">
-                <span>First Booking Discount (10%)</span>
-                <span>-₹{welcomeDiscount.toLocaleString('en-IN')}</span>
-              </div>
-            )}
             {discount > 0 && (
               <div className="flex justify-between text-green-600">
                 <span>Coupon Discount</span>

@@ -327,7 +327,19 @@ export const useCheckoutStore = create<CheckoutState>((set, get) => ({
         Query.equal('userId', user.$id),
         Query.limit(1)
       ]);
-      set({ isFirstBooking: response.total === 0 });
+      const isFirst = response.total === 0;
+      set({ isFirstBooking: isFirst });
+      if (isFirst) {
+        const currentCoupon = get().appliedCoupon;
+        if (!currentCoupon) {
+          set({ appliedCoupon: { code: 'WELCOMERACOONN', type: 'percentage', value: 10 } });
+        }
+      } else {
+        const currentCoupon = get().appliedCoupon;
+        if (currentCoupon && currentCoupon.code === 'WELCOMERACOONN') {
+          set({ appliedCoupon: null });
+        }
+      }
     } catch (error) {
       console.error("Error checking first booking:", error);
       set({ isFirstBooking: false });
@@ -445,12 +457,7 @@ export const useCheckoutStore = create<CheckoutState>((set, get) => ({
         }
       }
       
-      let welcomeDiscount = 0;
-      if (get().isFirstBooking) {
-        welcomeDiscount = Math.floor(roomAmount * 0.10);
-      }
-      
-      const totalAmount = Math.max(0, gstCalc.totalAmount - discount - welcomeDiscount);
+      const totalAmount = Math.max(0, gstCalc.totalAmount - discount);
       const platformCommissionRate = 18;
       const platformCommissionAmount = Math.round((roomAmount * (platformCommissionRate / 100)) * 100) / 100;
       const vendorSettlement = Math.round((totalAmount - platformCommissionAmount) * 100) / 100;

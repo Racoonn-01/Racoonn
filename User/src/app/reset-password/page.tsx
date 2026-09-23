@@ -17,6 +17,7 @@ function ResetPasswordForm() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState("");
 
   if (!userId || !secret) {
     return (
@@ -35,12 +36,13 @@ function ResetPasswordForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError("");
     if (password !== confirmPassword) {
-      toast.error("Passwords do not match");
+      setError("Passwords do not match");
       return;
     }
     if (password.length < 8) {
-      toast.error("Password must be at least 8 characters");
+      setError("Password must be at least 8 characters");
       return;
     }
 
@@ -79,10 +81,13 @@ function ResetPasswordForm() {
             <input
               type={showPassword ? "text" : "password"}
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                if (error) setError("");
+              }}
               placeholder="••••••••"
               required
-              className="w-full px-4 py-3 rounded-xl border bg-gray-50/50 focus:bg-white focus:outline-none focus:border-[#E86A6F] focus:ring-4 focus:ring-[#E86A6F]/10 transition-all text-[15px] tracking-widest border-gray-200"
+              className={`w-full px-4 py-3 rounded-xl border bg-gray-50/50 focus:bg-white focus:outline-none focus:border-[#E86A6F] focus:ring-4 focus:ring-[#E86A6F]/10 transition-all text-[15px] tracking-widest ${error ? 'border-red-500' : 'border-gray-200'}`}
             />
             <button
               type="button"
@@ -102,13 +107,17 @@ function ResetPasswordForm() {
             <input
               type={showPassword ? "text" : "password"}
               value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
+              onChange={(e) => {
+                setConfirmPassword(e.target.value);
+                if (error) setError("");
+              }}
               placeholder="••••••••"
               required
-              className="w-full px-4 py-3 rounded-xl border bg-gray-50/50 focus:bg-white focus:outline-none focus:border-[#E86A6F] focus:ring-4 focus:ring-[#E86A6F]/10 transition-all text-[15px] tracking-widest border-gray-200"
+              className={`w-full px-4 py-3 rounded-xl border bg-gray-50/50 focus:bg-white focus:outline-none focus:border-[#E86A6F] focus:ring-4 focus:ring-[#E86A6F]/10 transition-all text-[15px] tracking-widest ${error ? 'border-red-500' : 'border-gray-200'}`}
             />
           </div>
         </div>
+        {error && <span className="text-red-500 text-[11px] mt-1 block leading-tight">{error}</span>}
 
         <button
           type="submit"

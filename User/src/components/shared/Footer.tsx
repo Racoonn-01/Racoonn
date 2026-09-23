@@ -70,7 +70,7 @@ export default function Footer() {
                   Download App Now !
                 </h2>
                 <p className="text-gray-600 text-[17px]">
-                  Use code <span className="font-bold text-gray-800">WELCOMERACOONN</span> and get <span className="font-bold text-gray-800">FLAT 25% OFF*</span> on your first Hotel booking
+                  Use code <span className="font-bold text-gray-800">WELCOMERACOONN</span> and get <span className="font-bold text-gray-800">FLAT 10% OFF*</span> on your first Hotel booking
                 </p>
               </div>
             </div>

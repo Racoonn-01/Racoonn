@@ -361,6 +361,7 @@ export default function VendorFullPageReviewScreen({ params }: { params: Promise
 
     // Sync to cookie for vendor cross-port sync
     document.cookie = `racoonn_vendor_docs_${vendorId}=${encodeURIComponent(JSON.stringify({ vendorId, docs: updatedDocs, updatedAt: new Date().toISOString() }))}; path=/; max-age=31536000; SameSite=Lax`;
+    localStorage.setItem(`racoonn_vendor_documents_${vendorId}`, JSON.stringify(updatedDocs));
 
     if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
       try {
@@ -637,6 +638,7 @@ export default function VendorFullPageReviewScreen({ params }: { params: Promise
                       <div className="flex items-center gap-3">
                         <div className={`h-9 w-9 rounded-xl flex items-center justify-center font-bold text-xs ${
                           doc.status === 'Verified' ? 'bg-emerald-50 text-emerald-600' :
+                          doc.status === 'Rejected' ? 'bg-rose-50 text-rose-600' :
                           doc.status === 'Under Review' ? 'bg-blue-50 text-blue-600' :
                           doc.status === 'Pending' ? 'bg-amber-50 text-amber-600' :
                           'bg-slate-100 text-slate-500'
@@ -651,6 +653,7 @@ export default function VendorFullPageReviewScreen({ params }: { params: Promise
 
                       <Badge className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
                         doc.status === 'Verified' ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' :
+                        doc.status === 'Rejected' ? 'bg-rose-100 text-rose-700 border border-rose-200' :
                         doc.status === 'Under Review' ? 'bg-blue-100 text-blue-700 border border-blue-200' :
                         doc.status === 'Pending' ? 'bg-amber-100 text-amber-700 border border-amber-200' :
                         'bg-slate-100 text-slate-600'

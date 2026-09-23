@@ -63,6 +63,8 @@ export default function VendorFullPageReviewScreen({ params }: { params: Promise
     avatar: `https://api.dicebear.com/7.x/initials/svg?seed=Oceanview&backgroundColor=1F2E4A`
   });
 
+  const [imageError, setImageError] = useState<Record<string, boolean>>({});
+
   const [documents, setDocuments] = useState<ReviewDoc[]>([]);
   const [selectedDoc, setSelectedDoc] = useState<ReviewDoc | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
@@ -560,11 +562,16 @@ export default function VendorFullPageReviewScreen({ params }: { params: Promise
                   className="transition-transform duration-300 w-full h-full p-2 flex items-center justify-center"
                   style={{ transform: `scale(${zoomLevel}) rotate(${rotation}deg)` }}
                 >
-                  {selectedDoc.fileName?.toLowerCase().endsWith(".pdf") || selectedDoc.fileUrl.startsWith("data:application/pdf") ? (
+                  {selectedDoc.fileName?.toLowerCase().endsWith(".pdf") || selectedDoc.fileUrl.startsWith("data:application/pdf") || imageError[selectedDoc.id] ? (
                     <iframe src={selectedDoc.fileUrl} className="w-full h-170 lg:h-185 rounded-2xl border border-slate-200 shadow-md bg-white" title={selectedDoc.title} />
                   ) : (
                     /* eslint-disable-next-line @next/next/no-img-element */
-                    <img src={selectedDoc.fileUrl} alt={selectedDoc.title} className="max-h-175 lg:max-h-187.5 w-auto object-contain rounded-2xl shadow-md border border-slate-200" />
+                    <img 
+                      src={selectedDoc.fileUrl} 
+                      alt={selectedDoc.title} 
+                      onError={() => setImageError(prev => ({ ...prev, [selectedDoc.id]: true }))}
+                      className="max-h-175 lg:max-h-187.5 w-auto object-contain rounded-2xl shadow-md border border-slate-200" 
+                    />
                   )}
                 </div>
               ) : (

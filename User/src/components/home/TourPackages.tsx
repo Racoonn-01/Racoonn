@@ -68,7 +68,7 @@ export default function TourPackages() {
           return {
             id: String(cmsPkg.id || ''),
             title: String(cmsPkg.title || ''),
-            location: String(cmsPkg.metaTitle || 'Uttarakhand'),
+            location: String(cmsPkg.location || cmsPkg.metaTitle || 'Uttarakhand'),
             duration: itinerary.length > 0 
               ? `${itinerary.length + 1} Days / ${itinerary.length} Nights` 
               : '5 Days / 4 Nights',

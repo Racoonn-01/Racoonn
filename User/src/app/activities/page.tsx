@@ -4,6 +4,8 @@ import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { MapPin, Clock, Users, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
+import { Suspense } from 'react';
 import { databases, appwriteConfig } from '@/lib/appwrite/config';
 import { Query } from 'appwrite';
 
@@ -132,9 +134,11 @@ const ActivityCard = ({ activity }: { activity: Activity }) => {
   );
 };
 
-export default function ActivitiesPage() {
+function ActivitiesContent() {
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
+  const searchParams = useSearchParams();
+  const searchQuery = searchParams.get('search')?.toLowerCase() || '';
 
   useEffect(() => {
     const fetchActivities = async () => {
@@ -177,12 +181,26 @@ export default function ActivitiesPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {activities.map((activity) => (
+            {activities
+              .filter(activity => {
+                if (!searchQuery) return true;
+                const searchStr = `${activity.title} ${activity.location}`.toLowerCase();
+                return searchStr.includes(searchQuery);
+              })
+              .map((activity) => (
               <ActivityCard key={activity.$id} activity={activity} />
             ))}
           </div>
         )}
       </div>
     </div>
+  );
+}
+
+export default function ActivitiesPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading activities...</div>}>
+      <ActivitiesContent />
+    </Suspense>
   );
 }

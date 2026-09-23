@@ -160,7 +160,7 @@ export default function HeroSection() {
   }, [heroImages.length]);
 
   useEffect(() => {
-    if (destination.length > 2 && activeTab !== 'packages') {
+    if (destination.length > 2 && activeTab === 'stays') {
       const delayDebounceFn = setTimeout(() => {
         setLoadingSuggestions(true);
         fetch(`https://api.postalpincode.in/postoffice/${destination}`)
@@ -361,7 +361,7 @@ export default function HeroSection() {
                 className="flex items-center gap-4 border border-gray-200 rounded-2xl px-5 py-4 hover:border-brand-coral/40 transition-colors cursor-text group"
                 onClick={() => destinationInputRef.current?.focus()}
               >
-                {activeTab === 'packages' ? (
+                {activeTab !== 'stays' ? (
                   <Search size={22} className="text-brand-charcoal/40 group-hover:text-brand-coral transition-colors shrink-0" />
                 ) : (
                   <MapPin size={22} className="text-brand-charcoal/40 group-hover:text-brand-coral transition-colors shrink-0" />
@@ -391,7 +391,7 @@ export default function HeroSection() {
                     }
                     className="w-full outline-none text-brand-charcoal/70 text-sm font-medium placeholder:text-brand-charcoal/40 bg-transparent mt-0.5 p-0"
                   />
-                  {showSuggestions && destination.length > 2 && activeTab !== 'packages' && (
+                  {showSuggestions && destination.length > 2 && activeTab === 'stays' && (
                     <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden z-50">
                       {loadingSuggestions ? (
                         <div className="p-4 text-sm text-gray-500">Loading...</div>
@@ -608,7 +608,7 @@ export default function HeroSection() {
                 <Link 
                   href={
                     activeTab === 'packages' ? `/packages?search=${encodeURIComponent(destination)}` : 
-                    activeTab === 'activities' ? `/activities?location=${encodeURIComponent(destination)}&date=${checkIn?.toISOString() || ''}&adults=${adults}&children=${children}` : 
+                    activeTab === 'activities' ? `/activities?search=${encodeURIComponent(destination)}` : 
                     `/search?location=${encodeURIComponent(destination)}&checkIn=${checkIn?.toISOString() || ''}&checkOut=${checkOut?.toISOString() || ''}&adults=${adults}&children=${children}&rooms=${rooms}`
                   } 
                   className="bg-brand-coral hover:bg-brand-coral/90 text-white pl-7 pr-5 py-3.5 rounded-full font-bold flex items-center justify-center gap-3 transition-all hover:-translate-y-0.5 text-[15px] w-full sm:w-auto min-w-50"

@@ -6,7 +6,7 @@ import { NextResponse } from "next/server";
 import { unstable_noStore as noStore } from "next/cache";
 import fs from "fs";
 
-import { appwriteServer } from "@/lib/appwrite/server";
+import { databases } from "@/lib/appwrite/config";
 
 const SHARED_FILE_PATH = "/tmp/racoonn_hero_section_cms.json";
 const DATABASE_ID = process.env.APPWRITE_DATABASE_ID || process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID || "6a3cec630035d63ea963";
@@ -26,7 +26,7 @@ export async function GET() {
   }
 
   try {
-    const doc = await appwriteServer.databases.getDocument(
+    const doc = await databases.getDocument(
       DATABASE_ID,
       COLLECTION_ID,
       DOC_ID

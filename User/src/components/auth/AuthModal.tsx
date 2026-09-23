@@ -81,7 +81,8 @@ export default function AuthModal({ isOpen, onClose, initialView = 'signin', onS
     } catch (error: unknown) {
       const err = error as Error & { code?: number };
       if (view === 'signin' && (err.code === 401 || err?.message?.toLowerCase().includes('invalid credentials'))) {
-        toast.error("Account not found or invalid password. Please sign up!");
+        setError('email', { type: 'manual', message: 'Invalid email or password' });
+        setError('password', { type: 'manual', message: 'Invalid email or password' });
       } else {
         toast.error(err?.message || "Authentication failed. Please try again.");
       }

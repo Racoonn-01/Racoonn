@@ -21,7 +21,8 @@ import {
   Plus,
   Minus,
   Mic,
-  MicOff
+  MicOff,
+  Search
 } from 'lucide-react';
 
 const tabs = [
@@ -360,7 +361,11 @@ export default function HeroSection() {
                 className="flex items-center gap-4 border border-gray-200 rounded-2xl px-5 py-4 hover:border-brand-coral/40 transition-colors cursor-text group"
                 onClick={() => destinationInputRef.current?.focus()}
               >
-                <MapPin size={22} className="text-brand-charcoal/40 group-hover:text-brand-coral transition-colors shrink-0" />
+                {activeTab === 'packages' ? (
+                  <Search size={22} className="text-brand-charcoal/40 group-hover:text-brand-coral transition-colors shrink-0" />
+                ) : (
+                  <MapPin size={22} className="text-brand-charcoal/40 group-hover:text-brand-coral transition-colors shrink-0" />
+                )}
                 <div className="w-full relative">
                   <h4 className="font-semibold text-brand-navy text-[15px]">
                     {activeTab === 'activities' ? 'What do you want to do?' : 'Where are you going?'}
@@ -386,7 +391,7 @@ export default function HeroSection() {
                     }
                     className="w-full outline-none text-brand-charcoal/70 text-sm font-medium placeholder:text-brand-charcoal/40 bg-transparent mt-0.5 p-0"
                   />
-                  {showSuggestions && destination.length > 2 && (
+                  {showSuggestions && destination.length > 2 && activeTab !== 'packages' && (
                     <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden z-50">
                       {loadingSuggestions ? (
                         <div className="p-4 text-sm text-gray-500">Loading...</div>

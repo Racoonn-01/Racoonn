@@ -361,9 +361,17 @@ export default function VendorFullPageReviewScreen({ params }: { params: Promise
       setSelectedDoc(updatedDocs.find(d => d.id === docId) || selectedDoc);
     }
 
-    // Sync to cookie for vendor cross-port sync
-    document.cookie = `racoonn_vendor_docs_${vendorId}=${encodeURIComponent(JSON.stringify({ vendorId, docs: updatedDocs, updatedAt: new Date().toISOString() }))}; path=/; max-age=31536000; SameSite=Lax`;
+    // Sync to cookie for vendor cross-port sync (only ID and Status to stay under 4KB limit)
+    const minimalDocs = updatedDocs.map(d => ({ id: d.id, status: d.status }));
+    document.cookie = `racoonn_vendor_docs_${vendorId}=${encodeURIComponent(JSON.stringify({ vendorId, docs: minimalDocs, updatedAt: new Date().toISOString() }))}; path=/; max-age=31536000; SameSite=Lax`;
     localStorage.setItem(`racoonn_vendor_documents_${vendorId}`, JSON.stringify(updatedDocs));
+
+    // Save to Appwrite Database to persist across devices
+    fetch(`/api/vendors/${vendorId}/docs`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ documentStatuses: JSON.stringify(minimalDocs) })
+    }).catch(err => console.error("Failed to sync doc status to Appwrite:", err));
 
     if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
       try {
@@ -371,6 +379,7 @@ export default function VendorFullPageReviewScreen({ params }: { params: Promise
         bc.postMessage({
           type: 'VERIFICATION_UPDATED',
           vendorId,
+          docs: minimalDocs,
           timestamp: Date.now()
         });
         bc.close();

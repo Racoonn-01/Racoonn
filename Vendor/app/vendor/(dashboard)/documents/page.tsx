@@ -182,7 +182,22 @@ export default function DocumentsPage() {
         };
       }) as VendorDoc[];
 
-      setDocuments(mergedList);
+          if (profile.documentStatuses) {
+            try {
+              const dbStatuses = JSON.parse(profile.documentStatuses);
+              mergedList = mergedList.map(doc => {
+                const match = dbStatuses.find((d: any) => d.id === doc.id);
+                if (match) {
+                  return { ...doc, status: match.status };
+                }
+                return doc;
+              });
+            } catch (e) {
+              console.warn("Failed to parse documentStatuses from DB", e);
+            }
+          }
+
+          setDocuments(mergedList as VendorDoc[]);
     } catch {
       setDocuments(INITIAL_DOC_TEMPLATES.map(t => ({
         ...t,
@@ -263,6 +278,20 @@ export default function DocumentsPage() {
       try {
         channel = new BroadcastChannel('racoonn_realtime_verification');
         channel.onmessage = (event) => {
+          if (event.data?.type === 'VERIFICATION_UPDATED' && event.data.docs) {
+            setDocuments(prevDocs => {
+              let changed = false;
+              const newDocs = prevDocs.map(prevDoc => {
+                const syncedDoc = event.data.docs.find((d: any) => d.id === prevDoc.id);
+                if (syncedDoc && syncedDoc.status !== prevDoc.status) {
+                  changed = true;
+                  return { ...prevDoc, status: syncedDoc.status };
+                }
+                return prevDoc;
+              });
+              return changed ? newDocs : prevDocs;
+            });
+          }
           if (event.data?.type === 'VENDOR_STATUS_CHANGED' || event.data?.type === 'VERIFICATION_UPDATED') {
             checkLiveStatusSync();
           }

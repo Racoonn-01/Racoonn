@@ -5,12 +5,17 @@ import { packages as defaultPackages } from '@/data/packages';
 import TourCard from '@/components/packages/TourCard';
 import { SlidersHorizontal, ChevronDown } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
+import { useSearchParams } from 'next/navigation';
 
-export default function PackagesPage() {
+import { Suspense } from 'react';
+
+function PackagesContent() {
   const [showFilters, setShowFilters] = useState(false);
   const [selectedFilters, setSelectedFilters] = useState<string[]>([]);
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const [packageList, setPackageList] = useState<any[]>([]);
+  const searchParams = useSearchParams();
+  const searchQuery = searchParams.get('search')?.toLowerCase() || '';
 
   const fetchCMSPackages = async () => {
     try {
@@ -87,6 +92,13 @@ export default function PackagesPage() {
 
   // Basic filtering logic
   const filteredPackages = packageList.filter(pkg => {
+    // 1. Apply search query
+    if (searchQuery) {
+      const searchStr = `${pkg.title} ${pkg.location}`.toLowerCase();
+      if (!searchStr.includes(searchQuery)) return false;
+    }
+
+    // 2. Apply selected filters
     if (selectedFilters.length === 0) return true;
     
     return selectedFilters.every(filter => {
@@ -176,5 +188,13 @@ export default function PackagesPage() {
         )}
       </section>
     </div>
+  );
+}
+
+export default function PackagesPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading packages...</div>}>
+      <PackagesContent />
+    </Suspense>
   );
 }

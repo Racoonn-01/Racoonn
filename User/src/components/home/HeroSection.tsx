@@ -159,7 +159,7 @@ export default function HeroSection() {
   }, [heroImages.length]);
 
   useEffect(() => {
-    if (destination.length > 2) {
+    if (destination.length > 2 && activeTab !== 'packages') {
       const delayDebounceFn = setTimeout(() => {
         setLoadingSuggestions(true);
         fetch(`https://api.postalpincode.in/postoffice/${destination}`)
@@ -454,10 +454,10 @@ export default function HeroSection() {
                 </Popover>
 
                 {/* Divider */}
-                {activeTab !== 'activities' && <div className="hidden sm:block w-px bg-gray-200 self-stretch" />}
+                {activeTab !== 'activities' && activeTab !== 'packages' && <div className="hidden sm:block w-px bg-gray-200 self-stretch" />}
 
                 {/* Check-out / End Date */}
-                {activeTab !== 'activities' && (
+                {activeTab !== 'activities' && activeTab !== 'packages' && (
                   <Popover open={isCheckOutOpen} onOpenChange={setIsCheckOutOpen}>
                     <PopoverTrigger className="flex items-center gap-4 border border-gray-200 rounded-2xl px-5 py-4 hover:border-brand-coral/40 transition-colors cursor-pointer group flex-1 text-left focus:outline-none focus:ring-2 focus:ring-brand-coral/30">
                       <div className="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center shrink-0">
@@ -602,7 +602,7 @@ export default function HeroSection() {
 
                 <Link 
                   href={
-                    activeTab === 'packages' ? "/packages" : 
+                    activeTab === 'packages' ? `/packages?search=${encodeURIComponent(destination)}` : 
                     activeTab === 'activities' ? `/activities?location=${encodeURIComponent(destination)}&date=${checkIn?.toISOString() || ''}&adults=${adults}&children=${children}` : 
                     `/search?location=${encodeURIComponent(destination)}&checkIn=${checkIn?.toISOString() || ''}&checkOut=${checkOut?.toISOString() || ''}&adults=${adults}&children=${children}&rooms=${rooms}`
                   } 

@@ -81,7 +81,7 @@ export default function AuthModal({ isOpen, onClose, initialView = 'signin', onS
     } catch (error: unknown) {
       const err = error as Error & { code?: number };
       if (view === 'signin' && (err.code === 401 || err?.message?.toLowerCase().includes('invalid credentials'))) {
-        setError('email', { type: 'manual', message: 'Invalid email or password' });
+        setError('email', { type: 'manual', message: '' });
         setError('password', { type: 'manual', message: 'Invalid email or password' });
       } else {
         toast.error(err?.message || "Authentication failed. Please try again.");
@@ -210,7 +210,7 @@ export default function AuthModal({ isOpen, onClose, initialView = 'signin', onS
                       {...register("email")}
                       className={`w-full px-4 py-3 rounded-xl border bg-gray-50/50 focus:bg-white focus:outline-none focus:border-brand-coral focus:ring-4 focus:ring-brand-coral/10 transition-all text-[15px] ${errors.email ? 'border-red-500' : 'border-gray-200'}`}
                     />
-                    {errors.email && <span className="text-red-500 text-[11px] mt-1 block">{errors.email.message}</span>}
+                    {errors.email?.message && <span className="text-red-500 text-[11px] mt-1 block">{errors.email.message}</span>}
                   </div>
                   
                   {view !== 'forgot' && (
@@ -238,7 +238,7 @@ export default function AuthModal({ isOpen, onClose, initialView = 'signin', onS
                           {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                         </button>
                       </div>
-                      {errors.password && <span className="text-red-500 text-[11px] mt-1 block leading-tight">{errors.password.message}</span>}
+                      {errors.password?.message && <span className="text-red-500 text-[11px] mt-1 block leading-tight">{errors.password.message}</span>}
                     </div>
                   )}
 

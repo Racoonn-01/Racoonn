@@ -212,16 +212,16 @@ export default function AuthPage() {
         
         <div className="relative z-10 w-full max-w-xl animate-in fade-in zoom-in-95 duration-1000 delay-200 fill-mode-both">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white font-semibold text-sm mb-8 shadow-lg">
-              <Star className="w-4 h-4 text-amber-400 fill-amber-400" /> #1 Property Management Platform
+              <Star className="w-4 h-4 text-amber-400 fill-amber-400" /> #1 Travel Partner Platform
             </div>
 
             <h3 className="text-5xl lg:text-6xl font-heading font-black text-white leading-[1.1] tracking-tight mb-8">
-              Elevate your <br/>
-              <span className="text-transparent bg-clip-text bg-linear-to-r from-brand-coral to-[#FF8C73]">hospitality.</span>
+              Grow your <br/>
+              <span className="text-transparent bg-clip-text bg-linear-to-r from-brand-coral to-[#FF8C73]">business.</span>
             </h3>
             
             <p className="text-slate-300 text-lg leading-relaxed mb-12 max-w-md">
-              Join thousands of luxury properties managing their operations, bookings, and guest experiences in one unified platform.
+              Join thousands of travel partners managing their packages, bookings, and customer experiences in one unified platform.
             </p>
             
             {/* Bento-style feature cards */}
@@ -231,7 +231,7 @@ export default function AuthPage() {
                   <Globe2 className="w-6 h-6 text-white" />
                 </div>
                 <h4 className="text-white font-bold text-lg mb-2">Global Reach</h4>
-                <p className="text-slate-300/80 text-sm">Connect with luxury travelers worldwide.</p>
+                <p className="text-slate-300/80 text-sm">Connect with eager travelers worldwide.</p>
               </div>
               
               <div className="bg-white/5 backdrop-blur-xl border border-white/10 p-6 rounded-3xl hover:bg-white/15 transition-colors shadow-2xl">
@@ -239,7 +239,7 @@ export default function AuthPage() {
                   <ShieldCheck className="w-6 h-6 text-white" />
                 </div>
                 <h4 className="text-white font-bold text-lg mb-2">Secure Data</h4>
-                <p className="text-slate-300/80 text-sm">Your property data is completely safe.</p>
+                <p className="text-slate-300/80 text-sm">Your business data is completely safe.</p>
               </div>
             </div>
 
@@ -260,7 +260,7 @@ export default function AuthPage() {
                   {[...Array(5)].map((_, i) => <Star key={i} className="w-4 h-4 fill-current" />)}
                 </div>
                 <p className="text-sm font-medium text-slate-300">
-                  Loved by top hoteliers
+                  Loved by top travel vendors
                 </p>
               </div>
             </div>

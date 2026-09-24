@@ -182,9 +182,9 @@ export default function DocumentsPage() {
         };
       }) as VendorDoc[];
 
-          if (profile && profile.documentStatuses) {
+          if (profile && (profile as any).documentStatuses) {
             try {
-              const dbStatuses = JSON.parse(profile.documentStatuses);
+              const dbStatuses = JSON.parse((profile as any).documentStatuses);
               mergedList = mergedList.map(doc => {
                 const match = dbStatuses.find((d: any) => d.id === doc.id);
                 if (match) {

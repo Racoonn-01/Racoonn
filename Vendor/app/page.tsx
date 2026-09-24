@@ -60,9 +60,9 @@ export default function AuthPage() {
 
 
   return (
-    <div className="min-h-screen bg-slate-50 flex overflow-hidden selection:bg-brand-coral selection:text-white font-sans">
-      {/* Left Column: Auth Form */}
-      <div className="w-full lg:w-[45%] xl:w-[40%] flex flex-col justify-center relative z-10 px-8 sm:px-16 py-12 bg-white shadow-[30px_0_60px_-15px_rgba(0,0,0,0.05)] overflow-y-auto">
+    <div className="min-h-screen bg-slate-50 flex flex-row-reverse overflow-hidden selection:bg-brand-coral selection:text-white font-sans">
+      {/* Right side form (was left) */}
+      <div className="w-full lg:w-[45%] xl:w-[40%] flex flex-col justify-center relative z-10 px-8 sm:px-16 py-12 bg-white shadow-[-30px_0_60px_-15px_rgba(0,0,0,0.05)] overflow-y-auto">
         <div className="absolute top-8 left-8 sm:left-12">
           <Image src="/racoonn-logo-text.png" alt="Racoonn" width={140} height={40} className="h-8 w-auto" />
         </div>

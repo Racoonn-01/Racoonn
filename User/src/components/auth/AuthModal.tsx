@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Loader2, Eye, EyeOff } from 'lucide-react';
+import { X, Loader2, Eye, EyeOff, CheckCircle2 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -35,6 +35,7 @@ export default function AuthModal({ isOpen, onClose, initialView = 'signin', onS
   const [view, setView] = useState<'signin' | 'signup' | 'forgot'>(initialView);
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [resetSuccess, setResetSuccess] = useState(false);
   
   const { checkAuth } = useAuthStore();
 
@@ -49,6 +50,7 @@ export default function AuthModal({ isOpen, onClose, initialView = 'signin', onS
       setTimeout(() => {
         setView(initialView);
         setShowPassword(false);
+        setResetSuccess(false);
       }, 0);
     }
   }, [isOpen, initialView, reset, clearErrors]);
@@ -103,8 +105,7 @@ export default function AuthModal({ isOpen, onClose, initialView = 'signin', onS
       }
       clearErrors('email');
       await authService.forgotPassword(emailVal);
-      toast.success('Password Reset Email Sent');
-      setView('signin');
+      setResetSuccess(true);
     } catch (error: unknown) {
       const err = error as Error;
       toast.error(err?.message || "Failed to send reset email");
@@ -158,10 +159,12 @@ export default function AuthModal({ isOpen, onClose, initialView = 'signin', onS
               <div className="p-8">
                 <div className="text-center mb-8">
                   <h2 className="text-[28px] font-heading font-bold text-[#222] mb-1 tracking-tight">
-                    {view === 'signin' ? 'Welcome back' : view === 'signup' ? 'Create account' : 'Reset password'}
+                    {resetSuccess ? 'Check your email' : view === 'signin' ? 'Welcome back' : view === 'signup' ? 'Create account' : 'Reset password'}
                   </h2>
                   <p className="text-gray-500 text-[14px]">
-                    {view === 'signin' 
+                    {resetSuccess
+                      ? "We've sent a password reset link to your email."
+                      : view === 'signin' 
                       ? 'Enter your details to access your account.' 
                       : view === 'signup'
                       ? 'Join us to unlock the best travel experiences.'
@@ -169,7 +172,21 @@ export default function AuthModal({ isOpen, onClose, initialView = 'signin', onS
                   </p>
                 </div>
 
-                <form className="space-y-4" onSubmit={(e) => {
+                {resetSuccess ? (
+                  <div className="text-center mt-6">
+                    <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                      <CheckCircle2 size={32} className="text-green-600" />
+                    </div>
+                    <button 
+                      onClick={() => { setResetSuccess(false); setView('signin'); reset(); }}
+                      className="w-full bg-[#222] hover:bg-black text-white py-3.5 rounded-xl font-bold text-[15px] transition-all active:scale-[0.98] mt-2"
+                    >
+                      Back to sign in
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <form className="space-y-4" onSubmit={(e) => {
                   if (view === 'forgot') {
                     e.preventDefault();
                     handleForgot();
@@ -297,6 +314,8 @@ export default function AuthModal({ isOpen, onClose, initialView = 'signin', onS
                     </p>
                   )}
                 </div>
+                  </>
+                )}
               </div>
             </motion.div>
           </div>

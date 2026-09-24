@@ -18,6 +18,7 @@ function ResetPasswordForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [resetSuccess, setResetSuccess] = useState(false);
 
   if (!userId || !secret) {
     return (
@@ -49,11 +50,13 @@ function ResetPasswordForm() {
     setIsSubmitting(true);
     try {
       await authService.resetPassword(userId, secret, password);
-      toast.success("Password reset successfully! You can now log in.");
-      router.push("/?login=true");
+      setResetSuccess(true);
+      toast.success("Password reset successfully!");
     } catch (error: unknown) {
       const err = error as Error;
-      toast.error(err?.message || "Failed to reset password. The link might be expired.");
+      const errorMessage = err?.message || "Failed to reset password. The link might be expired.";
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
@@ -66,69 +69,91 @@ function ResetPasswordForm() {
           <Lock className="w-5 h-5 text-[#E86A6F]" />
         </div>
         <h1 className="text-[28px] font-heading font-bold text-[#222] mb-2 tracking-tight">
-          Reset Password
+          {resetSuccess ? "Password Reset" : "Reset Password"}
         </h1>
         <p className="text-gray-500 text-[14px]">
-          Please enter your new password below.
+          {resetSuccess ? "Your password has been reset successfully." : "Please enter your new password below."}
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-5">
-        <div className="space-y-1.5 relative">
-          <label className="block text-[12px] font-semibold text-gray-700 uppercase tracking-wide">
-            New Password
-          </label>
-          <div className="relative">
-            <input
-              type={showPassword ? "text" : "password"}
-              value={password}
-              onChange={(e) => {
-                setPassword(e.target.value);
-                if (error) setError("");
-              }}
-              placeholder="••••••••"
-              required
-              className={`w-full px-4 py-3 rounded-xl border bg-gray-50/50 focus:bg-white focus:outline-none focus:border-[#E86A6F] focus:ring-4 focus:ring-[#E86A6F]/10 transition-all text-[15px] tracking-widest ${error ? 'border-red-500' : 'border-gray-200'}`}
-            />
-            <button
-              type="button"
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-              onClick={() => setShowPassword(!showPassword)}
-            >
-              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-            </button>
-          </div>
+      {resetSuccess ? (
+        <div className="text-center mt-6">
+          <button
+            onClick={() => router.push("/?login=true")}
+            className="w-full bg-[#222] hover:bg-black text-white py-3.5 rounded-xl font-bold text-[15px] transition-all active:scale-[0.98] mt-4"
+          >
+            Go to Login
+          </button>
         </div>
+      ) : (
+        <form onSubmit={handleSubmit} className="space-y-5">
+          {error && error !== "Passwords do not match" && error !== "Password must be at least 8 characters" && (
+            <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl text-[13px] font-medium flex items-center justify-center text-center">
+              {error}
+            </div>
+          )}
 
-        <div className="space-y-1.5 relative">
-          <label className="block text-[12px] font-semibold text-gray-700 uppercase tracking-wide">
-            Confirm Password
-          </label>
-          <div className="relative">
-            <input
-              type={showPassword ? "text" : "password"}
-              value={confirmPassword}
-              onChange={(e) => {
-                setConfirmPassword(e.target.value);
-                if (error) setError("");
-              }}
-              placeholder="••••••••"
-              required
-              className={`w-full px-4 py-3 rounded-xl border bg-gray-50/50 focus:bg-white focus:outline-none focus:border-[#E86A6F] focus:ring-4 focus:ring-[#E86A6F]/10 transition-all text-[15px] tracking-widest ${error ? 'border-red-500' : 'border-gray-200'}`}
-            />
+          <div className="space-y-1.5 relative">
+            <label className="block text-[12px] font-semibold text-gray-700 uppercase tracking-wide">
+              New Password
+            </label>
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  if (error) setError("");
+                }}
+                placeholder="••••••••"
+                required
+                className={`w-full px-4 py-3 rounded-xl border bg-gray-50/50 focus:bg-white focus:outline-none focus:border-[#E86A6F] focus:ring-4 focus:ring-[#E86A6F]/10 transition-all text-[15px] tracking-widest ${error ? 'border-red-500' : 'border-gray-200'}`}
+              />
+              <button
+                type="button"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
           </div>
-        </div>
-        {error && <span className="text-red-500 text-[11px] mt-1 block leading-tight">{error}</span>}
 
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="w-full bg-[#222] hover:bg-black text-white py-3.5 rounded-xl font-bold text-[15px] transition-all active:scale-[0.98] mt-4 flex items-center justify-center gap-2 disabled:opacity-70"
-        >
-          {isSubmitting && <Loader2 size={18} className="animate-spin" />}
-          Reset Password
-        </button>
-      </form>
+          <div className="space-y-1.5 relative">
+            <label className="block text-[12px] font-semibold text-gray-700 uppercase tracking-wide">
+              Confirm Password
+            </label>
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                value={confirmPassword}
+                onChange={(e) => {
+                  setConfirmPassword(e.target.value);
+                  if (error) setError("");
+                }}
+                placeholder="••••••••"
+                required
+                className={`w-full px-4 py-3 rounded-xl border bg-gray-50/50 focus:bg-white focus:outline-none focus:border-[#E86A6F] focus:ring-4 focus:ring-[#E86A6F]/10 transition-all text-[15px] tracking-widest ${(error || (confirmPassword && confirmPassword !== password)) ? 'border-red-500' : 'border-gray-200'}`}
+              />
+            </div>
+          </div>
+          {(confirmPassword && confirmPassword !== password) && (
+            <span className="text-red-500 text-[11px] mt-1 block leading-tight font-medium">Passwords do not match</span>
+          )}
+          {error && error !== "Passwords do not match" && (
+            <span className="text-red-500 text-[11px] mt-1 block leading-tight font-medium">{error}</span>
+          )}
+
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="w-full bg-[#222] hover:bg-black text-white py-3.5 rounded-xl font-bold text-[15px] transition-all active:scale-[0.98] mt-4 flex items-center justify-center gap-2 disabled:opacity-70"
+          >
+            {isSubmitting && <Loader2 size={18} className="animate-spin" />}
+            Reset Password
+          </button>
+        </form>
+      )}
     </div>
   );
 }

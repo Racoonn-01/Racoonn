@@ -18,19 +18,19 @@
         "id": "1789804544913",
         "minPersons": 1,
         "maxPersons": 2,
-        "pricePerPerson": 14599
+        "pricePerPerson": 10000
       },
       {
         "id": "1789804699490",
         "minPersons": 3,
         "maxPersons": 4,
-        "pricePerPerson": 10299
+        "pricePerPerson": 9000
       },
       {
         "id": "1789804713148",
         "minPersons": 5,
         "maxPersons": 6,
-        "pricePerPerson": 9699
+        "pricePerPerson": 8000
       }
     ],
     "hotelOptions": [

@@ -74,7 +74,7 @@ export default function PromoPopup() {
     }
   };
 
-  if (!promo || pathname !== "/") return null;
+  if (!promo) return null;
 
   const discountText = 
     promo.discountType === "percentage" ? `${promo.discountValue}% OFF` : 

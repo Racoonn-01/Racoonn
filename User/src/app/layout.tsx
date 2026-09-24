@@ -4,7 +4,6 @@ import "./globals.css";
 import QueryProvider from "@/providers/QueryProvider";
 import Navbar from "@/components/shared/Navbar";
 import ConditionalFooter from "@/components/shared/ConditionalFooter";
-import PromoPopup from "@/components/shared/PromoPopup";
 import ScrollToTop from "@/components/shared/ScrollToTop";
 
 const inter = Inter({
@@ -40,7 +39,6 @@ export default function RootLayout({
           <Navbar />
           <main className="flex-1 flex flex-col">{children}</main>
           <ConditionalFooter />
-          <PromoPopup />
         </QueryProvider>
       </body>
     </html>

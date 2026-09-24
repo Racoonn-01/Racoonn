@@ -1,18 +1,18 @@
 "use client"
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, Suspense } from 'react';
 import { packages as defaultPackages } from '@/data/packages';
 import TourCard from '@/components/packages/TourCard';
 import { SlidersHorizontal, ChevronDown } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useSearchParams } from 'next/navigation';
-
-import { Suspense } from 'react';
+import PricePopover from '@/components/search/PricePopover';
 
 function PackagesContent() {
-  const [showFilters, setShowFilters] = useState(false);
   const [selectedFilters, setSelectedFilters] = useState<string[]>([]);
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
+  const [isPricePopoverOpen, setIsPricePopoverOpen] = useState(false);
+  const [priceRange, setPriceRange] = useState<{min: number, max: number} | null>(null);
   const [packageList, setPackageList] = useState<any[]>([]);
   const searchParams = useSearchParams();
   const searchQuery = searchParams.get('search')?.toLowerCase() || '';
@@ -27,16 +27,16 @@ function PackagesContent() {
       }
       const json = await res.json();
       if (json.success && Array.isArray(json.packages)) {
-        const publishedOnly = json.packages.filter((p: any) => p.status === 'published');
-        const mapped = publishedOnly.map((cmsPkg: any) => {
-          const minPrice = cmsPkg.pricing && cmsPkg.pricing[0] ? cmsPkg.pricing[0].pricePerPerson : 0;
-          return {
-            id: cmsPkg.id,
-            title: cmsPkg.title,
-            location: cmsPkg.metaTitle || 'Uttarakhand',
-            duration: cmsPkg.itinerary && cmsPkg.itinerary.length > 0 
-              ? `${cmsPkg.itinerary.length + 1} Days / ${cmsPkg.itinerary.length} Nights` 
-              : '5 Days / 4 Nights',
+          const publishedOnly = json.packages.filter((p: any) => p.status === 'published');
+          const mapped = publishedOnly.map((cmsPkg: any) => {
+            const minPrice = cmsPkg.pricing && cmsPkg.pricing[0] ? cmsPkg.pricing[0].pricePerPerson : 0;
+            return {
+              id: cmsPkg.id,
+              title: cmsPkg.title,
+              location: cmsPkg.location || cmsPkg.metaTitle || 'Uttarakhand',
+              duration: cmsPkg.itinerary && cmsPkg.itinerary.length > 0 
+                ? `${cmsPkg.itinerary.length + 1} Days / ${cmsPkg.itinerary.length} Nights` 
+                : '5 Days / 4 Nights',
             features: String(cmsPkg.features || 'Meals | Stay | Transfer'),
             price: `₹${minPrice.toLocaleString('en-IN')}`,
             badge: String(cmsPkg.badge || 'Featured'),
@@ -79,7 +79,7 @@ function PackagesContent() {
   }, []);
 
   const filters = [
-    'Price', 'Duration', 'Uttarakhand', 'Himachal', 'Goa', 'International', 'Bestseller', 'Trending', 'New'
+    'Price', 'Uttarakhand', 'Himachal', 'Goa', 'International', 'Bestseller', 'Trending', 'New'
   ];
 
   const toggleFilter = (filter: string) => {
@@ -90,6 +90,28 @@ function PackagesContent() {
     );
   };
 
+  // Calculate absolute min and max prices
+  const { absoluteMinPrice, absoluteMaxPrice } = useMemo(() => {
+    if (packageList.length === 0) return { absoluteMinPrice: 1000, absoluteMaxPrice: 100000 };
+    
+    let min = Infinity;
+    let max = -Infinity;
+    packageList.forEach(p => {
+      const pNum = Number(String(p.price).replace(/[^0-9]/g, ''));
+      if (pNum < min) min = pNum;
+      if (pNum > max) max = pNum;
+    });
+    
+    if (min === Infinity || max === -Infinity) return { absoluteMinPrice: 1000, absoluteMaxPrice: 100000 };
+    
+    min = Math.floor(min / 1000) * 1000;
+    max = Math.ceil(max / 1000) * 1000;
+    
+    if (max <= min) max = min + 1000;
+    
+    return { absoluteMinPrice: Math.max(0, min), absoluteMaxPrice: max };
+  }, [packageList]);
+
   // Basic filtering logic
   const filteredPackages = packageList.filter(pkg => {
     // 1. Apply search query
@@ -98,12 +120,28 @@ function PackagesContent() {
       if (!searchStr.includes(searchQuery)) return false;
     }
 
-    // 2. Apply selected filters
+    // 2. Apply Price filter
+    if (priceRange) {
+      const pNum = Number(String(pkg.price).replace(/[^0-9]/g, ''));
+      if (pNum < priceRange.min || pNum > priceRange.max) return false;
+    }
+
+    // 3. Apply selected pill filters
     if (selectedFilters.length === 0) return true;
     
-    return selectedFilters.every(filter => {
-      if (filter === 'Price' || filter === 'Duration') return true;
-      return pkg.location.toLowerCase().includes(filter.toLowerCase()) || pkg.badge.toLowerCase().includes(filter.toLowerCase());
+    // We want it to match ANY of the selected location/badge pills, OR ALL of them?
+    // Usually for locations/badges, checking if it matches ALL is too strict (e.g. clicking Goa AND Uttarakhand returns nothing).
+    // Let's make it so if there are selected pills, the package must match AT LEAST ONE non-Price pill, 
+    // unless Price is the ONLY filter selected.
+    const nonPriceFilters = selectedFilters.filter(f => f !== 'Price');
+    if (nonPriceFilters.length === 0) return true;
+
+    return nonPriceFilters.some(filter => {
+      const f = filter.toLowerCase();
+      const locStr = String(pkg.location || '').toLowerCase();
+      const titleStr = String(pkg.title || '').toLowerCase();
+      const badgeStr = String(pkg.badge || '').toLowerCase();
+      return locStr.includes(f) || titleStr.includes(f) || badgeStr.includes(f);
     });
   });
 
@@ -113,60 +151,42 @@ function PackagesContent() {
       <div className="bg-white border-b border-gray-200 sticky top-19 z-30 shadow-sm">
         <div className="container mx-auto px-4 py-4 flex items-center gap-3 overflow-x-auto hide-scrollbar">
           <button 
-            className={`flex items-center gap-2 border rounded-full px-4 py-2 transition-colors shrink-0 font-medium text-[14px] ${showFilters ? 'border-gray-900 bg-gray-100 text-gray-900' : 'border-gray-300 hover:border-gray-900 text-gray-700'}`}
-            onClick={() => {
-              setShowFilters(!showFilters);
-              if (showFilters) {
-                setActiveDropdown(null);
-              }
-            }}
+            className="flex items-center gap-2 border border-gray-300 hover:border-gray-900 rounded-full px-4 py-2 transition-colors shrink-0 font-medium text-[14px] text-gray-700"
           >
             <SlidersHorizontal size={16} /> Filters
           </button>
           
-          <AnimatePresence>
-            {showFilters && (
-              <motion.div 
-                initial={{ width: 0, opacity: 0, paddingLeft: 0 }}
-                animate={{ width: "auto", opacity: 1, paddingLeft: 8 }}
-                exit={{ width: 0, opacity: 0, paddingLeft: 0 }}
-                transition={{ duration: 0.3, ease: "easeInOut" }}
-                className="flex items-center gap-3 overflow-hidden origin-left shrink-0"
+          <div className="h-8 w-px bg-gray-200 shrink-0 mx-1" />
+          
+          {filters.map((filter, idx) => {
+            const isSelected = selectedFilters.includes(filter) || (filter === 'Price' && priceRange !== null);
+
+            if (filter === 'Price') {
+              return (
+                <button 
+                  key={idx}
+                  onClick={() => setIsPricePopoverOpen(true)}
+                  className={`flex items-center gap-2 border rounded-full px-4 py-2 transition-colors shrink-0 font-medium text-[14px] ${
+                    isSelected ? 'border-gray-900 bg-gray-100 text-gray-900 font-semibold' : 'border-gray-300 hover:border-gray-900 text-gray-700'
+                  }`}
+                >
+                  {filter} <ChevronDown size={14} className={isPricePopoverOpen ? "rotate-180 transition-transform" : "transition-transform"} />
+                </button>
+              );
+            }
+
+            return (
+              <button 
+                key={idx}
+                onClick={() => toggleFilter(filter)}
+                className={`border rounded-full px-4 py-2 transition-colors shrink-0 font-medium text-[14px] ${
+                  isSelected ? 'border-gray-900 bg-gray-100 text-gray-900' : 'border-gray-300 hover:border-gray-900 text-gray-700'
+                }`}
               >
-                <div className="h-8 w-px bg-gray-200 shrink-0 mr-1" />
-                {filters.map((filter, idx) => {
-                  const isDropdown = filter === 'Price' || filter === 'Duration';
-                  const isSelected = selectedFilters.includes(filter) || activeDropdown === filter;
-
-                  if (isDropdown) {
-                    return (
-                      <button 
-                        key={idx}
-                        onClick={() => setActiveDropdown(activeDropdown === filter ? null : filter)}
-                        className={`flex items-center gap-2 border rounded-full px-4 py-2 transition-colors shrink-0 font-medium text-[14px] ${
-                          isSelected ? 'border-gray-900 bg-gray-100 text-gray-900' : 'border-gray-300 hover:border-gray-900 text-gray-700'
-                        }`}
-                      >
-                        {filter} <ChevronDown size={14} className={activeDropdown === filter ? "rotate-180 transition-transform" : "transition-transform"} />
-                      </button>
-                    );
-                  }
-
-                  return (
-                    <button 
-                      key={idx}
-                      onClick={() => toggleFilter(filter)}
-                      className={`border rounded-full px-4 py-2 transition-colors shrink-0 font-medium text-[14px] ${
-                        isSelected ? 'border-gray-900 bg-gray-100 text-gray-900' : 'border-gray-300 hover:border-gray-900 text-gray-700'
-                      }`}
-                    >
-                      {filter}
-                    </button>
-                  );
-                })}
-              </motion.div>
-            )}
-          </AnimatePresence>
+                {filter}
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -187,6 +207,27 @@ function PackagesContent() {
           </div>
         )}
       </section>
+
+      {/* Price Popover */}
+      <PricePopover
+        isOpen={isPricePopoverOpen}
+        onClose={() => setIsPricePopoverOpen(false)}
+        minPrice={priceRange?.min ?? absoluteMinPrice}
+        maxPrice={priceRange?.max ?? absoluteMaxPrice}
+        absoluteMin={absoluteMinPrice}
+        absoluteMax={absoluteMaxPrice}
+        matchCount={filteredPackages.length}
+        onApply={(min, max) => {
+          setPriceRange({ min, max });
+          if (!selectedFilters.includes('Price')) {
+            setSelectedFilters((prev) => [...prev, 'Price']);
+          }
+        }}
+        onClear={() => {
+          setPriceRange(null);
+          setSelectedFilters((prev) => prev.filter((f) => f !== 'Price'));
+        }}
+      />
     </div>
   );
 }

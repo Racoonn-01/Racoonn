@@ -34,11 +34,7 @@ const tabs = [
 
 export default function HeroSection() {
   const router = useRouter();
-  const [heroImages, setHeroImages] = useState<string[]>([
-    "https://images.unsplash.com/photo-1499793983690-e29da59ef1c2?q=80&w=1920&auto=format&fit=crop",
-    "https://images.unsplash.com/photo-1514282401047-d79a71a590e8?q=80&w=1920&auto=format&fit=crop",
-    "https://images.unsplash.com/photo-1540541338287-41700207dee6?q=80&w=1920&auto=format&fit=crop"
-  ]);
+  const [heroImages, setHeroImages] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState('stays');
   const [checkIn, setCheckIn] = useState<Date>();
   const [checkOut, setCheckOut] = useState<Date>();

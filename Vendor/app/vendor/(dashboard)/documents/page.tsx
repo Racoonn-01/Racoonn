@@ -182,7 +182,7 @@ export default function DocumentsPage() {
         };
       }) as VendorDoc[];
 
-          if (profile.documentStatuses) {
+          if (profile && profile.documentStatuses) {
             try {
               const dbStatuses = JSON.parse(profile.documentStatuses);
               mergedList = mergedList.map(doc => {

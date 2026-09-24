@@ -120,7 +120,7 @@ export default function DocumentsPage() {
       const formattedDate = new Date().toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
 
       // Merge templates: preserve uploaded files, default rest to clean Missing state
-      const mergedList = INITIAL_DOC_TEMPLATES.map((t) => {
+      let mergedList = INITIAL_DOC_TEMPLATES.map((t) => {
         const existing = savedDocs.find(d => d.id === t.id || d.title?.toLowerCase() === t.title.toLowerCase());
         if (existing && existing.fileName) {
           return existing;

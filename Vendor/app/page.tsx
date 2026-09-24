@@ -212,16 +212,16 @@ export default function AuthPage() {
         
         <div className="relative z-10 w-full max-w-xl animate-in fade-in zoom-in-95 duration-1000 delay-200 fill-mode-both">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white font-semibold text-sm mb-8 shadow-lg">
-              <Star className="w-4 h-4 text-amber-400 fill-amber-400" /> #1 Travel Vendor Platform
+              <Star className="w-4 h-4 text-amber-400 fill-amber-400" /> #1 Trusted Partner Platform
             </div>
 
             <h3 className="text-5xl lg:text-6xl font-heading font-black text-white leading-[1.1] tracking-tight mb-8">
-              Elevate your <br/>
-              <span className="text-transparent bg-clip-text bg-linear-to-r from-brand-coral to-[#FF8C73]">offerings.</span>
+              Empowering our <br/>
+              <span className="text-transparent bg-clip-text bg-linear-to-r from-brand-coral to-[#FF8C73]">partners.</span>
             </h3>
             
             <p className="text-slate-300 text-lg leading-relaxed mb-12 max-w-md">
-              The all-in-one hub for travel creators and partners to manage packages, bookings, and customer experiences.
+              A trusted and valuable platform for travel creators to manage packages, bookings, and deliver exceptional experiences.
             </p>
             
             {/* Bento-style feature cards */}
@@ -238,8 +238,8 @@ export default function AuthPage() {
                 <div className="w-12 h-12 rounded-2xl bg-linear-to-br from-blue-500 to-indigo-600 flex items-center justify-center mb-4 shadow-lg shadow-blue-500/30">
                   <ShieldCheck className="w-6 h-6 text-white" />
                 </div>
-                <h4 className="text-white font-bold text-lg mb-2">Secure Data</h4>
-                <p className="text-slate-300/80 text-sm">Your operational data is completely safe.</p>
+                <h4 className="text-white font-bold text-lg mb-2">Secure & Reliable</h4>
+                <p className="text-slate-300/80 text-sm">Your business data is completely safe with us.</p>
               </div>
             </div>
 
@@ -260,7 +260,7 @@ export default function AuthPage() {
                   {[...Array(5)].map((_, i) => <Star key={i} className="w-4 h-4 fill-current" />)}
                 </div>
                 <p className="text-sm font-medium text-slate-300">
-                  Loved by top travel vendors
+                  Trusted by top travel partners
                 </p>
               </div>
             </div>

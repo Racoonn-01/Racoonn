@@ -98,20 +98,13 @@ export default function Home() {
           </h1>
         </motion.div>
         
-        <motion.p 
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 1, delay: 0.8 }}
-          className="text-xl md:text-3xl text-brand-charcoal/80 max-w-3xl mx-auto font-medium leading-relaxed tracking-wide"
-        >
-          The Himalayas are calling, and we are building something extraordinary to answer. <br className="hidden md:block" /> Prepare to explore like never before. 
-        </motion.p>
+
 
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 1.2 }}
-          className="pt-10 flex justify-center"
+          className="flex justify-center"
         >
           <a href="https://partner.racoonn.com" className="relative group inline-flex items-center justify-center">
             <div className="absolute inset-0 bg-brand-coral rounded-2xl blur-lg opacity-30 group-hover:opacity-60 group-hover:blur-xl transition-all duration-500" />

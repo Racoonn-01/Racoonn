@@ -5,7 +5,6 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Tag, Clock, Loader2 } from 'lucide-react';
 import { databases, appwriteConfig } from '@/lib/appwrite/config';
-import PromoPopup from '@/components/shared/PromoPopup';
 import { Query } from 'appwrite';
 
 interface Offer {
@@ -152,8 +151,6 @@ export default function SpecialOffersPage() {
             ))}
           </div>
         )}
-      </div>
-      <PromoPopup />
-    </div>
+      </div>    </div>
   );
 }

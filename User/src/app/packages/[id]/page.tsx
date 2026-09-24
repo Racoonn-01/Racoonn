@@ -52,18 +52,14 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
   const setRoomDetails = useCheckoutStore((state) => state.setRoomDetails);
   const resolvedParams = use(params);
   const rawPkgId = resolvedParams.id || '1';
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [pkg, setPkg] = useState<any | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [itinerary, setItinerary] = useState<any[]>([]);
 
   // Available Hotel Options
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [hotelOptions, setHotelOptions] = useState<any[]>([]);
 
   // Available Activity Options
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [activityOptions, setActivityOptions] = useState<any[]>([]);
   
   const [reviewsData, setReviewsData] = useState<any[]>([]);
@@ -80,9 +76,7 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
   const [adultsCount, setAdultsCount] = useState<number>(1);
   const [isHotelModalOpen, setIsHotelModalOpen] = useState(false);
   const [isActivityModalOpen, setIsActivityModalOpen] = useState(false);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [selectedActivityForModal, setSelectedActivityForModal] = useState<any>(null);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [selectedHotelForModal, setSelectedHotelForModal] = useState<any>(null);
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const [isAllReviewsModalOpen, setIsAllReviewsModalOpen] = useState(false);
@@ -114,7 +108,6 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
         const res = await fetch("/api/cms/packages");
         const json = await res.json();
         if (json.success && Array.isArray(json.packages) && json.packages.length > 0) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const cmsFound = json.packages.find((p: Record<string, any>) => String(p.id) === String(rawPkgId));
           if (cmsFound) {
             const minPrice = cmsFound.pricing && cmsFound.pricing[0] ? cmsFound.pricing[0].pricePerPerson : 0;
@@ -711,7 +704,6 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
                                 <div className="p-5 pt-0 border-t border-gray-100 bg-white">
                                   <div className="relative pl-8 ml-6 border-l border-brand-coral/30 py-4 flex flex-col gap-6 mt-4">
                                     {(day.points && day.points.length > 0) ? (
-                                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                       day.points.map((pt: Record<string, any>, pIdx: number) => (
                                         <div key={pIdx} className="relative">
                                           <div className="absolute -left-9.5 top-1.5 w-3 h-3 rounded-full bg-brand-coral ring-4 ring-white" />

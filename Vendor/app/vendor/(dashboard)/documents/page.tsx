@@ -600,7 +600,7 @@ export default function DocumentsPage() {
                             variant="outline" 
                             size="sm" 
                             onClick={async () => {
-                              let docToView = { ...doc };
+                              const docToView = { ...doc };
                               if (doc.fileName && doc.fileName.includes("(Uploaded)") && doc.fileId) {
                                 try {
                                   const meta = await storage.getFile(appwriteConfig.vendorDocumentsBucketId, doc.fileId);
@@ -714,6 +714,7 @@ export default function DocumentsPage() {
                 {viewingDoc.fileName?.toLowerCase().endsWith(".pdf") || viewingDoc.fileUrl.startsWith("data:application/pdf") ? (
                   <iframe src={viewingDoc.fileUrl} className="w-full h-96 rounded-xl border border-slate-200 shadow-md" title={viewingDoc.title} />
                 ) : (
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={viewingDoc.fileUrl} alt={viewingDoc.title} className="max-h-80 object-contain rounded-2xl shadow-md border border-slate-200" />
                 )}
               </div>

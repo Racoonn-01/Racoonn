@@ -699,7 +699,7 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
                               </div>
                               <div className="text-left flex-1 min-w-0 pr-2">
                                 <h4 className="font-bold text-[16px] sm:text-[18px] text-brand-coral">Day {dayNum}</h4>
-                                <p className="text-gray-600 text-[14px] sm:text-[15px] font-medium mt-0.5 break-words line-clamp-2 sm:line-clamp-none">{day.title || day.activities || `Day ${dayNum} Overview`}</p>
+                                <p className="text-gray-600 text-[14px] sm:text-[15px] font-medium mt-0.5 wrap-break-word line-clamp-2 sm:line-clamp-none">{day.title || day.activities || `Day ${dayNum} Overview`}</p>
                               </div>
                               <div className="shrink-0 ml-auto flex items-center justify-center">
                                 {isDayOpen ? <ChevronUp className="text-brand-coral w-5 h-5 sm:w-6 sm:h-6" /> : <ChevronDown className="text-brand-coral w-5 h-5 sm:w-6 sm:h-6" />}

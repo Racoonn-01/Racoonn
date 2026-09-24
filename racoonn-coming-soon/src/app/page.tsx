@@ -16,7 +16,7 @@ export default function Home() {
           y: [0, -50, 0]
         }}
         transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
-        className="absolute top-[-10%] right-[-10%] w-[600px] h-[600px] bg-brand-coral/15 rounded-full blur-[100px] pointer-events-none" 
+        className="absolute top-[-10%] right-[-10%] w-150 h-150 bg-brand-coral/15 rounded-full blur-[100px] pointer-events-none" 
       />
       <motion.div 
         animate={{ 
@@ -26,7 +26,7 @@ export default function Home() {
           y: [0, 50, 0]
         }}
         transition={{ duration: 20, repeat: Infinity, ease: "easeInOut", delay: 2 }}
-        className="absolute bottom-[-10%] left-[-10%] w-[600px] h-[600px] bg-brand-sky/40 rounded-full blur-[100px] pointer-events-none" 
+        className="absolute bottom-[-10%] left-[-10%] w-150 h-150 bg-brand-sky/40 rounded-full blur-[100px] pointer-events-none" 
       />
 
       {/* Floating Animated Icons */}
@@ -83,8 +83,8 @@ export default function Home() {
           transition={{ duration: 1, delay: 0.4 }}
         >
           <h1 className="text-6xl sm:text-7xl md:text-8xl lg:text-9xl font-heading font-black tracking-tighter leading-none mb-6 flex flex-col sm:flex-row items-center justify-center gap-y-2 sm:gap-x-[0.25em]">
-            <span className="text-transparent bg-clip-text bg-gradient-to-br from-brand-navy via-brand-navy to-brand-navy/70 pb-4">Coming</span>
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-coral to-[#FF8A90] relative inline-block">
+            <span className="text-transparent bg-clip-text bg-linear-to-br from-brand-navy via-brand-navy to-brand-navy/70 pb-4">Coming</span>
+            <span className="text-transparent bg-clip-text bg-linear-to-r from-brand-coral to-[#FF8A90] relative inline-block">
               Soon
               <motion.svg 
                 initial={{ pathLength: 0 }}
@@ -108,8 +108,8 @@ export default function Home() {
         >
           <a href="https://partner.racoonn.com" className="relative group inline-flex items-center justify-center">
             <div className="absolute inset-0 bg-brand-coral rounded-2xl blur-lg opacity-30 group-hover:opacity-60 group-hover:blur-xl transition-all duration-500" />
-            <div className="relative flex items-center gap-3 px-8 py-5 md:px-10 md:py-6 rounded-2xl bg-gradient-to-br from-brand-coral to-[#E05259] text-white font-bold text-lg md:text-xl border border-brand-coral/20 shadow-xl transition-transform duration-300 group-hover:scale-105 group-hover:-translate-y-1 overflow-hidden">
-              <div className="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 ease-in-out" />
+            <div className="relative flex items-center gap-3 px-8 py-5 md:px-10 md:py-6 rounded-2xl bg-linear-to-br from-brand-coral to-[#E05259] text-white font-bold text-lg md:text-xl border border-brand-coral/20 shadow-xl transition-transform duration-300 group-hover:scale-105 group-hover:-translate-y-1 overflow-hidden">
+              <div className="absolute inset-0 bg-white/20 -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out" />
               <Building className="w-6 h-6" />
               <span>List Your Property</span>
               <ArrowRight className="w-6 h-6 group-hover:translate-x-1.5 transition-transform duration-300" />

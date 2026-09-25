@@ -12,6 +12,8 @@ import { useAuthStore } from "@/store/authStore";
 export function Step6Media({ onNext, onBack }: { onNext: () => void, onBack: () => void }) {
   const { profile } = useAuthStore();
   const [photos, setPhotos] = useState<string[]>([]);
+  const [photoCategories, setPhotoCategories] = useState<Record<string, string>>({});
+  const [activeFilter, setActiveFilter] = useState("All");
   const [failedImages, setFailedImages] = useState<Set<number>>(new Set());
   const [uploading, setUploading] = useState(false);
   useEffect(() => {
@@ -25,6 +27,10 @@ export function Step6Media({ onNext, onBack }: { onNext: () => void, onBack: () 
           );
           if (property.photos && property.photos.length > 0) {
             setPhotos(property.photos);
+            // Default existing photos to "Exterior" if no category is known
+            const initialCats: Record<string, string> = {};
+            property.photos.forEach((p: string) => initialCats[p] = "Exterior");
+            setPhotoCategories(initialCats);
           }
         } catch (error) {
           console.error("Failed to fetch property images", error);
@@ -43,9 +49,14 @@ export function Step6Media({ onNext, onBack }: { onNext: () => void, onBack: () 
     if (e.target.files && e.target.files.length > 0) {
       const filesArray = Array.from(e.target.files);
       
-      // 1. Show immediate local preview for snappy UX
       const localPreviews = filesArray.map(file => URL.createObjectURL(file));
       setPhotos(prev => [...prev, ...localPreviews]);
+      setPhotoCategories(prev => {
+        const newCats = { ...prev };
+        const categoryToAssign = activeFilter === "All" ? "Exterior" : activeFilter;
+        localPreviews.forEach(url => newCats[url] = categoryToAssign);
+        return newCats;
+      });
       setUploading(true);
       
       try {
@@ -73,6 +84,13 @@ export function Step6Media({ onNext, onBack }: { onNext: () => void, onBack: () 
         setPhotos(prev => {
           const filtered = prev.filter(p => !p.startsWith('blob:'));
           return [...filtered, ...newUrls];
+        });
+        
+        setPhotoCategories(prev => {
+          const newCats = { ...prev };
+          const categoryToAssign = activeFilter === "All" ? "Exterior" : activeFilter;
+          newUrls.forEach(url => newCats[url] = categoryToAssign);
+          return newCats;
         });
         
         // 3. Update the database
@@ -136,11 +154,24 @@ export function Step6Media({ onNext, onBack }: { onNext: () => void, onBack: () 
           </div>
         </div>
 
+        {/* Filters */}
+        <div className="flex flex-wrap gap-3 pt-2">
+          {["All", "Exterior", "Rooms", "Amenities"].map(filter => (
+            <button
+              key={filter}
+              onClick={() => setActiveFilter(filter)}
+              className={`px-6 py-2.5 rounded-full font-bold text-sm transition-all shadow-sm ${activeFilter === filter ? 'bg-brand-navy text-white scale-105' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+            >
+              {filter}
+            </button>
+          ))}
+        </div>
+
         {/* Upload Progress/Preview Mock */}
         <div className="space-y-3">
-          <h4 className="text-sm font-bold text-slate-700">Uploaded Photos ({photos.length}/10)</h4>
+          <h4 className="text-sm font-bold text-slate-700">Uploaded Photos ({activeFilter === "All" ? photos.length : photos.filter(p => photoCategories[p] === activeFilter).length}/10)</h4>
           <div className="grid grid-cols-4 gap-3">
-            {photos.map((photo, idx) => (
+            {(activeFilter === "All" ? photos : photos.filter(p => photoCategories[p] === activeFilter)).map((photo, idx) => (
               <div key={idx} className="aspect-square bg-slate-100 rounded-xl overflow-hidden relative group">
                 {failedImages.has(idx) ? (
                   <div className="w-full h-full flex flex-col items-center justify-center bg-red-50 text-red-400 p-2 text-center">
@@ -166,7 +197,7 @@ export function Step6Media({ onNext, onBack }: { onNext: () => void, onBack: () 
               </div>
             ))}
             {/* Empty slots */}
-            {Array.from({ length: Math.max(0, 8 - photos.length) }).map((_, i) => (
+            {Array.from({ length: Math.max(0, 8 - (activeFilter === "All" ? photos.length : photos.filter(p => photoCategories[p] === activeFilter).length)) }).map((_, i) => (
               <div key={`empty-${i}`} className="aspect-square bg-slate-50 border border-slate-200 border-dashed rounded-xl flex items-center justify-center text-slate-300">
                 <ImageIcon className="w-6 h-6" />
               </div>

@@ -1,11 +1,14 @@
 "use client";
 
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function Step10Review({ onSubmit, onBack }: { onSubmit: () => void, onBack: () => void }) {
+  const [accepted, setAccepted] = useState(false);
+  
   const slideUp: any = {
     hidden: { opacity: 0, y: 20 },
     visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } }
@@ -35,7 +38,6 @@ export function Step10Review({ onSubmit, onBack }: { onSubmit: () => void, onBac
 
       <motion.div variants={slideUp} className="space-y-6">
         
-
         {/* Review Checklist */}
         <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm">
           <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wide mb-4">Application Summary</h3>
@@ -64,8 +66,17 @@ export function Step10Review({ onSubmit, onBack }: { onSubmit: () => void, onBac
           </div>
         </div>
 
-        <div className="text-center py-4">
-          <p className="text-xs font-bold text-slate-400">By submitting, you agree to Racoonn's Partner Terms and Conditions.</p>
+        <div className="flex flex-row items-center justify-center gap-3 py-6 px-4">
+          <input 
+            type="checkbox" 
+            id="terms" 
+            checked={accepted}
+            onChange={(e) => setAccepted(e.target.checked)}
+            className="w-5 h-5 rounded border-slate-300 text-brand-coral focus:ring-brand-coral cursor-pointer flex-shrink-0 accent-brand-coral"
+          />
+          <label htmlFor="terms" className="text-sm font-medium text-slate-600 cursor-pointer select-none">
+            By submitting, you agree to Racoonn's <a href="/terms" target="_blank" className="font-bold text-brand-coral hover:underline">Partner Terms and Conditions</a>.
+          </label>
         </div>
 
       </motion.div>
@@ -74,7 +85,11 @@ export function Step10Review({ onSubmit, onBack }: { onSubmit: () => void, onBac
         <Button onClick={onBack} variant="ghost" className="text-slate-500 font-bold hover:bg-slate-100 rounded-full px-6">
           <ArrowLeft className="mr-2 w-4 h-4" /> Back
         </Button>
-        <Button onClick={onSubmit} className="bg-brand-coral hover:bg-[#d65d60] text-white rounded-full px-10 h-14 text-lg font-bold shadow-[0_0_30px_rgba(232,106,112,0.3)] hover:scale-105 transition-all">
+        <Button 
+          onClick={onSubmit} 
+          disabled={!accepted}
+          className="bg-brand-coral hover:bg-[#d65d60] text-white rounded-full px-10 h-14 text-lg font-bold shadow-[0_0_30px_rgba(232,106,112,0.3)] hover:scale-105 transition-all disabled:opacity-50 disabled:hover:scale-100 disabled:cursor-not-allowed"
+        >
           Submit For Approval
         </Button>
       </motion.div>

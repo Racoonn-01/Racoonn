@@ -20,13 +20,13 @@ function LoginContent() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-
-
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setSuccess(null);
     setIsLoading(true);
 
     try {
@@ -36,15 +36,19 @@ function LoginContent() {
 
       const res = await loginAdmin(formData);
       if (res.success) {
-        router.push("/admin/dashboard");
-        router.refresh();
+        setIsLoading(false);
+        setSuccess("Login successfully");
+        setTimeout(() => {
+          router.push("/admin/dashboard");
+          router.refresh();
+        }, 1000);
       } else {
-        setError(res.error || "Failed to authenticate");
+        setError("login failed");
+        setIsLoading(false);
       }
     } catch (err) {
       console.error("Login error:", err);
-      setError("Authentication failed. Please check your internet connection.");
-    } finally {
+      setError("login failed");
       setIsLoading(false);
     }
   };
@@ -82,6 +86,13 @@ function LoginContent() {
             <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs font-bold flex items-center gap-2">
               <AlertCircle className="w-4 h-4 shrink-0" />
               <span>{error}</span>
+            </div>
+          )}
+
+          {success && (
+            <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 shrink-0" />
+              <span>{success}</span>
             </div>
           )}
 

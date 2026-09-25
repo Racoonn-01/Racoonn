@@ -396,7 +396,7 @@ export default function SettingsPage() {
                         <Input id="panNumber" value={panNumber} onChange={e => setPanNumber(e.target.value)} className="h-11 rounded-xl border-slate-200 bg-slate-50/50 hover:bg-slate-50 focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary transition-all text-sm shadow-sm" />
                       </div>
                       <div className="space-y-2.5">
-                        <Label htmlFor="aadharNumber" className="text-sm font-semibold text-slate-700">Aadhar Number</Label>
+                        <Label htmlFor="aadharNumber" className="text-sm font-semibold text-slate-700">Aadhar Number (Optional)</Label>
                         <Input id="aadharNumber" value={aadharNumber} onChange={e => setAadharNumber(e.target.value)} className="h-11 rounded-xl border-slate-200 bg-slate-50/50 hover:bg-slate-50 focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary transition-all text-sm shadow-sm" />
                       </div>
                     </>

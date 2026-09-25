@@ -72,6 +72,12 @@ export function Step5Rooms({ onNext, onBack }: { onNext: () => void, onBack: () 
         if (!currentUser) throw new Error("You must be logged in.");
       }
 
+      for (const room of rooms) {
+        if ((room.photos?.length || 0) + (room.photoFiles?.length || 0) === 0) {
+          throw new Error(`Please upload at least 1 photo for ${room.name}.`);
+        }
+      }
+
       let currentProfile = profile;
       if (!currentProfile?.currentPropertyId) {
         await refreshProfile();

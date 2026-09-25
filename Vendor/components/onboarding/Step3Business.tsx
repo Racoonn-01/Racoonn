@@ -216,6 +216,27 @@ export function Step3Business({ onNext, onBack }: { onNext: () => void, onBack: 
     }
   };
 
+  const handleSkip = async () => {
+    setIsLoading(true);
+    try {
+      if (user) {
+        await databases.updateDocument(
+          appwriteConfig.databaseId,
+          appwriteConfig.vendorCollectionId,
+          user.$id,
+          { onboardingStep: 3 }
+        );
+        await refreshProfile();
+      }
+      onNext();
+    } catch (err: any) {
+      console.error("Failed to skip step 3:", err);
+      onNext();
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleNext = async () => {
     setError("");
     
@@ -232,7 +253,7 @@ export function Step3Business({ onNext, onBack }: { onNext: () => void, onBack: 
         return;
       }
     } else {
-      if (!fullName.trim() || !panNumber.trim() || !aadharNumber.trim() || !address.trim()) {
+      if (!fullName.trim() || !panNumber.trim() || !address.trim()) {
         setError("Please fill in all required fields.");
         return;
       }
@@ -241,10 +262,12 @@ export function Step3Business({ onNext, onBack }: { onNext: () => void, onBack: 
         return;
       }
       
-      const cleanAadhar = aadharNumber.replace(/\s+/g, "");
-      if (!/^\d{12}$/.test(cleanAadhar)) {
-        setError("Please enter a valid 12-digit Aadhar number.");
-        return;
+      if (aadharNumber.trim()) {
+        const cleanAadhar = aadharNumber.replace(/\s+/g, "");
+        if (!/^\d{12}$/.test(cleanAadhar)) {
+          setError("Please enter a valid 12-digit Aadhar number.");
+          return;
+        }
       }
     }
 
@@ -469,7 +492,7 @@ export function Step3Business({ onNext, onBack }: { onNext: () => void, onBack: 
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-xs font-bold text-slate-700 uppercase tracking-wide">Aadhar Number</label>
+                <label className="text-xs font-bold text-slate-700 uppercase tracking-wide">Aadhar Number (Optional)</label>
                 <Input 
                   value={aadharNumber}
                   onChange={(e) => setAadharNumber(e.target.value)}
@@ -534,7 +557,7 @@ export function Step3Business({ onNext, onBack }: { onNext: () => void, onBack: 
             </div>
 
             <div className="space-y-4 mt-6">
-              <label className="text-xs font-bold text-slate-700 uppercase tracking-wide">Upload Aadhar Card</label>
+              <label className="text-xs font-bold text-slate-700 uppercase tracking-wide">Upload Aadhar Card (Optional)</label>
 
               <div className="grid grid-cols-2 gap-4">
                 <div 
@@ -621,11 +644,16 @@ export function Step3Business({ onNext, onBack }: { onNext: () => void, onBack: 
         <Button onClick={onBack} variant="ghost" className="text-slate-500 font-bold hover:bg-slate-100 rounded-full px-6" disabled={isLoading || isVerifyingDoc}>
           <ArrowLeft className="mr-2 w-4 h-4" /> Back
         </Button>
-        <Button onClick={handleNext} disabled={isLoading || isVerifyingDoc} className="h-12 px-8 rounded-full bg-slate-900 hover:bg-slate-800 text-white font-semibold transition-all">
-          {isLoading || isVerifyingDoc ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
-          {isVerifyingDoc ? "Verifying Documents..." : isLoading ? "Saving..." : "Continue to Properties"}
-          {!(isLoading || isVerifyingDoc) && <ArrowRight className="w-4 h-4 ml-2" />}
-        </Button>
+        <div className="flex items-center gap-3">
+          <Button onClick={handleSkip} variant="ghost" className="text-slate-500 font-bold hover:bg-slate-100 rounded-full px-6" disabled={isLoading || isVerifyingDoc}>
+            Skip for now
+          </Button>
+          <Button onClick={handleNext} disabled={isLoading || isVerifyingDoc} className="h-12 px-8 rounded-full bg-slate-900 hover:bg-slate-800 text-white font-semibold transition-all">
+            {isLoading || isVerifyingDoc ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+            {isVerifyingDoc ? "Verifying Documents..." : isLoading ? "Saving..." : "Continue to Properties"}
+            {!(isLoading || isVerifyingDoc) && <ArrowRight className="w-4 h-4 ml-2" />}
+          </Button>
+        </div>
       </motion.div>
     </motion.div>
   );

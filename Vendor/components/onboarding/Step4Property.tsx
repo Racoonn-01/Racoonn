@@ -99,8 +99,9 @@ export function Step4Property({ onNext, onBack }: { onNext: () => void, onBack: 
   const { user, profile, refreshProfile } = useAuthStore();
   const [propertyName, setPropertyName] = useState("");
   const [selectedType, setSelectedType] = useState("Hotel");
-  const [city, setCity] = useState("Mumbai");
-  const [propertyState, setPropertyState] = useState("Maharashtra");
+  const [city, setCity] = useState("");
+  const [propertyState, setPropertyState] = useState("");
+  const [propertyAddress, setPropertyAddress] = useState("");
   const [description, setDescription] = useState("");
   
   const [error, setError] = useState("");
@@ -121,6 +122,7 @@ export function Step4Property({ onNext, onBack }: { onNext: () => void, onBack: 
           if (property.propertyType) setSelectedType(property.propertyType);
           if (property.city) setCity(property.city);
           if (property.state) setPropertyState(property.state);
+
           if (property.description) setDescription(property.description);
         } catch(e) {
           console.error("Failed to load property", e);
@@ -179,8 +181,8 @@ export function Step4Property({ onNext, onBack }: { onNext: () => void, onBack: 
   const handleNextSubmit = async () => {
     setError("");
 
-    if (!propertyName.trim() || !city.trim() || !propertyState.trim()) {
-      setError("Please fill in Property Name, City, and State.");
+    if (!propertyName.trim() || !propertyAddress.trim() || !city.trim() || !propertyState.trim()) {
+      setError("Please fill in Property Name, Hotel Address, City, and State.");
       return;
     }
 
@@ -204,7 +206,7 @@ export function Step4Property({ onNext, onBack }: { onNext: () => void, onBack: 
       saveToLocal();
       
       const existingPropertyId = currentProfile.currentPropertyId;
-      const fullAddr = `${registeredAddress ? registeredAddress + ", " : ""}${city}, ${propertyState}`;
+      const fullAddr = `${propertyAddress ? propertyAddress + ", " : ""}${city}, ${propertyState}`;
       let lat: number | null = null;
       let lng: number | null = null;
 
@@ -321,6 +323,8 @@ export function Step4Property({ onNext, onBack }: { onNext: () => void, onBack: 
           />
         </div>
 
+
+
         <div className="space-y-2">
           <label className="text-xs font-bold text-slate-700 uppercase tracking-wide">Property Type</label>
           <Select value={selectedType} onValueChange={(val) => { if (val) setSelectedType(val); }}>
@@ -346,39 +350,21 @@ export function Step4Property({ onNext, onBack }: { onNext: () => void, onBack: 
           </Select>
         </div>
 
-        {/* Live Google Map */}
         <div className="space-y-2">
-          <div className="flex justify-between items-end">
-            <label className="text-xs font-bold text-slate-700 uppercase tracking-wide">Pin Location on Map</label>
-            {registeredAddress && (
-              <span className="text-[10px] font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full truncate max-w-50" title={registeredAddress}>
-                📍 {registeredAddress}
-              </span>
-            )}
-          </div>
-          <div className="w-full h-64 bg-slate-100 rounded-2xl border border-slate-200 overflow-hidden relative group">
-            <iframe 
-              width="100%" 
-              height="100%" 
-              frameBorder="0" 
-              scrolling="no" 
-              marginHeight={0} 
-              marginWidth={0} 
-              src={`https://maps.google.com/maps?q=${encodeURIComponent(`${registeredAddress ? registeredAddress + ", " : ""}${city}, ${propertyState}` || "India")}&t=&z=13&ie=UTF8&iwloc=&output=embed`}
-              className="w-full h-full"
-            ></iframe>
-            <div className="absolute top-4 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-              <div className="bg-brand-navy/90 backdrop-blur-sm px-4 py-2 rounded-full shadow-lg flex items-center gap-2 font-bold text-sm text-white">
-                <MapPin className="w-4 h-4 text-brand-coral" /> Interactive Map Enabled
-              </div>
-            </div>
-          </div>
+          <label className="text-xs font-bold text-slate-700 uppercase tracking-wide">Hotel Address</label>
+          <textarea 
+            value={propertyAddress}
+            onChange={(e) => setPropertyAddress(e.target.value)}
+            className="w-full p-4 rounded-xl border border-slate-200 bg-white focus:ring-2 focus:ring-brand-coral/20 focus:border-brand-coral transition-all font-medium resize-none min-h-20 outline-none" 
+            placeholder="e.g. 123 Main Street, Near Beach..." 
+          />
         </div>
+
 
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
             <label className="text-xs font-bold text-slate-700 uppercase tracking-wide">State</label>
-            <Select value={propertyState} onValueChange={(val) => { if (val) { setPropertyState(val); setCity(STATE_CITY_MAP[val]?.[0] || ""); } }}>
+            <Select value={propertyState} onValueChange={(val) => { if (val) { setPropertyState(val); } }}>
               <SelectTrigger className="w-full h-12! rounded-xl border-slate-200 bg-white px-4 focus:ring-2 focus:ring-brand-coral/20 focus:border-brand-coral transition-all font-medium text-slate-700">
                 <SelectValue placeholder="Select a state" />
               </SelectTrigger>
@@ -396,15 +382,9 @@ export function Step4Property({ onNext, onBack }: { onNext: () => void, onBack: 
             <Input 
               value={city}
               onChange={(e) => setCity(e.target.value)}
-              list="city-suggestions"
               className="h-12 rounded-xl border-slate-200 bg-white focus:ring-2 focus:ring-brand-coral/20 focus:border-brand-coral transition-all font-medium" 
               placeholder="e.g. Mumbai" 
             />
-            <datalist id="city-suggestions">
-              {(STATE_CITY_MAP[propertyState] || []).map(c => (
-                <option key={c} value={c} />
-              ))}
-            </datalist>
           </div>
         </div>
 
@@ -416,6 +396,35 @@ export function Step4Property({ onNext, onBack }: { onNext: () => void, onBack: 
             className="w-full p-4 rounded-xl border border-slate-200 bg-white focus:ring-2 focus:ring-brand-coral/20 focus:border-brand-coral transition-all font-medium resize-none min-h-30 outline-none" 
             placeholder="Describe what makes your property unique. Highlight nearby attractions, atmosphere, and special features..."
           />
+        </div>
+
+        {/* Live Google Map */}
+        <div className="space-y-2">
+          <div className="flex justify-between items-end">
+            <label className="text-xs font-bold text-slate-700 uppercase tracking-wide">Pin Location on Map</label>
+            {propertyAddress && (
+              <span className="text-[10px] font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full truncate max-w-50" title={propertyAddress}>
+                📍 {propertyAddress}
+              </span>
+            )}
+          </div>
+          <div className="w-full h-64 bg-slate-100 rounded-2xl border border-slate-200 overflow-hidden relative group">
+            <iframe 
+              width="100%" 
+              height="100%" 
+              frameBorder="0" 
+              scrolling="no" 
+              marginHeight={0} 
+              marginWidth={0} 
+              src={`https://maps.google.com/maps?q=${encodeURIComponent(`${propertyName ? propertyName + ", " : ""}${propertyAddress ? propertyAddress + ", " : ""}${city}, ${propertyState}` || "India")}&t=&z=13&ie=UTF8&iwloc=&output=embed`}
+              className="w-full h-full"
+            ></iframe>
+            <div className="absolute top-4 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+              <div className="bg-brand-navy/90 backdrop-blur-sm px-4 py-2 rounded-full shadow-lg flex items-center gap-2 font-bold text-sm text-white">
+                <MapPin className="w-4 h-4 text-brand-coral" /> Interactive Map Enabled
+              </div>
+            </div>
+          </div>
         </div>
 
       </motion.div>

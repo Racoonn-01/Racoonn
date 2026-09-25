@@ -19,7 +19,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     if (isLoading || isInitializing) return;
 
     if (!isAuthenticated) {
-      if (pathname !== "/" && pathname !== "/vendor/reset-password" && pathname !== "/developers") {
+      if (pathname !== "/" && pathname !== "/vendor/reset-password" && pathname !== "/developers" && pathname !== "/terms") {
         router.push("/");
       }
       return;
@@ -35,7 +35,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
           }
        } else if (status === "pending") {
           if (!onboardingCompleted) {
-             if (!pathname.startsWith("/vendor/onboarding")) {
+             if (!pathname.startsWith("/vendor/onboarding") && pathname !== "/terms") {
                 router.push("/vendor/onboarding");
              }
           } else {

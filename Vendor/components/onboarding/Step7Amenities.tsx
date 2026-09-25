@@ -3,10 +3,106 @@
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, ArrowLeft, Wifi, Dumbbell, Car, Coffee, Wind, Tv, Snowflake, UtensilsCrossed, PawPrint, Wine, Clock, Zap, Plane, Shirt, Sun, Users, Accessibility } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/authStore";
 import { databases, appwriteConfig } from "@/lib/appwrite/client";
+
+function CustomTimePicker({ value, onChange, label, isOpen, setIsOpen, onConfirm }: { value: string, onChange: (v: string) => void, label: string, isOpen: boolean, setIsOpen: (v: boolean) => void, onConfirm?: () => void }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [setIsOpen]);
+
+  const getParts = () => {
+    let h = "02", m = "00", ampm = "PM";
+    if (value) {
+      const match = value.match(/(\d+):(\d+)\s*(AM|PM)/i);
+      if (match) {
+        h = match[1].padStart(2, '0');
+        m = match[2].padStart(2, '0');
+        ampm = match[3].toUpperCase();
+      }
+    }
+    return { h, m, ampm };
+  };
+
+  const { h, m, ampm } = getParts();
+
+  const handleUpdate = (newH: string, newM: string, newAmpm: string) => {
+    onChange(`${newH}:${newM} ${newAmpm}`);
+  };
+
+  return (
+    <div className="relative space-y-2" ref={containerRef}>
+      <label className="text-xs font-bold text-slate-500">{label}</label>
+      <div 
+        className="w-full h-12 rounded-xl border border-slate-200 bg-white px-4 font-bold text-slate-700 flex items-center justify-between cursor-pointer focus:border-brand-coral focus:ring-2 focus:ring-brand-coral/20"
+        onClick={() => setIsOpen(!isOpen)}
+      >
+        <span>{value || "Select Time"}</span>
+        <Clock className="w-4 h-4 text-slate-400" />
+      </div>
+
+      {isOpen && (
+        <div className="absolute bottom-[calc(100%+8px)] left-0 w-64 bg-white border border-slate-200 shadow-xl rounded-xl p-2 z-50 flex flex-col gap-2">
+          <div className="flex gap-2 h-56">
+            <div className="flex-1 overflow-y-auto hide-scrollbar scroll-smooth snap-y border-r border-slate-100 pr-1">
+              <div className="text-[10px] font-bold text-slate-400 text-center mb-2 sticky top-0 bg-white py-1">HR</div>
+              {Array.from({ length: 12 }, (_, i) => (i === 0 ? 12 : i).toString().padStart(2, '0')).map(hour => (
+                <div 
+                  key={hour}
+                  onClick={() => handleUpdate(hour, m, ampm)}
+                  className={`py-2 text-center text-base font-bold rounded-lg cursor-pointer snap-center mb-1 transition-colors ${h === hour ? 'bg-brand-coral text-white' : 'hover:bg-slate-100 text-slate-700'}`}
+                >
+                  {hour}
+                </div>
+              ))}
+            </div>
+            <div className="flex-1 overflow-y-auto hide-scrollbar scroll-smooth snap-y border-r border-slate-100 pr-1">
+              <div className="text-[10px] font-bold text-slate-400 text-center mb-2 sticky top-0 bg-white py-1">MIN</div>
+              {Array.from({ length: 60 }, (_, i) => i.toString().padStart(2, '0')).map(minute => (
+                <div 
+                  key={minute}
+                  onClick={() => handleUpdate(h, minute, ampm)}
+                  className={`py-2 text-center text-base font-bold rounded-lg cursor-pointer snap-center mb-1 transition-colors ${m === minute ? 'bg-brand-coral text-white' : 'hover:bg-slate-100 text-slate-700'}`}
+                >
+                  {minute}
+                </div>
+              ))}
+            </div>
+            <div className="flex-1 overflow-y-auto hide-scrollbar">
+              <div className="text-[10px] font-bold text-slate-400 text-center mb-2 sticky top-0 bg-white py-1">AM/PM</div>
+              {["AM", "PM"].map(period => (
+                <div 
+                  key={period}
+                  onClick={() => handleUpdate(h, m, period)}
+                  className={`py-2 text-center text-base font-bold rounded-lg cursor-pointer mb-1 transition-colors ${ampm === period ? 'bg-brand-coral text-white' : 'hover:bg-slate-100 text-slate-700'}`}
+                >
+                  {period}
+                </div>
+              ))}
+            </div>
+          </div>
+          <Button 
+            size="sm" 
+            onClick={(e) => { e.stopPropagation(); setIsOpen(false); if (onConfirm) onConfirm(); }} 
+            className="w-full bg-brand-navy hover:bg-slate-800 text-white font-bold rounded-lg"
+          >
+            Confirm
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+}
 
 const AMENITIES = [
   { id: "wifi", name: "Free WiFi", icon: Wifi },
@@ -32,10 +128,11 @@ const AMENITIES = [
 export function Step7Amenities({ onNext, onBack }: { onNext: () => void, onBack: () => void }) {
   const { profile } = useAuthStore();
   const [selected, setSelected] = useState<string[]>(["wifi", "parking"]);
-  const [checkIn, setCheckIn] = useState("2:00 PM");
+  const [checkIn, setCheckIn] = useState("02:00 PM");
   const [checkOut, setCheckOut] = useState("11:00 AM");
-  const [cancellationPolicy, setCancellationPolicy] = useState("Flexible (Full refund 1 day prior)");
   const [isLoading, setIsLoading] = useState(false);
+  const [checkInOpen, setCheckInOpen] = useState(false);
+  const [checkOutOpen, setCheckOutOpen] = useState(false);
 
   useEffect(() => {
     const fetchProperty = async () => {
@@ -47,9 +144,8 @@ export function Step7Amenities({ onNext, onBack }: { onNext: () => void, onBack:
             profile.currentPropertyId
           );
           if (prop.amenities && prop.amenities.length > 0) setSelected(prop.amenities);
-          if (prop.checkInTime) setCheckIn(prop.checkInTime);
-          if (prop.checkOutTime) setCheckOut(prop.checkOutTime);
-          if (prop.cancellationPolicy) setCancellationPolicy(prop.cancellationPolicy);
+          if (prop.checkInTime) setCheckIn(parseTime(prop.checkInTime));
+          if (prop.checkOutTime) setCheckOut(parseTime(prop.checkOutTime));
         } catch { }
       }
     };
@@ -70,8 +166,7 @@ export function Step7Amenities({ onNext, onBack }: { onNext: () => void, onBack:
         {
           amenities: selected,
           checkInTime: checkIn,
-          checkOutTime: checkOut,
-          cancellationPolicy: cancellationPolicy
+          checkOutTime: checkOut
         }
       );
       onNext();
@@ -142,46 +237,22 @@ export function Step7Amenities({ onNext, onBack }: { onNext: () => void, onBack:
           <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wide">Basic Policies</h3>
           
           <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-slate-500">Check-in Time</label>
-              <select 
-                value={checkIn}
-                onChange={(e) => setCheckIn(e.target.value)}
-                className="w-full h-12 rounded-xl border border-slate-200 bg-white px-4 font-bold text-slate-700 outline-none focus:border-brand-coral"
-              >
-                <option>12:00 PM</option>
-                <option>1:00 PM</option>
-                <option>2:00 PM</option>
-                <option>3:00 PM</option>
-              </select>
-            </div>
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-slate-500">Check-out Time</label>
-              <select 
-                value={checkOut}
-                onChange={(e) => setCheckOut(e.target.value)}
-                className="w-full h-12 rounded-xl border border-slate-200 bg-white px-4 font-bold text-slate-700 outline-none focus:border-brand-coral"
-              >
-                <option>10:00 AM</option>
-                <option>11:00 AM</option>
-                <option>12:00 PM</option>
-              </select>
-            </div>
+            <CustomTimePicker 
+              label="Check-in Time"
+              value={checkIn}
+              onChange={setCheckIn}
+              isOpen={checkInOpen}
+              setIsOpen={setCheckInOpen}
+              onConfirm={() => setCheckOutOpen(true)}
+            />
+            <CustomTimePicker 
+              label="Check-out Time"
+              value={checkOut}
+              onChange={setCheckOut}
+              isOpen={checkOutOpen}
+              setIsOpen={setCheckOutOpen}
+            />
           </div>
-
-          <div className="space-y-2 mt-4">
-            <label className="text-xs font-bold text-slate-500">Cancellation Policy</label>
-            <select 
-              value={cancellationPolicy}
-              onChange={(e) => setCancellationPolicy(e.target.value)}
-              className="w-full h-12 rounded-xl border border-slate-200 bg-white px-4 font-bold text-slate-700 outline-none focus:border-brand-coral"
-            >
-              <option>Flexible (Full refund 1 day prior)</option>
-              <option>Moderate (Full refund 5 days prior)</option>
-              <option>Strict (50% refund up to 1 week prior)</option>
-            </select>
-          </div>
-
         </div>
 
       </motion.div>

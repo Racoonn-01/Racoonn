@@ -50,7 +50,7 @@ export function CMSNavbar() {
         </Link>
 
         <Avatar className="h-9 w-9 border-2 border-background shadow-sm hover:ring-2 hover:ring-primary/20 transition-all cursor-pointer">
-          <AvatarImage src="/placeholder-user.jpg" alt="@admin" />
+          <AvatarImage src="/RacoonFavicon.jpg" alt="@admin" />
           <AvatarFallback className="bg-primary/10 text-primary font-bold">SA</AvatarFallback>
         </Avatar>
       </div>

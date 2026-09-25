@@ -107,7 +107,7 @@ export function AdminNavbar() {
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
             className="h-10 w-10 border-2 border-primary/20 shadow-sm hover:ring-2 hover:ring-primary/30 transition-all cursor-pointer"
           >
-            <AvatarImage src="/placeholder-user.jpg" alt="@admin" />
+            <AvatarImage src="/RacoonFavicon.jpg" alt="@admin" />
             <AvatarFallback className="bg-[#E86A70] text-white font-bold text-sm">
               {avatarInitials}
             </AvatarFallback>

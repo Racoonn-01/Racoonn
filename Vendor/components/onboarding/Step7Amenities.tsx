@@ -144,8 +144,8 @@ export function Step7Amenities({ onNext, onBack }: { onNext: () => void, onBack:
             profile.currentPropertyId
           );
           if (prop.amenities && prop.amenities.length > 0) setSelected(prop.amenities);
-          if (prop.checkInTime) setCheckIn(parseTime(prop.checkInTime));
-          if (prop.checkOutTime) setCheckOut(parseTime(prop.checkOutTime));
+          if (prop.checkInTime) setCheckIn(prop.checkInTime);
+          if (prop.checkOutTime) setCheckOut(prop.checkOutTime);
         } catch { }
       }
     };

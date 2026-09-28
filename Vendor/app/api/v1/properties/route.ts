@@ -44,6 +44,11 @@ export async function GET(req: NextRequest) {
         }, { headers: { 'X-Request-ID': reqId } });
       }
       queries.push(Query.equal('$id', allowedPropertyIds));
+    } else {
+      // STRICT TENANT ISOLATION:
+      // If allowedPropertyIds is null (meaning no specific property mappings exist),
+      // we must fallback to fetching ONLY the properties owned by this vendor.
+      queries.push(Query.equal('vendorId', partnerCtx.partner));
     }
 
     const resp = await appwriteServer.databases.listDocuments(

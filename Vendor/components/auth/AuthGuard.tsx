@@ -25,8 +25,15 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    if (isAuthenticated && profile) {
-       const status = profile.status?.toLowerCase();
+    if (isAuthenticated) {
+      if (!profile) {
+        if (pathname === "/") {
+          router.push("/vendor/onboarding");
+        }
+        return;
+      }
+
+       const status = profile.status?.toLowerCase() || "pending";
        const onboardingCompleted = profile.onboardingStep !== undefined && profile.onboardingStep >= 10;
 
        if (status === "approved" || status === "active" || status === "published") {
@@ -46,6 +53,11 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
        } else if (status === "rejected") {
           if (pathname !== "/vendor/rejected") {
              router.push("/vendor/rejected");
+          }
+       } else {
+          // Fallback for unknown status
+          if (pathname === "/") {
+            router.push("/vendor/dashboard");
           }
        }
     }

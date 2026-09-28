@@ -57,6 +57,7 @@ export default function DevelopersPage() {
     { id: "overview", label: "Overview", icon: Layers },
     { id: "authentication", label: "Authentication", icon: KeyRound },
     { id: "rate-limits", label: "Rate Limits", icon: Zap },
+    { id: "channel-manager", label: "Channel Manager Integration", icon: Activity },
     { id: "properties", label: "Properties API", icon: Building2 },
     { id: "availability", label: "Availability API", icon: Calendar },
     { id: "rates", label: "Rates API", icon: Server },
@@ -87,7 +88,7 @@ export default function DevelopersPage() {
           <div className="flex items-center gap-3">
             <div className="hidden md:flex items-center gap-2 bg-slate-900/90 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-slate-400">
               <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
-              <span>Production: <code>api.racoonn.com/v1</code></span>
+              <span>Production: <code>partner.racoonn.com/api/v1</code></span>
             </div>
 
             <Link href="/admin/integrations/api-keys">
@@ -257,6 +258,43 @@ export default function DevelopersPage() {
             </div>
           </section>
 
+          {/* Section: Channel Manager Setup */}
+          <section id="channel-manager" className="space-y-6 scroll-mt-28 border-t border-slate-800/80 pt-10">
+            <div className="space-y-1">
+              <span className="text-xs font-bold text-rose-500 uppercase tracking-wider font-mono">Integration Guide</span>
+              <h2 className="text-2xl font-bold text-white">Channel Manager Setup Flow</h2>
+              <p className="text-xs sm:text-sm text-slate-400">
+                Connect your PMS/Channel Manager to Racoonn. A complete guide from authentication to real-time webhook handling.
+              </p>
+            </div>
+
+            <div className="p-6 rounded-2xl bg-slate-900/40 border border-slate-800/80 space-y-6">
+              <div className="space-y-4">
+                <h4 className="text-sm font-semibold text-white border-b border-slate-800 pb-2">1. End-to-End Integration Flow</h4>
+                <ol className="list-decimal pl-4 space-y-2 text-xs text-slate-400 leading-relaxed">
+                  <li><strong>Authentication:</strong> Partner logs in and generates a Bearer API token via the <code>/admin/integrations/api-keys</code> portal.</li>
+                  <li><strong>Property Mapping:</strong> Call <code>GET /api/v1/properties</code> to map Racoonn property IDs and room IDs to the Channel Manager.</li>
+                  <li><strong>Initial Sync (Push):</strong> Channel Manager pushes 90-day inventory via <code>PUT /api/v1/availability</code> and <code>PUT /api/v1/rates</code>.</li>
+                  <li><strong>Reservations (Pull/Push):</strong> When guests book via Racoonn, the Channel Manager listens to the <code>reservation.created</code> webhook. It can also push OTAs bookings to Racoonn via <code>POST /api/v1/reservations</code>.</li>
+                </ol>
+              </div>
+
+              <div className="space-y-4">
+                <h4 className="text-sm font-semibold text-white border-b border-slate-800 pb-2">2. Error Handling & Common Issues</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="p-4 bg-rose-500/10 border border-rose-500/20 rounded-xl text-xs space-y-2">
+                    <span className="font-semibold text-rose-400 block">HTTP 409 Conflict (Idempotency)</span>
+                    <p className="text-rose-400/80">Occurs when you create a reservation using an existing <code>Idempotency-Key</code> but with different data. Re-use the key exactly, or generate a new one for a new booking.</p>
+                  </div>
+                  <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl text-xs space-y-2">
+                    <span className="font-semibold text-amber-400 block">Inventory Mismatch (Overbooking)</span>
+                    <p className="text-amber-400/80">Ensure webhooks are processed synchronously or queued properly. If a <code>reservation.created</code> webhook is missed, the Channel Manager will overwrite Racoonn&apos;s inventory.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
           {/* Section: Properties API */}
           <section id="properties" className="space-y-6 scroll-mt-28 border-t border-slate-800/80 pt-10">
             <div className="space-y-1">
@@ -285,7 +323,7 @@ export default function DevelopersPage() {
                 <div className="px-4 py-2 bg-slate-900/80 border-b border-slate-800 flex items-center justify-between text-xs text-slate-400 font-mono">
                   <span>cURL Request</span>
                   <button
-                    onClick={() => copyToClipboard(`curl -X GET "https://api.racoonn.com/v1/properties?page=1&limit=50" \\\n  -H "Authorization: Bearer rac_live_partner_xxxx"`, "curl_prop")}
+                    onClick={() => copyToClipboard(`curl -X GET "https://partner.racoonn.com/api/v1/properties?page=1&limit=50" \\\n  -H "Authorization: Bearer rac_live_partner_xxxx"`, "curl_prop")}
                     className="hover:text-white flex items-center gap-1"
                   >
                     {copiedKey === "curl_prop" ? <Check className="h-3 w-3 text-emerald-400" /> : <Copy className="h-3 w-3" />}
@@ -293,7 +331,7 @@ export default function DevelopersPage() {
                   </button>
                 </div>
                 <pre className="p-4 text-xs font-mono text-slate-300 overflow-x-auto">
-                  <code>{`curl -X GET "https://api.racoonn.com/v1/properties?page=1&limit=50" \\
+                  <code>{`curl -X GET "https://partner.racoonn.com/api/v1/properties?page=1&limit=50" \\
   -H "Authorization: Bearer rac_live_partner_xxxx"`}</code>
                 </pre>
               </div>
@@ -343,7 +381,7 @@ export default function DevelopersPage() {
                 <div className="px-4 py-2 bg-slate-900/80 border-b border-slate-800 flex items-center justify-between text-xs text-slate-400 font-mono">
                   <span>cURL Request</span>
                   <button
-                    onClick={() => copyToClipboard(`curl -X PUT "https://api.racoonn.com/v1/availability" \\\n  -H "Authorization: Bearer rac_live_partner_xxxx" \\\n  -H "Content-Type: application/json" \\\n  -d '{"roomId":"6a4646c700110e5fdaab","date":"2026-10-15","available":4,"blocked":false}'`, "curl_avail")}
+                    onClick={() => copyToClipboard(`curl -X PUT "https://partner.racoonn.com/api/v1/availability" \\\n  -H "Authorization: Bearer rac_live_partner_xxxx" \\\n  -H "Content-Type: application/json" \\\n  -d '{"roomId":"6a4646c700110e5fdaab","date":"2026-10-15","available":4,"blocked":false}'`, "curl_avail")}
                     className="hover:text-white flex items-center gap-1"
                   >
                     {copiedKey === "curl_avail" ? <Check className="h-3 w-3 text-emerald-400" /> : <Copy className="h-3 w-3" />}
@@ -351,7 +389,7 @@ export default function DevelopersPage() {
                   </button>
                 </div>
                 <pre className="p-4 text-xs font-mono text-slate-300 overflow-x-auto">
-                  <code>{`curl -X PUT "https://api.racoonn.com/v1/availability" \\
+                  <code>{`curl -X PUT "https://partner.racoonn.com/api/v1/availability" \\
   -H "Authorization: Bearer rac_live_partner_xxxx" \\
   -H "Content-Type: application/json" \\
   -d '{
@@ -392,7 +430,7 @@ export default function DevelopersPage() {
 
               <div className="rounded-xl border border-slate-800 bg-[#060911] overflow-hidden">
                 <pre className="p-4 text-xs font-mono text-slate-300 overflow-x-auto">
-                  <code>{`curl -X PUT "https://api.racoonn.com/v1/rates" \\
+                  <code>{`curl -X PUT "https://partner.racoonn.com/api/v1/rates" \\
   -H "Authorization: Bearer rac_live_partner_xxxx" \\
   -H "Content-Type: application/json" \\
   -d '{
@@ -436,7 +474,7 @@ export default function DevelopersPage() {
 
               <div className="rounded-xl border border-slate-800 bg-[#060911] overflow-hidden">
                 <pre className="p-4 text-xs font-mono text-slate-300 overflow-x-auto">
-                  <code>{`curl -X POST "https://api.racoonn.com/v1/reservations" \\
+                  <code>{`curl -X POST "https://partner.racoonn.com/api/v1/reservations" \\
   -H "Authorization: Bearer rac_live_partner_xxxx" \\
   -H "Idempotency-Key: PMS-BOOKING-99812" \\
   -H "Content-Type: application/json" \\
@@ -455,6 +493,39 @@ export default function DevelopersPage() {
     }
   }'`}</code>
                 </pre>
+              </div>
+
+              {/* GET Reservations List */}
+              <div className="border-t border-slate-800 pt-4 space-y-2">
+                <div className="flex items-center gap-2">
+                  <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-mono text-xs px-2 py-0.5 rounded font-bold">GET</span>
+                  <span className="font-mono text-xs text-white">/api/v1/reservations</span>
+                </div>
+                <p className="text-xs text-slate-400">
+                  Retrieve a paginated list of reservations. Supports filtering by status, date ranges, and property IDs.
+                </p>
+              </div>
+
+              {/* GET Single Reservation */}
+              <div className="border-t border-slate-800 pt-4 space-y-2">
+                <div className="flex items-center gap-2">
+                  <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-mono text-xs px-2 py-0.5 rounded font-bold">GET</span>
+                  <span className="font-mono text-xs text-white">/api/v1/reservations/{`{id}`}</span>
+                </div>
+                <p className="text-xs text-slate-400">
+                  Fetch detailed information about a specific reservation.
+                </p>
+              </div>
+
+              {/* PUT Update Reservation */}
+              <div className="border-t border-slate-800 pt-4 space-y-2">
+                <div className="flex items-center gap-2">
+                  <span className="bg-blue-500/10 text-blue-400 border border-blue-500/20 font-mono text-xs px-2 py-0.5 rounded font-bold">PUT</span>
+                  <span className="font-mono text-xs text-white">/api/v1/reservations/{`{id}`}</span>
+                </div>
+                <p className="text-xs text-slate-400">
+                  Modify an existing reservation (e.g., change dates or update guest details).
+                </p>
               </div>
 
               {/* Cancellation Endpoint */}

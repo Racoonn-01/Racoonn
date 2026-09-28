@@ -43,7 +43,7 @@ export default function RoomListWithAvailability({
   const { checkIn, checkOut, adults, children, rooms } = usePropertyFilterStore();
   const totalGuests = adults + children;
   const guestsPerRoom = Math.ceil(totalGuests / rooms);
-  const [overrides, setOverrides] = useState<Record<string, Record<string, { price?: number; available?: number }>>>({});
+  const [overrides, setOverrides] = useState<Record<string, Record<string, { price?: number; available?: number; blocked?: boolean }>>>({});
   const [occupiedRooms, setOccupiedRooms] = useState<Record<string, number>>({});
   const [selectedRoomForModal, setSelectedRoomForModal] = useState<Room | null>(null);
   const [modalImageIndex, setModalImageIndex] = useState(0);
@@ -52,7 +52,7 @@ export default function RoomListWithAvailability({
   useEffect(() => {
     async function loadAvailability() {
       try {
-        const res = await fetch("/api/vendor/availability");
+        const res = await fetch(`/api/vendor/availability?_t=${new Date().getTime()}`, { cache: 'no-store' });
         const json = await res.json();
         if (json.success && json.overrides) {
           setOverrides(json.overrides);
@@ -134,7 +134,12 @@ export default function RoomListWithAvailability({
           const roomNameKey = room.name ? room.name.trim() : "";
           const roomOccupiedCount = occupiedRooms[roomNameKey] || occupiedRooms[room.$id] || 0;
           const roomTotalRooms = Number(room.totalRooms) || 1;
-          const availableRooms = Math.max(0, roomTotalRooms - roomOccupiedCount);
+          
+          let availableRooms = Math.max(0, roomTotalRooms - roomOccupiedCount);
+          if (roomOverride && roomOverride.available !== undefined) {
+            availableRooms = roomOverride.available;
+            if (roomOverride.blocked) availableRooms = 0;
+          }
           
           const autoRooms = Math.ceil(totalGuests / (maxCap as number));
           const requiredRooms = Math.max(rooms, autoRooms);

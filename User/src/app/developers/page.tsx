@@ -38,11 +38,13 @@ export default function DevelopersPage() {
     { id: "overview", label: "Overview", icon: Layers },
     { id: "authentication", label: "Authentication", icon: KeyRound },
     { id: "rate-limits", label: "Rate Limits", icon: Zap },
+    { id: "channel-manager", label: "Channel Manager Integration", icon: Activity },
     { id: "properties", label: "Properties API", icon: Building2 },
     { id: "availability", label: "Availability API", icon: Calendar },
     { id: "rates", label: "Rates API", icon: Server },
     { id: "reservations", label: "Reservations API", icon: Lock },
     { id: "webhooks", label: "Webhooks & Sync", icon: BellRing },
+    { id: "sandbox", label: "Sandbox & Testing", icon: Terminal },
   ];
 
   return (
@@ -74,16 +76,16 @@ export default function DevelopersPage() {
           <div className="flex items-center gap-3">
             <div className="hidden md:flex items-center gap-2 bg-white/50 border border-brand-navy/10 rounded-full px-4 py-1.5 text-xs text-brand-navy font-medium shadow-inner">
               <span className="h-2 w-2 rounded-full bg-[#10b981] shadow-[0_0_8px_#10b981] animate-pulse"></span>
-              <span>API Live: <code className="text-brand-coral font-bold bg-brand-coral/10 px-1.5 py-0.5 rounded-md">api.racoonn.com/v1</code></span>
+              <span>API Live: <code className="text-brand-coral font-bold bg-brand-coral/10 px-1.5 py-0.5 rounded-md">partner.racoonn.com/api/v1</code></span>
             </div>
             
-            <a 
-              href="https://partner.racoonn.com/vendor/settings" 
+            <Link 
+              href="/vendor/settings" 
               className="flex items-center gap-2 bg-brand-coral hover:bg-[#d95d63] text-white px-5 py-2 rounded-full text-sm font-bold transition-all shadow-lg shadow-brand-coral/20 hover:shadow-xl hover:shadow-brand-coral/30 hover:-translate-y-0.5 group"
             >
               <KeyRound className="h-4 w-4 group-hover:rotate-12 transition-transform" />
               Generate API Key
-            </a>
+            </Link>
           </div>
         </div>
       </header>
@@ -267,6 +269,41 @@ export default function DevelopersPage() {
                   </div>
                 </Section>
 
+                {/* Section: Channel Manager Setup */}
+                <Section 
+                  id="channel-manager" tag="Integration Guide" title="Channel Manager Setup Flow" 
+                  desc={<>Connect your PMS/Channel Manager to Racoonn. A complete guide from authentication to real-time webhook handling.</>}
+                >
+                  <div className="rounded-3xl border border-brand-navy/5 bg-white/80 backdrop-blur-xl overflow-hidden p-6 shadow-xl shadow-brand-navy/5 space-y-8">
+                    
+                    {/* Step-by-step Flow */}
+                    <div className="space-y-4">
+                      <h4 className="text-sm font-bold text-brand-navy border-b border-brand-navy/10 pb-2">1. End-to-End Integration Flow</h4>
+                      <ol className="list-decimal pl-4 space-y-2 text-[13px] text-brand-navy/70 font-medium">
+                        <li><strong>Authentication:</strong> Partner logs in and generates a Bearer API token via the <code className="bg-brand-navy/5 text-brand-coral px-1.5 py-0.5 rounded">/admin/integrations/api-keys</code> portal.</li>
+                        <li><strong>Property Mapping:</strong> Call <code className="bg-brand-navy/5 text-brand-coral px-1.5 py-0.5 rounded">GET /api/v1/properties</code> to map Racoonn property IDs and room IDs to the Channel Manager.</li>
+                        <li><strong>Initial Sync (Push):</strong> Channel Manager pushes 90-day inventory via <code className="bg-brand-navy/5 text-brand-coral px-1.5 py-0.5 rounded">PUT /api/v1/availability</code> and <code className="bg-brand-navy/5 text-brand-coral px-1.5 py-0.5 rounded">PUT /api/v1/rates</code>.</li>
+                        <li><strong>Reservations (Pull/Push):</strong> When guests book via Racoonn, the Channel Manager listens to the <code className="bg-brand-navy/5 text-brand-coral px-1.5 py-0.5 rounded">reservation.created</code> webhook. It can also push OTAs bookings to Racoonn via <code className="bg-brand-navy/5 text-brand-coral px-1.5 py-0.5 rounded">POST /api/v1/reservations</code>.</li>
+                      </ol>
+                    </div>
+
+                    {/* Common Issues */}
+                    <div className="space-y-4">
+                      <h4 className="text-sm font-bold text-brand-navy border-b border-brand-navy/10 pb-2">2. Error Handling & Common Issues</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="p-4 bg-rose-50 border border-rose-200 rounded-2xl text-xs space-y-2">
+                          <span className="font-bold text-rose-800 block">HTTP 409 Conflict (Idempotency)</span>
+                          <p className="text-rose-700/80">Occurs when you create a reservation using an existing <code>Idempotency-Key</code> but with different data. Re-use the key exactly, or generate a new one for a new booking.</p>
+                        </div>
+                        <div className="p-4 bg-amber-50 border border-amber-200 rounded-2xl text-xs space-y-2">
+                          <span className="font-bold text-amber-800 block">Inventory Mismatch (Overbooking)</span>
+                          <p className="text-amber-700/80">Ensure webhooks are processed synchronously or queued properly. If a <code>reservation.created</code> webhook is missed, the Channel Manager will overwrite Racoonn&apos;s inventory.</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </Section>
+
                 {/* Section: Properties API */}
                 <Section 
                   id="properties" tag="Endpoints" title="Properties & Rooms" 
@@ -287,7 +324,7 @@ export default function DevelopersPage() {
 
                     <CodeBlock 
                       title="cURL Request" id="curl_prop"
-                      code={'curl -X GET "https://api.racoonn.com/v1/properties?page=1&limit=50" \\\n  -H "Authorization: Bearer rac_live_partner_xxxx"'}
+                      code={'curl -X GET "https://partner.racoonn.com/api/v1/properties?page=1&limit=50" \\\n  -H "Authorization: Bearer rac_live_partner_xxxx"'}
                     />
                   </div>
                 </Section>
@@ -312,7 +349,7 @@ export default function DevelopersPage() {
 
                     <CodeBlock 
                       title="cURL Request" id="curl_avail"
-                      code={`curl -X PUT "https://api.racoonn.com/v1/availability" \\
+                      code={`curl -X PUT "https://partner.racoonn.com/api/v1/availability" \\
   -H "Authorization: Bearer rac_live_partner_xxxx" \\
   -H "Content-Type: application/json" \\
   -d '{
@@ -341,7 +378,7 @@ export default function DevelopersPage() {
 
                     <CodeBlock 
                       title="cURL Request" id="curl_rates"
-                      code={`curl -X PUT "https://api.racoonn.com/v1/rates" \\
+                      code={`curl -X PUT "https://partner.racoonn.com/api/v1/rates" \\
   -H "Authorization: Bearer rac_live_partner_xxxx" \\
   -H "Content-Type: application/json" \\
   -d '{
@@ -379,7 +416,7 @@ export default function DevelopersPage() {
 
                     <CodeBlock 
                       title="cURL Request" id="curl_res"
-                      code={`curl -X POST "https://api.racoonn.com/v1/reservations" \\
+                      code={`curl -X POST "https://partner.racoonn.com/api/v1/reservations" \\
   -H "Authorization: Bearer rac_live_partner_xxxx" \\
   -H "Idempotency-Key: PMS-BOOKING-99812" \\
   -H "Content-Type: application/json" \\
@@ -398,6 +435,55 @@ export default function DevelopersPage() {
     }
   }'`}
                     />
+
+                    {/* Additional Endpoints */}
+                    <div className="pt-6 mt-6 border-t border-brand-navy/10 space-y-6">
+                      
+                      {/* GET Reservations List */}
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-3">
+                          <span className="bg-[#10b981]/10 text-[#10b981] border border-[#10b981]/20 font-mono text-xs px-2.5 py-1 rounded-md font-bold">GET</span>
+                          <span className="font-mono text-[13px] font-bold text-brand-navy">/api/v1/reservations</span>
+                        </div>
+                        <p className="text-[13px] text-brand-navy/70 pl-14">
+                          Retrieve a paginated list of reservations. Supports filtering by status, date ranges, and property IDs.
+                        </p>
+                      </div>
+
+                      {/* GET Single Reservation */}
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-3">
+                          <span className="bg-[#10b981]/10 text-[#10b981] border border-[#10b981]/20 font-mono text-xs px-2.5 py-1 rounded-md font-bold">GET</span>
+                          <span className="font-mono text-[13px] font-bold text-brand-navy">/api/v1/reservations/{`{id}`}</span>
+                        </div>
+                        <p className="text-[13px] text-brand-navy/70 pl-14">
+                          Fetch detailed information about a specific reservation.
+                        </p>
+                      </div>
+
+                      {/* PUT Update Reservation */}
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-3">
+                          <span className="bg-[#3b82f6]/10 text-[#3b82f6] border border-[#3b82f6]/20 font-mono text-xs px-2.5 py-1 rounded-md font-bold">PUT</span>
+                          <span className="font-mono text-[13px] font-bold text-brand-navy">/api/v1/reservations/{`{id}`}</span>
+                        </div>
+                        <p className="text-[13px] text-brand-navy/70 pl-14">
+                          Modify an existing reservation (e.g., change dates or update guest details).
+                        </p>
+                      </div>
+
+                      {/* POST Cancel Reservation */}
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-3">
+                          <span className="bg-[#ff5f56]/10 text-[#ff5f56] border border-[#ff5f56]/20 font-mono text-xs px-2.5 py-1 rounded-md font-bold">POST</span>
+                          <span className="font-mono text-[13px] font-bold text-brand-navy">/api/v1/reservations/{`{id}`}/cancel</span>
+                        </div>
+                        <p className="text-[13px] text-brand-navy/70 pl-14">
+                          Cancels the reservation, restores available room inventory, and dispatches a <code className="bg-brand-navy/5 px-1 rounded text-brand-coral">reservation.cancelled</code> webhook.
+                        </p>
+                      </div>
+
+                    </div>
                   </div>
                 </Section>
 
@@ -431,6 +517,30 @@ export default function DevelopersPage() {
                           </span>
                         ))}
                       </div>
+                    </div>
+                  </div>
+                </Section>
+                
+                {/* Section: Sandbox */}
+                <Section 
+                  id="sandbox" tag="Testing" title="Sandbox Testing Environment" 
+                  desc={<>Safely test your integration flows using dedicated sandbox credentials without affecting real live hotel availability.</>}
+                >
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+                    <div className="p-5 rounded-[20px] bg-[#0f172a] border border-[#1e293b] space-y-1.5 font-mono text-xs shadow-2xl relative overflow-hidden group hover:-translate-y-1 transition-transform">
+                      <div className="absolute inset-0 bg-linear-to-br from-[#ff5f56]/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                      <span className="text-[#94a3b8] font-semibold relative z-10">Test Property ID</span>
+                      <p className="text-[#ff5f56] font-black text-sm relative z-10">TEST_PROPERTY_001</p>
+                    </div>
+                    <div className="p-5 rounded-[20px] bg-[#0f172a] border border-[#1e293b] space-y-1.5 font-mono text-xs shadow-2xl relative overflow-hidden group hover:-translate-y-1 transition-transform">
+                      <div className="absolute inset-0 bg-linear-to-br from-[#27c93f]/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                      <span className="text-[#94a3b8] font-semibold relative z-10">Test Room ID</span>
+                      <p className="text-[#27c93f] font-black text-sm relative z-10">TEST_ROOM_001</p>
+                    </div>
+                    <div className="p-5 rounded-[20px] bg-[#0f172a] border border-[#1e293b] space-y-1.5 font-mono text-xs shadow-2xl relative overflow-hidden group hover:-translate-y-1 transition-transform">
+                      <div className="absolute inset-0 bg-linear-to-br from-[#ffbd2e]/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                      <span className="text-[#94a3b8] font-semibold relative z-10">Key Prefix</span>
+                      <p className="text-[#ffbd2e] font-black text-sm relative z-10">rac_test_partner_...</p>
                     </div>
                   </div>
                 </Section>

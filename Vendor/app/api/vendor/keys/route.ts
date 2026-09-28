@@ -18,9 +18,12 @@ export async function POST(req: Request) {
     const databases = new Databases(client);
     const dbId = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID || "";
     
-    // Generate Vendor Keys
-    const newApiKey = "pk_live_" + crypto.randomBytes(12).toString("hex");
-    const newSecretKey = "sk_live_" + crypto.randomBytes(24).toString("hex");
+    // Generate Vendor Keys using standard format
+    const randomSecret = crypto.randomBytes(24).toString('hex');
+    const newApiKey = `rac_live_partner_${randomSecret}`;
+    
+    // We can also generate a webhook secret while we're at it
+    const newSecretKey = `whsec_${crypto.randomBytes(24).toString('hex')}`;
 
     // 1. Update Vendor Collection
     await databases.updateDocument(
@@ -34,8 +37,8 @@ export async function POST(req: Request) {
     );
 
     // 2. Add to Integration API Keys so Admin can see it
-    const keyPrefix = newSecretKey.substring(0, 16);
-    const keyHash = crypto.createHash('sha256').update(newSecretKey.trim()).digest('hex');
+    const keyPrefix = newApiKey.substring(0, 25);
+    const keyHash = crypto.createHash('sha256').update(newApiKey.trim()).digest('hex');
 
     await databases.createDocument(
       dbId,
@@ -50,8 +53,8 @@ export async function POST(req: Request) {
         status: "active",
         permissions: ["properties:read", "properties:write", "rooms:read", "rooms:write", "availability:read", "availability:write", "rates:read", "rates:write", "reservations:read", "reservations:write", "reservations:create", "reservations:update", "reservations:cancel", "webhooks:read", "webhooks:write"],
         createdBy: "Vendor",
-        expiresAt: "",
-        lastUsedAt: "",
+        expiresAt: null,
+        lastUsedAt: null,
         rateLimit: 1000
       }
     );

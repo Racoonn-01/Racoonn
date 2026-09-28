@@ -140,6 +140,32 @@ export async function PUT(req: NextRequest) {
       );
     }
 
+    // Sync to the Vendor UI's local overrides system so it shows up on the calendar instantly
+    try {
+      const fs = require('fs');
+      const path = require('path');
+      const OVERRIDES_FILE = path.join(process.cwd(), '..', 'availability_overrides.json');
+      
+      let overrides: Record<string, any> = {};
+      try {
+        if (fs.existsSync(OVERRIDES_FILE)) {
+          overrides = JSON.parse(fs.readFileSync(OVERRIDES_FILE, 'utf-8'));
+        }
+      } catch (e) {}
+
+      if (!overrides[roomId]) overrides[roomId] = {};
+      
+      overrides[roomId][date] = {
+        available: available,
+        blocked: isBlocked,
+        price: price || ((roomDoc as any)?.price || 0)
+      };
+
+      fs.writeFileSync(OVERRIDES_FILE, JSON.stringify(overrides, null, 2), 'utf-8');
+    } catch (e) {
+      console.error("Failed to sync to local overrides", e);
+    }
+
     const resData = {
       roomId: resultDoc.roomId,
       date: resultDoc.date,

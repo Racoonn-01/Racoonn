@@ -5,6 +5,7 @@ import { NextResponse } from "next/server";
 import { unstable_noStore as noStore } from "next/cache";
 import fs from "fs";
 import { appwriteServer } from "@/lib/appwrite/server";
+import { Permission, Role } from "node-appwrite";
 
 const SHARED_FILE_PATH = "/Users/haldwani/Documents/Working/Working/Racoonn/packages_cms.json";
 const DATABASE_ID = process.env.APPWRITE_DATABASE_ID || process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID || "6a3cec630035d63ea963";
@@ -69,7 +70,8 @@ export async function POST(request: Request) {
           location: "CMS",
           status: "Published",
           price: 0
-        }
+        },
+        [Permission.read(Role.any()), Permission.update(Role.any()), Permission.delete(Role.any())]
       );
     } catch (err: unknown) {
       const error = err as { code?: number };
@@ -91,7 +93,8 @@ export async function POST(request: Request) {
               location: "CMS",
               status: "Published",
               price: 0
-            }
+            },
+            [Permission.read(Role.any()), Permission.update(Role.any()), Permission.delete(Role.any())]
           );
         } catch (createErr) {
           console.warn("Appwrite DB doc create warning:", createErr);

@@ -409,11 +409,22 @@ export const useCheckoutStore = create<CheckoutState>((set, get) => ({
       
       // Calculate dynamic addons
       const propAddons = get().propertyAddons || [];
+      const defaultAddons = [
+        { id: "airport", title: "Airport Transfer", price: 1200, description: "Hassle-free pickup and drop-off" },
+        { id: "breakfast", title: "Breakfast Package", price: 800, description: "Daily buffet breakfast per person" },
+        { id: "spa", title: "Spa Access", price: 1500, description: "Unlimited access to wellness center" },
+        { id: "insurance", title: "Travel Insurance", price: 450, description: "Comprehensive trip coverage" }
+      ];
+      
       const addonsList = get().selectedAddons.map((addonId: string) => {
-        const addon = propAddons.find((a: PropertyAddon) => (a.id || a.$id) === addonId);
+        let addon: any = propAddons.find((a: any) => (a.id || a.$id) === addonId);
+        if (!addon) {
+          addon = defaultAddons.find(a => a.id === addonId);
+        }
+        
         const isPerPerson = typeof addon?.description === 'string' && addon.description.toLowerCase().includes('per person');
         const addonPrice = (addon?.price || 0) * (isPerPerson ? (bookingData.adults || 1) : 1);
-        return { name: addon?.name || "Add-on", price: addonPrice };
+        return { name: addon?.title || addon?.name || "Add-on", price: addonPrice };
       });
       const addons = addonsList.reduce((sum: number, item: { price: number }) => sum + item.price, 0);
 

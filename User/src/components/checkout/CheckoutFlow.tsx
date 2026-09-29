@@ -562,6 +562,25 @@ export function CheckoutFlow() {
         </div>
       )}
 
+      {/* Mobile Sticky Bottom Bar */}
+      {currentStep === 3 && (
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-brand-sky p-4 lg:hidden z-50 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+          <div className="flex justify-between items-center max-w-7xl mx-auto">
+            <div>
+              <p className="text-xs text-gray-500 mb-0.5">Total Amount (Incl. Taxes)</p>
+              <p className="text-xl font-poppins font-bold text-brand-coral">₹{finalTotalAmount.toLocaleString('en-IN')}</p>
+            </div>
+            <button 
+              onClick={handleCompleteBooking}
+              disabled={isSubmitting || !isFormValid}
+              className="bg-brand-coral hover:bg-[#d65f64] disabled:opacity-50 text-white font-bold px-6 py-3 rounded-xl transition-all shadow-lg shadow-brand-coral/30 flex items-center gap-2"
+            >
+              {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : (highlightAddonSection ? "Skip Addons" : "Continue to Payment")}
+            </button>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

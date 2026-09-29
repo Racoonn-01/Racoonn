@@ -94,11 +94,9 @@ export default async function CheckoutPage({ searchParams }: { searchParams: Pro
         </div>
       </div>
 
-      {/* Mobile Sticky Bottom Bar */}
+      {/* Mobile Sticky Bottom Bar now rendered in CheckoutFlow */}
       <div className="lg:hidden block">
-        <Suspense fallback={null}>
-          <MobileCheckoutBar total={totalAmount} />
-        </Suspense>
+        {/* Rendered inside CheckoutFlow to have access to Razorpay handlers */}
       </div>
     </div>
   );

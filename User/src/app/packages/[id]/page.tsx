@@ -27,7 +27,9 @@ import {
   ChevronUp,
   Pencil,
   X,
-  User
+  User,
+  Grid,
+  ChevronRight
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getReviews, createReview } from '@/lib/appwrite/api';
@@ -87,6 +89,8 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
   const [newReviewText, setNewReviewText] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
+  const [isGalleryOpen, setIsGalleryOpen] = useState(false);
+  const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
 
   const { profile, toggleSavedHotel, isAuthenticated } = useAuthStore();
   const isSaved = profile?.savedHotels?.includes(rawPkgId) || false;
@@ -492,6 +496,13 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
               </SwiperSlide>
             ))}
           </Swiper>
+          
+          <button 
+            onClick={() => setIsGalleryOpen(true)}
+            className="absolute bottom-3 right-3 sm:bottom-4 sm:right-4 z-10 bg-white/90 hover:bg-white text-gray-900 px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg sm:rounded-xl font-bold text-[13px] sm:text-sm shadow-md flex items-center gap-1.5 sm:gap-2 backdrop-blur-sm transition-all hover:scale-105 active:scale-95"
+          >
+            <Grid size={16} className="w-4 h-4 sm:w-5 sm:h-5" /> Show all photos
+          </button>
         </div>
         
         {/* Main Content Area */}
@@ -1404,6 +1415,84 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Full Screen Gallery Modal */}
+      {isGalleryOpen && (
+        <div className="fixed inset-0 z-[100] bg-white flex flex-col animate-in fade-in duration-300">
+          <div className="flex items-center justify-between p-4 border-b border-gray-100 sticky top-0 z-10 bg-white">
+            <h3 className="font-bold text-lg text-gray-900">Photo Gallery</h3>
+            <button 
+              onClick={() => setIsGalleryOpen(false)}
+              className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
+            >
+              <X size={24} className="text-gray-900" />
+            </button>
+          </div>
+          <div className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8 lg:p-12">
+            <div className="max-w-6xl mx-auto grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-2 sm:gap-4 auto-rows-[150px] sm:auto-rows-[250px]">
+              {pkg.images.map((img: string, i: number) => (
+                <div 
+                  key={i} 
+                  onClick={() => setSelectedImageIndex(i)}
+                  className={`relative w-full h-full rounded-xl overflow-hidden cursor-pointer ${i % 5 === 0 ? 'col-span-2 row-span-2' : ''}`}
+                >
+                  <Image 
+                    src={img} 
+                    alt={`${pkg.title} - Image ${i + 1}`} 
+                    fill 
+                    className="object-cover hover:scale-105 transition-transform duration-500" 
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Lightbox Modal */}
+      {selectedImageIndex !== null && (
+        <div className="fixed inset-0 z-[110] bg-black/95 flex flex-col animate-in fade-in duration-300">
+          <div className="flex items-center justify-between p-4 z-10 absolute top-0 w-full">
+            <span className="text-white/70 font-medium">{selectedImageIndex + 1} / {pkg.images.length}</span>
+            <button 
+              onClick={() => setSelectedImageIndex(null)}
+              className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors"
+            >
+              <X size={24} className="text-white" />
+            </button>
+          </div>
+          <div className="flex-1 flex items-center justify-center relative p-2 sm:p-4">
+            <button 
+              onClick={(e) => {
+                e.stopPropagation();
+                setSelectedImageIndex((prev) => (prev === null || prev === 0 ? pkg.images.length - 1 : prev - 1));
+              }}
+              className="absolute left-2 sm:left-4 z-10 w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-full bg-black/40 sm:bg-white/10 hover:bg-black/60 sm:hover:bg-white/20 transition-colors text-white backdrop-blur-sm"
+            >
+              <ChevronLeft className="w-6 h-6 sm:w-8 sm:h-8" />
+            </button>
+
+            <div className="relative w-full h-full max-w-6xl max-h-[85vh] sm:max-h-[80vh]">
+              <Image 
+                src={pkg.images[selectedImageIndex]} 
+                alt={`${pkg.title} - Image ${selectedImageIndex + 1}`} 
+                fill 
+                className="object-contain" 
+              />
+            </div>
+
+            <button 
+              onClick={(e) => {
+                e.stopPropagation();
+                setSelectedImageIndex((prev) => (prev === null || prev === pkg.images.length - 1 ? 0 : prev + 1));
+              }}
+              className="absolute right-2 sm:right-4 z-10 w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-full bg-black/40 sm:bg-white/10 hover:bg-black/60 sm:hover:bg-white/20 transition-colors text-white backdrop-blur-sm"
+            >
+              <ChevronRight className="w-6 h-6 sm:w-8 sm:h-8" />
+            </button>
+          </div>
+        </div>
+      )}
       </div>
   );
 }

@@ -47,6 +47,12 @@ import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/pagination';
 
+const getYouTubeId = (url: string) => {
+  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=|\/shorts\/)([^#\&\?]*).*/;
+  const match = url.match(regExp);
+  return (match && match[2].length === 11) ? match[2] : null;
+};
+
 import { PackageDetailsSkeleton } from '@/components/skeletons/PageSkeletons';
 
 export default function PackageDetails({ params }: { params: Promise<{ id: string }> }) {
@@ -676,12 +682,12 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
               >
                 <PhoneCall size={16} /> Contact Us
               </button>
-              {pkg.videoTestimonial && (
+              {pkg.videoTestimonials && pkg.videoTestimonials.length > 0 && (
                 <button 
                   onClick={() => setActiveTab('testimonials')}
                   className={`flex items-center gap-2 px-4 py-2.5 rounded-full text-[14px] font-semibold transition-colors whitespace-nowrap border ${activeTab === 'testimonials' ? 'bg-gray-900 text-white border-gray-900' : 'bg-white text-gray-700 border-gray-200 hover:border-gray-900'}`}
                 >
-                  <PlayCircle size={16} /> Video Testimonial
+                  <PlayCircle size={16} /> Video Testimonials
                 </button>
               )}
             </div>
@@ -1041,32 +1047,39 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
                 </div>
               )}
 
-              {activeTab === 'testimonials' && pkg.videoTestimonial && (
+              {activeTab === 'testimonials' && pkg.videoTestimonials && pkg.videoTestimonials.length > 0 && (
                 <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-                  <h3 className="text-[20px] font-bold text-gray-900 mb-6 font-heading">Video Testimonial</h3>
-                  <div className="bg-gray-50 rounded-2xl p-4 sm:p-6 border border-gray-200">
-                    <div className="aspect-video w-full overflow-hidden rounded-xl bg-gray-200 relative">
-                      {pkg.videoTestimonial.includes('youtube.com') || pkg.videoTestimonial.includes('youtu.be') ? (
-                        <iframe
-                          className="w-full h-full absolute inset-0"
-                          src={`https://www.youtube.com/embed/${pkg.videoTestimonial.includes('v=') ? pkg.videoTestimonial.split('v=')[1].split('&')[0] : pkg.videoTestimonial.split('youtu.be/')[1]?.split('?')[0]}`}
-                          title="YouTube video player"
-                          frameBorder="0"
-                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                          allowFullScreen
-                        ></iframe>
-                      ) : (
-                        <a 
-                          href={pkg.videoTestimonial}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="w-full h-full flex flex-col items-center justify-center gap-4 text-brand-coral hover:text-brand-coral/80 bg-white"
-                        >
-                          <PlayCircle size={64} className="text-brand-coral" />
-                          <span className="font-bold text-lg">Watch Testimonial Video</span>
-                        </a>
-                      )}
-                    </div>
+                  <h3 className="text-[20px] font-bold text-gray-900 mb-6 font-heading">Video Testimonials</h3>
+                  <div className="grid sm:grid-cols-2 gap-6">
+                    {pkg.videoTestimonials.map((testimonialLink: string, idx: number) => {
+                      const videoId = getYouTubeId(testimonialLink);
+                      return (
+                        <div key={idx} className="bg-gray-50 rounded-2xl p-4 border border-gray-200">
+                          <div className="aspect-video w-full overflow-hidden rounded-xl bg-gray-200 relative">
+                            {videoId ? (
+                              <iframe
+                                className="w-full h-full absolute inset-0"
+                                src={`https://www.youtube.com/embed/${videoId}`}
+                                title={`YouTube video player ${idx + 1}`}
+                                frameBorder="0"
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                allowFullScreen
+                              ></iframe>
+                            ) : (
+                              <a 
+                                href={testimonialLink}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="w-full h-full flex flex-col items-center justify-center gap-4 text-brand-coral hover:text-brand-coral/80 bg-white"
+                              >
+                                <PlayCircle size={64} className="text-brand-coral" />
+                                <span className="font-bold text-lg">Watch Video {idx + 1}</span>
+                              </a>
+                            )}
+                          </div>
+                        </div>
+                      )
+                    })}
                   </div>
                 </div>
               )}

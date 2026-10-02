@@ -74,7 +74,7 @@ type Package = {
   metaKeywords: string[];
   itinerary: ItineraryDay[];
   status: 'draft' | 'published';
-  videoTestimonial?: string;
+  videoTestimonials?: string[];
 }
 
 const emptyForm: Package = {
@@ -129,7 +129,7 @@ const emptyForm: Package = {
   metaKeywords: [],
   itinerary: [{ id: Date.now().toString(), dayNumber: 1, title: "Arrival & Welcome", activities: "Check-in and local sightseeing", points: [] }],
   status: 'draft',
-  videoTestimonial: ""
+  videoTestimonials: []
 }
 
 export default function PackagesPage() {
@@ -498,6 +498,26 @@ export default function PackagesPage() {
     e.target.value = ''
   }
 
+  // Video Testimonial Handlers
+  const addVideoTestimonial = () => {
+    setFormData(prev => ({ ...prev, videoTestimonials: [...(prev.videoTestimonials || []), ""] }))
+  }
+
+  const updateVideoTestimonial = (index: number, value: string) => {
+    setFormData(prev => {
+      const arr = [...(prev.videoTestimonials || [])]
+      arr[index] = value
+      return { ...prev, videoTestimonials: arr }
+    })
+  }
+
+  const removeVideoTestimonial = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      videoTestimonials: (prev.videoTestimonials || []).filter((_, i) => i !== index)
+    }))
+  }
+
   // Itinerary Handlers
   const addItineraryDay = () => {
     setFormData(prev => ({
@@ -621,16 +641,6 @@ export default function PackagesPage() {
                       placeholder="e.g. Uttarakhand, Himachal, Goa" 
                       value={formData.location || ''}
                       onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
-                      className="h-11 rounded-xl border-slate-200"
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="videoTestimonial" className="font-semibold text-slate-700">Video Testimonial (YouTube Link)</Label>
-                    <Input 
-                      id="videoTestimonial" 
-                      placeholder="e.g. https://www.youtube.com/watch?v=..." 
-                      value={formData.videoTestimonial || ''}
-                      onChange={(e) => setFormData(prev => ({ ...prev, videoTestimonial: e.target.value }))}
                       className="h-11 rounded-xl border-slate-200"
                     />
                   </div>
@@ -976,6 +986,50 @@ export default function PackagesPage() {
                   />
                 </div>
               </div>
+            </div>
+          </section>
+
+          {/* Section 7: Video Testimonials */}
+          <section className="bg-white p-8 rounded-2xl shadow-sm border border-slate-100">
+            <div className="flex justify-between items-center mb-6">
+              <div>
+                <h3 className="text-lg font-bold text-[#1F2E4A]">7. Video Testimonials</h3>
+                <p className="text-sm text-muted-foreground mt-1">Add YouTube links to showcase customer reviews.</p>
+              </div>
+              <Button type="button" variant="outline" onClick={addVideoTestimonial} className="rounded-full gap-2 border-slate-200">
+                <Plus className="w-4 h-4" /> Add Testimonial
+              </Button>
+            </div>
+            
+            <div className="space-y-4">
+              {(!formData.videoTestimonials || formData.videoTestimonials.length === 0) ? (
+                <div className="text-center py-6 bg-slate-50 border border-slate-100 rounded-xl">
+                  <p className="text-slate-500 text-sm">No video testimonials added yet.</p>
+                </div>
+              ) : (
+                formData.videoTestimonials.map((link, idx) => (
+                  <div key={idx} className="flex items-center gap-4">
+                    <div className="flex-1 grid gap-2">
+                      <Label className="text-xs uppercase tracking-wider text-slate-500 font-bold">YouTube Link {idx + 1}</Label>
+                      <Input 
+                        placeholder="e.g. https://www.youtube.com/watch?v=..." 
+                        value={link}
+                        onChange={(e) => updateVideoTestimonial(idx, e.target.value)}
+                        className="bg-white border-slate-200 h-11"
+                      />
+                    </div>
+                    <Button 
+                      type="button" 
+                      variant="ghost" 
+                      size="icon" 
+                      onClick={() => removeVideoTestimonial(idx)}
+                      className="h-11 w-11 mt-6 shrink-0 text-red-500 hover:text-red-600 hover:bg-red-50"
+                    >
+                      <Trash2 className="w-5 h-5" />
+                    </Button>
+                  </div>
+                ))
+              )}
             </div>
           </section>
             

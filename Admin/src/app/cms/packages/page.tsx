@@ -74,6 +74,7 @@ type Package = {
   metaKeywords: string[];
   itinerary: ItineraryDay[];
   status: 'draft' | 'published';
+  videoTestimonial?: string;
 }
 
 const emptyForm: Package = {
@@ -127,7 +128,8 @@ const emptyForm: Package = {
   metaDescription: "",
   metaKeywords: [],
   itinerary: [{ id: Date.now().toString(), dayNumber: 1, title: "Arrival & Welcome", activities: "Check-in and local sightseeing", points: [] }],
-  status: 'draft'
+  status: 'draft',
+  videoTestimonial: ""
 }
 
 export default function PackagesPage() {
@@ -619,6 +621,16 @@ export default function PackagesPage() {
                       placeholder="e.g. Uttarakhand, Himachal, Goa" 
                       value={formData.location || ''}
                       onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
+                      className="h-11 rounded-xl border-slate-200"
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="videoTestimonial" className="font-semibold text-slate-700">Video Testimonial (YouTube Link)</Label>
+                    <Input 
+                      id="videoTestimonial" 
+                      placeholder="e.g. https://www.youtube.com/watch?v=..." 
+                      value={formData.videoTestimonial || ''}
+                      onChange={(e) => setFormData(prev => ({ ...prev, videoTestimonial: e.target.value }))}
                       className="h-11 rounded-xl border-slate-200"
                     />
                   </div>

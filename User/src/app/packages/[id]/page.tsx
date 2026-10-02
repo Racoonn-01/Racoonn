@@ -29,7 +29,8 @@ import {
   X,
   User,
   Grid,
-  ChevronRight
+  ChevronRight,
+  PlayCircle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getReviews, createReview } from '@/lib/appwrite/api';
@@ -675,6 +676,14 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
               >
                 <PhoneCall size={16} /> Contact Us
               </button>
+              {pkg.videoTestimonial && (
+                <button 
+                  onClick={() => setActiveTab('testimonials')}
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-full text-[14px] font-semibold transition-colors whitespace-nowrap border ${activeTab === 'testimonials' ? 'bg-gray-900 text-white border-gray-900' : 'bg-white text-gray-700 border-gray-200 hover:border-gray-900'}`}
+                >
+                  <PlayCircle size={16} /> Video Testimonial
+                </button>
+              )}
             </div>
 
             {/* Tab Content */}
@@ -1027,6 +1036,36 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
                       <a href="mailto:hello@racoonn.com" className="flex items-center justify-center gap-2 bg-white hover:bg-gray-50 text-gray-900 border border-gray-300 font-bold py-3.5 px-6 rounded-xl transition-all shadow-sm w-full sm:w-auto">
                         Email Support
                       </a>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {activeTab === 'testimonials' && pkg.videoTestimonial && (
+                <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                  <h3 className="text-[20px] font-bold text-gray-900 mb-6 font-heading">Video Testimonial</h3>
+                  <div className="bg-gray-50 rounded-2xl p-4 sm:p-6 border border-gray-200">
+                    <div className="aspect-video w-full overflow-hidden rounded-xl bg-gray-200 relative">
+                      {pkg.videoTestimonial.includes('youtube.com') || pkg.videoTestimonial.includes('youtu.be') ? (
+                        <iframe
+                          className="w-full h-full absolute inset-0"
+                          src={`https://www.youtube.com/embed/${pkg.videoTestimonial.includes('v=') ? pkg.videoTestimonial.split('v=')[1].split('&')[0] : pkg.videoTestimonial.split('youtu.be/')[1]?.split('?')[0]}`}
+                          title="YouTube video player"
+                          frameBorder="0"
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                          allowFullScreen
+                        ></iframe>
+                      ) : (
+                        <a 
+                          href={pkg.videoTestimonial}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="w-full h-full flex flex-col items-center justify-center gap-4 text-brand-coral hover:text-brand-coral/80 bg-white"
+                        >
+                          <PlayCircle size={64} className="text-brand-coral" />
+                          <span className="font-bold text-lg">Watch Testimonial Video</span>
+                        </a>
+                      )}
                     </div>
                   </div>
                 </div>

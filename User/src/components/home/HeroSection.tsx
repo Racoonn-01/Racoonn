@@ -22,7 +22,8 @@ import {
   Minus,
   Mic,
   MicOff,
-  Search
+  Search,
+  X
 } from 'lucide-react';
 
 const tabs = [
@@ -416,102 +417,107 @@ export default function HeroSection() {
               </div>
 
               {/* Date + Guests Row */}
-              <div className="flex flex-col sm:flex-row gap-4">
-                {/* Check-in / Start Date */}
-                <Popover open={isCheckInOpen} onOpenChange={setIsCheckInOpen}>
-                  <PopoverTrigger className="flex items-center gap-4 border border-gray-200 rounded-2xl px-5 py-4 hover:border-brand-coral/40 transition-colors cursor-pointer group flex-1 text-left focus:outline-none focus:ring-2 focus:ring-brand-coral/30">
-                    <div className="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center shrink-0">
-                      <CalendarDays size={20} className="text-brand-coral group-hover:scale-110 transition-transform" />
-                    </div>
-                    <div>
-                      <h4 className="font-semibold text-brand-navy text-[15px]">
-                        {activeTab === 'stays' ? 'Check-in' : activeTab === 'packages' ? 'Start date' : 'Date'}
-                      </h4>
-                      <p className="text-sm text-brand-charcoal/50">
-                        {checkIn ? format(checkIn, "PP") : "Add dates"}
-                      </p>
-                    </div>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={checkIn}
-                      onSelect={(date) => {
-                        if (!date) return;
-                        setCheckIn(date);
-                        setIsCheckInOpen(false);
-                        if (!checkOut || date >= checkOut) {
-                          setCheckOut(addDays(date, 1));
-                        }
-                        if (activeTab !== 'activities') {
-                          setTimeout(() => {
-                            setIsCheckOutOpen(true);
-                          }, 150);
-                        }
-                      }}
-                      disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
-                    />
-                  </PopoverContent>
-                </Popover>
-
-                {/* Divider */}
-                {activeTab !== 'activities' && activeTab !== 'packages' && <div className="hidden sm:block w-px bg-gray-200 self-stretch" />}
-
-                {/* Check-out / End Date */}
-                {activeTab !== 'activities' && activeTab !== 'packages' && (
-                  <Popover open={isCheckOutOpen} onOpenChange={setIsCheckOutOpen}>
-                    <PopoverTrigger className="flex items-center gap-4 border border-gray-200 rounded-2xl px-5 py-4 hover:border-brand-coral/40 transition-colors cursor-pointer group flex-1 text-left focus:outline-none focus:ring-2 focus:ring-brand-coral/30">
-                      <div className="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center shrink-0">
-                        <CalendarDays size={20} className="text-brand-coral group-hover:scale-110 transition-transform" />
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+                
+                {/* Dates Container (Grid on mobile, Flex on desktop) */}
+                <div className="grid grid-cols-2 gap-3 sm:flex sm:gap-4 sm:flex-1">
+                  
+                  {/* Check-in / Start Date */}
+                  <Popover open={isCheckInOpen} onOpenChange={setIsCheckInOpen}>
+                    <PopoverTrigger className="flex items-center gap-2 sm:gap-4 border border-gray-200 rounded-2xl px-3 sm:px-5 py-3 sm:py-4 hover:border-brand-coral/40 transition-colors cursor-pointer group flex-1 text-left focus:outline-none focus:ring-2 focus:ring-brand-coral/30">
+                      <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-red-50 flex items-center justify-center shrink-0">
+                        <CalendarDays size={18} className="text-brand-coral group-hover:scale-110 transition-transform sm:w-5 sm:h-5" />
                       </div>
-                      <div>
-                        <h4 className="font-semibold text-brand-navy text-[15px]">
-                          {activeTab === 'stays' ? 'Check-out' : 'End date'}
+                      <div className="overflow-hidden">
+                        <h4 className="font-semibold text-brand-navy text-[13px] sm:text-[15px] truncate">
+                          {activeTab === 'stays' ? 'Check-in' : activeTab === 'packages' ? 'Start date' : 'Date'}
                         </h4>
-                        <p className="text-sm text-brand-charcoal/50">
-                          {checkOut ? format(checkOut, "PP") : "Add dates"}
+                        <p className="text-[12px] sm:text-sm text-brand-charcoal/50 truncate">
+                          {checkIn ? format(checkIn, "PP") : "Add dates"}
                         </p>
                       </div>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
+                    <PopoverContent className="hidden md:block w-auto p-0" align="start">
                       <Calendar
                         mode="single"
-                        selected={checkOut}
+                        selected={checkIn}
                         onSelect={(date) => {
                           if (!date) return;
-                          setCheckOut(date);
-                          setIsCheckOutOpen(false);
-                        }}
-                        disabled={(date) => {
-                          if (checkIn) {
-                            return date <= checkIn;
+                          setCheckIn(date);
+                          setIsCheckInOpen(false);
+                          if (!checkOut || date >= checkOut) {
+                            setCheckOut(addDays(date, 1));
                           }
-                          return date < new Date(new Date().setHours(0, 0, 0, 0));
+                          if (activeTab !== 'activities') {
+                            setTimeout(() => {
+                              setIsCheckOutOpen(true);
+                            }, 150);
+                          }
                         }}
+                        disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
                       />
                     </PopoverContent>
                   </Popover>
-                )}
+
+                  {/* Divider */}
+                  {activeTab !== 'activities' && activeTab !== 'packages' && <div className="hidden sm:block w-px bg-gray-200 self-stretch" />}
+
+                  {/* Check-out / End Date */}
+                  {activeTab !== 'activities' && activeTab !== 'packages' && (
+                    <Popover open={isCheckOutOpen} onOpenChange={setIsCheckOutOpen}>
+                      <PopoverTrigger className="flex items-center gap-2 sm:gap-4 border border-gray-200 rounded-2xl px-3 sm:px-5 py-3 sm:py-4 hover:border-brand-coral/40 transition-colors cursor-pointer group flex-1 text-left focus:outline-none focus:ring-2 focus:ring-brand-coral/30">
+                        <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-red-50 flex items-center justify-center shrink-0">
+                          <CalendarDays size={18} className="text-brand-coral group-hover:scale-110 transition-transform sm:w-5 sm:h-5" />
+                        </div>
+                        <div className="overflow-hidden">
+                          <h4 className="font-semibold text-brand-navy text-[13px] sm:text-[15px] truncate">
+                            {activeTab === 'stays' ? 'Check-out' : 'End date'}
+                          </h4>
+                          <p className="text-[12px] sm:text-sm text-brand-charcoal/50 truncate">
+                            {checkOut ? format(checkOut, "PP") : "Add dates"}
+                          </p>
+                        </div>
+                      </PopoverTrigger>
+                      <PopoverContent className="hidden md:block w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={checkOut}
+                          onSelect={(date) => {
+                            if (!date) return;
+                            setCheckOut(date);
+                            setIsCheckOutOpen(false);
+                          }}
+                          disabled={(date) => {
+                            if (checkIn) {
+                              return date <= checkIn;
+                            }
+                            return date < new Date(new Date().setHours(0, 0, 0, 0));
+                          }}
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  )}
+                </div>
 
                 {/* Divider */}
                 <div className="hidden sm:block w-px bg-gray-200 self-stretch" />
 
                 {/* Guests / Participants */}
                 <Popover>
-                  <PopoverTrigger className="flex items-center gap-4 border border-gray-200 rounded-2xl px-5 py-4 hover:border-brand-coral/40 transition-colors cursor-pointer group flex-1 text-left focus:outline-none focus:ring-2 focus:ring-brand-coral/30">
-                    <Users size={22} className="text-brand-charcoal/40 group-hover:text-brand-coral transition-colors shrink-0" />
-                    <div className="flex-1">
-                      <h4 className="font-semibold text-brand-navy text-[15px]">
+                  <PopoverTrigger className="flex items-center gap-3 sm:gap-4 border border-gray-200 rounded-2xl px-4 sm:px-5 py-3 sm:py-4 hover:border-brand-coral/40 transition-colors cursor-pointer group flex-1 sm:flex-none text-left focus:outline-none focus:ring-2 focus:ring-brand-coral/30">
+                    <Users size={20} className="text-brand-charcoal/40 group-hover:text-brand-coral transition-colors shrink-0 sm:w-[22px] sm:h-[22px]" />
+                    <div className="flex-1 overflow-hidden">
+                      <h4 className="font-semibold text-brand-navy text-[14px] sm:text-[15px] truncate">
                         {activeTab === 'activities' ? 'Participants' : 'Guests'}
                       </h4>
-                      <p className="text-sm text-brand-charcoal/50 truncate">
+                      <p className="text-[13px] sm:text-sm text-brand-charcoal/50 truncate">
                         {adults + children === 0 && rooms === 0 
                           ? (activeTab === 'activities' ? "Add participants" : "Add guests") 
                           : `${adults + children} ${activeTab === 'activities' ? 'participant' : 'guest'}${adults + children !== 1 ? 's' : ''}` + (activeTab !== 'activities' ? ` · ${rooms} room${rooms !== 1 ? 's' : ''}` : '')
                         }
                       </p>
                     </div>
-                    <ChevronDown size={18} className="text-brand-charcoal/40" />
+                    <ChevronDown size={18} className="text-brand-charcoal/40 shrink-0" />
                   </PopoverTrigger>
                   <PopoverContent className="w-80 p-4" align="end">
                     <div className="space-y-4">
@@ -624,6 +630,67 @@ export default function HeroSection() {
 
       </div>
 
+      {/* Mobile Center Popups for Dates */}
+      <AnimatePresence>
+        {(isCheckInOpen || isCheckOutOpen) && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] bg-black/40 flex items-center justify-center p-4 md:hidden"
+            onClick={() => { setIsCheckInOpen(false); setIsCheckOutOpen(false); }}
+            onPointerDown={() => { setIsCheckInOpen(false); setIsCheckOutOpen(false); }}
+          >
+            <motion.div 
+              initial={{ scale: 0.95, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 20 }}
+              className="bg-white rounded-3xl shadow-2xl p-2 relative w-full max-w-sm mx-auto"
+              onClick={e => e.stopPropagation()}
+              onPointerDown={e => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between px-4 pt-3 pb-2 border-b border-gray-100 mb-2">
+                <h3 className="font-bold text-gray-900">{isCheckInOpen ? 'Select Check-in Date' : 'Select Check-out Date'}</h3>
+                <button 
+                  onClick={() => { setIsCheckInOpen(false); setIsCheckOutOpen(false); }}
+                  className="p-1.5 bg-gray-100 rounded-full text-gray-500 hover:text-gray-900 transition-colors"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+              <div className="flex justify-center px-2 pb-2">
+                <Calendar
+                  mode="single"
+                  selected={isCheckInOpen ? checkIn : checkOut}
+                  onSelect={(date) => {
+                    if (!date) return;
+                    if (isCheckInOpen) {
+                      setCheckIn(date);
+                      setIsCheckInOpen(false);
+                      if (!checkOut || date >= checkOut) {
+                        setCheckOut(addDays(date, 1));
+                      }
+                      if (activeTab !== 'activities') {
+                        setTimeout(() => { setIsCheckOutOpen(true); }, 150);
+                      }
+                    } else {
+                      setCheckOut(date);
+                      setIsCheckOutOpen(false);
+                    }
+                  }}
+                  disabled={(date) => {
+                    if (isCheckOutOpen && checkIn) {
+                      return date <= checkIn;
+                    }
+                    return date < new Date(new Date().setHours(0, 0, 0, 0));
+                  }}
+                  className="w-full"
+                />
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
     </section>
   );

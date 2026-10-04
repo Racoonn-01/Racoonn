@@ -1147,7 +1147,7 @@ export default function VendorInvoicesPage() {
                   <div className="relative w-40 h-12 mb-2">
                     <Image src="/racoonn-logo-text.png" alt="Racoonn Logo" fill className="object-contain object-left" unoptimized />
                   </div>
-                  <p className="text-xs text-gray-500 font-medium">CIELE TRAVELS PRIVATE LIMITED</p>
+                  <p className="text-xs text-gray-500 font-medium">CIELLE TRAVELS PRIVATE LIMITED</p>
                   <p className="text-xs text-gray-500">
                     B-81, Rose Villa, Samiah Lake City, Rudrapur,<br />
                     Kichha, Udham Singh Nagar - 263153, Uttarakhand
@@ -1185,7 +1185,7 @@ export default function VendorInvoicesPage() {
                   <h4 className="font-bold text-gray-400 uppercase tracking-wider mb-1">
                     {selectedInvoice.type === "withdrawal" ? "Billed To (Platform Admin)" : "Issued By (Platform Admin)"}
                   </h4>
-                  <p className="text-sm font-bold text-gray-900">CIELE TRAVELS PRIVATE LIMITED</p>
+                  <p className="text-sm font-bold text-gray-900">CIELLE TRAVELS PRIVATE LIMITED</p>
                   <p className="text-gray-600 mt-0.5">Admin Finance Team</p>
                   <p className="text-gray-600">
                     B-81, Rose Villa, Samiah Lake City, Rudrapur,<br />

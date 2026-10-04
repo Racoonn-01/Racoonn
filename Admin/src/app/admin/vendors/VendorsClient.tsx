@@ -457,22 +457,7 @@ export default function VendorsClient({ vendors: initialVendors, kpi }: VendorsC
           </CardContent>
         </Card>
 
-        <Card className="bg-linear-to-br from-card to-card/50 border-muted/50 shadow-sm">
-          <CardContent className="p-6">
-            <div className="flex justify-between items-start">
-              <div className="space-y-2">
-                <p className="text-sm font-medium text-muted-foreground">Total Revenue (YTD)</p>
-                <p className="text-3xl font-bold">{kpi.totalPayouts}</p>
-              </div>
-              <div className="p-3 bg-emerald-500/10 rounded-xl">
-                <DollarSign className="h-5 w-5 text-emerald-500" />
-              </div>
-            </div>
-            <div className="mt-4 flex items-center text-sm text-muted-foreground">
-              Across all vendors
-            </div>
-          </CardContent>
-        </Card>
+
 
         <Card className="bg-linear-to-br from-card to-card/50 border-muted/50 shadow-sm">
           <CardContent className="p-6">

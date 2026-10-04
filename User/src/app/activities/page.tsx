@@ -43,7 +43,7 @@ const ActivityCard = ({ activity }: { activity: Activity }) => {
   return (
     <div className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 group flex flex-col">
       {/* Image Container */}
-      <div className="relative h-64 overflow-hidden bg-gray-100">
+      <div className="relative h-52 sm:h-64 overflow-hidden bg-gray-100">
         {images.length > 0 && (
           <Image
             src={images[currentImageIndex]}
@@ -162,11 +162,11 @@ function ActivitiesContent() {
     <div className="min-h-screen bg-gray-50 pb-20 pt-10">
       <div className="container mx-auto px-4">
         {/* Header Section */}
-        <div className="text-center mb-16">
-          <h1 className="text-4xl md:text-5xl font-heading font-bold text-brand-navy mb-4">
+        <div className="text-center mb-10 md:mb-16">
+          <h1 className="text-[32px] md:text-5xl leading-tight font-heading font-bold text-brand-navy mb-3 md:mb-4">
             Discover <span className="text-brand-coral">Activities</span>
           </h1>
-          <p className="text-gray-600 max-w-2xl mx-auto text-lg">
+          <p className="text-gray-600 max-w-2xl mx-auto text-[15px] md:text-lg px-2">
             Elevate your travel experience with curated adventures and memorable local activities.
           </p>
         </div>

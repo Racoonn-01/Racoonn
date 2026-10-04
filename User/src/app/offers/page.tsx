@@ -65,11 +65,11 @@ export default function SpecialOffersPage() {
     <div className="min-h-screen bg-gray-50 pb-24 pt-12">
       <div className="container mx-auto px-4">
         {/* Header Section */}
-        <div className="text-center mb-16">
-          <h1 className="text-4xl md:text-5xl font-heading font-bold text-brand-navy mb-4">
+        <div className="text-center mb-10 md:mb-16">
+          <h1 className="text-[32px] md:text-5xl leading-tight font-heading font-bold text-brand-navy mb-3 md:mb-4">
             Special <span className="text-brand-coral">Offers</span>
           </h1>
-          <p className="text-gray-600 max-w-2xl mx-auto text-lg">
+          <p className="text-gray-600 max-w-2xl mx-auto text-[15px] md:text-lg px-2">
             Discover our hand-picked deals and exclusive discounts. Make your next journey unforgettable while saving more.
           </p>
         </div>
@@ -88,7 +88,7 @@ export default function SpecialOffersPage() {
             {offers.map((offer) => (
               <div key={offer.$id} className="bg-white rounded-3xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 group flex flex-col sm:flex-row">
                 {/* Image Section */}
-                <div className="relative w-full sm:w-2/5 h-64 sm:h-auto overflow-hidden bg-gray-100 shrink-0">
+                <div className="relative w-full sm:w-2/5 h-48 sm:h-auto overflow-hidden bg-gray-100 shrink-0">
                   {offer.image && (
                     <Image
                       src={offer.image}
@@ -112,35 +112,35 @@ export default function SpecialOffersPage() {
                 </div>
 
                 {/* Content Section */}
-                <div className="p-6 sm:p-8 w-full sm:w-3/5 flex flex-col justify-center">
-                  <h3 className="text-2xl font-bold text-brand-navy mb-2 group-hover:text-brand-coral transition-colors line-clamp-2">
+                <div className="p-5 sm:p-8 w-full sm:w-3/5 flex flex-col justify-center">
+                  <h3 className="text-xl md:text-2xl font-bold text-brand-navy mb-1.5 md:mb-2 group-hover:text-brand-coral transition-colors line-clamp-2">
                     {offer.name}
                   </h3>
-                  <p className="text-gray-600 mb-6 grow line-clamp-3">
+                  <p className="text-gray-600 mb-4 md:mb-6 grow line-clamp-3 text-sm md:text-base">
                     {offer.description}
                   </p>
 
-                  <div className="flex flex-col gap-4">
+                  <div className="flex flex-col gap-3 md:gap-4">
                     {offer.validUntil && (
-                      <div className="flex items-center gap-2 text-sm text-gray-500 font-medium">
+                      <div className="flex items-center gap-2 text-[13px] md:text-sm text-gray-500 font-medium">
                         <Clock size={16} className="text-brand-coral" />
                         Valid till {offer.validUntil}
                       </div>
                     )}
                     
-                    <div className="flex items-center justify-between mt-2 pt-4 border-t border-gray-100">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mt-1 pt-4 border-t border-gray-100 gap-4 sm:gap-0">
                       <div className="flex flex-col">
-                        <span className="text-xs text-gray-400 font-semibold uppercase tracking-wider mb-1">Promo Code</span>
-                        <span className={`font-mono font-bold px-3 py-1.5 rounded-lg border inline-block w-fit ${!isExpired(offer) ? 'bg-brand-sky/10 text-brand-navy border-brand-sky/20' : 'bg-gray-100 text-gray-400 border-gray-200 line-through'}`}>
+                        <span className="text-[11px] md:text-xs text-gray-400 font-semibold uppercase tracking-wider mb-1">Promo Code</span>
+                        <span className={`font-mono font-bold px-3 py-1.5 rounded-lg border inline-block w-fit text-sm md:text-base ${!isExpired(offer) ? 'bg-brand-sky/10 text-brand-navy border-brand-sky/20' : 'bg-gray-100 text-gray-400 border-gray-200 line-through'}`}>
                           {offer.code}
                         </span>
                       </div>
                       {!isExpired(offer) ? (
-                        <Link href="/search" className="bg-brand-navy hover:bg-brand-coral text-white px-6 py-2.5 rounded-xl font-medium transition-colors shadow-sm">
+                        <Link href="/search" className="bg-brand-navy hover:bg-brand-coral text-white px-6 py-3 sm:py-2.5 rounded-xl font-medium transition-colors shadow-sm text-center">
                           Book Now
                         </Link>
                       ) : (
-                        <button disabled className="bg-gray-100 text-gray-400 px-6 py-2.5 rounded-xl font-medium cursor-not-allowed border border-gray-200">
+                        <button disabled className="bg-gray-100 text-gray-400 px-6 py-3 sm:py-2.5 rounded-xl font-medium cursor-not-allowed border border-gray-200 w-full sm:w-auto">
                           Expired
                         </button>
                       )}

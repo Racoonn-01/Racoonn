@@ -118,12 +118,12 @@ export default function PaymentMethods() {
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-gray-50/50 border-b border-gray-100">
-                <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Transaction</th>
-                <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Amount</th>
-                <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Status</th>
-                <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Date</th>
-                <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider text-right">Invoice</th>
+              <tr className="bg-gray-50/50 border-b border-gray-100 whitespace-nowrap">
+                <th className="px-4 sm:px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Transaction</th>
+                <th className="px-4 sm:px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Amount</th>
+                <th className="px-4 sm:px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Status</th>
+                <th className="px-4 sm:px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Date</th>
+                <th className="px-4 sm:px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider text-right">Invoice</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -142,8 +142,8 @@ export default function PaymentMethods() {
                 </tr>
               ) : (
                 filteredTransactions.map((txn) => (
-                  <tr key={txn.id} className="hover:bg-gray-50/50 transition-colors">
-                    <td className="px-6 py-4">
+                  <tr key={txn.id} className="hover:bg-gray-50/50 transition-colors whitespace-nowrap">
+                    <td className="px-4 sm:px-6 py-4">
                       <div className="flex items-center gap-3">
                         <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${txn.type === 'Credit' ? 'bg-green-50 text-green-600' : 'bg-brand-coral/10 text-brand-coral'}`}>
                           {txn.type === 'Credit' ? <ArrowDownRight size={18} /> : <ArrowUpRight size={18} />}
@@ -154,12 +154,12 @@ export default function PaymentMethods() {
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-4 sm:px-6 py-4">
                       <p className={`font-bold ${txn.type === 'Credit' ? 'text-green-600' : 'text-brand-navy'}`}>
                         {txn.type === 'Credit' ? '+' : ''}{txn.amount}
                       </p>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-4 sm:px-6 py-4">
                       <span className={`px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider ${
                         txn.status === 'Completed' || txn.status === 'Paid' ? 'bg-green-50 text-green-600' : 
                         txn.status === 'Refunded' ? 'bg-blue-50 text-blue-600' : 
@@ -168,10 +168,10 @@ export default function PaymentMethods() {
                         {txn.status}
                       </span>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-4 sm:px-6 py-4">
                       <p className="text-sm text-gray-600">{txn.date}</p>
                     </td>
-                    <td className="px-6 py-4 text-right">
+                    <td className="px-4 sm:px-6 py-4 text-right">
                       <button className="p-2 text-gray-400 hover:text-brand-coral transition-colors rounded-lg hover:bg-brand-coral/5 inline-flex">
                         <FileText size={18} />
                       </button>

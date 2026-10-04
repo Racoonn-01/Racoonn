@@ -168,18 +168,19 @@ export default function BookingsSection() {
 
                   {/* Details */}
                   <div className="flex-1 flex flex-col">
-                    <div className="flex justify-between items-start mb-2">
-                      <div>
-                        <h3 className="text-xl font-heading font-bold text-brand-navy">{booking.hotel}</h3>
+                    <div className="flex flex-col sm:flex-row sm:justify-between items-start gap-3 sm:gap-2 mb-2">
+                      <div className="order-2 sm:order-1 pr-0 sm:pr-4">
+                        <h3 className="text-xl font-heading font-bold text-brand-navy leading-tight">{booking.hotel}</h3>
                         {booking.roomName && (
                           <p className="text-sm font-semibold text-brand-navy/80 mt-0.5">{booking.roomName}</p>
                         )}
-                        <p className="text-gray-500 text-sm flex items-center gap-1 mt-1">
-                          <MapPin size={14} /> {booking.location}
+                        <p className="text-gray-500 text-sm flex items-start gap-1 mt-1.5">
+                          <MapPin size={14} className="shrink-0 mt-0.5" /> 
+                          <span className="line-clamp-2 leading-snug">{booking.location}</span>
                         </p>
                       </div>
-                      <div className="text-right">
-                        <p className="text-sm text-gray-400 font-medium">Booking ID</p>
+                      <div className="text-left sm:text-right shrink-0 order-1 sm:order-2 bg-gray-50 sm:bg-transparent px-3 py-1.5 sm:p-0 rounded-lg sm:rounded-none w-full sm:w-auto flex justify-between sm:block items-center">
+                        <p className="text-xs sm:text-sm text-gray-400 font-medium">Booking ID</p>
                         <p className="font-mono text-sm font-bold text-brand-navy">#{booking.id}</p>
                       </div>
                     </div>
@@ -204,11 +205,11 @@ export default function BookingsSection() {
                     </div>
 
                     {/* Actions */}
-                    <div className="mt-auto flex flex-wrap gap-3 justify-end">
+                    <div className="mt-4 sm:mt-auto pt-4 sm:pt-0 flex flex-col sm:flex-row gap-3 justify-end border-t sm:border-t-0 border-gray-50">
                       {booking.status === 'Completed' && (
                         <button 
                           onClick={() => setBookingToReview(booking)}
-                          className="px-5 py-2.5 bg-brand-coral/10 hover:bg-brand-coral/20 text-brand-coral text-sm font-bold rounded-xl transition-colors flex items-center gap-2"
+                          className="w-full sm:w-auto px-5 py-2.5 bg-brand-coral/10 hover:bg-brand-coral/20 text-brand-coral text-sm font-bold rounded-xl transition-colors flex items-center justify-center gap-2"
                         >
                           <Star size={16} /> Leave Review
                         </button>
@@ -216,9 +217,9 @@ export default function BookingsSection() {
                       {booking.status === 'Upcoming' && (
                         <button 
                           onClick={() => setBookingToCancel(booking)}
-                          className="px-5 py-2.5 bg-red-50 hover:bg-red-100 text-red-500 text-sm font-bold rounded-xl transition-colors"
+                          className="w-full sm:w-auto px-5 py-2.5 bg-red-50 hover:bg-red-100 text-red-500 text-sm font-bold rounded-xl transition-colors text-center"
                         >
-                          Cancel
+                          Cancel Booking
                         </button>
                       )}
                     </div>

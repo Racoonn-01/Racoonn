@@ -72,7 +72,7 @@ export async function getAllCustomers() {
         
         if (booking.status === 'confirmed' || booking.status === 'completed' || booking.paymentStatus === 'Paid') {
           const payment = payments.documents.find(p => p.bookingId === booking.$id);
-          const amount = payment ? payment.totalAmount : (booking.price * booking.nights);
+          const amount = payment ? (Number(payment.totalAmount) || 0) : ((Number(booking.price) || 0) * (Number(booking.nights) || 0));
           customer.totalSpentNum += amount;
           
           if (booking.status !== 'completed' && booking.status !== 'cancelled') {

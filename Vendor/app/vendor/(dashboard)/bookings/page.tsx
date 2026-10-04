@@ -873,13 +873,13 @@ export default function BookingsPage() {
                         unoptimized
                       />
                     </div>
-                    <h4 className="text-sm font-bold text-slate-900">CIELE TRAVELS PRIVATE LIMITED</h4>
+                    <h4 className="text-sm font-bold text-slate-900">CIELLE TRAVELS PRIVATE LIMITED</h4>
                     <p className="text-xs text-slate-500 leading-relaxed">
                       B-81, Rose Villa, Samiah Lake City, Rudrapur,<br />
                       Kichha, Udham Singh Nagar - 263153, Uttarakhand
                     </p>
                     <p className="text-xs text-slate-500 font-medium">
-                      support@racoonn.com &nbsp;•&nbsp; +91 120 456 7890
+                      support@racoonn.com &nbsp;•&nbsp; +91 8954442144
                     </p>
                     <p className="text-xs font-bold text-slate-700 pt-0.5">
                       GSTIN: 05AAOCC0859Q1Z0 &nbsp;•&nbsp; HSN Code for Hotel rent: 9963
@@ -951,7 +951,7 @@ export default function BookingsPage() {
                     <p className="text-xs text-slate-600 leading-relaxed">
                       {selectedBooking.hotelLocation || 'India'}
                     </p>
-                    <p className="text-xs text-slate-600 font-medium">+91 120 456 7890</p>
+                    <p className="text-xs text-slate-600 font-medium">+91 8954442144</p>
                     <p className="text-xs font-bold text-slate-700 pt-1">GSTIN: 05AAOCC0859Q1Z0</p>
                   </div>
 
@@ -1220,7 +1220,7 @@ export default function BookingsPage() {
                       <span className="font-bold text-white">Need Help?</span>
                       <span className="text-slate-300 text-[11px] whitespace-nowrap">support@racoonn.com</span>
                       <span className="text-slate-500">•</span>
-                      <span className="text-slate-300 text-[11px] whitespace-nowrap">+91 120 456 7890</span>
+                      <span className="text-slate-300 text-[11px] whitespace-nowrap">+91 8954442144</span>
                     </div>
                   </div>
                   <div className="flex items-center gap-2.5 sm:text-right shrink-0">

@@ -160,7 +160,7 @@ export default function CabsPage() {
                 </div>
               </div>
               <DialogFooter>
-                <Button type="button" onClick={async () => {
+                <Button type="button" disabled={!newCategoryName.trim()} onClick={async () => {
                   if (newCategoryName.trim()) {
                     const name = newCategoryName.trim()
                     
@@ -241,7 +241,7 @@ export default function CabsPage() {
 
               </div>
               <DialogFooter>
-                <Button type="button" onClick={handleAddCab}>Save Cab</Button>
+                <Button type="button" disabled={!newCabData.name.trim() || !newCabData.category} onClick={handleAddCab}>Save Cab</Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>

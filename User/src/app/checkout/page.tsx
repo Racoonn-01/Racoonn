@@ -48,9 +48,9 @@ export default async function CheckoutPage({ searchParams }: { searchParams: Pro
       <div className="bg-white/80 backdrop-blur-md border-b border-brand-sky sticky top-0 z-40 shadow-sm transition-all duration-300">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 md:py-4 flex flex-col md:flex-row items-center justify-between gap-4 md:gap-8">
           <div className="flex w-full md:w-auto items-center justify-between shrink-0">
-            <Link href="/" className="hover:opacity-80 transition-opacity">
+            <a href="/" className="hover:opacity-80 transition-opacity">
               <Image src={logo} alt="Racoonn Logo" width={150} height={38} className="h-6 md:h-8 w-auto" />
-            </Link>
+            </a>
             
             {/* Mobile Customer Care Button */}
             <div className="lg:hidden flex items-center">

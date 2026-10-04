@@ -52,9 +52,6 @@ export default function PropertiesClient({ properties, kpi }: PropertiesClientPr
           <h2 className="text-3xl font-black tracking-tight text-foreground">Property Management</h2>
           <p className="text-muted-foreground mt-1 text-lg">Review, approve, and manage all listed properties across your platform.</p>
         </div>
-        <Button className="h-11 px-6 rounded-full shadow-lg hover:shadow-xl transition-all">
-          <Building2 className="mr-2 h-5 w-5" /> Add New Property
-        </Button>
       </div>
 
       {/* KPI Cards */}

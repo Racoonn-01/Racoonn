@@ -24,7 +24,7 @@ const SocialIcon = ({ type, size = 18 }: { type: string; size?: number }) => {
 
 export default function Footer() {
   const pathname = usePathname();
-  const isAuthPage = ['/signin', '/signup', '/forgot-password', '/search', '/developers'].includes(pathname);
+  const isAuthPage = ['/signin', '/signup', '/forgot-password', '/search'].includes(pathname);
   const isCheckoutPage = pathname.startsWith('/checkout');
   
   if (isAuthPage || isCheckoutPage) return null;
@@ -36,13 +36,13 @@ export default function Footer() {
       {/* App Download Section */}
       <section className="bg-white pt-12 pb-6 md:pb-10">
         <div className="container mx-auto px-4 lg:px-8 max-w-6xl">
-          <div className="relative bg-[#F2F4F7] border border-gray-200 rounded-3xl p-8 md:p-10 overflow-hidden flex flex-col md:flex-row items-center justify-between gap-8 shadow-sm">
+          <div className="relative bg-[#F2F4F7] border border-gray-200 rounded-3xl p-6 md:p-10 overflow-hidden flex flex-col md:flex-row items-center justify-between gap-8 md:gap-8 shadow-sm">
             
             {/* Left Content: Text & Icon */}
-            <div className="relative z-10 flex flex-col sm:flex-row items-center sm:items-start text-center sm:text-left gap-6">
+            <div className="relative z-10 flex flex-col sm:flex-row items-center sm:items-start text-center sm:text-left gap-5 sm:gap-6">
               {/* Icon */}
-              <div className="relative shrink-0">
-                <div className="w-16 h-24 border-[3px] border-gray-700 rounded-xl bg-white relative">
+              <div className="relative shrink-0 mb-2 sm:mb-0">
+                <div className="w-16 h-24 border-[3px] border-gray-700 rounded-xl bg-white relative mx-auto sm:mx-0">
                   <div className="absolute top-2 left-1/2 -translate-x-1/2 w-4 h-1 bg-gray-300 rounded-full"></div>
                   <div className="absolute top-8 left-1/2 -translate-x-1/2 font-script text-brand-coral font-bold italic text-lg -rotate-12">R</div>
                 </div>
@@ -65,24 +65,24 @@ export default function Footer() {
               </div>
               
               {/* Text */}
-              <div className="pt-2">
-                <h2 className="text-3xl md:text-[40px] font-bold text-[#2D3748] mb-3 tracking-tight">
-                  Download App Now !
+              <div className="pt-1 sm:pt-2">
+                <h2 className="text-[26px] sm:text-3xl md:text-[40px] leading-tight font-bold text-[#2D3748] mb-2 sm:mb-3 tracking-tight">
+                  Download App Now!
                 </h2>
-                <p className="text-gray-600 text-[17px]">
+                <p className="text-gray-600 text-[15px] md:text-[17px] max-w-sm mx-auto sm:mx-0">
                   Use code <span className="font-bold text-gray-800">WELCOMERACOONN</span> and get <span className="font-bold text-gray-800">FLAT 10% OFF*</span> on your first Hotel booking
                 </p>
               </div>
             </div>
             
             {/* Right Content: Badges */}
-            <div className="relative z-10 flex flex-row items-center justify-center gap-3 shrink-0">
+            <div className="relative z-10 flex flex-row flex-wrap items-center justify-center gap-3 shrink-0 mt-2 md:mt-0">
               {/* App Store Official Badge */}
               <Link href="#" className="hover:opacity-80 transition-transform transform hover:-translate-y-1 duration-300">
                 <img 
                   src="https://upload.wikimedia.org/wikipedia/commons/3/3c/Download_on_the_App_Store_Badge.svg" 
                   alt="Download on the App Store" 
-                  className="h-10 sm:h-12 md:h-14"
+                  className="h-[38px] sm:h-12 md:h-14"
                 />
               </Link>
               
@@ -91,7 +91,7 @@ export default function Footer() {
                 <img 
                   src="https://upload.wikimedia.org/wikipedia/commons/7/78/Google_Play_Store_badge_EN.svg" 
                   alt="Get it on Google Play" 
-                  className="h-10 sm:h-12 md:h-14"
+                  className="h-[38px] sm:h-12 md:h-14"
                 />
               </Link>
             </div>
@@ -108,25 +108,27 @@ export default function Footer() {
         <div className="container mx-auto px-4 lg:px-8 relative z-10">
           
           {/* Top Row: Newsletter Subscription */}
-          <div className="bg-white/5 border border-white/10 rounded-3xl p-8 md:p-10 mb-16 relative overflow-hidden group">
+          <div className="bg-white/5 border border-white/10 rounded-3xl p-6 md:p-10 mb-16 relative overflow-hidden group">
             <div className="absolute inset-0 bg-linear-to-r from-brand-coral/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
-            <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-8">
+            <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-6 md:gap-8">
               <div className="w-full lg:w-1/2 text-center lg:text-left">
-                <h3 className="text-2xl md:text-3xl font-heading font-bold mb-2 text-white">Subscribe to our Newsletter</h3>
-                <p className="text-white/90">Get weekly updates on special offers and the best hotel deals globally.</p>
+                <h3 className="text-[26px] md:text-3xl font-heading font-bold mb-2 text-white">Subscribe to our Newsletter</h3>
+                <p className="text-white/90 text-[15px] md:text-base">Get weekly updates on special offers and the best hotel deals globally.</p>
               </div>
               <div className="w-full lg:w-1/2">
-                <form className="relative flex items-center w-full max-w-lg mx-auto lg:mx-0 lg:ml-auto">
-                  <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
-                    <Mail className="h-5 w-5 text-white/50" />
+                <form className="flex flex-col sm:flex-row items-center w-full max-w-lg mx-auto lg:mx-0 lg:ml-auto gap-3">
+                  <div className="relative w-full">
+                    <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
+                      <Mail className="h-5 w-5 text-white/50" />
+                    </div>
+                    <input 
+                      type="email" 
+                      placeholder="Enter your email address" 
+                      className="w-full bg-brand-navy/50 border border-white/20 rounded-full pl-12 md:pl-14 pr-5 py-3.5 md:py-4 text-white placeholder:text-white/50 focus:border-brand-coral outline-none transition-all shadow-inner"
+                      suppressHydrationWarning
+                    />
                   </div>
-                  <input 
-                    type="email" 
-                    placeholder="Enter your email address" 
-                    className="w-full bg-brand-navy/50 border border-white/20 rounded-full pl-14 pr-40 py-4 text-white placeholder:text-white/50 focus:border-brand-coral outline-none transition-all shadow-inner"
-                    suppressHydrationWarning
-                  />
-                  <button type="button" className="absolute right-2 top-2 bottom-2 bg-brand-coral hover:bg-[#d95d63] text-white px-8 rounded-full font-bold transition-all shadow-md hover:shadow-brand-coral/30 hover:scale-105 active:scale-95">
+                  <button type="button" className="w-full sm:w-auto bg-brand-coral hover:bg-[#d95d63] text-white px-8 py-3.5 md:py-4 rounded-full font-bold transition-all shadow-md hover:shadow-brand-coral/30 hover:scale-105 active:scale-95 shrink-0">
                     Subscribe
                   </button>
                 </form>
@@ -198,10 +200,9 @@ export default function Footer() {
               <ul className="space-y-4 text-brand-sky/70">
                 <li><Link href="/about" className="hover:text-brand-coral hover:translate-x-1 inline-block transition-transform">About Us</Link></li>
                 <li><Link href="/help" className="hover:text-brand-coral hover:translate-x-1 inline-block transition-transform">Help Center / FAQs</Link></li>
-                <li><Link href="/contact" className="hover:text-brand-coral hover:translate-x-1 inline-block transition-transform">Contact Support</Link></li>
                 <li><Link href="/terms" className="hover:text-brand-coral hover:translate-x-1 inline-block transition-transform">Terms of Service</Link></li>
                 <li><Link href="/privacy" className="hover:text-brand-coral hover:translate-x-1 inline-block transition-transform">Privacy Policy</Link></li>
-                <li><Link href="/developers" className="hover:text-brand-coral hover:translate-x-1 inline-block transition-transform">API Documentation</Link></li>
+                <li><a href={process.env.NODE_ENV === 'production' ? 'https://partner.racoonn.com/developers' : 'http://localhost:3000/developers'} className="hover:text-brand-coral hover:translate-x-1 inline-block transition-transform">API Documentation</a></li>
               </ul>
             </div>
             

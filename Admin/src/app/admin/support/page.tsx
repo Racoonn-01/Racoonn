@@ -29,6 +29,7 @@ export default function SupportPage() {
   const [tickets, setTickets] = useState<Ticket[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null)
+  const [timeFilter, setTimeFilter] = useState("today")
 
   const loadTickets = async (showLoading = false) => {
     if (showLoading) setIsLoading(true)
@@ -108,12 +109,36 @@ export default function SupportPage() {
     }
   }
 
+  const timeFilteredTickets = useMemo(() => {
+    if (timeFilter === "lifetime") return tickets;
+    const now = new Date();
+    return tickets.filter(t => {
+      const tDate = new Date(t.time);
+      if (timeFilter === "today") {
+        return tDate.toDateString() === now.toDateString();
+      } else if (timeFilter === "weekly") {
+        const oneWeekAgo = new Date(now);
+        oneWeekAgo.setDate(now.getDate() - 7);
+        return tDate >= oneWeekAgo;
+      } else if (timeFilter === "monthly") {
+        const oneMonthAgo = new Date(now);
+        oneMonthAgo.setMonth(now.getMonth() - 1);
+        return tDate >= oneMonthAgo;
+      } else if (timeFilter === "yearly") {
+        const oneYearAgo = new Date(now);
+        oneYearAgo.setFullYear(now.getFullYear() - 1);
+        return tDate >= oneYearAgo;
+      }
+      return true;
+    });
+  }, [tickets, timeFilter]);
+
   const stats = useMemo(() => {
-    const openTickets = tickets.filter(t => t.status === "Open" || t.status === "In Progress").length
-    const resolvedTickets = tickets.filter(t => t.status === "Resolved" || t.status === "Closed").length
-    const highPriority = tickets.filter(t => t.priority === "High" && (t.status === "Open" || t.status === "In Progress")).length
+    const openTickets = timeFilteredTickets.filter(t => t.status === "Open" || t.status === "In Progress").length
+    const resolvedTickets = timeFilteredTickets.filter(t => t.status === "Resolved" || t.status === "Closed").length
+    const highPriority = timeFilteredTickets.filter(t => t.priority === "High" && (t.status === "Open" || t.status === "In Progress")).length
     return { openTickets, resolvedTickets, highPriority }
-  }, [tickets])
+  }, [timeFilteredTickets])
 
   if (selectedTicket) {
     return (
@@ -213,10 +238,24 @@ export default function SupportPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Support Center</h2>
           <p className="text-muted-foreground mt-1">Manage customer and vendor support tickets and queries.</p>
+        </div>
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <Select value={timeFilter} onValueChange={(val) => val && setTimeFilter(val)}>
+            <SelectTrigger className="w-full sm:w-[180px] bg-white border-muted shadow-sm h-10 rounded-xl">
+              <SelectValue placeholder="Select timeframe" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="today">Today</SelectItem>
+              <SelectItem value="weekly">Weekly</SelectItem>
+              <SelectItem value="monthly">Monthly</SelectItem>
+              <SelectItem value="yearly">Yearly</SelectItem>
+              <SelectItem value="lifetime">Lifetime</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
@@ -290,14 +329,14 @@ export default function SupportPage() {
                     Loading tickets...
                   </TableCell>
                 </TableRow>
-              ) : tickets.length === 0 ? (
+              ) : timeFilteredTickets.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={7} className="h-32 text-center text-muted-foreground">
-                    No support tickets found.
+                    No support tickets found for this timeframe.
                   </TableCell>
                 </TableRow>
               ) : (
-                tickets.map((ticket) => (
+                timeFilteredTickets.map((ticket) => (
                   <TableRow key={ticket.id}>
                     <TableCell className="font-medium">{ticket.displayId}</TableCell>
                     <TableCell>

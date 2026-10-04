@@ -264,11 +264,11 @@ export function Step1Account({ onNext }: { onNext: () => void }) {
           />
           <label htmlFor="terms" className="text-sm text-slate-600 font-medium leading-relaxed cursor-pointer block">
             I agree to Racoonn's{" "}
-            <a href="#" className="text-rose-600 hover:text-rose-700 font-semibold hover:underline">Terms of Service</a>
+            <a href={process.env.NODE_ENV === 'production' ? 'https://racoonn.com/terms' : 'http://localhost:3001/terms'} target="_blank" rel="noopener noreferrer" className="text-rose-600 hover:text-rose-700 font-semibold hover:underline">Terms of Service</a>
             {", "}
-            <a href="#" className="text-rose-600 hover:text-rose-700 font-semibold hover:underline">Privacy Policy</a>
+            <a href={process.env.NODE_ENV === 'production' ? 'https://racoonn.com/privacy' : 'http://localhost:3001/privacy'} target="_blank" rel="noopener noreferrer" className="text-rose-600 hover:text-rose-700 font-semibold hover:underline">Privacy Policy</a>
             {", and "}
-            <a href="#" className="text-rose-600 hover:text-rose-700 font-semibold hover:underline">Partner Agreement</a>
+            <a href={process.env.NODE_ENV === 'production' ? 'https://racoonn.com/terms' : 'http://localhost:3001/terms'} target="_blank" rel="noopener noreferrer" className="text-rose-600 hover:text-rose-700 font-semibold hover:underline">Partner Agreement</a>
             .
           </label>
         </motion.div>

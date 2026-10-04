@@ -42,7 +42,7 @@ export default function Navbar() {
     }
   }, [pathname]);
 
-  const isAuthPage = ['/signin', '/signup', '/forgot-password', '/reset-password', '/developers'].includes(pathname);
+  const isAuthPage = ['/signin', '/signup', '/forgot-password', '/reset-password'].includes(pathname);
   const isCheckoutPage = pathname.startsWith('/checkout');
   if (isAuthPage || isCheckoutPage) return null;
 
@@ -117,7 +117,7 @@ export default function Navbar() {
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
               onClick={() => setIsSidebarOpen(false)}
-              className="fixed inset-0 bg-brand-navy/60 z-50"
+              className="fixed inset-0 bg-brand-navy/60 z-[9999]"
             />
             
             {/* Premium Sidebar Panel */}
@@ -126,7 +126,7 @@ export default function Navbar() {
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
               transition={{ type: 'tween', ease: 'circOut', duration: 0.3 }}
-              className="fixed top-0 right-0 bottom-0 w-95 max-w-[85vw] bg-white z-50 shadow-2xl flex flex-col will-change-transform transform-gpu"
+              className="fixed top-0 right-0 bottom-0 w-95 max-w-[85vw] bg-white z-[9999] shadow-2xl flex flex-col will-change-transform transform-gpu"
             >
               {/* Header */}
               <div className="flex items-center justify-between p-8 pb-4">

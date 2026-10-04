@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Plus, Edit2, Trash2, MapPin, Eye, EyeOff, Zap, AlertTriangle, Check, Search, Building } from "lucide-react";
+import { Plus, Edit2, Trash2, MapPin, Eye, EyeOff, Zap, AlertTriangle, Check, Search, Building, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -16,6 +16,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import Image from "next/image";
+import { DeleteConfirmModal } from "@/components/ui/delete-confirm-modal";
 
 export interface PopularStaySection {
   id: string;
@@ -39,6 +40,7 @@ const STORAGE_KEY = "racoonn_cms_popular_stays_sections_v3";
 
 export default function PopularStaysCMSPage() {
   const [sections, setSections] = useState<PopularStaySection[]>([]);
+  const [isLoadingSections, setIsLoadingSections] = useState(true);
   const [availableProperties, setAvailableProperties] = useState<AvailableProperty[]>([]);
   const [propSearch, setPropSearch] = useState("");
   const [isLoadingProps, setIsLoadingProps] = useState(false);
@@ -47,6 +49,7 @@ export default function PopularStaysCMSPage() {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [editingSection, setEditingSection] = useState<PopularStaySection | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [statusConfirm, setStatusConfirm] = useState<{ id: string, nextStatus: boolean } | null>(null);
 
   // Form State
   const [titleInput, setTitleInput] = useState("");
@@ -85,6 +88,8 @@ export default function PopularStaysCMSPage() {
         }
       } catch (err) {
         console.error("Failed to load CMS sections from DB:", err);
+      } finally {
+        setIsLoadingSections(false);
       }
     }
     loadCMSSections();
@@ -184,11 +189,13 @@ export default function PopularStaysCMSPage() {
     setEditingSection(null);
   };
 
-  const handleToggleActive = (id: string) => {
+  const confirmToggleStatus = () => {
+    if (!statusConfirm) return;
     const updated = sections.map((sec) =>
-      sec.id === id ? { ...sec, isActive: !sec.isActive } : sec
+      sec.id === statusConfirm.id ? { ...sec, isActive: statusConfirm.nextStatus } : sec
     );
     saveSections(updated);
+    setStatusConfirm(null);
   };
 
   const handleDelete = () => {
@@ -257,7 +264,7 @@ export default function PopularStaysCMSPage() {
               <div className="flex items-center gap-2">
                 <Switch
                   checked={section.isActive}
-                  onCheckedChange={() => handleToggleActive(section.id)}
+                  onCheckedChange={() => setStatusConfirm({ id: section.id, nextStatus: !section.isActive })}
                   title={section.isActive ? "Hide Section" : "Show Section"}
                 />
               </div>
@@ -298,7 +305,11 @@ export default function PopularStaysCMSPage() {
           </Card>
         ))}
 
-        {sections.length === 0 && (
+        {isLoadingSections ? (
+          <div className="col-span-full flex justify-center items-center h-48 border-2 border-dashed border-gray-200 rounded-3xl bg-gray-50">
+            <Loader2 className="h-10 w-10 text-rose-500 animate-spin" />
+          </div>
+        ) : sections.length === 0 ? (
           <div className="col-span-full border-2 border-dashed border-gray-200 rounded-3xl p-12 text-center bg-gray-50">
             <Zap className="mx-auto text-gray-400 mb-3" size={36} />
             <h3 className="text-lg font-bold text-gray-700">No Popular Stays Sections Uploaded</h3>
@@ -312,7 +323,7 @@ export default function PopularStaysCMSPage() {
               Add New Section
             </Button>
           </div>
-        )}
+        ) : null}
       </div>
 
       {/* Modal: Upload / Create Section */}
@@ -574,27 +585,35 @@ export default function PopularStaysCMSPage() {
       </Dialog>
 
       {/* Modal: Delete Section */}
-      <Dialog open={Boolean(deletingId)} onOpenChange={() => setDeletingId(null)}>
-        <DialogContent className="sm:max-w-md rounded-2xl">
-          <DialogHeader>
-            <DialogTitle className="text-xl font-bold text-rose-600 flex items-center gap-2">
-              <AlertTriangle size={22} /> Delete Section?
-            </DialogTitle>
-            <DialogDescription>
-              Are you sure you want to delete this Popular Stays section? It will immediately be removed from the website homepage.
-            </DialogDescription>
-          </DialogHeader>
+      <DeleteConfirmModal
+        isOpen={Boolean(deletingId)}
+        onClose={() => setDeletingId(null)}
+        onConfirm={handleDelete}
+        title="Delete Section?"
+        description="Are you sure you want to delete this Popular Stays section? It will immediately be removed from the website homepage."
+      />
 
-          <DialogFooter className="gap-2 sm:gap-0 pt-4">
-            <Button variant="ghost" onClick={() => setDeletingId(null)} className="rounded-xl">
-              Cancel
-            </Button>
-            <Button variant="destructive" onClick={handleDelete} className="rounded-xl">
-              Delete Permanently
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Custom Status Confirm Modal */}
+      {statusConfirm && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="p-6 text-center">
+              <h3 className="text-lg font-semibold text-slate-900 mb-2">Change Visibility</h3>
+              <p className="text-slate-500 text-sm">
+                Are you sure you want to {statusConfirm.nextStatus ? "show" : "hide"} this section on the homepage?
+              </p>
+            </div>
+            <div className="bg-slate-50 p-4 flex justify-end gap-3 border-t border-slate-100">
+              <Button variant="outline" onClick={() => setStatusConfirm(null)} className="rounded-full">
+                Cancel
+              </Button>
+              <Button onClick={() => confirmToggleStatus()} className="rounded-full bg-[#1F2E4A] hover:bg-[#2a3c5e] text-white">
+                Confirm
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

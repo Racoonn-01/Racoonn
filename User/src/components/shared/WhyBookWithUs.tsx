@@ -63,15 +63,15 @@ export default function WhyBookWithUs() {
         </div>
 
         {/* Features Row */}
-        <div className="flex flex-col md:grid md:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-6 mb-12 md:divide-x divide-gray-100">
+        <div className="flex flex-col md:grid md:grid-cols-3 lg:grid-cols-5 gap-6 md:gap-6 mb-12 md:divide-x divide-gray-100">
           {features.map((feature, idx) => (
-            <div key={idx} className={`flex flex-row md:flex-col items-center md:items-center text-left md:text-center gap-4 md:gap-0 ${idx !== 0 ? 'md:pl-6 pt-4 md:pt-0 border-t border-gray-100 md:border-t-0' : ''}`}>
-              <div className={`w-10 h-10 md:w-12 md:h-12 shrink-0 ${feature.bg} ${feature.color} rounded-xl flex items-center justify-center md:mb-4`}>
-                <feature.icon className="w-5 h-5 md:w-6 md:h-6" />
+            <div key={idx} className={`flex flex-row md:flex-col items-center md:items-center text-left md:text-center gap-5 md:gap-0 ${idx !== 0 ? 'md:pl-6 pt-5 md:pt-0 border-t border-gray-100 md:border-t-0' : ''}`}>
+              <div className={`w-14 h-14 md:w-16 md:h-16 shrink-0 ${feature.bg} ${feature.color} rounded-2xl flex items-center justify-center md:mb-5`}>
+                <feature.icon className="w-6 h-6 md:w-8 md:h-8" />
               </div>
-              <div>
-                <h3 className="text-sm md:text-base font-bold text-brand-navy mb-1 md:mb-2">{feature.title}</h3>
-                <p className="text-gray-500 text-[11px] md:text-xs leading-relaxed">{feature.desc}</p>
+              <div className="flex-1">
+                <h3 className="text-[17px] md:text-lg font-bold text-brand-navy mb-1 md:mb-2">{feature.title}</h3>
+                <p className="text-gray-500 text-[14px] md:text-[15px] leading-relaxed">{feature.desc}</p>
               </div>
             </div>
           ))}

@@ -40,6 +40,10 @@ export default function TourCard({ pkg }: { pkg: TourCardPackage }) {
                 src={img}
                 alt={`${pkg.title} ${i + 1}`}
                 fill
+                unoptimized
+                onError={(e) => {
+                  e.currentTarget.src = "https://images.unsplash.com/photo-1519999482648-25049ddd37b1?q=80&w=800&auto=format&fit=crop";
+                }}
                 sizes="(max-width: 768px) 85vw, (max-width: 1024px) 50vw, 25vw"
                 className="object-cover group-hover/card:scale-110 transition-transform duration-700 ease-in-out"
               />

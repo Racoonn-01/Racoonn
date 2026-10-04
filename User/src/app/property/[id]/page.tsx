@@ -175,23 +175,24 @@ export default async function PropertyDetails({ params }: { params: Promise<{ id
         <PropertyPhotoGallery images={images} />
 
         {/* Sticky Horizontal Tab Navigation */}
-        <div className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-gray-200 mb-8 py-2">
-          <div className="flex items-center gap-2 overflow-x-auto hide-scrollbar">
-            <a href="#rooms" className="px-5 py-2.5 bg-gray-100 rounded-xl font-bold text-[15px] text-brand-navy flex items-center gap-2 transition-colors whitespace-nowrap">
-              <BedDouble size={18} /> Rooms and prices
+        <div className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-gray-200 mb-8 py-2 -mx-6 sm:mx-0">
+          <div className="flex items-center gap-2 overflow-x-auto hide-scrollbar px-6 sm:px-0 pb-1">
+            <a href="#rooms" className="shrink-0 px-4 sm:px-5 py-2 sm:py-2.5 bg-gray-100 rounded-xl font-bold text-[14px] sm:text-[15px] text-brand-navy flex items-center gap-2 transition-colors whitespace-nowrap">
+              <BedDouble size={16} className="sm:w-[18px] sm:h-[18px]" /> Rooms and prices
             </a>
-            <a href="#amenities" className="px-5 py-2.5 rounded-xl font-semibold text-[15px] text-gray-600 hover:bg-gray-50 flex items-center gap-2 transition-colors whitespace-nowrap">
-              <Coffee size={18} /> Amenities
+            <a href="#amenities" className="shrink-0 px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl font-semibold text-[14px] sm:text-[15px] text-gray-600 hover:bg-gray-50 flex items-center gap-2 transition-colors whitespace-nowrap">
+              <Coffee size={16} className="sm:w-[18px] sm:h-[18px]" /> Amenities
             </a>
-            <a href="#about" className="px-5 py-2.5 rounded-xl font-semibold text-[15px] text-gray-600 hover:bg-gray-50 flex items-center gap-2 transition-colors whitespace-nowrap">
-              <Info size={18} /> About the hotel
+            <a href="#about" className="shrink-0 px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl font-semibold text-[14px] sm:text-[15px] text-gray-600 hover:bg-gray-50 flex items-center gap-2 transition-colors whitespace-nowrap">
+              <Info size={16} className="sm:w-[18px] sm:h-[18px]" /> About the hotel
             </a>
-            <a href="#location" className="px-5 py-2.5 rounded-xl font-semibold text-[15px] text-gray-600 hover:bg-gray-50 flex items-center gap-2 transition-colors whitespace-nowrap">
-              <MapPin size={18} /> Location
+            <a href="#location" className="shrink-0 px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl font-semibold text-[14px] sm:text-[15px] text-gray-600 hover:bg-gray-50 flex items-center gap-2 transition-colors whitespace-nowrap">
+              <MapPin size={16} className="sm:w-[18px] sm:h-[18px]" /> Location
             </a>
-            <a href="#reviews" className="px-5 py-2.5 rounded-xl font-semibold text-[15px] text-gray-600 hover:bg-gray-50 flex items-center gap-2 transition-colors whitespace-nowrap">
-              <Star size={18} /> Rating and reviews <span className="bg-brand-navy text-white text-xs px-2 py-0.5 rounded-full ml-1">{reviewCount}</span>
+            <a href="#reviews" className="shrink-0 px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl font-semibold text-[14px] sm:text-[15px] text-gray-600 hover:bg-gray-50 flex items-center gap-2 transition-colors whitespace-nowrap">
+              <Star size={16} className="sm:w-[18px] sm:h-[18px]" /> Rating and reviews <span className="bg-brand-navy text-white text-xs px-2 py-0.5 rounded-full ml-1">{reviewCount}</span>
             </a>
+            <div className="w-1 shrink-0 sm:hidden"></div>
           </div>
         </div>
 

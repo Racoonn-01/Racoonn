@@ -17,7 +17,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-const AuthModal = ({ children }: { children: React.ReactElement }) => {
+export const AuthModal = ({ children }: { children: React.ReactElement }) => {
   const [view, setView] = useState<'signin' | 'signup' | 'forgot'>('signin');
 
   return (

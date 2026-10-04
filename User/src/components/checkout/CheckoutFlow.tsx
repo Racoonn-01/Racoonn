@@ -10,7 +10,7 @@ import { Loader2, AlertCircle, Gem, Ticket, MapPin, CalendarDays, Check } from "
 import { motion } from "framer-motion";
 import Script from "next/script";
 import { checkAvailability } from "@/lib/appwrite/availability";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { calculateRoomGst } from "@/lib/gst";
 import { calculateRoomPricing } from "@/lib/pricing";
 
@@ -58,6 +58,8 @@ export function CheckoutFlow() {
   const hotelImage = localHotelImage || searchParams.get('roomImage') || searchParams.get('hotelImage') || useCheckoutStore.getState().hotelImage || 'https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=1600&auto=format&fit=crop';
   const adults = Number(searchParams.get('guests')) || 2;
 
+
+
   const fetchPropertyAddons = useCheckoutStore(state => state.fetchPropertyAddons);
   const propertyAddons = useCheckoutStore(state => state.propertyAddons);
 
@@ -71,6 +73,44 @@ export function CheckoutFlow() {
   const rooms = Number(searchParams.get('rooms')) || 1;
   const roomName = searchParams.get('roomName') || '';
   const isPackage = roomName.startsWith('Package:') || roomName.toLowerCase().includes('package');
+
+  // Abandoned Checkout Tracking
+  const sessionIdRef = useRef<string>('');
+  useEffect(() => {
+    if (!sessionIdRef.current) {
+      sessionIdRef.current = 'ses_' + Math.random().toString(36).substring(2, 15);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!guestDetails.email.includes('@') || !guestDetails.email.includes('.')) return;
+
+    const timeout = setTimeout(() => {
+      fetch('/api/abandoned-checkout/track', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sessionId: sessionIdRef.current,
+          email: guestDetails.email,
+          name: `${guestDetails.firstName} ${guestDetails.lastName}`.trim(),
+          phone: guestDetails.phone,
+          hotelId,
+          roomId: '',
+          roomName,
+          checkIn,
+          checkOut,
+          guests: `${adults} Adults`,
+          amount: price,
+          checkoutUrl: window.location.href,
+        })
+      }).catch(console.error);
+    }, 2000); // 2 second debounce
+
+    return () => clearTimeout(timeout);
+  }, [
+    guestDetails.email, guestDetails.firstName, guestDetails.lastName, 
+    guestDetails.phone, hotelId, roomName, checkIn, checkOut, adults, price
+  ]);
 
   let isFormValid = 
     guestDetails.firstName.trim() !== '' && 
@@ -171,6 +211,21 @@ export function CheckoutFlow() {
       return;
     }
 
+    const markCheckoutSuccess = async (bookingId: string) => {
+      try {
+        await fetch('/api/abandoned-checkout/success', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            sessionId: sessionIdRef.current,
+            bookingId: bookingId
+          })
+        });
+      } catch (err) {
+        console.error("Failed to mark checkout success:", err);
+      }
+    };
+
     // 2. Process Payment / Booking
     try {
       const razorpayKey = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
@@ -191,66 +246,35 @@ export function CheckoutFlow() {
         hasRazorpayScript = typeof (window as any).Razorpay !== "undefined";
       }
 
+      const processDirectBooking = async () => {
+        await submitBooking({
+          hotelId, hotelName, hotelLocation, hotelImage, price, nights, rooms, roomName, checkIn, checkOut, adults
+        });
+        await markCheckoutSuccess('');
+      };
+
       if (!hasRealRazorpayKey || !hasRazorpayScript) {
         // Direct seamless booking processing when real Razorpay keys are not configured
-        await submitBooking({
-          hotelId,
-          hotelName,
-          hotelLocation,
-          hotelImage,
-          price,
-          nights,
-          rooms,
-          roomName,
-          checkIn,
-          checkOut,
-          adults
-        });
+        await processDirectBooking();
         return;
       }
 
       const res = await fetch('/api/razorpay/create-order', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ amount: finalTotalAmount }),
       });
       
       const contentType = res.headers.get("content-type") || "";
       if (!res.ok || !contentType.includes("application/json")) {
         console.warn("API returned non-JSON response, processing booking directly.");
-        await submitBooking({
-          hotelId,
-          hotelName,
-          hotelLocation,
-          hotelImage,
-          price,
-          nights,
-          rooms,
-          roomName,
-          checkIn,
-          checkOut,
-          adults
-        });
+        await processDirectBooking();
         return;
       }
 
       const order = await res.json();
       if (!order || !order.id || order.id.startsWith("mock_")) {
-        await submitBooking({
-          hotelId,
-          hotelName,
-          hotelLocation,
-          hotelImage,
-          price,
-          nights,
-          rooms,
-          roomName,
-          checkIn,
-          checkOut,
-          adults
-        });
+        await processDirectBooking();
         return;
       }
 
@@ -265,18 +289,9 @@ export function CheckoutFlow() {
         handler: async function () {
           try {
             await submitBooking({
-              hotelId,
-              hotelName,
-              hotelLocation,
-              hotelImage,
-              price,
-              nights,
-              rooms,
-              roomName,
-              checkIn,
-              checkOut,
-              adults
+              hotelId, hotelName, hotelLocation, hotelImage, price, nights, rooms, roomName, checkIn, checkOut, adults
             });
+            await markCheckoutSuccess('');
           } catch (error) {
             console.error("Booking save error:", error);
             useCheckoutStore.setState({ bookingError: "Payment succeeded but booking save failed. Contact support." });

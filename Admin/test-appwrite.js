@@ -7,20 +7,14 @@ client
 
 const databases = new sdk.Databases(client);
 
-async function run() {
-    try {
-        console.log("Creating attribute...");
-        await databases.createBooleanAttribute(
-            '6a3cec630035d63ea963', 
-            '6a3e0fd9da7df0d38588', 
-            'allow24PercentGst', 
-            false, 
-            false, 
-            false
-        );
-        console.log("Success");
-    } catch (e) {
-        console.error(e.message);
-    }
-}
-run();
+databases.listDocuments(
+    '6a3cec630035d63ea963',
+    'properties',
+    [
+        sdk.Query.limit(100)
+    ]
+).then(response => {
+    console.log(response.documents.map(d => ({id: d.$id, name: d.propertyName, detailsLength: d.details ? d.details.length : 0})));
+}).catch(err => {
+    console.error(err);
+});

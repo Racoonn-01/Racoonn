@@ -129,14 +129,14 @@ export default function TourPackages() {
     <section className="container mx-auto px-4 pt-10 pb-16 relative">
       
       {/* Section Header */}
-      <div className="flex flex-col items-center text-center mb-10">
-        <div className="flex items-center gap-2 text-brand-coral font-bold text-sm tracking-widest uppercase mb-4">
+      <div className="flex flex-col items-center text-center mb-8 md:mb-10">
+        <div className="flex items-center gap-2 text-brand-coral font-bold text-xs md:text-sm tracking-widest uppercase mb-3 md:mb-4">
           <span>CURATED FOR YOU</span>
         </div>
-        <h2 className="text-4xl md:text-5xl font-extrabold text-brand-navy font-heading mb-4">
+        <h2 className="text-[28px] leading-tight md:text-4xl lg:text-5xl font-extrabold text-brand-navy font-heading mb-3 md:mb-4">
           Best <span className="text-brand-coral">Tour Packages</span>
         </h2>
-        <p className="text-brand-charcoal/70 text-lg max-w-2xl">
+        <p className="text-brand-charcoal/70 text-base md:text-lg max-w-2xl px-2">
           Discover handpicked tour packages that promise an unforgettable journey through the mountains.
         </p>
       </div>

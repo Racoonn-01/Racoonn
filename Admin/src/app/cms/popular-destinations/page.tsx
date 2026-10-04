@@ -16,6 +16,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { DeleteConfirmModal } from "@/components/ui/delete-confirm-modal";
 
 export interface PopularDestination {
   id: string | number;
@@ -31,6 +32,7 @@ export default function PopularDestinationsPage() {
   const [destinations, setDestinations] = useState<PopularDestination[]>([]);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | number | null>(null);
 
   // Form state
   const [newCity, setNewCity] = useState("");
@@ -144,8 +146,15 @@ export default function PopularDestinationsPage() {
   };
 
   const handleRemove = (id: string | number) => {
-    const updated = destinations.filter((d) => d.id !== id);
-    saveDestinations(updated);
+    setDeleteConfirmId(id);
+  };
+
+  const confirmRemove = () => {
+    if (deleteConfirmId !== null) {
+      const updated = destinations.filter((d) => d.id !== deleteConfirmId);
+      saveDestinations(updated);
+      setDeleteConfirmId(null);
+    }
   };
 
   return (
@@ -328,6 +337,14 @@ export default function PopularDestinationsPage() {
           </Button>
         </div>
       )}
+
+      <DeleteConfirmModal
+        isOpen={deleteConfirmId !== null}
+        onClose={() => setDeleteConfirmId(null)}
+        onConfirm={confirmRemove}
+        title="Remove Destination"
+        description="Are you sure you want to remove this popular destination? This action cannot be undone."
+      />
     </div>
   );
 }

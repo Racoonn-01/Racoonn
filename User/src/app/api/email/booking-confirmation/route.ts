@@ -48,12 +48,12 @@ function generateInvoicePdf(data: any): Promise<Buffer> {
       }
       
       doc.fontSize(10).font('Helvetica-Bold').fillColor(COLORS.textDark);
-      doc.text('CIELE TRAVELS PRIVATE LIMITED', 50, 90);
+      doc.text('CIELLE TRAVELS PRIVATE LIMITED', 50, 90);
       doc.fontSize(9).font('Helvetica').fillColor(COLORS.textLight);
       doc.text('GSTIN - 05AAOCC0859Q1Z0', 50, 105);
       doc.text('B-81, Rose Villa, Samiah Lake City, Rudrapur,', 50, 120);
       doc.text('Kichha, Udham Singh Nagar - 263153, Uttarakhand', 50, 135);
-      doc.text('Phone: +91 9061****** | Email: support@racoonn.com', 50, 150);
+      doc.text('Phone: +91 8954442144 | Email: support@racoonn.com', 50, 150);
 
       // Invoice Meta (Right Aligned)
       doc.fontSize(28).font('Helvetica-Bold').fillColor(COLORS.textDark).text('INVOICE', 350, 45, { align: 'right' });

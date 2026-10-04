@@ -32,6 +32,7 @@ import {
   BlogItem
 } from "./actions";
 import { client, appwriteConfig } from "@/lib/appwrite/client";
+import { DeleteConfirmModal } from "@/components/ui/delete-confirm-modal";
 
 export default function BlogsPage() {
   const [data, setData] = useState<{
@@ -49,6 +50,7 @@ export default function BlogsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
   // New Blog Form State
   const [formData, setFormData] = useState({
@@ -121,10 +123,15 @@ export default function BlogsPage() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (confirm("Are you sure you want to delete this blog?")) {
-      await deleteBlog(id);
+  const handleDelete = (id: string) => {
+    setDeleteConfirmId(id);
+  };
+
+  const confirmDelete = async () => {
+    if (deleteConfirmId) {
+      await deleteBlog(deleteConfirmId);
       await loadData();
+      setDeleteConfirmId(null);
     }
   };
 
@@ -280,6 +287,13 @@ export default function BlogsPage() {
         </CardContent>
       </Card>
 
+      <DeleteConfirmModal
+        isOpen={!!deleteConfirmId}
+        onClose={() => setDeleteConfirmId(null)}
+        onConfirm={confirmDelete}
+        title="Delete Blog"
+        description="Are you sure you want to delete this blog? This action cannot be undone."
+      />
     </div>
   );
 }

@@ -80,14 +80,14 @@ export default function PopularDestinations() {
   return (
     <section className="container mx-auto px-4 pt-4 pb-4 relative">
       {/* Header Section */}
-      <div className="flex flex-col items-center text-center mb-12">
-        <div className="flex items-center gap-2 text-brand-coral font-bold text-sm tracking-widest uppercase mb-4">
+      <div className="flex flex-col items-center text-center mb-8 md:mb-12">
+        <div className="flex items-center gap-2 text-brand-coral font-bold text-xs md:text-sm tracking-widest uppercase mb-3 md:mb-4">
           <span>EXPLORE UTTARAKHAND</span>
         </div>
-        <h2 className="text-4xl md:text-5xl font-extrabold text-brand-navy font-heading mb-4">
+        <h2 className="text-[28px] leading-tight md:text-4xl lg:text-5xl font-extrabold text-brand-navy font-heading mb-3 md:mb-4">
           Popular Destinations in <span className="text-brand-coral">Uttarakhand</span>
         </h2>
-        <p className="text-brand-charcoal/70 text-lg max-w-2xl">
+        <p className="text-brand-charcoal/70 text-base md:text-lg max-w-2xl px-2">
           From serene mountains to spiritual towns, explore the best stays and packages in Devbhoomi.
         </p>
       </div>
@@ -104,10 +104,10 @@ export default function PopularDestinations() {
               {[1, 2, 3, 4].map((i) => (
                 <div 
                   key={i} 
-                  className="w-full min-w-full md:min-w-0 md:w-[calc(50%-12px)] lg:w-[calc(25%-18px)] shrink-0 rounded-3xl overflow-hidden shadow-sm h-112.5 bg-gray-100 animate-pulse relative snap-center md:snap-start"
+                  className="w-full min-w-full md:min-w-0 md:w-[calc(50%-12px)] lg:w-[calc(25%-18px)] shrink-0 rounded-3xl overflow-hidden shadow-sm h-[360px] md:h-[450px] bg-gray-100 animate-pulse relative snap-center md:snap-start"
                 >
                   <div className="absolute top-4 left-4 bg-gray-200 w-28 h-8 rounded-full" />
-                  <div className="absolute bottom-6 left-6 right-6 flex flex-col gap-4">
+                  <div className="absolute bottom-4 md:bottom-6 left-4 md:left-6 right-4 md:right-6 flex flex-col gap-3 md:gap-4">
                     <div className="bg-gray-200 h-4 w-full rounded" />
                     <div className="bg-gray-200 h-4 w-2/3 rounded" />
                     <div className="bg-gray-200 h-9 w-36 rounded-full" />
@@ -122,12 +122,16 @@ export default function PopularDestinations() {
                 <Link
                   href={`/search?location=${encodeURIComponent(dest.city)}`}
                   key={dest.id}
-                  className="w-full min-w-full md:min-w-0 md:w-[calc(50%-12px)] lg:w-[calc(25%-18px)] shrink-0 group/card relative rounded-3xl overflow-hidden cursor-pointer shadow-sm hover:shadow-xl transition-all duration-300 snap-center md:snap-start h-112.5"
+                  className="w-full min-w-full md:min-w-0 md:w-[calc(50%-12px)] lg:w-[calc(25%-18px)] shrink-0 group/card relative rounded-3xl overflow-hidden cursor-pointer shadow-sm hover:shadow-xl transition-all duration-300 snap-center md:snap-start h-[360px] md:h-[450px] bg-gray-100"
                 >
                   <Image
                     src={dest.image || "https://images.unsplash.com/photo-1626621341517-bbf3d9990a23?q=80&w=800&auto=format&fit=crop"}
                     alt={dest.city}
                     fill
+                    unoptimized
+                    onError={(e) => {
+                      e.currentTarget.src = "https://images.unsplash.com/photo-1626621341517-bbf3d9990a23?q=80&w=800&auto=format&fit=crop";
+                    }}
                     className="object-cover group-hover/card:scale-110 transition-transform duration-700"
                     sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 25vw"
                   />
@@ -140,11 +144,11 @@ export default function PopularDestinations() {
                   </div>
   
                   {/* Bottom Info */}
-                  <div className="absolute bottom-0 left-0 w-full p-6 text-white flex flex-col gap-4">
-                    <p className="text-white/90 font-medium text-[16px] leading-snug line-clamp-2">
+                  <div className="absolute bottom-0 left-0 w-full p-4 md:p-6 text-white flex flex-col gap-3 md:gap-4">
+                    <p className="text-white/90 font-medium text-sm md:text-[16px] leading-snug line-clamp-2">
                       {dest.description}
                     </p>
-                    <div className="bg-white/95 px-5 py-2 rounded-full self-start text-brand-navy font-bold text-sm shadow-lg transform-gpu">
+                    <div className="bg-white/95 px-4 md:px-5 py-1.5 md:py-2 rounded-full self-start text-brand-navy font-bold text-xs md:text-sm shadow-lg transform-gpu">
                       Stays from ₹{rawPrice}
                     </div>
                   </div>

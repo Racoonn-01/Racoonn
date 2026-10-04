@@ -7,6 +7,7 @@ import { Plus, Trash2, Loader2, MapPin, Clock, Users, ChevronLeft, ChevronRight,
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { Tent } from 'lucide-react';
+import { DeleteConfirmModal } from '@/components/ui/delete-confirm-modal';
 
 const databases = new Databases(client);
 
@@ -137,6 +138,7 @@ const ActivityCardAdmin = ({ activity, handleDelete }: { activity: Activity, han
 export default function ActivitiesPage() {
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
   const COLLECTION_ID = process.env.NEXT_PUBLIC_APPWRITE_ACTIVITIES_COLLECTION_ID || 'activities';
 
@@ -159,10 +161,14 @@ export default function ActivitiesPage() {
     loadActivities();
   }, [COLLECTION_ID]);
 
-  const handleDelete = async (id: string) => {
-    if (confirm('Are you sure you want to delete this activity?')) {
+  const handleDelete = (id: string) => {
+    setDeleteConfirmId(id);
+  };
+
+  const confirmDelete = async () => {
+    if (deleteConfirmId) {
       try {
-        await databases.deleteDocument(appwriteConfig.databaseId, COLLECTION_ID, id);
+        await databases.deleteDocument(appwriteConfig.databaseId, COLLECTION_ID, deleteConfirmId);
         // Quick local reload function for delete
         setLoading(true);
         const res = await databases.listDocuments(
@@ -171,9 +177,11 @@ export default function ActivitiesPage() {
           [Query.orderDesc('$createdAt')]
         );
         setActivities(res.documents as unknown as Activity[]);
-        setLoading(false);
       } catch (error) {
         console.error('Error deleting activity:', error);
+      } finally {
+        setLoading(false);
+        setDeleteConfirmId(null);
       }
     }
   };
@@ -210,6 +218,15 @@ export default function ActivitiesPage() {
           ))}
         </div>
       )}
+
+      {/* Custom Delete Confirmation Modal */}
+      <DeleteConfirmModal
+        isOpen={!!deleteConfirmId}
+        onClose={() => setDeleteConfirmId(null)}
+        onConfirm={confirmDelete}
+        title="Delete Activity"
+        description="Are you sure you want to delete this activity? This action cannot be undone."
+      />
     </div>
   );
 }

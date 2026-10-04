@@ -1,10 +1,12 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Check, Clock, ShieldCheck } from "lucide-react";
+import { Check, Clock, ShieldCheck, PlayCircle } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { useState } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 const STEPS = [
   { id: 1, name: "Create Account" },
@@ -19,6 +21,7 @@ const STEPS = [
 ];
 
 export function ProgressSidebar({ currentStep }: { currentStep: number }) {
+  const [isTutorialOpen, setIsTutorialOpen] = useState(false);
   const progressPercent = Math.min((currentStep / 9) * 100, 100);
 
   return (
@@ -29,7 +32,16 @@ export function ProgressSidebar({ currentStep }: { currentStep: number }) {
       </Link>
 
       <div className="mb-8">
-        <h2 className="text-2xl font-black text-brand-navy mb-2 font-['Poppins',sans-serif]">Registration</h2>
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="text-2xl font-black text-brand-navy font-['Poppins',sans-serif]">Registration</h2>
+          <button 
+            onClick={() => setIsTutorialOpen(true)}
+            className="flex items-center gap-1.5 text-xs font-bold text-brand-coral bg-brand-coral/10 hover:bg-brand-coral/20 px-3 py-1.5 rounded-full transition-colors"
+          >
+            <PlayCircle className="w-4 h-4" />
+            View Tutorial
+          </button>
+        </div>
         <p className="text-sm text-slate-500 font-medium">Get ready to welcome guests from around the globe.</p>
       </div>
 
@@ -93,6 +105,26 @@ export function ProgressSidebar({ currentStep }: { currentStep: number }) {
           <p className="text-[10px] font-medium text-slate-400">Your data is encrypted & secure</p>
         </div>
       </div>
+
+      <Dialog open={isTutorialOpen} onOpenChange={setIsTutorialOpen}>
+        <DialogContent className="sm:max-w-3xl p-0 overflow-hidden bg-black/95 border-slate-800">
+          <DialogHeader className="px-6 py-4 border-b border-white/10 absolute top-0 w-full z-10 bg-gradient-to-b from-black/80 to-transparent pointer-events-none">
+            <DialogTitle className="text-white">Partner Onboarding Tutorial</DialogTitle>
+          </DialogHeader>
+          <div className="aspect-video w-full bg-black">
+            <iframe 
+              width="100%" 
+              height="100%" 
+              src="https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1" 
+              title="Racoonn Partner Onboarding Tutorial" 
+              frameBorder="0" 
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+              referrerPolicy="strict-origin-when-cross-origin" 
+              allowFullScreen
+            ></iframe>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

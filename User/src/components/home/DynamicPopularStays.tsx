@@ -224,16 +224,16 @@ export default function DynamicPopularStays() {
             className="container mx-auto px-4 py-6 relative group"
           >
             {/* Section Header */}
-            <div className="flex justify-between items-center mb-6">
-              <div>
-                <h2 className="text-2xl font-bold text-gray-900 tracking-tight font-heading">
+            <div className="flex justify-between items-end sm:items-center mb-5 sm:mb-6 gap-4">
+              <div className="flex-1">
+                <h2 className="text-[22px] leading-tight sm:text-2xl font-bold text-gray-900 tracking-tight font-heading">
                   {sec.title}
                 </h2>
-                <p className="text-gray-500 text-sm mt-1">{sec.subtitle}</p>
+                <p className="text-gray-500 text-[13px] sm:text-sm mt-1.5 line-clamp-2 sm:line-clamp-none">{sec.subtitle}</p>
               </div>
               <Link
                 href={targetLocation ? `/search?location=${encodeURIComponent(targetLocation)}` : "/search"}
-                className="text-rose-600 font-semibold flex items-center hover:underline text-sm whitespace-nowrap group/link"
+                className="text-rose-600 font-semibold flex items-center hover:underline text-sm whitespace-nowrap shrink-0 group/link"
               >
                 View all <ChevronRight size={16} className="ml-1 group-hover/link:translate-x-1 transition-transform" />
               </Link>
@@ -258,6 +258,10 @@ export default function DynamicPopularStays() {
                         src={stay.image}
                         alt={stay.title}
                         fill
+                        unoptimized
+                        onError={(e) => {
+                          e.currentTarget.src = "https://images.unsplash.com/photo-1542314831-c6a4d14d837e?q=80&w=800&auto=format&fit=crop";
+                        }}
                         sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
                         className="object-cover group-hover/card:scale-105 transition-transform duration-500"
                       />

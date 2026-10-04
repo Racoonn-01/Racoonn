@@ -3,7 +3,7 @@
 import {
   LayoutDashboard, Building2, BedDouble, CalendarDays,
   CalendarCheck, Users, Star, Wallet, FileText,
-  LifeBuoy, Settings, LogOut
+  LifeBuoy, Settings, LogOut, Code2
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -35,6 +35,7 @@ const navItems = [
   { title: "Documents", url: "/vendor/documents", icon: FileText },
   { title: "Support", url: "/vendor/support", icon: LifeBuoy },
   { title: "Settings", url: "/vendor/settings", icon: Settings },
+  { title: "Developers", url: "/vendor/developers", icon: Code2 },
 ];
 
 export function AppSidebar() {

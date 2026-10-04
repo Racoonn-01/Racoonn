@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
 import Image from "next/image"
+import { DeleteConfirmModal } from "@/components/ui/delete-confirm-modal"
 
 type PricingSlab = {
   id: string;
@@ -145,6 +146,8 @@ export default function PackagesPage() {
   const [propertySearch, setPropertySearch] = useState('')
   const [activitySearch, setActivitySearch] = useState('')
   const [toast, setToast] = useState<{title: string, type: 'success' | 'error'} | null>(null)
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
+  const [statusConfirm, setStatusConfirm] = useState<{ id: string, nextStatus: 'draft' | 'published' } | null>(null)
 
   const showToast = (title: string, type: 'success' | 'error' = 'success') => {
     setToast({ title, type })
@@ -319,7 +322,11 @@ export default function PackagesPage() {
 
   const handleOpenForm = (pkg?: Package) => {
     if (pkg) {
-      setFormData(pkg)
+      setFormData({
+        ...pkg,
+        metaKeywords: pkg.metaKeywords || [],
+        videoTestimonials: pkg.videoTestimonials || []
+      })
     } else {
       setFormData({ ...emptyForm, id: Date.now().toString() })
     }
@@ -332,20 +339,34 @@ export default function PackagesPage() {
     setFormData(emptyForm)
   }
 
-  const handleDelete = async (id: string) => {
-    if (confirm("Are you sure you want to delete this package?")) {
-      const updated = packages.filter(p => p.id !== id);
+  const handleDelete = (id: string) => {
+    setDeleteConfirmId(id)
+  }
+
+  const confirmDelete = async () => {
+    if (deleteConfirmId) {
+      const updated = packages.filter(p => p.id !== deleteConfirmId);
       const success = await savePackagesToServer(updated);
-      if (success) fetchPackages();
+      if (success) {
+        fetchPackages();
+        showToast("Package deleted successfully");
+      }
+      setDeleteConfirmId(null);
     }
   }
 
-  const handleToggleStatus = async (id: string) => {
+  const confirmToggleStatus = async () => {
+    if (!statusConfirm) return;
+    const { id, nextStatus } = statusConfirm;
     const updated = packages.map(p => 
-      p.id === id ? { ...p, status: (p.status === 'published' ? 'draft' : 'published') as 'draft' | 'published' } : p
+      p.id === id ? { ...p, status: nextStatus } : p
     );
     const success = await savePackagesToServer(updated);
-    if (success) fetchPackages();
+    if (success) {
+      fetchPackages();
+      showToast(`Package status changed to ${nextStatus}`, 'success');
+    }
+    setStatusConfirm(null);
   };
 
   const handleSave = async (e: React.FormEvent) => {
@@ -473,8 +494,8 @@ export default function PackagesPage() {
 
   const addKeyword = (value: string) => {
     const trimmed = value.trim().replace(/,$/, "")
-    if (trimmed && !formData.metaKeywords.includes(trimmed)) {
-      setFormData(prev => ({ ...prev, metaKeywords: [...prev.metaKeywords, trimmed] }))
+    if (trimmed && !(formData.metaKeywords || []).includes(trimmed)) {
+      setFormData(prev => ({ ...prev, metaKeywords: [...(prev.metaKeywords || []), trimmed] }))
     }
   }
 
@@ -721,14 +742,18 @@ export default function PackagesPage() {
                       <Button type="button" size="icon" variant="secondary" className="h-8 w-8 rounded-full" onClick={() => moveImage(idx, 'left')} disabled={idx === 0}>
                         <ChevronLeft className="w-4 h-4" />
                       </Button>
-                      <Button type="button" size="icon" variant="destructive" className="h-8 w-8 rounded-full" onClick={() => removeImage(idx)}>
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
                       <Button type="button" size="icon" variant="secondary" className="h-8 w-8 rounded-full" onClick={() => moveImage(idx, 'right')} disabled={idx === formData.images.length - 1}>
                         <ChevronRight className="w-4 h-4" />
                       </Button>
                     </div>
-                    {idx === 0 && <span className="absolute top-3 left-3 bg-white/90 text-xs font-bold px-2 py-1 rounded-md shadow-sm">Cover Image</span>}
+                    {idx === 0 && <span className="absolute top-3 left-3 bg-white/90 text-[#1F2E4A] text-xs font-bold px-3 py-1.5 rounded-lg shadow-sm">Cover Image</span>}
+                    <button
+                      type="button"
+                      onClick={() => removeImage(idx)}
+                      className="absolute top-3 right-3 bg-white text-red-500 hover:bg-red-500 hover:text-white w-8 h-8 rounded-full flex items-center justify-center shadow-md transition-all z-10"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
                   </div>
                 ))
               )}
@@ -979,7 +1004,7 @@ export default function PackagesPage() {
                   <input 
                     type="text" 
                     id="metaKeywords"
-                    placeholder={formData.metaKeywords.length === 0 ? "e.g. kashmir, tour (Press Enter or Comma)" : "Add keyword..."} 
+                    placeholder={(formData.metaKeywords || []).length === 0 ? "e.g. kashmir, tour (Press Enter or Comma)" : "Add keyword..."} 
                     className="flex-1 bg-transparent min-w-37.5 outline-none text-sm px-2 text-slate-700 placeholder:text-slate-400"
                     onKeyDown={handleKeywordKeyDown}
                     onBlur={handleKeywordBlur}
@@ -1264,12 +1289,19 @@ export default function PackagesPage() {
                   <div>
                     <h3 className="font-bold text-xl text-[#1F2E4A] line-clamp-1">{pkg.title}</h3>
                     <div className="flex items-center gap-3 mt-2">
-                      <button 
-                        onClick={() => handleToggleStatus(pkg.id)}
-                        className={`px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider cursor-pointer hover:opacity-80 transition-opacity ${pkg.status === 'published' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}
+                      <div 
+                        className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
+                        onClick={() => setStatusConfirm({ id: pkg.id, nextStatus: pkg.status === 'published' ? 'draft' : 'published' })}
                       >
-                        {pkg.status}
-                      </button>
+                        <Switch 
+                          checked={pkg.status === 'published'}
+                          onCheckedChange={() => {}}
+                          className="pointer-events-none"
+                        />
+                        <span className={`px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${pkg.status === 'published' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
+                          {pkg.status}
+                        </span>
+                      </div>
                       <span className="text-sm text-slate-500 font-medium">{(pkg.pricing || []).length} Pricing Slab(s)</span>
                     </div>
                   </div>
@@ -1301,6 +1333,37 @@ export default function PackagesPage() {
           <button onClick={() => setToast(null)} className="ml-2 p-1 opacity-70 hover:opacity-100 transition-opacity">
             <X className="w-4 h-4" />
           </button>
+        </div>
+      )}
+
+      {/* Custom Delete Confirmation Modal */}
+      <DeleteConfirmModal
+        isOpen={!!deleteConfirmId}
+        onClose={() => setDeleteConfirmId(null)}
+        onConfirm={confirmDelete}
+        title="Delete Package"
+        description="Are you sure you want to delete this package? This action cannot be undone."
+      />
+
+      {/* Custom Status Confirm Modal */}
+      {statusConfirm && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="p-6 text-center">
+              <h3 className="text-lg font-semibold text-slate-900 mb-2">Change Status</h3>
+              <p className="text-slate-500 text-sm">
+                Are you sure you want to change the status to <span className="font-bold">{statusConfirm.nextStatus}</span>?
+              </p>
+            </div>
+            <div className="bg-slate-50 p-4 flex justify-end gap-3 border-t border-slate-100">
+              <Button variant="outline" onClick={() => setStatusConfirm(null)} className="rounded-full">
+                Cancel
+              </Button>
+              <Button onClick={() => confirmToggleStatus()} className="rounded-full bg-[#1F2E4A] hover:bg-[#2a3c5e] text-white">
+                Confirm
+              </Button>
+            </div>
+          </div>
         </div>
       )}
     </div>

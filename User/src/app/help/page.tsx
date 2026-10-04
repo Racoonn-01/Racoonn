@@ -44,35 +44,35 @@ export default function HelpPage() {
       </section>
 
       {/* Main Content */}
-      <div className="container mx-auto px-4 -mt-12 relative z-20">
+      <div className="container mx-auto px-4 mt-0 md:-mt-12 relative z-20">
         
         {/* Support Options */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
-          <div className="bg-white rounded-2xl p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100 hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all hover:-translate-y-1">
-            <div className="w-14 h-14 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center mb-6">
-              <BookOpen size={28} />
+          <div className="bg-white rounded-2xl p-6 md:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100 hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all hover:-translate-y-1">
+            <div className="w-12 h-12 md:w-14 md:h-14 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center mb-5 md:mb-6">
+              <Mail size={24} className="md:w-7 md:h-7" />
             </div>
-            <h3 className="text-xl font-bold text-brand-navy mb-3">Booking Guide</h3>
-            <p className="text-gray-500 mb-4 line-clamp-2">Learn everything about how to make, manage, and modify your reservations.</p>
-            <Link href="#" className="text-brand-coral font-semibold hover:underline flex items-center gap-1">Read articles <ChevronDown className="w-4 h-4 -rotate-90" /></Link>
+            <h3 className="text-lg md:text-xl font-bold text-brand-navy mb-2 md:mb-3">Email Support</h3>
+            <p className="text-gray-500 mb-4 line-clamp-2 text-sm md:text-base">Send us an email and our support team will get back to you within 24 hours.</p>
+            <a href="mailto:info@racoonn.com" className="text-brand-coral font-semibold hover:underline flex items-center gap-1 text-sm md:text-base">info@racoonn.com</a>
           </div>
           
-          <div className="bg-white rounded-2xl p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100 hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all hover:-translate-y-1">
-            <div className="w-14 h-14 bg-green-50 text-green-600 rounded-xl flex items-center justify-center mb-6">
-              <MessageSquare size={28} />
+          <div className="bg-white rounded-2xl p-6 md:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100 hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all hover:-translate-y-1">
+            <div className="w-12 h-12 md:w-14 md:h-14 bg-green-50 text-green-600 rounded-xl flex items-center justify-center mb-5 md:mb-6">
+              <MessageSquare size={24} className="md:w-7 md:h-7" />
             </div>
-            <h3 className="text-xl font-bold text-brand-navy mb-3">Live Chat</h3>
-            <p className="text-gray-500 mb-4 line-clamp-2">Chat directly with our support team for immediate assistance with your booking.</p>
-            <button className="text-brand-coral font-semibold hover:underline flex items-center gap-1">Start chat <ChevronDown className="w-4 h-4 -rotate-90" /></button>
+            <h3 className="text-lg md:text-xl font-bold text-brand-navy mb-2 md:mb-3">Live Chat</h3>
+            <p className="text-gray-500 mb-4 line-clamp-2 text-sm md:text-base">Chat directly with our support team for immediate assistance with your booking.</p>
+            <a href="https://wa.me/918954442144" target="_blank" rel="noopener noreferrer" className="text-brand-coral font-semibold hover:underline flex items-center gap-1 w-fit text-sm md:text-base">Start chat <ChevronDown className="w-4 h-4 -rotate-90" /></a>
           </div>
 
-          <div className="bg-white rounded-2xl p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100 hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all hover:-translate-y-1">
-            <div className="w-14 h-14 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center mb-6">
-              <Phone size={28} />
+          <div className="bg-white rounded-2xl p-6 md:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100 hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all hover:-translate-y-1">
+            <div className="w-12 h-12 md:w-14 md:h-14 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center mb-5 md:mb-6">
+              <Phone size={24} className="md:w-7 md:h-7" />
             </div>
-            <h3 className="text-xl font-bold text-brand-navy mb-3">Call Support</h3>
-            <p className="text-gray-500 mb-4 line-clamp-2">Our support team is available 24/7 to help you over the phone.</p>
-            <p className="text-brand-navy font-semibold text-lg">+91 8954442144</p>
+            <h3 className="text-lg md:text-xl font-bold text-brand-navy mb-2 md:mb-3">Call Support</h3>
+            <p className="text-gray-500 mb-4 line-clamp-2 text-sm md:text-base">Our support team is available 24/7 to help you over the phone.</p>
+            <p className="text-brand-navy font-semibold text-base md:text-lg">+91 8954442144</p>
           </div>
         </div>
 

@@ -71,6 +71,11 @@ export default function PropertyCard({
           src={property.images[0]} 
           alt={property.title} 
           fill 
+          unoptimized
+          onError={(e) => {
+            e.currentTarget.src = "https://images.unsplash.com/photo-1542314831-c6a4d14d837e?q=80&w=800&auto=format&fit=crop";
+          }}
+          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
           className="object-cover transition-transform duration-300 group-hover:scale-105"
         />
         

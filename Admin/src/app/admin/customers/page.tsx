@@ -12,6 +12,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Calendar } from "@/components/ui/calendar"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { getAllCustomers, toggleCustomerStatus } from "./actions"
 
 export type CustomerData = {
@@ -29,7 +30,7 @@ export type CustomerData = {
 export default function CustomersPage() {
   const [activeTab, setActiveTab] = useState("all")
   const [searchQuery, setSearchQuery] = useState("")
-  const [dateFilter, setDateFilter] = useState<Date | undefined>(undefined)
+  const [timeFilter, setTimeFilter] = useState("today")
   const [customers, setCustomers] = useState<CustomerData[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
@@ -64,8 +65,32 @@ export default function CustomersPage() {
     }
   };
 
+  const timeFilteredCustomers = useMemo(() => {
+    if (timeFilter === "lifetime") return customers;
+    const now = new Date();
+    return customers.filter(c => {
+      const cDate = new Date(c.joined);
+      if (timeFilter === "today") {
+        return cDate.toDateString() === now.toDateString();
+      } else if (timeFilter === "weekly") {
+        const oneWeekAgo = new Date(now);
+        oneWeekAgo.setDate(now.getDate() - 7);
+        return cDate >= oneWeekAgo;
+      } else if (timeFilter === "monthly") {
+        const oneMonthAgo = new Date(now);
+        oneMonthAgo.setMonth(now.getMonth() - 1);
+        return cDate >= oneMonthAgo;
+      } else if (timeFilter === "yearly") {
+        const oneYearAgo = new Date(now);
+        oneYearAgo.setFullYear(now.getFullYear() - 1);
+        return cDate >= oneYearAgo;
+      }
+      return true;
+    });
+  }, [customers, timeFilter]);
+
   const stats = useMemo(() => {
-    const totalCustomers = customers.length;
+    const totalCustomers = timeFilteredCustomers.length;
     let activeBookings = 0;
     let totalRevenue = 0;
     let suspended = 0;
@@ -77,9 +102,9 @@ export default function CustomersPage() {
     
     let usersWithActiveBookings = 0;
 
-    customers.forEach(c => {
-      activeBookings += c.activeBookings;
-      totalRevenue += c.totalSpentNum;
+    timeFilteredCustomers.forEach(c => {
+      activeBookings += c.activeBookings || 0;
+      totalRevenue += Number(c.totalSpentNum) || 0;
       if (c.status === 'suspended') suspended++;
       if (c.activeBookings > 0) usersWithActiveBookings++;
       
@@ -92,9 +117,9 @@ export default function CustomersPage() {
     const averageSpend = totalCustomers > 0 ? Math.round(totalRevenue / totalCustomers) : 0;
 
     return { totalCustomers, activeBookings, averageSpend, suspended, newCustomersThisMonth, usersWithActiveBookings };
-  }, [customers])
+  }, [timeFilteredCustomers])
 
-  const filteredCustomers = customers.filter(c => {
+  const filteredCustomers = timeFilteredCustomers.filter(c => {
     if (activeTab !== "all" && c.status !== activeTab) return false;
     
     if (searchQuery) {
@@ -104,11 +129,7 @@ export default function CustomersPage() {
       }
     }
     
-    if (dateFilter) {
-      const cDate = new Date(c.joined).toDateString();
-      const fDate = dateFilter.toDateString();
-      if (cDate !== fDate) return false;
-    }
+
     
     return true;
   })
@@ -123,7 +144,20 @@ export default function CustomersPage() {
           <h2 className="text-3xl font-black tracking-tight text-foreground">Customer Management</h2>
           <p className="text-muted-foreground mt-1 text-lg">Manage platform users, view their booking history, and monitor activity.</p>
         </div>
-
+        <div className="flex items-center gap-2">
+          <Select value={timeFilter} onValueChange={(val) => val && setTimeFilter(val)}>
+            <SelectTrigger className="w-[180px] bg-white border-muted shadow-sm h-10 rounded-xl">
+              <SelectValue placeholder="Select timeframe" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="today">Today</SelectItem>
+              <SelectItem value="weekly">Weekly</SelectItem>
+              <SelectItem value="monthly">Monthly</SelectItem>
+              <SelectItem value="yearly">Yearly</SelectItem>
+              <SelectItem value="lifetime">Lifetime</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {/* KPI Cards */}
@@ -256,27 +290,7 @@ export default function CustomersPage() {
                 </button>
               ))}
             </div>
-            <Popover>
-              <PopoverTrigger render={<Button variant="outline" size="sm" className={`h-9 rounded-full border-muted-foreground/20 ${dateFilter ? 'bg-primary/10 text-primary border-primary/20' : ''}`} />}>
-                <Filter className="mr-2 h-4 w-4" /> 
-                {dateFilter ? dateFilter.toLocaleDateString() : 'Filters'}
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="end">
-                <div className="p-3 border-b flex justify-between items-center">
-                  <span className="text-sm font-semibold">Filter by Join Date</span>
-                  {dateFilter && (
-                    <Button variant="ghost" size="sm" className="h-7 text-xs text-muted-foreground hover:text-foreground" onClick={() => setDateFilter(undefined)}>
-                      Clear
-                    </Button>
-                  )}
-                </div>
-                <Calendar
-                  mode="single"
-                  selected={dateFilter}
-                  onSelect={setDateFilter}
-                />
-              </PopoverContent>
-            </Popover>
+
           </div>
         </div>
 

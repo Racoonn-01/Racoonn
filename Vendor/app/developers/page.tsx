@@ -8,10 +8,13 @@ import Link from "next/link";
 import Image from "next/image";
 import RacoonnLogo from "@/assets/Racoonn-Logo-03.png";
 import { Badge } from "@/components/ui/badge";
+import { useAuthStore } from "@/store/authStore";
+import { AuthModal } from "@/components/landing/Navbar";
 
 type Language = "curl" | "node" | "python";
 
 export default function DevelopersPage() {
+  const { isAuthenticated } = useAuthStore();
   const [activeTab, setActiveTab] = useState<string>("overview");
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
@@ -79,13 +82,22 @@ export default function DevelopersPage() {
               <span>API Live: <code className="text-brand-coral font-bold bg-brand-coral/10 px-1.5 py-0.5 rounded-md">partner.racoonn.com/api/v1</code></span>
             </div>
             
-            <Link 
-              href="/vendor/settings" 
-              className="flex items-center gap-2 bg-brand-coral hover:bg-[#d95d63] text-white px-5 py-2 rounded-full text-sm font-bold transition-all shadow-lg shadow-brand-coral/20 hover:shadow-xl hover:shadow-brand-coral/30 hover:-translate-y-0.5 group"
-            >
-              <KeyRound className="h-4 w-4 group-hover:rotate-12 transition-transform" />
-              Generate API Key
-            </Link>
+            {isAuthenticated ? (
+              <Link 
+                href="/vendor/developers" 
+                className="flex items-center gap-2 bg-brand-coral hover:bg-[#d95d63] text-white px-5 py-2 rounded-full text-sm font-bold transition-all shadow-lg shadow-brand-coral/20 hover:shadow-xl hover:shadow-brand-coral/30 hover:-translate-y-0.5 group"
+              >
+                <KeyRound className="h-4 w-4 group-hover:rotate-12 transition-transform" />
+                Generate API Key
+              </Link>
+            ) : (
+              <AuthModal>
+                <button className="flex items-center gap-2 bg-brand-coral hover:bg-[#d95d63] text-white px-5 py-2 rounded-full text-sm font-bold transition-all shadow-lg shadow-brand-coral/20 hover:shadow-xl hover:shadow-brand-coral/30 hover:-translate-y-0.5 group">
+                  <KeyRound className="h-4 w-4 group-hover:rotate-12 transition-transform" />
+                  Generate API Key
+                </button>
+              </AuthModal>
+            )}
           </div>
         </div>
       </header>

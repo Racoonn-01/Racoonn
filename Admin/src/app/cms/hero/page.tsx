@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Plus, Edit2, Trash2, Eye, EyeOff, Image as ImageIcon, Check, Upload, X } from "lucide-react";
+import { Plus, Edit2, Trash2, Eye, EyeOff, Image as ImageIcon, Check, Upload, X, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,6 +18,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import Image from "next/image";
+import { DeleteConfirmModal } from "@/components/ui/delete-confirm-modal";
 
 export interface HeroImage {
   id: string;
@@ -28,10 +29,12 @@ export interface HeroImage {
 
 export default function HeroSectionCMSPage() {
   const [images, setImages] = useState<HeroImage[]>([]);
+  const [isLoadingImages, setIsLoadingImages] = useState(true);
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [editingImage, setEditingImage] = useState<HeroImage | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [statusConfirm, setStatusConfirm] = useState<{ id: string, nextStatus: boolean } | null>(null);
   const [isUploading, setIsUploading] = useState(false);
 
   // Form State
@@ -48,6 +51,8 @@ export default function HeroSectionCMSPage() {
         }
       } catch (err) {
         console.error("Failed to load CMS hero images:", err);
+      } finally {
+        setIsLoadingImages(false);
       }
     }
     loadCMSImages();
@@ -137,11 +142,13 @@ export default function HeroSectionCMSPage() {
     setEditingImage(null);
   };
 
-  const handleToggleActive = (id: string) => {
+  const confirmToggleActive = () => {
+    if (!statusConfirm) return;
     const updated = images.map((img) =>
-      img.id === id ? { ...img, isActive: !img.isActive } : img
+      img.id === statusConfirm.id ? { ...img, isActive: statusConfirm.nextStatus } : img
     );
     saveImages(updated);
+    setStatusConfirm(null);
   };
 
   const handleDelete = () => {
@@ -194,7 +201,7 @@ export default function HeroSectionCMSPage() {
               <div className="flex items-center gap-2">
                 <Switch
                   checked={img.isActive}
-                  onCheckedChange={() => handleToggleActive(img.id)}
+                  onCheckedChange={() => setStatusConfirm({ id: img.id, nextStatus: !img.isActive })}
                   title={img.isActive ? "Hide Image" : "Show Image"}
                 />
               </div>
@@ -242,7 +249,11 @@ export default function HeroSectionCMSPage() {
           </Card>
         ))}
 
-        {images.length === 0 && (
+        {isLoadingImages ? (
+          <div className="col-span-full flex justify-center items-center h-48 border-2 border-dashed border-gray-200 rounded-3xl bg-gray-50">
+            <Loader2 className="h-10 w-10 text-rose-500 animate-spin" />
+          </div>
+        ) : images.length === 0 ? (
           <div className="col-span-full border-2 border-dashed border-gray-200 rounded-3xl p-12 text-center bg-gray-50">
             <ImageIcon className="mx-auto text-gray-400 mb-3" size={36} />
             <h3 className="text-lg font-bold text-gray-700">No Hero Images Found</h3>
@@ -256,7 +267,7 @@ export default function HeroSectionCMSPage() {
               Add New Image
             </Button>
           </div>
-        )}
+        ) : null}
       </div>
 
       {/* Modal: Upload / Create Image */}
@@ -388,27 +399,35 @@ export default function HeroSectionCMSPage() {
       </Dialog>
 
       {/* Modal: Delete Section */}
-      <Dialog open={Boolean(deletingId)} onOpenChange={() => setDeletingId(null)}>
-        <DialogContent className="sm:max-w-md rounded-2xl">
-          <DialogHeader>
-            <DialogTitle className="text-xl font-bold text-rose-600 flex items-center gap-2">
-               Delete Image?
-            </DialogTitle>
-            <DialogDescription>
-              Are you sure you want to delete this Hero Image? It will be removed from the homepage.
-            </DialogDescription>
-          </DialogHeader>
+      <DeleteConfirmModal
+        isOpen={Boolean(deletingId)}
+        onClose={() => setDeletingId(null)}
+        onConfirm={handleDelete}
+        title="Delete Image?"
+        description="Are you sure you want to delete this Hero Image? It will be removed from the homepage."
+      />
 
-          <DialogFooter className="gap-2 sm:gap-0 pt-4">
-            <Button variant="ghost" onClick={() => setDeletingId(null)} className="rounded-xl">
-              Cancel
-            </Button>
-            <Button variant="destructive" onClick={handleDelete} className="rounded-xl">
-              Delete Permanently
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Modal: Status Confirm Section */}
+      {statusConfirm && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="p-6 text-center">
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Change Visibility</h3>
+              <p className="text-gray-500 text-sm">
+                Are you sure you want to <span className="font-bold">{statusConfirm.nextStatus ? "show" : "hide"}</span> this image?
+              </p>
+            </div>
+            <div className="bg-gray-50 p-4 flex justify-end gap-3 border-t border-gray-100">
+              <Button variant="outline" onClick={() => setStatusConfirm(null)} className="rounded-xl">
+                Cancel
+              </Button>
+              <Button onClick={() => confirmToggleActive()} className="rounded-xl bg-rose-600 hover:bg-rose-700 text-white">
+                Confirm
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

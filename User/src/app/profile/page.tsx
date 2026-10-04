@@ -66,17 +66,17 @@ export default function ProfilePage() {
           {/* Sidebar / Top Navigation */}
           <aside className="lg:w-1/4 w-full lg:sticky lg:top-32 lg:self-start mb-6 lg:mb-0">
             <nav 
-              className="flex lg:flex-col overflow-x-auto lg:overflow-visible gap-2 lg:gap-0 lg:space-y-1 bg-white p-2 lg:p-4 rounded-full lg:rounded-3xl shadow-sm border border-gray-100 snap-x"
+              className="flex lg:flex-col overflow-x-auto lg:overflow-visible gap-3 lg:gap-0 lg:space-y-1 lg:bg-white lg:p-4 lg:rounded-3xl lg:shadow-sm lg:border lg:border-gray-100 snap-x hide-scrollbar -mx-4 px-4 lg:mx-0 lg:px-0"
               style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
             >
               {['personal', 'bookings', 'wishlist', 'payments'].map((section) => (
                 <button
                   key={section}
                   onClick={() => setActiveSection(section)}
-                  className={`shrink-0 w-auto lg:w-full text-center lg:text-left px-6 py-2.5 lg:py-3.5 rounded-full lg:rounded-2xl font-semibold transition-all capitalize snap-center ${
+                  className={`shrink-0 w-auto lg:w-full text-center lg:text-left px-5 lg:px-6 py-2.5 lg:py-3.5 rounded-full lg:rounded-2xl font-semibold transition-all capitalize snap-center text-[14px] lg:text-base ${
                     activeSection === section 
-                      ? 'bg-brand-coral/10 text-brand-coral' 
-                      : 'text-gray-600 hover:bg-gray-50 hover:text-brand-navy'
+                      ? 'bg-brand-coral text-white lg:bg-brand-coral/10 lg:text-brand-coral shadow-md lg:shadow-none border border-brand-coral lg:border-transparent' 
+                      : 'bg-white text-gray-600 border border-gray-200 lg:border-transparent lg:bg-transparent hover:bg-gray-50 hover:text-brand-navy shadow-sm lg:shadow-none'
                   }`}
                 >
                   {section}

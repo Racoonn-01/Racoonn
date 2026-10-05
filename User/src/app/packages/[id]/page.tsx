@@ -79,6 +79,7 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
   const [openDay, setOpenDay] = useState<number>(1);
   const [selectedDay, setSelectedDay] = useState(0);
   const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
+  const [isQuoteSuccessModalOpen, setIsQuoteSuccessModalOpen] = useState(false);
   const [quoteForm, setQuoteForm] = useState({ name: '', phone: '', email: '', message: '' });
   const [isQuoteSubmitting, setIsQuoteSubmitting] = useState(false);
   const [selectedHotel, setSelectedHotel] = useState<number>(0);
@@ -394,12 +395,34 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
   const handleQuoteSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsQuoteSubmitting(true);
-    // In a real app, send this to an API or email service
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    setIsQuoteSubmitting(false);
-    setIsQuoteModalOpen(false);
-    alert("Quote request sent! Our team will contact you shortly.");
-    setQuoteForm({ name: '', phone: '', email: '', message: '' });
+    
+    try {
+      const payload = {
+        packageId: pkg.id,
+        packageTitle: pkg.title,
+        name: quoteForm.name,
+        phone: quoteForm.phone,
+        email: quoteForm.email,
+        message: quoteForm.message
+      };
+      
+      const res = await fetch("/api/custom-package-leads", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      
+      if (!res.ok) throw new Error("Failed to send quote request");
+      
+      setIsQuoteModalOpen(false);
+      setIsQuoteSuccessModalOpen(true);
+      setQuoteForm({ name: '', phone: '', email: '', message: '' });
+    } catch (err) {
+      console.error(err);
+      alert("Something went wrong. Please try again.");
+    } finally {
+      setIsQuoteSubmitting(false);
+    }
   };
 
   return (
@@ -1403,6 +1426,26 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
             }, 300);
           }}
         />
+
+      {/* Quote Request Success Modal */}
+      <Dialog open={isQuoteSuccessModalOpen} onOpenChange={setIsQuoteSuccessModalOpen}>
+        <DialogContent className="sm:max-w-sm bg-white rounded-3xl p-8 border-none shadow-2xl flex flex-col items-center justify-center text-center [&>button]:top-4 [&>button]:right-4 [&>button]:w-8 [&>button]:h-8 [&>button]:bg-slate-100 [&>button]:rounded-full [&>button]:flex [&>button]:items-center [&>button]:justify-center hover:[&>button]:bg-slate-200 transition-colors">
+          <div className="w-16 h-16 bg-green-50 text-green-500 rounded-full flex items-center justify-center mb-4">
+            <CheckCircle2 size={32} />
+          </div>
+          <DialogTitle className="text-[24px] font-heading font-bold text-[#222] tracking-tight mb-2">Request Sent!</DialogTitle>
+          <DialogDescription className="text-slate-500 text-[15px] mb-8">
+            Your custom quote request has been sent successfully. Our travel experts will contact you shortly.
+          </DialogDescription>
+          <button 
+            type="button"
+            onClick={() => setIsQuoteSuccessModalOpen(false)}
+            className="w-full bg-[#1F2E4A] hover:bg-[#2a3c5e] text-white font-bold py-3.5 px-6 rounded-xl transition-all shadow-md"
+          >
+            Okay
+          </button>
+        </DialogContent>
+      </Dialog>
 
       {/* Quote Request Modal */}
       <Dialog open={isQuoteModalOpen} onOpenChange={setIsQuoteModalOpen}>

@@ -54,6 +54,7 @@ const navItems: NavItem[] = [
   { title: "Cab Details", url: "/admin/cabs", icon: Car, key: "Cabs" },
   { title: "Bookings", url: "/admin/bookings", icon: CalendarDays, key: "Bookings" },
   { title: "Customers", url: "/admin/customers", icon: UserCircle, key: "Customers" },
+  { title: "Custom Package Leads", url: "/admin/custom-package-leads", icon: FileText, key: "PackageLeads" },
 ]
 
 const financialItems: NavItem[] = [

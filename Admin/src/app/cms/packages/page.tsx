@@ -324,8 +324,13 @@ export default function PackagesPage() {
     if (pkg) {
       setFormData({
         ...pkg,
+        images: pkg.images || [],
+        pricing: pkg.pricing || [],
+        hotelOptions: pkg.hotelOptions || [],
+        activityOptions: pkg.activityOptions || [],
         metaKeywords: pkg.metaKeywords || [],
-        videoTestimonials: pkg.videoTestimonials || []
+        videoTestimonials: pkg.videoTestimonials || [],
+        itinerary: pkg.itinerary || []
       })
     } else {
       setFormData({ ...emptyForm, id: Date.now().toString() })

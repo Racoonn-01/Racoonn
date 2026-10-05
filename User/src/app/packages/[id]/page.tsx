@@ -30,7 +30,8 @@ import {
   User,
   Grid,
   ChevronRight,
-  PlayCircle
+  PlayCircle,
+  MessageCircle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getReviews, createReview } from '@/lib/appwrite/api';
@@ -1039,7 +1040,11 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
                         <PhoneCall size={18} />
                         Call Us Now
                       </a>
-                      <a href="mailto:hello@racoonn.com" className="flex items-center justify-center gap-2 bg-white hover:bg-gray-50 text-gray-900 border border-gray-300 font-bold py-3.5 px-6 rounded-xl transition-all shadow-sm w-full sm:w-auto">
+                      <a href={`https://wa.me/918954442144?text=${encodeURIComponent(`Hi Racoonn, I'm interested in the "${pkg.title}" package and need some details.`)}`} target="_blank" rel="noreferrer" className="flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#128C7E] text-white font-bold py-3.5 px-6 rounded-xl transition-all shadow-md w-full sm:w-auto">
+                        <MessageCircle size={18} />
+                        WhatsApp
+                      </a>
+                      <a href="mailto:info@racoonn.com" className="flex items-center justify-center gap-2 bg-white hover:bg-gray-50 text-gray-900 border border-gray-300 font-bold py-3.5 px-6 rounded-xl transition-all shadow-sm w-full sm:w-auto">
                         Email Support
                       </a>
                     </div>
@@ -1095,7 +1100,11 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
                         <PhoneCall size={18} />
                         Call Us Now
                       </a>
-                      <a href="mailto:hello@racoonn.com" className="flex items-center justify-center gap-2 bg-white hover:bg-gray-50 text-gray-900 border border-gray-300 font-bold py-3.5 px-6 rounded-xl transition-all shadow-sm w-full sm:w-auto">
+                      <a href={`https://wa.me/918954442144?text=${encodeURIComponent(`Hi Racoonn, I'm interested in the "${pkg.title}" package and need some details.`)}`} target="_blank" rel="noreferrer" className="flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#128C7E] text-white font-bold py-3.5 px-6 rounded-xl transition-all shadow-md w-full sm:w-auto">
+                        <MessageCircle size={18} />
+                        WhatsApp
+                      </a>
+                      <a href="mailto:info@racoonn.com" className="flex items-center justify-center gap-2 bg-white hover:bg-gray-50 text-gray-900 border border-gray-300 font-bold py-3.5 px-6 rounded-xl transition-all shadow-sm w-full sm:w-auto">
                         Email Support
                       </a>
                     </div>

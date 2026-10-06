@@ -287,11 +287,7 @@ export default function DynamicPopularStays() {
                         <h3 className="font-bold text-[15px] text-gray-900 line-clamp-1 group-hover/card:text-rose-600 transition-colors flex-1 min-w-0">
                           {stay.title}
                         </h3>
-                        <div className="flex items-center gap-1 text-[13px] font-semibold shrink-0">
-                          <Star size={13} className="fill-gray-900 text-gray-900" />
-                          {Number(stay.rating) > 0 ? stay.rating : "4.8"}{" "}
-                          <span className="text-gray-400 font-normal">({stay.reviews})</span>
-                        </div>
+
                       </div>
                       <p className="text-[13px] text-gray-500 truncate mt-0.5 w-full">{stay.location}</p>
                       <p className="text-[13px] text-gray-500 line-clamp-1 mt-0.5 w-full">{stay.subtitle || stay.details}</p>

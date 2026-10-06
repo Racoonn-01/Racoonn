@@ -175,10 +175,7 @@ export default function PopularStaysNainital() {
               <div className="flex flex-col flex-1 min-w-0">
                 <div className="flex justify-between items-start min-w-0">
                   <h3 className="font-semibold text-[15px] text-gray-900 pr-2 line-clamp-1 flex-1 min-w-0">{stay.title}</h3>
-                  <div className="flex items-center gap-1 text-[14px] font-medium shrink-0 ml-2">
-                    <Star size={13} className="fill-gray-900 text-gray-900" />
-                    {Number(stay.rating) > 0 ? stay.rating : 'New'} <span className="text-gray-500 font-normal">({stay.reviews})</span>
-                  </div>
+
                 </div>
                 <p className="text-[14px] text-gray-500 truncate mt-0.5 w-full">{stay.location}</p>
                 <p className="text-[14px] text-gray-500 line-clamp-2 w-full">{stay.details}</p>

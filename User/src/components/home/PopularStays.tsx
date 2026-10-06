@@ -156,9 +156,7 @@ export default function PopularStays() {
                       </h3>
                       <div className="flex justify-between items-center mt-auto pt-1 gap-2 min-w-0">
                         <p className="text-sm text-brand-charcoal/60 truncate flex-1 min-w-0" title={stay.location}>{stay.location}</p>
-                        <div className="flex items-center text-sm font-bold text-brand-coral shrink-0 ml-2">
-                          <span className="mr-1">★</span> {stay.rating > 0 ? stay.rating : 'New'}
-                        </div>
+
                       </div>
                     </div>
                   </Link>

@@ -3,7 +3,10 @@ import fs from "fs";
 import path from "path";
 import nodemailer from "nodemailer";
 
-const SHARED_FILE_PATH = "/Users/haldwani/Documents/Working/Working/Racoonn/custom_package_leads.json";
+const IS_VERCEL = process.env.VERCEL === '1';
+const SHARED_FILE_PATH = IS_VERCEL 
+  ? "/tmp/custom_package_leads.json" 
+  : "/Users/haldwani/Documents/Working/Working/Racoonn/custom_package_leads.json";
 
 export async function POST(request: Request) {
   try {
@@ -22,8 +25,12 @@ export async function POST(request: Request) {
       createdAt: new Date().toISOString()
     };
 
-    leads.push(newLead);
-    fs.writeFileSync(SHARED_FILE_PATH, JSON.stringify(leads, null, 2), "utf-8");
+    try {
+      leads.push(newLead);
+      fs.writeFileSync(SHARED_FILE_PATH, JSON.stringify(leads, null, 2), "utf-8");
+    } catch (fsErr) {
+      console.warn("Could not save lead to filesystem, skipping to email.", fsErr);
+    }
 
     // Send Email to User
     if (newLead.email) {

@@ -212,9 +212,12 @@ export default function Footer() {
 
           {/* Bottom Bar */}
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-            <div className="flex flex-col md:flex-row items-center gap-2 text-sm text-brand-sky/50">
-              <span>&copy; {new Date().getFullYear()} Racoonn. All rights reserved.</span>
-              <span className="hidden md:inline">•</span>
+            <div className="flex flex-col items-center md:items-start gap-1 text-sm text-brand-sky/50 text-center md:text-left">
+              <div className="flex flex-col md:flex-row items-center gap-2">
+                <span>&copy; {new Date().getFullYear()} Racoonn. All rights reserved.</span>
+                <span className="hidden md:inline">•</span>
+                <span className="text-white/80 font-medium">A Platform by CIELLE TRAVELS PRIVATE LIMITED</span>
+              </div>
               <span>Design and Developed By <a href="https://preettech.com" target="_blank" rel="noopener noreferrer" className="hover:text-brand-coral transition-colors font-medium">Preet Tech</a></span>
             </div>
             

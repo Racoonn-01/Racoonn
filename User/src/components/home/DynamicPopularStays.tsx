@@ -34,7 +34,7 @@ export default function DynamicPopularStays() {
     // Fetch sections live from server API / Appwrite DB
     const loadCMSSections = async () => {
       try {
-        await fetch("/api/cms/popular-stays");
+        const res = await fetch("/api/cms/popular-stays");
         const json = await res.json();
         if (json.success && Array.isArray(json.sections)) {
           setSections(json.sections);

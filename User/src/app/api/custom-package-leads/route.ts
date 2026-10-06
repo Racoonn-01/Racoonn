@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
 import nodemailer from "nodemailer";
+import { Client, Databases, ID } from "node-appwrite";
 
 const IS_VERCEL = process.env.VERCEL === '1';
 const SHARED_FILE_PATH = IS_VERCEL 
@@ -11,25 +12,40 @@ const SHARED_FILE_PATH = IS_VERCEL
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    let leads = [];
-
-    if (fs.existsSync(SHARED_FILE_PATH)) {
-      const fileData = fs.readFileSync(SHARED_FILE_PATH, "utf-8");
-      if (fileData) leads = JSON.parse(fileData);
-    }
-
     const newLead = {
       id: Date.now().toString(),
       ...body,
       status: 'New Lead',
       createdAt: new Date().toISOString()
     };
-
+    
+    // Attempt to save to Appwrite
     try {
-      leads.push(newLead);
-      fs.writeFileSync(SHARED_FILE_PATH, JSON.stringify(leads, null, 2), "utf-8");
-    } catch (fsErr) {
-      console.warn("Could not save lead to filesystem, skipping to email.", fsErr);
+      const client = new Client()
+        .setEndpoint(process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT || "https://sgp.cloud.appwrite.io/v1")
+        .setProject(process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID || "")
+        .setKey(process.env.APPWRITE_API_KEY || "");
+      
+      const databases = new Databases(client);
+      
+      await databases.createDocument(
+        process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID || "6a3cec630035d63ea963",
+        "custom_package_leads",
+        ID.unique(),
+        {
+          packageId: newLead.packageId,
+          packageTitle: newLead.packageTitle,
+          name: newLead.name,
+          phone: newLead.phone,
+          email: newLead.email,
+          message: newLead.message || "",
+          destination: newLead.destination || "",
+          departureCity: newLead.departureCity || "",
+          status: newLead.status,
+        }
+      );
+    } catch (dbErr) {
+      console.warn("Could not save lead to Appwrite, skipping to email.", dbErr);
     }
 
     // Send Email to User

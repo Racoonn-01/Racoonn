@@ -1236,11 +1236,15 @@ export default function PackagesPage() {
               </section>
 
               <div className="flex justify-between pt-4">
-                <Button type="button" variant="outline" onClick={() => setFormStep(1)} className="rounded-full px-8 h-12 border-slate-200 text-lg font-medium text-slate-600">
+                <Button type="button" variant="outline" onClick={() => setFormStep(1)} className="rounded-full px-8 h-12 border-slate-200 text-lg font-medium text-slate-600" disabled={loading}>
                   <ChevronLeft className="mr-2 w-5 h-5" /> Back to Details
                 </Button>
-                <Button onClick={handleSave} className="rounded-full px-10 h-12 bg-[#1F2E4A] hover:bg-[#2a3c5e] text-white text-lg font-medium shadow-md transition-transform hover:scale-105 active:scale-95">
-                  Save Final Package <Check className="ml-2 w-5 h-5" />
+                <Button onClick={handleSave} disabled={loading} className="rounded-full px-10 h-12 bg-[#1F2E4A] hover:bg-[#2a3c5e] text-white text-lg font-medium shadow-md transition-transform hover:scale-105 active:scale-95 disabled:opacity-70 disabled:hover:scale-100 disabled:active:scale-100">
+                  {loading ? (
+                    <>Saving... <Loader2 className="ml-2 w-5 h-5 animate-spin" /></>
+                  ) : (
+                    <>Save Final Package <Check className="ml-2 w-5 h-5" /></>
+                  )}
                 </Button>
               </div>
             </div>

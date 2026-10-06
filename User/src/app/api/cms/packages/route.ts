@@ -14,18 +14,7 @@ const DOC_ID = "cms_packages_v1";
 export async function GET() {
   noStore();
   try {
-    // 1. Try reading from shared file (prefer in dev or if available)
-    if (fs.existsSync(SHARED_FILE_PATH)) {
-      const fileData = fs.readFileSync(SHARED_FILE_PATH, "utf-8");
-      const packages = JSON.parse(fileData);
-      return NextResponse.json({ success: true, packages });
-    }
-  } catch (err) {
-    console.warn("File read failed in User app, trying Appwrite DB:", err);
-  }
-
-  try {
-    // 2. Fallback to Appwrite DB
+    // 1. Try reading from Appwrite DB first
     const doc = await databases.getDocument(
       DATABASE_ID,
       COLLECTION_ID,
@@ -33,6 +22,18 @@ export async function GET() {
     );
     const packages = doc.details ? JSON.parse(doc.details) : [];
     return NextResponse.json({ success: true, packages });
+  } catch (err) {
+    console.warn("Appwrite read failed in User app, trying local file:", err);
+  }
+
+  try {
+    // 2. Fallback to local file
+    if (fs.existsSync(SHARED_FILE_PATH)) {
+      const fileData = fs.readFileSync(SHARED_FILE_PATH, "utf-8");
+      const packages = JSON.parse(fileData);
+      return NextResponse.json({ success: true, packages });
+    }
+    return NextResponse.json({ success: true, packages: [] });
   } catch {
     return NextResponse.json({ success: true, packages: [] });
   }

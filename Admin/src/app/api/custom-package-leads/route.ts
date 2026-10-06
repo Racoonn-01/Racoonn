@@ -1,22 +1,29 @@
 import { NextResponse } from "next/server";
 import { unstable_noStore as noStore } from "next/cache";
-import fs from "fs";
-
-export const dynamic = "force-dynamic";
-export const fetchCache = "force-no-store";
-export const revalidate = 0;
-
-const SHARED_FILE_PATH = "/Users/haldwani/Documents/Working/Working/Racoonn/custom_package_leads.json";
+import { Client, Databases, Query } from "node-appwrite";
 
 export async function GET() {
   noStore();
   try {
-    let leads = [];
-    if (fs.existsSync(SHARED_FILE_PATH)) {
-      const fileData = fs.readFileSync(SHARED_FILE_PATH, "utf-8");
-      if (fileData) leads = JSON.parse(fileData);
-    }
-    return NextResponse.json({ success: true, leads: leads.reverse() }); // Return newest first
+    const client = new Client()
+      .setEndpoint(process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT || "https://sgp.cloud.appwrite.io/v1")
+      .setProject(process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID || "")
+      .setKey(process.env.APPWRITE_API_KEY || "");
+    const databases = new Databases(client);
+
+    const dbId = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID || "6a3cec630035d63ea963";
+    const response = await databases.listDocuments(dbId, "custom_package_leads", [
+      Query.orderDesc("$createdAt"),
+      Query.limit(100)
+    ]);
+    
+    // Map Appwrite documents back to exactly what Admin frontend expects
+    const leads = response.documents.map((doc: any) => ({
+      ...doc,
+      id: doc.$id
+    }));
+
+    return NextResponse.json({ success: true, leads });
   } catch (err: unknown) {
     console.error("Error reading custom package leads:", err);
     return NextResponse.json({ success: false, error: err instanceof Error ? err.message : String(err) }, { status: 500 });
@@ -28,21 +35,16 @@ export async function PATCH(request: Request) {
     const { id, status } = await request.json();
     if (!id || !status) return NextResponse.json({ success: false, error: "Missing id or status" }, { status: 400 });
 
-    let leads: any[] = [];
-    if (fs.existsSync(SHARED_FILE_PATH)) {
-      const fileData = fs.readFileSync(SHARED_FILE_PATH, "utf-8");
-      if (fileData) leads = JSON.parse(fileData);
-    }
+    const client = new Client()
+      .setEndpoint(process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT || "https://sgp.cloud.appwrite.io/v1")
+      .setProject(process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID || "")
+      .setKey(process.env.APPWRITE_API_KEY || "");
+    const databases = new Databases(client);
+    const dbId = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID || "6a3cec630035d63ea963";
 
-    const leadIndex = leads.findIndex((l: any) => l.id === id);
-    if (leadIndex === -1) {
-      return NextResponse.json({ success: false, error: "Lead not found" }, { status: 404 });
-    }
+    const updatedDoc = await databases.updateDocument(dbId, "custom_package_leads", id, { status });
 
-    leads[leadIndex].status = status;
-    fs.writeFileSync(SHARED_FILE_PATH, JSON.stringify(leads, null, 2), "utf-8");
-
-    return NextResponse.json({ success: true, lead: leads[leadIndex] });
+    return NextResponse.json({ success: true, lead: { ...updatedDoc, id: updatedDoc.$id } });
   } catch (err: unknown) {
     console.error("Error updating custom package lead:", err);
     return NextResponse.json({ success: false, error: err instanceof Error ? err.message : String(err) }, { status: 500 });

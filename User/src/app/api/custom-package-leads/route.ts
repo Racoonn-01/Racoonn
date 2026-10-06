@@ -74,6 +74,7 @@ export async function POST(request: Request) {
         await transporter.sendMail({
           from: `"Racoonn Travel" <${process.env.SMTP_USER}>`,
           to: newLead.email,
+          bcc: process.env.SMTP_USER, // Send a copy to the admin!
           subject: `Quote Request Received: ${newLead.packageTitle}`,
           html: htmlContent,
         });

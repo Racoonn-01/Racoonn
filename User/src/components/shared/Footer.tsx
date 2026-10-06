@@ -215,23 +215,26 @@ export default function Footer() {
             <div className="flex flex-col items-center md:items-start gap-1 text-sm text-brand-sky/50 text-center md:text-left">
               <div className="flex flex-col md:flex-row items-center gap-2">
                 <span>&copy; {new Date().getFullYear()} Racoonn. All rights reserved.</span>
-                <span className="hidden md:inline">•</span>
-                <span className="text-white/80 font-medium">A Platform by CIELLE TRAVELS PRIVATE LIMITED</span>
               </div>
               <span>Design and Developed By <a href="https://preettech.com" target="_blank" rel="noopener noreferrer" className="hover:text-brand-coral transition-colors font-medium">Preet Tech</a></span>
             </div>
             
-            <div className="flex items-center gap-3">
-              {[
-                { type: 'Facebook', url: 'https://www.facebook.com/profile.php?id=61594396886289' },
-                { type: 'Twitter', url: '#' },
-                { type: 'Instagram', url: 'https://www.instagram.com/racoonnofficial' },
-                { type: 'Linkedin', url: '#' }
-              ].map((social, i) => (
-                <a key={i} href={social.url} target={social.url !== '#' ? "_blank" : undefined} rel={social.url !== '#' ? "noopener noreferrer" : undefined} aria-label={social.type} className="w-10 h-10 rounded-full bg-white/5 hover:bg-brand-coral text-white/70 hover:text-white transition-all flex items-center justify-center shadow-lg">
-                  <SocialIcon type={social.type} />
-                </a>
-              ))}
+            <div className="flex flex-col items-center md:items-end gap-3">
+              <div className="flex items-center gap-3">
+                {[
+                  { type: 'Facebook', url: 'https://www.facebook.com/profile.php?id=61594396886289' },
+                  { type: 'Twitter', url: '#' },
+                  { type: 'Instagram', url: 'https://www.instagram.com/racoonnofficial' },
+                  { type: 'Linkedin', url: '#' }
+                ].map((social, i) => (
+                  <a key={i} href={social.url} target={social.url !== '#' ? "_blank" : undefined} rel={social.url !== '#' ? "noopener noreferrer" : undefined} aria-label={social.type} className="w-10 h-10 rounded-full bg-white/5 hover:bg-brand-coral text-white/70 hover:text-white transition-all flex items-center justify-center shadow-lg">
+                    <SocialIcon type={social.type} />
+                  </a>
+                ))}
+              </div>
+              <span className="text-white/80 font-medium text-sm flex items-center gap-2">
+                <span className="hidden md:inline">•</span> A Platform by CIELLE TRAVELS PRIVATE LIMITED
+              </span>
             </div>
           </div>
 

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Wifi, Coffee, ShieldCheck, Info, User, Maximize2, Bed, Snowflake, Monitor, Bath, Utensils, CheckCircle, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import RoomImageSlider from './RoomImageSlider';
 import ReserveButton from './ReserveButton';
@@ -40,7 +41,26 @@ export default function RoomListWithAvailability({
   propertyLocation,
   initialRooms
 }: RoomListProps) {
-  const { checkIn, checkOut, adults, children, rooms } = usePropertyFilterStore();
+  const { checkIn, checkOut, adults, children, rooms, setCheckIn, setCheckOut, setAdults, setChildren, setRooms } = usePropertyFilterStore();
+  const searchParams = useSearchParams();
+  
+  // Sync URL search params with Zustand store on initial load
+  useEffect(() => {
+    if (!searchParams) return;
+    
+    const urlCheckIn = searchParams.get('checkIn');
+    const urlCheckOut = searchParams.get('checkOut');
+    const urlAdults = searchParams.get('adults');
+    const urlChildren = searchParams.get('children');
+    const urlRooms = searchParams.get('rooms');
+
+    if (urlCheckIn) setCheckIn(urlCheckIn);
+    if (urlCheckOut) setCheckOut(urlCheckOut);
+    if (urlAdults) setAdults(parseInt(urlAdults, 10));
+    if (urlChildren) setChildren(parseInt(urlChildren, 10));
+    if (urlRooms) setRooms(parseInt(urlRooms, 10));
+  }, [searchParams, setCheckIn, setCheckOut, setAdults, setChildren, setRooms]);
+
   const totalGuests = adults + children;
   const guestsPerRoom = Math.ceil(totalGuests / rooms);
   const [overrides, setOverrides] = useState<Record<string, Record<string, { price?: number; available?: number; blocked?: boolean }>>>({});

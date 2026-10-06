@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { Heart, Star } from 'lucide-react';
 import Link from 'next/link';
 import { useAuthStore } from '@/store/authStore';
+import { useSearchParams } from 'next/navigation';
 
 export interface Property {
   id: string;
@@ -45,6 +46,9 @@ export default function PropertyCard({
   const { profile, toggleSavedHotel } = useAuthStore();
   const savedHotelIds = profile?.savedHotels || [];
   const isLiked = savedHotelIds.includes(property.id);
+  const searchParams = useSearchParams();
+  const queryString = searchParams?.toString();
+  const href = queryString ? `/property/${property.id}?${queryString}` : `/property/${property.id}`;
 
   const toggleLike = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -58,7 +62,7 @@ export default function PropertyCard({
 
   return (
     <Link 
-      href={`/property/${property.id}`} 
+      href={href} 
       id={`property-card-${property.id}`}
       onClick={handleClick}
       className={`group flex flex-col gap-3 p-2 rounded-2xl transition-all duration-300 ${

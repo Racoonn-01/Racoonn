@@ -49,6 +49,9 @@ export async function POST(request: Request) {
               
               <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin: 20px 0;">
                 <h3 style="margin-top: 0; color: #1F2E4A;">Your Requirements:</h3>
+                <p style="margin: 5px 0;"><strong>Destination:</strong> ${newLead.destination}</p>
+                <p style="margin: 5px 0;"><strong>Departure City:</strong> ${newLead.departureCity}</p>
+                <p style="margin: 15px 0 5px 0;"><strong>Additional Message:</strong></p>
                 <p style="margin: 5px 0;"><em>${newLead.message || 'No additional requirements specified.'}</em></p>
               </div>
               

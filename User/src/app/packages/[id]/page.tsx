@@ -80,7 +80,7 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
   const [selectedDay, setSelectedDay] = useState(0);
   const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
   const [isQuoteSuccessModalOpen, setIsQuoteSuccessModalOpen] = useState(false);
-  const [quoteForm, setQuoteForm] = useState({ name: '', phone: '', email: '', message: '' });
+  const [quoteForm, setQuoteForm] = useState({ name: '', phone: '', email: '', message: '', destination: '', departureCity: '' });
   const [isQuoteSubmitting, setIsQuoteSubmitting] = useState(false);
   const [selectedHotel, setSelectedHotel] = useState<number>(0);
   const [selectedActivities, setSelectedActivities] = useState<number[]>([]);
@@ -403,6 +403,8 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
         name: quoteForm.name,
         phone: quoteForm.phone,
         email: quoteForm.email,
+        destination: quoteForm.destination,
+        departureCity: quoteForm.departureCity,
         message: quoteForm.message
       };
       
@@ -416,7 +418,7 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
       
       setIsQuoteModalOpen(false);
       setIsQuoteSuccessModalOpen(true);
-      setQuoteForm({ name: '', phone: '', email: '', message: '' });
+      setQuoteForm({ name: '', phone: '', email: '', message: '', destination: '', departureCity: '' });
     } catch (err) {
       console.error(err);
       alert("Something went wrong. Please try again.");
@@ -512,7 +514,8 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
             modules={[Navigation, Pagination]}
             navigation
             pagination={{ clickable: true }}
-            className="w-full h-full [&_.swiper-button-next]:text-white [&_.swiper-button-prev]:text-white [&_.swiper-pagination-bullet]:bg-white [&_.swiper-pagination-bullet-active]:bg-white [&_.swiper-button-next]:opacity-0 [&_.swiper-button-prev]:opacity-0 group-hover/slider:[&_.swiper-button-next]:opacity-100 group-hover/slider:[&_.swiper-button-prev]:opacity-100 [&_.swiper-button-next]:transition-opacity [&_.swiper-button-prev]:transition-opacity"
+            style={{ '--swiper-theme-color': '#E86A6F' } as React.CSSProperties}
+            className="w-full h-full [&_.swiper-button-next]:opacity-0 [&_.swiper-button-prev]:opacity-0 group-hover/slider:[&_.swiper-button-next]:opacity-100 group-hover/slider:[&_.swiper-button-prev]:opacity-100 [&_.swiper-button-next]:transition-opacity [&_.swiper-button-prev]:transition-opacity"
           >
             {pkg.images.map((img: string, i: number) => (
               <SwiperSlide key={i} className="relative w-full h-full">
@@ -1492,6 +1495,30 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
                   required 
                   value={quoteForm.email}
                   onChange={(e) => setQuoteForm({...quoteForm, email: e.target.value})}
+                  className="rounded-xl border-gray-200 focus:border-brand-coral focus:ring-brand-coral/20"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="quote-destination" className="text-xs font-bold uppercase text-gray-600">Destination</Label>
+                <Input 
+                  id="quote-destination" 
+                  placeholder="E.g. Maldives" 
+                  required 
+                  value={quoteForm.destination}
+                  onChange={(e) => setQuoteForm({...quoteForm, destination: e.target.value})}
+                  className="rounded-xl border-gray-200 focus:border-brand-coral focus:ring-brand-coral/20"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="quote-departure" className="text-xs font-bold uppercase text-gray-600">Departure City</Label>
+                <Input 
+                  id="quote-departure" 
+                  placeholder="E.g. New York" 
+                  required 
+                  value={quoteForm.departureCity}
+                  onChange={(e) => setQuoteForm({...quoteForm, departureCity: e.target.value})}
                   className="rounded-xl border-gray-200 focus:border-brand-coral focus:ring-brand-coral/20"
                 />
               </div>

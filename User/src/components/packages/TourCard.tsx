@@ -32,7 +32,8 @@ export default function TourCard({ pkg }: { pkg: TourCardPackage }) {
           modules={[Navigation, Pagination]}
           navigation
           pagination={{ clickable: true }}
-          className="h-full w-full [&_.swiper-button-next]:text-white [&_.swiper-button-prev]:text-white [&_.swiper-button-next]:scale-50 [&_.swiper-button-prev]:scale-50 [&_.swiper-button-next]:opacity-0 [&_.swiper-button-prev]:opacity-0 group-hover/image:[&_.swiper-button-next]:opacity-100 group-hover/image:[&_.swiper-button-prev]:opacity-100 [&_.swiper-button-next]:transition-opacity [&_.swiper-button-prev]:transition-opacity [&_.swiper-pagination-bullet]:bg-white [&_.swiper-pagination-bullet-active]:bg-white"
+          style={{ '--swiper-theme-color': '#E86A6F' } as React.CSSProperties}
+          className="h-full w-full [&_.swiper-button-next]:scale-50 [&_.swiper-button-prev]:scale-50 [&_.swiper-button-next]:opacity-0 [&_.swiper-button-prev]:opacity-0 group-hover/image:[&_.swiper-button-next]:opacity-100 group-hover/image:[&_.swiper-button-prev]:opacity-100 [&_.swiper-button-next]:transition-opacity [&_.swiper-button-prev]:transition-opacity"
         >
           {pkg.images.map((img, i) => (
             <SwiperSlide key={i}>

@@ -11,6 +11,8 @@ type Lead = {
   phone: string;
   email: string;
   message: string;
+  destination?: string;
+  departureCity?: string;
   status?: string;
   createdAt: string;
 }
@@ -185,6 +187,17 @@ export default function CustomPackageLeadsPage() {
                 <div>
                   <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Email Address</div>
                   <div className="font-medium text-slate-900">{selectedLead.email}</div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Destination</div>
+                  <div className="font-medium text-slate-900">{selectedLead.destination || '-'}</div>
+                </div>
+                <div>
+                  <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Departure City</div>
+                  <div className="font-medium text-slate-900">{selectedLead.departureCity || '-'}</div>
                 </div>
               </div>
 

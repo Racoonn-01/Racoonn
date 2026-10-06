@@ -241,9 +241,14 @@ export default function Footer() {
             </div>
             
             <div className="flex items-center gap-3">
-              {['Facebook', 'Twitter', 'Instagram', 'Linkedin'].map((social, i) => (
-                <a key={i} href="#" aria-label={social} className="w-10 h-10 rounded-full bg-white/5 hover:bg-brand-coral text-white/70 hover:text-white transition-all flex items-center justify-center shadow-lg">
-                  <SocialIcon type={social} />
+              {[
+                { type: 'Facebook', url: 'https://www.facebook.com/profile.php?id=61594396886289' },
+                { type: 'Twitter', url: '#' },
+                { type: 'Instagram', url: 'https://www.instagram.com/racoonnofficial' },
+                { type: 'Linkedin', url: '#' }
+              ].map((social, i) => (
+                <a key={i} href={social.url} target={social.url !== '#' ? "_blank" : undefined} rel={social.url !== '#' ? "noopener noreferrer" : undefined} aria-label={social.type} className="w-10 h-10 rounded-full bg-white/5 hover:bg-brand-coral text-white/70 hover:text-white transition-all flex items-center justify-center shadow-lg">
+                  <SocialIcon type={social.type} />
                 </a>
               ))}
             </div>

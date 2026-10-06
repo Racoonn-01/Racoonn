@@ -6,7 +6,7 @@ import { Menu, X, User, Home, Building, Package, Tag, Compass, HelpCircle, Heart
 import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
-// Logo loaded from public folder
+import logoImg from '@/assets/Racoonn-Logo-02.png';
 import SearchBar from './SearchBar';
 import AuthModal from '@/components/auth/AuthModal';
 import { useAuthStore } from '@/store/authStore';
@@ -35,8 +35,8 @@ export default function Navbar() {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       if (params.get('login') === 'true') {
-        setAuthModalView('signin');
-        setIsAuthModalOpen(true);
+        setTimeout(() => setAuthModalView('signin'), 0);
+        setTimeout(() => setIsAuthModalOpen(true), 0);
         window.history.replaceState(null, '', window.location.pathname);
       }
     }
@@ -52,7 +52,7 @@ export default function Navbar() {
         <div className="container mx-auto px-6 lg:px-8 h-19 flex items-center justify-between bg-white lg:bg-white/70 lg:backdrop-blur-xl border border-white shadow-[0_8px_30px_rgb(0,0,0,0.06)] rounded-full pointer-events-auto transition-all duration-300">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-            <Image src="/Racoonn%20Horizontal%20Logo-White%20BG.png" alt="Racoonn Logo" width={180} height={45} className="h-9 w-auto" />
+            <Image src={logoImg} alt="Racoonn Logo" width={180} height={45} className="h-9 w-auto" />
           </Link>
 
           {/* Desktop Navigation / SearchBar */}
@@ -82,7 +82,7 @@ export default function Navbar() {
               </Link>
             ) : (
               <button
-                onClick={() => { setAuthModalView('signin'); setIsAuthModalOpen(true); }}
+                onClick={() => { setTimeout(() => setAuthModalView('signin'), 0); setTimeout(() => setIsAuthModalOpen(true), 0); }}
                 className="bg-brand-coral hover:bg-opacity-90 text-white px-7 py-2.5 rounded-full font-bold transition-all shadow-md shadow-brand-coral/20 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-brand-coral/30"
               >
                 Sign in
@@ -117,7 +117,7 @@ export default function Navbar() {
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
               onClick={() => setIsSidebarOpen(false)}
-              className="fixed inset-0 bg-brand-navy/60 z-[9999]"
+              className="fixed inset-0 bg-brand-navy/60 z-9999"
             />
             
             {/* Premium Sidebar Panel */}
@@ -126,7 +126,7 @@ export default function Navbar() {
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
               transition={{ type: 'tween', ease: 'circOut', duration: 0.3 }}
-              className="fixed top-0 right-0 bottom-0 w-95 max-w-[85vw] bg-white z-[9999] shadow-2xl flex flex-col will-change-transform transform-gpu"
+              className="fixed top-0 right-0 bottom-0 w-95 max-w-[85vw] bg-white z-9999 shadow-2xl flex flex-col will-change-transform transform-gpu"
             >
               {/* Header */}
               <div className="flex items-center justify-between p-8 pb-4">
@@ -211,8 +211,8 @@ export default function Navbar() {
                   <button
                     onClick={() => {
                       setIsSidebarOpen(false);
-                      setAuthModalView('signin');
-                      setIsAuthModalOpen(true);
+                      setTimeout(() => setAuthModalView('signin'), 0);
+                      setTimeout(() => setIsAuthModalOpen(true), 0);
                     }}
                     className="block w-full text-center bg-brand-navy hover:bg-brand-coral text-white px-7 py-4 rounded-xl font-bold transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5 transform-gpu"
                   >

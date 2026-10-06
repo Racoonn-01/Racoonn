@@ -8,7 +8,7 @@ export default function ContactPage() {
     <div className="min-h-screen bg-gray-50 pb-20">
       {/* Hero Section */}
       <div className="bg-brand-navy pt-32 pb-24 text-center px-4 relative overflow-hidden">
-        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white via-transparent to-transparent"></div>
+        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_center,var(--tw-gradient-stops))] from-white via-transparent to-transparent"></div>
         <div className="max-w-3xl mx-auto relative z-10">
           <h1 className="text-4xl md:text-5xl font-bold text-white mb-6">Get in Touch</h1>
           <p className="text-gray-300 text-lg">Have a question or need assistance? Our team is here to help you.</p>

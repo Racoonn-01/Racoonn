@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Wifi, Coffee, ShieldCheck, Info, User, Maximize2, Bed, Snowflake, Monitor, Bath, Utensils, CheckCircle, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Wifi, Coffee, Info, User, Maximize2, Bed, Snowflake, Monitor, Bath, CheckCircle, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import Image from 'next/image';
 import RoomImageSlider from './RoomImageSlider';
 import ReserveButton from './ReserveButton';
 import { usePropertyFilterStore } from '@/store/propertyFilterStore';
@@ -42,7 +43,7 @@ export default function RoomListWithAvailability({
 }: RoomListProps) {
   const { checkIn, checkOut, adults, children, rooms } = usePropertyFilterStore();
   const totalGuests = adults + children;
-  const guestsPerRoom = Math.ceil(totalGuests / rooms);
+  // const guestsPerRoom = Math.ceil(totalGuests / rooms);
   const [overrides, setOverrides] = useState<Record<string, Record<string, { price?: number; available?: number; blocked?: boolean }>>>({});
   const [occupiedRooms, setOccupiedRooms] = useState<Record<string, number>>({});
   const [selectedRoomForModal, setSelectedRoomForModal] = useState<Room | null>(null);
@@ -313,10 +314,11 @@ export default function RoomListWithAvailability({
             <div className="w-full h-56 sm:h-72 relative bg-gray-900 shrink-0 group">
               {selectedRoomForModal.images && selectedRoomForModal.images.length > 0 ? (
                 <>
-                  <img 
+                  <Image 
                     src={selectedRoomForModal.images[modalImageIndex]} 
                     alt={selectedRoomForModal.name}
-                    className="w-full h-full object-cover opacity-90 transition-opacity duration-700 group-hover:opacity-100"
+                    fill
+                    className="object-cover opacity-90 transition-opacity duration-700 group-hover:opacity-100"
                   />
                   <div className="absolute inset-0 bg-linear-to-t from-black/90 via-black/30 to-transparent pointer-events-none" />
                   

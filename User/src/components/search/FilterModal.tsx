@@ -58,9 +58,11 @@ export default function FilterModal({ isOpen, onClose, onApply, initialFilters, 
         setMinInputVal(String(minP));
         setMaxInputVal(String(maxP));
       }, 0);
-      setSelectedAmenities(initialFilters?.selectedAmenities ?? []);
-      setSelectedPropertyTypes(initialFilters?.selectedPropertyTypes ?? []);
-      setSelectedBookingOptions(initialFilters?.selectedBookingOptions ?? []);
+      setTimeout(() => {
+        setSelectedAmenities(initialFilters?.selectedAmenities ?? []);
+        setSelectedPropertyTypes(initialFilters?.selectedPropertyTypes ?? []);
+        setSelectedBookingOptions(initialFilters?.selectedBookingOptions ?? []);
+      }, 0);
     }
   }, [isOpen, initialFilters]);
 

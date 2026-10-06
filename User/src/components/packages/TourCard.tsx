@@ -63,7 +63,7 @@ export default function TourCard({ pkg }: { pkg: TourCardPackage }) {
       </div>
 
       {/* Content Section */}
-      <div className="p-5 flex flex-col flex-grow">
+      <div className="p-5 flex flex-col grow">
         <h3 className="font-bold text-brand-navy text-[17px] mb-1.5">{pkg.title}</h3>
         
         <div className="flex items-center gap-1 text-gray-500 mb-4">
@@ -83,7 +83,7 @@ export default function TourCard({ pkg }: { pkg: TourCardPackage }) {
         </div>
 
         {/* Divider */}
-        <div className="h-[1px] w-full bg-gray-100 my-4" />
+        <div className="h-px w-full bg-gray-100 my-4" />
 
         {/* Bottom Row */}
         <div className="flex items-end justify-between mt-auto">

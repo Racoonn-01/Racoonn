@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
-import { Mail, Phone, MapPin, Send, Navigation, Heart, ShieldCheck } from 'lucide-react';
+import { Phone, MapPin } from 'lucide-react';
 import logoImg from '@/assets/Racoon-icon-White.png';
 import WhyBookWithUs from './WhyBookWithUs';
 
@@ -40,30 +40,7 @@ export default function Footer() {
             
             {/* Left Content: Text & Icon */}
             <div className="relative z-10 flex flex-col sm:flex-row items-center sm:items-start text-center sm:text-left gap-5 sm:gap-6">
-              {/* Icon */}
-              <div className="relative shrink-0 mb-2 sm:mb-0">
-                <div className="w-16 h-24 border-[3px] border-gray-700 rounded-xl bg-white relative mx-auto sm:mx-0">
-                  <div className="absolute top-2 left-1/2 -translate-x-1/2 w-4 h-1 bg-gray-300 rounded-full"></div>
-                  <div className="absolute top-8 left-1/2 -translate-x-1/2 font-script text-brand-coral font-bold italic text-lg -rotate-12">R</div>
-                </div>
-                {/* Download Badge */}
-                <div className="absolute -top-3 -left-3 w-10 h-10 bg-[#FFD166] rounded-full border-[3px] border-gray-700 flex items-center justify-center">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#374151" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>
-                </div>
-                {/* Gift Box */}
-                <div className="absolute -bottom-2 -right-3">
-                  <div className="w-10 h-10 bg-[#EF476F] border-[3px] border-gray-700 rounded-sm relative">
-                    <div className="absolute inset-0 flex justify-center">
-                      <div className="w-2 h-full bg-[#FFD166] border-x-[3px] border-gray-700"></div>
-                    </div>
-                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 flex">
-                      <div className="w-4 h-3 border-[3px] border-gray-700 rounded-full rounded-br-none mr-[-1.5px]"></div>
-                      <div className="w-4 h-3 border-[3px] border-gray-700 rounded-full rounded-bl-none ml-[-1.5px]"></div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
+
               {/* Text */}
               <div className="pt-1 sm:pt-2">
                 <h2 className="text-[26px] sm:text-3xl md:text-[40px] leading-tight font-bold text-[#2D3748] mb-2 sm:mb-3 tracking-tight">
@@ -79,19 +56,23 @@ export default function Footer() {
             <div className="relative z-10 flex flex-row flex-wrap items-center justify-center gap-3 shrink-0 mt-2 md:mt-0">
               {/* App Store Official Badge */}
               <Link href="#" className="hover:opacity-80 transition-transform transform hover:-translate-y-1 duration-300">
-                <img 
+                <Image 
                   src="https://upload.wikimedia.org/wikipedia/commons/3/3c/Download_on_the_App_Store_Badge.svg" 
                   alt="Download on the App Store" 
-                  className="h-[38px] sm:h-12 md:h-14"
+                  width={140}
+                  height={40}
+                  className="h-9.5 w-auto sm:h-12 md:h-14"
                 />
               </Link>
               
               {/* Google Play Official Badge */}
               <Link href="#" className="hover:opacity-80 transition-transform transform hover:-translate-y-1 duration-300">
-                <img 
+                <Image 
                   src="https://upload.wikimedia.org/wikipedia/commons/7/78/Google_Play_Store_badge_EN.svg" 
                   alt="Get it on Google Play" 
-                  className="h-[38px] sm:h-12 md:h-14"
+                  width={140}
+                  height={40}
+                  className="h-9.5 w-auto sm:h-12 md:h-14"
                 />
               </Link>
             </div>
@@ -107,34 +88,7 @@ export default function Footer() {
 
         <div className="container mx-auto px-4 lg:px-8 relative z-10">
           
-          {/* Top Row: Newsletter Subscription */}
-          <div className="bg-white/5 border border-white/10 rounded-3xl p-6 md:p-10 mb-16 relative overflow-hidden group">
-            <div className="absolute inset-0 bg-linear-to-r from-brand-coral/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
-            <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-6 md:gap-8">
-              <div className="w-full lg:w-1/2 text-center lg:text-left">
-                <h3 className="text-[26px] md:text-3xl font-heading font-bold mb-2 text-white">Subscribe to our Newsletter</h3>
-                <p className="text-white/90 text-[15px] md:text-base">Get weekly updates on special offers and the best hotel deals globally.</p>
-              </div>
-              <div className="w-full lg:w-1/2">
-                <form className="flex flex-col sm:flex-row items-center w-full max-w-lg mx-auto lg:mx-0 lg:ml-auto gap-3">
-                  <div className="relative w-full">
-                    <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
-                      <Mail className="h-5 w-5 text-white/50" />
-                    </div>
-                    <input 
-                      type="email" 
-                      placeholder="Enter your email address" 
-                      className="w-full bg-brand-navy/50 border border-white/20 rounded-full pl-12 md:pl-14 pr-5 py-3.5 md:py-4 text-white placeholder:text-white/50 focus:border-brand-coral outline-none transition-all shadow-inner"
-                      suppressHydrationWarning
-                    />
-                  </div>
-                  <button type="button" className="w-full sm:w-auto bg-brand-coral hover:bg-[#d95d63] text-white px-8 py-3.5 md:py-4 rounded-full font-bold transition-all shadow-md hover:shadow-brand-coral/30 hover:scale-105 active:scale-95 shrink-0">
-                    Subscribe
-                  </button>
-                </form>
-              </div>
-            </div>
-          </div>
+
 
           {/* Main Links Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-12 lg:gap-8 mb-16">
@@ -233,7 +187,7 @@ export default function Footer() {
                 ))}
               </div>
               <span className="text-white/80 font-medium text-sm flex items-center gap-2">
-                <span className="hidden md:inline">•</span> A Platform by CIELLE TRAVELS PRIVATE LIMITED
+                <span className="hidden md:inline"></span> Managed by CIELLE TRAVELS PRIVATE LIMITED
               </span>
             </div>
           </div>

@@ -3,13 +3,8 @@
 import React from 'react';
 import { Target, Heart, Globe, Award, Shield, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 
-const stats = [
-  { value: '50K+', label: 'Happy Travelers' },
-  { value: '1,200+', label: 'Luxury Hotels' },
-  { value: '150+', label: 'Destinations' },
-  { value: '24/7', label: 'Customer Support' },
-];
 
 const values = [
   {
@@ -41,10 +36,11 @@ export default function AboutPage() {
       {/* Hero Section */}
       <section className="relative h-[40vh] min-h-87.5 flex items-center justify-center overflow-hidden bg-brand-navy">
         <div className="absolute inset-0 z-0">
-          <img 
+          <Image 
             src="https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=2000&auto=format&fit=crop" 
             alt="Beautiful luxury hotel" 
-            className="w-full h-full object-cover opacity-40"
+            fill
+            className="object-cover opacity-40"
           />
           <div className="absolute inset-0 bg-linear-to-t from-brand-navy via-brand-navy/60 to-transparent"></div>
         </div>
@@ -62,21 +58,6 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* Stats Section */}
-      <section className="relative z-20 -mt-10 mb-16">
-        <div className="container mx-auto px-4 lg:px-8 max-w-5xl">
-          <div className="bg-white rounded-2xl shadow-lg shadow-brand-navy/5 p-6 border border-gray-100">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 divide-x divide-gray-100">
-              {stats.map((stat, idx) => (
-                <div key={idx} className="text-center px-2">
-                  <h3 className="text-2xl md:text-3xl font-heading font-bold text-brand-navy mb-1">{stat.value}</h3>
-                  <p className="text-[10px] md:text-xs font-bold text-gray-400 uppercase tracking-wider">{stat.label}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
 
       {/* Mission & Vision */}
       <section className="py-12">
@@ -85,10 +66,11 @@ export default function AboutPage() {
             
             <div className="order-2 lg:order-1 relative group">
               <div className="aspect-4/3 relative rounded-2xl overflow-hidden shadow-xl border border-gray-100">
-                <img 
+                <Image 
                   src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=1000&auto=format&fit=crop" 
                   alt="Happy travelers" 
-                  className="w-full h-full object-cover"
+                  fill
+                  className="object-cover"
                 />
               </div>
               {/* Floating Badge */}

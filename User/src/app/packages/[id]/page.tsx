@@ -1440,7 +1440,7 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
           <button 
             type="button"
             onClick={() => setIsQuoteSuccessModalOpen(false)}
-            className="w-full bg-[#1F2E4A] hover:bg-[#2a3c5e] text-white font-bold py-3.5 px-6 rounded-xl transition-all shadow-md"
+            className="w-full bg-brand-navy hover:bg-[#2a3c5e] text-white font-bold py-3.5 px-6 rounded-xl transition-all shadow-md"
           >
             Okay
           </button>
@@ -1522,7 +1522,7 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
 
       {/* Full Screen Gallery Modal */}
       {isGalleryOpen && (
-        <div className="fixed inset-0 z-[100] bg-white flex flex-col animate-in fade-in duration-300">
+        <div className="fixed inset-0 z-100 bg-white flex flex-col animate-in fade-in duration-300">
           <div className="flex items-center justify-between p-4 border-b border-gray-100 sticky top-0 z-10 bg-white">
             <h3 className="font-bold text-lg text-gray-900">Photo Gallery</h3>
             <button 
@@ -1555,7 +1555,7 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
 
       {/* Lightbox Modal */}
       {selectedImageIndex !== null && (
-        <div className="fixed inset-0 z-[110] bg-black/95 flex flex-col animate-in fade-in duration-300">
+        <div className="fixed inset-0 z-110 bg-black/95 flex flex-col animate-in fade-in duration-300">
           <div className="flex items-center justify-between p-4 z-10 absolute top-0 w-full">
             <span className="text-white/70 font-medium">{selectedImageIndex + 1} / {pkg.images.length}</span>
             <button 

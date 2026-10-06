@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
+import logoExpanded from "@/assets/Racoonn-Logo-02.png";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
 import {
@@ -52,7 +53,7 @@ export function AppSidebar() {
     <Sidebar variant="sidebar" collapsible="icon" className="border-r border-slate-200 bg-white">
       <SidebarHeader className="p-4 group-data-[collapsible=icon]:p-0 h-16 flex items-center justify-center">
         <Image 
-          src="/racoonn-logo-text.png" 
+          src={logoExpanded}
           alt="Racoonn Logo" 
           width={120} 
           height={32} 

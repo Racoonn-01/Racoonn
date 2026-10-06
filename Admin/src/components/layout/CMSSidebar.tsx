@@ -4,7 +4,6 @@ import * as React from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { 
-  LayoutDashboard, 
   Home, 
   Map, 
   Package, 
@@ -24,6 +23,7 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
 import Image from "next/image"
+import logoExpanded from "@/assets/Racoonn-Logo-02.png"
 
 const navItems = [
   { title: "Hero Section", url: "/cms/hero", icon: ImageIcon },
@@ -63,7 +63,7 @@ export function CMSSidebar() {
       <SidebarHeader className="h-20 flex items-center px-4 justify-center bg-sidebar">
         <div className="flex items-center justify-center w-full h-full relative">
           <Image 
-            src="/logo-expanded.png" 
+            src={logoExpanded}
             alt="Racoonn Logo" 
             width={120} height={40}
             className="h-10 w-auto object-contain group-data-[collapsible=icon]:hidden transition-all" 

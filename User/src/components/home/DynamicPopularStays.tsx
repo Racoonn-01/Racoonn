@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Star, Heart, ChevronRight } from "lucide-react";
+import { Heart, ChevronRight } from "lucide-react";
 import { motion } from "framer-motion";
 import { PopularStaySection } from "@/lib/cms/popularStaysStore";
 import { getProperties } from "@/lib/appwrite/api";
@@ -34,7 +34,7 @@ export default function DynamicPopularStays() {
     // Fetch sections live from server API / Appwrite DB
     const loadCMSSections = async () => {
       try {
-        const res = await fetch("/api/cms/popular-stays");
+        await fetch("/api/cms/popular-stays");
         const json = await res.json();
         if (json.success && Array.isArray(json.sections)) {
           setSections(json.sections);
@@ -72,10 +72,10 @@ export default function DynamicPopularStays() {
         const docs = await getProperties();
         
         // 2. Fetch all rooms to determine the real starting price per property
-        let propertyPriceMap: Record<string, number> = {};
+        const propertyPriceMap: Record<string, number> = {};
         if (typeof window !== "undefined") {
           // Dynamic import or direct fetch to avoid circular dependency / SSR issues if needed
-          const res = await fetch("/api/properties/rooms").catch(() => null);
+          await fetch("/api/properties/rooms").catch(() => null);
           // Wait, we can just use Appwrite directly since this is client-side
           try {
             const { databases, appwriteConfig } = await import("@/lib/appwrite/config");

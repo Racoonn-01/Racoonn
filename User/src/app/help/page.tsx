@@ -1,6 +1,5 @@
 import React from 'react';
 import { Mail, Phone, MessageSquare, ChevronDown, BookOpen } from 'lucide-react';
-import Link from 'next/link';
 
 export default function HelpPage() {
   const faqs = [
@@ -8,10 +7,7 @@ export default function HelpPage() {
       question: "How do I book a stay?",
       answer: "You can book a stay by searching for your desired destination, selecting your dates, and choosing a hotel from the results. Follow the checkout process to confirm your reservation."
     },
-    {
-      question: "What is your cancellation policy?",
-      answer: "Cancellation policies vary by property. You can find the specific cancellation policy for your booking on the hotel details page and in your confirmation email."
-    },
+
     {
       question: "How can I change my booking dates?",
       answer: "To change your booking dates, please go to 'My Account' > 'My Bookings', select the booking you wish to modify, and choose the 'Modify Dates' option. Please note that changes are subject to availability and may incur additional charges."

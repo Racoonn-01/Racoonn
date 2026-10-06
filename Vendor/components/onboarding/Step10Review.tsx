@@ -72,7 +72,7 @@ export function Step10Review({ onSubmit, onBack }: { onSubmit: () => void, onBac
             id="terms" 
             checked={accepted}
             onChange={(e) => setAccepted(e.target.checked)}
-            className="w-5 h-5 rounded border-slate-300 text-brand-coral focus:ring-brand-coral cursor-pointer flex-shrink-0 accent-brand-coral"
+            className="w-5 h-5 rounded border-slate-300 text-brand-coral focus:ring-brand-coral cursor-pointer shrink-0 accent-brand-coral"
           />
           <label htmlFor="terms" className="text-sm font-medium text-slate-600 cursor-pointer select-none">
             By submitting, you agree to Racoonn's <a href="/terms" target="_blank" className="font-bold text-brand-coral hover:underline">Partner Terms and Conditions</a>.

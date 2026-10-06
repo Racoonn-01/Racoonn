@@ -5,6 +5,7 @@ import { useState, useEffect } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import Image from "next/image"
+import logoExpanded from "@/assets/Racoonn-Logo-02.png"
 import { 
   LayoutDashboard, 
   Users, 
@@ -19,12 +20,9 @@ import {
   MessageSquare, 
   LifeBuoy, 
   Megaphone, 
-  BarChart3, 
-  Bell, 
   AlertTriangle, 
   Shield, 
   Settings,
-  Tent,
   Car
 } from "lucide-react"
 
@@ -83,7 +81,7 @@ export function AdminSidebar() {
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
-    setIsMounted(true);
+    setTimeout(() => setIsMounted(true), 0);
     const loadSession = async () => {
       await Promise.resolve(); // Defers execution to avoid sync setState warning
       try {
@@ -149,7 +147,7 @@ export function AdminSidebar() {
         <div className="flex items-center justify-center w-full h-full relative">
           {/* Expanded Logo */}
           <Image 
-            src="/logo-expanded.png" 
+            src={logoExpanded}
             alt="Racoonn Logo" 
             width={120} height={40}
             className="h-10 w-auto object-contain group-data-[collapsible=icon]:hidden transition-all" 

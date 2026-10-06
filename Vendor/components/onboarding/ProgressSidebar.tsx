@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { Check, Clock, ShieldCheck, PlayCircle } from "lucide-react";
 import Image from "next/image";
+import logoExpanded from "@/assets/Racoonn-Logo-02.png";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
@@ -28,7 +29,7 @@ export function ProgressSidebar({ currentStep }: { currentStep: number }) {
     <div className="h-full flex flex-col p-8">
       {/* Logo */}
       <Link href="/" className="mb-12 inline-block">
-        <Image src="/racoonn-logo.png" alt="Racoonn" width={120} height={40} className="h-8 w-auto" />
+        <Image src={logoExpanded} alt="Racoonn" width={120} height={40} className="h-8 w-auto" />
       </Link>
 
       <div className="mb-8">
@@ -108,7 +109,7 @@ export function ProgressSidebar({ currentStep }: { currentStep: number }) {
 
       <Dialog open={isTutorialOpen} onOpenChange={setIsTutorialOpen}>
         <DialogContent className="sm:max-w-3xl p-0 overflow-hidden bg-black/95 border-slate-800">
-          <DialogHeader className="px-6 py-4 border-b border-white/10 absolute top-0 w-full z-10 bg-gradient-to-b from-black/80 to-transparent pointer-events-none">
+          <DialogHeader className="px-6 py-4 border-b border-white/10 absolute top-0 w-full z-10 bg-linear-to-b from-black/80 to-transparent pointer-events-none">
             <DialogTitle className="text-white">Partner Onboarding Tutorial</DialogTitle>
           </DialogHeader>
           <div className="aspect-video w-full bg-black">

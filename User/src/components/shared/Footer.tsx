@@ -208,29 +208,7 @@ export default function Footer() {
             
           </div>
 
-          {/* Feature Badges Row */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 py-8 border-y border-white/5 mb-8">
-            <div className="flex flex-col items-center justify-center text-center p-4 bg-white/2 rounded-xl hover:bg-white/4 transition-colors">
-              <ShieldCheck className="w-8 h-8 text-brand-coral mb-3" />
-              <span className="text-sm font-bold text-white">Secure Payments</span>
-              <span className="text-xs text-brand-sky/50 mt-1">100% Protected</span>
-            </div>
-            <div className="flex flex-col items-center justify-center text-center p-4 bg-white/2 rounded-xl hover:bg-white/4 transition-colors">
-              <Heart className="w-8 h-8 text-brand-coral mb-3" />
-              <span className="text-sm font-bold text-white">Trusted by Millions</span>
-              <span className="text-xs text-brand-sky/50 mt-1">Global Community</span>
-            </div>
-            <div className="flex flex-col items-center justify-center text-center p-4 bg-white/2 rounded-xl hover:bg-white/4 transition-colors">
-              <Navigation className="w-8 h-8 text-brand-coral mb-3" />
-              <span className="text-sm font-bold text-white">Global Reach</span>
-              <span className="text-xs text-brand-sky/50 mt-1">50,000+ Destinations</span>
-            </div>
-            <div className="flex flex-col items-center justify-center text-center p-4 bg-white/2 rounded-xl hover:bg-white/4 transition-colors">
-              <Phone className="w-8 h-8 text-brand-coral mb-3" />
-              <span className="text-sm font-bold text-white">24/7 Support</span>
-              <span className="text-xs text-brand-sky/50 mt-1">Always Here to Help</span>
-            </div>
-          </div>
+
 
           {/* Bottom Bar */}
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">

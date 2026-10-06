@@ -177,7 +177,7 @@ export default function Footer() {
               <div className="flex items-center gap-3">
                 {[
                   { type: 'Facebook', url: 'https://www.facebook.com/profile.php?id=61594396886289' },
-                  { type: 'Twitter', url: '#' },
+                  { type: 'Twitter', url: 'https://x.com/RACOONN06' },
                   { type: 'Instagram', url: 'https://www.instagram.com/racoonnofficial' },
                   { type: 'Linkedin', url: '#' }
                 ].map((social, i) => (

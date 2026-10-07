@@ -4,7 +4,7 @@ const client = new Client();
 client
   .setEndpoint("https://sgp.cloud.appwrite.io/v1")
   .setProject("6a3bce6900381359c3ce")
-  .setKey(process.env.APPWRITE_API_KEY);
+  .setKey(process.env.APPWRITE_API_KEY as string);
 
 const db = new Databases(client);
 

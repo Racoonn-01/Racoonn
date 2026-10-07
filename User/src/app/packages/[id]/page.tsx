@@ -1440,13 +1440,15 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
           <DialogDescription className="text-slate-500 text-[15px] mb-8">
             Your custom quote request has been sent successfully. Our travel experts will contact you shortly.
           </DialogDescription>
-          <button 
-            type="button"
-            onClick={() => setIsQuoteSuccessModalOpen(false)}
-            className="w-full bg-brand-navy hover:bg-[#2a3c5e] text-white font-bold py-3.5 px-6 rounded-xl transition-all shadow-md"
-          >
-            Okay
-          </button>
+          <div className="w-full">
+            <button 
+              type="button"
+              onClick={() => setIsQuoteSuccessModalOpen(false)}
+              className="w-full bg-brand-navy hover:bg-[#2a3c5e] text-white font-bold py-3.5 px-6 rounded-xl transition-all shadow-md"
+            >
+              Okay
+            </button>
+          </div>
         </DialogContent>
       </Dialog>
 

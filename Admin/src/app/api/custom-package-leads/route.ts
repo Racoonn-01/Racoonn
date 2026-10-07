@@ -20,7 +20,8 @@ export async function GET() {
     // Map Appwrite documents back to exactly what Admin frontend expects
     const leads = response.documents.map((doc: any) => ({
       ...doc,
-      id: doc.$id
+      id: doc.$id,
+      createdAt: doc.$createdAt
     }));
 
     return NextResponse.json({ success: true, leads });

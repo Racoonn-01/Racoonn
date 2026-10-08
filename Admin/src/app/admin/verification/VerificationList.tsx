@@ -65,7 +65,7 @@ export default function VerificationList({ type }: { type?: string }) {
           const ownerName = `${doc.firstName || ''} ${doc.lastName || ''}`.trim() || "Property Owner";
           const vendorName = doc.businessName || ownerName || "Vendor Partner";
           // Check Appwrite document fields
-          let uploadedCount = [doc.idProofFront, doc.idProofBack, doc.businessProof, doc.bankCheque].filter(Boolean).length;
+          let uploadedCount = [doc.idProofFront, doc.idProofBack, doc.aadhaarCardBack, doc.businessProof, doc.propertyProof, doc.gstCertificate, doc.bankCheque, doc.fssaiLicense].filter(Boolean).length;
           
           // Fallback to legacy/sync cookies if count is 0
           if (uploadedCount === 0 && typeof document !== 'undefined') {

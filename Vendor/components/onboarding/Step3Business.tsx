@@ -26,17 +26,20 @@ export function Step3Business({ onNext, onBack }: { onNext: () => void, onBack: 
   
   const [idProofFront, setIdProofFront] = useState(profile?.idProofFront || "");
   const [idProofBack, setIdProofBack] = useState(profile?.idProofBack || "");
+  const [aadhaarCardBack, setAadhaarCardBack] = useState((profile as any)?.aadhaarCardBack || "");
   const [businessProof, setBusinessProof] = useState(profile?.businessProof || "");
 
   const [uploadingFront, setUploadingFront] = useState(false);
   const [uploadingBack, setUploadingBack] = useState(false);
   const [uploadingBusiness, setUploadingBusiness] = useState(false);
+  const [uploadingPan, setUploadingPan] = useState(false);
   
-  const [localPreviews, setLocalPreviews] = useState<{front?: string, back?: string, business?: string}>({});
+  const [localPreviews, setLocalPreviews] = useState<{front?: string, back?: string, business?: string, pan?: string}>({});
 
   const frontInputRef = useRef<HTMLInputElement>(null);
   const backInputRef = useRef<HTMLInputElement>(null);
   const businessInputRef = useRef<HTMLInputElement>(null);
+  const panInputRef = useRef<HTMLInputElement>(null);
   
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -124,7 +127,7 @@ export function Step3Business({ onNext, onBack }: { onNext: () => void, onBack: 
 
   const handleFileUpload = async (
     e: React.ChangeEvent<HTMLInputElement>,
-    type: "front" | "back" | "business"
+    type: "front" | "back" | "business" | "pan"
   ) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -147,6 +150,7 @@ export function Step3Business({ onNext, onBack }: { onNext: () => void, onBack: 
       if (type === "front") setUploadingFront(true);
       if (type === "back") setUploadingBack(true);
       if (type === "business") setUploadingBusiness(true);
+      if (type === "pan") setUploadingPan(true);
 
       // Validate OCR during upload if applicable and autofill detected number
       if (type === "business" || type === "front") {
@@ -184,8 +188,10 @@ export function Step3Business({ onNext, onBack }: { onNext: () => void, onBack: 
         setLocalPreviews(prev => ({...prev, back: objectUrl}));
       }
       if (type === "business") {
-        setUploadingBusiness(true);
         setLocalPreviews(prev => ({...prev, business: objectUrl}));
+      }
+      if (type === "pan") {
+        setLocalPreviews(prev => ({...prev, pan: objectUrl}));
       }
 
       const response = await storage.createFile(
@@ -194,9 +200,10 @@ export function Step3Business({ onNext, onBack }: { onNext: () => void, onBack: 
         file
       );
 
-      if (type === "front") setIdProofFront(response.$id);
-      if (type === "back") setIdProofBack(response.$id);
+      if (type === "front") setIdProofBack(response.$id);
+      if (type === "back") setAadhaarCardBack(response.$id);
       if (type === "business") setBusinessProof(response.$id);
+      if (type === "pan") setIdProofFront(response.$id);
 
     } catch (err: any) {
       setError(err.message || "Failed to upload file");
@@ -204,6 +211,7 @@ export function Step3Business({ onNext, onBack }: { onNext: () => void, onBack: 
       if (type === "front") setUploadingFront(false);
       if (type === "back") setUploadingBack(false);
       if (type === "business") setUploadingBusiness(false);
+      if (type === "pan") setUploadingPan(false);
     }
   };
 
@@ -281,9 +289,10 @@ export function Step3Business({ onNext, onBack }: { onNext: () => void, onBack: 
           panNumber,
           address,
           onboardingStep: 3,
-          idProofFront: bizType === "individual" ? idProofFront : null,
+          idProofFront: idProofFront || null,
           idProofBack: bizType === "individual" ? idProofBack : null,
-          businessProof: businessProof
+          aadhaarCardBack: bizType === "individual" ? aadhaarCardBack : null,
+          businessProof: bizType === "company" ? businessProof : null
         };
 
         if (bizType === "company") {
@@ -461,6 +470,43 @@ export function Step3Business({ onNext, onBack }: { onNext: () => void, onBack: 
                 )}
               </div>
             </div>
+
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-slate-700 uppercase tracking-wide">Upload Company PAN Card</label>
+              <div 
+                onClick={() => panInputRef.current?.click()}
+                className={cn(
+                  "border-2 border-dashed rounded-2xl p-8 text-center transition-all cursor-pointer group relative overflow-hidden",
+                  idProofFront ? "border-green-300 bg-green-50" : "border-slate-300 hover:bg-slate-50"
+                )}
+              >
+                <input type="file" className="hidden" ref={panInputRef} onChange={(e) => handleFileUpload(e, "pan")} accept=".pdf,.jpg,.png" />
+                
+                {idProofFront && !uploadingPan ? (
+                  <div className="absolute inset-0">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={localPreviews.pan || getPreviewUrl(idProofFront) || ""} alt="PAN Card" className="w-full h-full object-cover opacity-60 group-hover:opacity-30 transition-opacity" />
+                    <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      <CheckCircle2 className="w-10 h-10 text-green-600 mb-2 drop-shadow-md" />
+                      <span className="text-green-700 text-sm font-bold bg-white/90 px-3 py-1 rounded-full shadow-sm">Change Document</span>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <div className={cn(
+                      "w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4 transition-transform relative z-10",
+                      "bg-blue-50 text-blue-500 group-hover:scale-110"
+                    )}>
+                      {uploadingPan ? <Loader2 className="w-7 h-7 animate-spin" /> : <UploadCloud className="w-7 h-7" />}
+                    </div>
+                    <p className="text-sm font-bold text-slate-700 mb-1 relative z-10">
+                      {uploadingPan ? "Uploading..." : "Click or drag file to this area to upload"}
+                    </p>
+                    {!uploadingPan && <p className="text-xs text-slate-500 relative z-10">Supports PDF, JPG, PNG (Max 5MB)</p>}
+                  </>
+                )}
+              </div>
+            </div>
           </>
         ) : (
           <>
@@ -525,15 +571,15 @@ export function Step3Business({ onNext, onBack }: { onNext: () => void, onBack: 
                 onClick={() => businessInputRef.current?.click()}
                 className={cn(
                   "border-2 border-dashed rounded-2xl p-6 text-center transition-all cursor-pointer group relative overflow-hidden h-32 flex flex-col justify-center",
-                  businessProof ? "border-green-300 bg-green-50" : "border-slate-300 hover:bg-slate-50"
+                  idProofFront ? "border-green-300 bg-green-50" : "border-slate-300 hover:bg-slate-50"
                 )}
               >
-                <input type="file" className="hidden" ref={businessInputRef} onChange={(e) => handleFileUpload(e, "business")} accept=".jpg,.jpeg,.png" />
+                <input type="file" className="hidden" ref={businessInputRef} onChange={(e) => handleFileUpload(e, "pan")} accept=".jpg,.jpeg,.png" />
                 
-                {businessProof && !uploadingBusiness ? (
+                {idProofFront && !uploadingBusiness ? (
                   <div className="absolute inset-0">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={localPreviews.business || getPreviewUrl(businessProof) || ""} alt="PAN Card" className="w-full h-full object-cover opacity-60 group-hover:opacity-30 transition-opacity" />
+                    <img src={localPreviews.business || getPreviewUrl(idProofFront) || ""} alt="PAN Card" className="w-full h-full object-cover opacity-60 group-hover:opacity-30 transition-opacity" />
                     <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                       <CheckCircle2 className="w-8 h-8 text-green-600 mb-2 drop-shadow-md" />
                       <span className="text-green-700 text-xs font-bold bg-white/90 px-3 py-1 rounded-full shadow-sm">Change</span>
@@ -560,19 +606,19 @@ export function Step3Business({ onNext, onBack }: { onNext: () => void, onBack: 
               <label className="text-xs font-bold text-slate-700 uppercase tracking-wide">Upload Aadhar Card (Optional)</label>
 
               <div className="grid grid-cols-2 gap-4">
-                <div 
+                  <div 
                   onClick={() => frontInputRef.current?.click()}
                   className={cn(
                     "border-2 border-dashed rounded-2xl p-6 text-center transition-all cursor-pointer group relative overflow-hidden h-32 flex flex-col justify-center",
-                    idProofFront ? "border-green-300 bg-green-50" : "border-slate-300 hover:bg-slate-50"
+                    idProofBack ? "border-green-300 bg-green-50" : "border-slate-300 hover:bg-slate-50"
                   )}
                 >
                   <input type="file" className="hidden" ref={frontInputRef} onChange={(e) => handleFileUpload(e, "front")} accept=".jpg,.jpeg,.png" />
                   
-                  {idProofFront && !uploadingFront ? (
+                  {idProofBack && !uploadingFront ? (
                     <div className="absolute inset-0">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={localPreviews.front || getPreviewUrl(idProofFront) || ""} alt="Front Side" className="w-full h-full object-cover opacity-60 group-hover:opacity-30 transition-opacity" />
+                      <img src={localPreviews.front || getPreviewUrl(idProofBack) || ""} alt="Front Side" className="w-full h-full object-cover opacity-60 group-hover:opacity-30 transition-opacity" />
                       <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                         <CheckCircle2 className="w-8 h-8 text-green-600 mb-2 drop-shadow-md" />
                         <span className="text-green-700 text-xs font-bold bg-white/90 px-3 py-1 rounded-full shadow-sm">Change</span>
@@ -598,15 +644,15 @@ export function Step3Business({ onNext, onBack }: { onNext: () => void, onBack: 
                   onClick={() => backInputRef.current?.click()}
                   className={cn(
                     "border-2 border-dashed rounded-2xl p-6 text-center transition-all cursor-pointer group relative overflow-hidden h-32 flex flex-col justify-center",
-                    idProofBack ? "border-green-300 bg-green-50" : "border-slate-300 hover:bg-slate-50"
+                    aadhaarCardBack ? "border-green-300 bg-green-50" : "border-slate-300 hover:bg-slate-50"
                   )}
                 >
                   <input type="file" className="hidden" ref={backInputRef} onChange={(e) => handleFileUpload(e, "back")} accept=".jpg,.jpeg,.png" />
                   
-                  {idProofBack && !uploadingBack ? (
+                  {aadhaarCardBack && !uploadingBack ? (
                     <div className="absolute inset-0">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={localPreviews.back || getPreviewUrl(idProofBack) || ""} alt="Back Side" className="w-full h-full object-cover opacity-60 group-hover:opacity-30 transition-opacity" />
+                      <img src={localPreviews.back || getPreviewUrl(aadhaarCardBack) || ""} alt="Back Side" className="w-full h-full object-cover opacity-60 group-hover:opacity-30 transition-opacity" />
                       <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                         <CheckCircle2 className="w-8 h-8 text-green-600 mb-2 drop-shadow-md" />
                         <span className="text-green-700 text-xs font-bold bg-white/90 px-3 py-1 rounded-full shadow-sm">Change</span>

@@ -157,39 +157,38 @@ export default function VendorFullPageReviewScreen({ params }: { params: Promise
 
           let fallbackDoc: ReviewDoc | undefined = undefined;
 
-          // 1. First priority: Realtime/dashboard uploaded documents (rawDocs)
+          // 1. First priority: Appwrite document fields (from onboarding Step3)
+          let fileId = null;
+          if (template.id === "pan_card") fileId = doc.idProofFront;
+          if (template.id === "aadhaar_card_front") fileId = doc.idProofBack;
+          if (template.id === "aadhaar_card_back") fileId = doc.aadhaarCardBack;
+          if (template.id === "business_registration") fileId = doc.businessProof;
+          if (template.id === "property_proof") fileId = doc.propertyProof;
+          if (template.id === "gst_certificate") fileId = doc.gstCertificate;
+          if (template.id === "bank_cheque") fileId = doc.bankCheque;
+          if (template.id === "fssai_license") fileId = doc.fssaiLicense;
+          
+          if (fileId) {
+            fileUrl = getFileUrl(fileId);
+            fileName = fileUrl ? `Document_${template.title}` : null;
+          }
+
+          // 2. Second priority: Fallback to Realtime/dashboard uploaded documents (rawDocs/cookies)
           if (rawDocs && rawDocs.length > 0) {
             let searchId = template.id;
             let legacySearchId = template.id;
             if (template.id === "aadhaar_card_front") legacySearchId = "aadhaar_card";
             
-            // For aadhaar_card_back, if it's not explicitly in rawDocs, we won't find it here and it will fall back to Appwrite
             fallbackDoc = rawDocs.find((d: ReviewDoc) => d.id === searchId || d.id === legacySearchId || d.title?.toLowerCase() === template.title.toLowerCase());
             
             if (fallbackDoc && (fallbackDoc.fileUrl || fallbackDoc.fileName)) {
-              // Don't duplicate the dashboard file into the Back slot if they only uploaded one file for Aadhaar
               if (template.id !== "aadhaar_card_back" || fallbackDoc.id === "aadhaar_card_back") {
-                fileUrl = fallbackDoc.fileUrl || null;
-                fileName = fallbackDoc.fileName || `Legacy_${template.title}`;
+                // Only override if Appwrite didn't give us a file
+                if (!fileUrl) {
+                  fileUrl = fallbackDoc.fileUrl || null;
+                  fileName = fallbackDoc.fileName || `Legacy_${template.title}`;
+                }
               }
-            }
-          }
-
-          // 2. Second priority: Fallback to Appwrite document fields (from legacy onboarding)
-          if (!fileUrl) {
-            let fileId = null;
-            // Map Appwrite database fields based on what Step9KYC.tsx actually saves:
-            if (template.id === "pan_card") fileId = doc.idProofFront;
-            if (template.id === "aadhaar_card_front") fileId = doc.idProofBack;
-            if (template.id === "aadhaar_card_back") fileId = doc.aadhaarCardBack;
-            if (template.id === "property_proof" || template.id === "business_registration") fileId = doc.businessProof;
-            if (template.id === "gst_certificate") fileId = doc.gstCertificate;
-            if (template.id === "bank_cheque") fileId = doc.bankCheque;
-            if (template.id === "fssai_license") fileId = doc.fssaiLicense;
-            
-            if (fileId) {
-              fileUrl = getFileUrl(fileId);
-              fileName = fileUrl ? `Document_${template.title}` : null;
             }
           }
           

@@ -119,13 +119,8 @@ export default function DocumentsPage() {
 
       const formattedDate = new Date().toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
 
-      // Merge templates: preserve uploaded files, default rest to clean Missing state
+      // Merge templates: preserve uploaded files from Appwrite profile first, then fallback to local storage
       let mergedList = INITIAL_DOC_TEMPLATES.map((t) => {
-        const existing = savedDocs.find(d => d.id === t.id || d.title?.toLowerCase() === t.title.toLowerCase());
-        if (existing && existing.fileName) {
-          return existing;
-        }
-
         let fileIdFromProfile = null;
         let fileNameFromProfile = null;
 
@@ -139,8 +134,11 @@ export default function DocumentsPage() {
           } else if (t.id === "aadhaar_card_back" && (profile as any).aadhaarCardBack) {
              fileIdFromProfile = (profile as any).aadhaarCardBack;
              fileNameFromProfile = "Aadhaar Card Back (Uploaded)";
-          } else if ((t.id === "property_proof" || t.id === "business_registration") && profile.businessProof) {
+          } else if (t.id === "business_registration" && profile.businessProof) {
              fileIdFromProfile = profile.businessProof;
+             fileNameFromProfile = "Business Registration (Uploaded)";
+          } else if (t.id === "property_proof" && (profile as any).propertyProof) {
+             fileIdFromProfile = (profile as any).propertyProof;
              fileNameFromProfile = "Property Proof (Uploaded)";
           } else if (t.id === "gst_certificate" && (profile as any).gstCertificate) {
              fileIdFromProfile = (profile as any).gstCertificate;
@@ -170,6 +168,11 @@ export default function DocumentsPage() {
              fileUrl: generatedFileUrl,
              updatedAt: formattedDate
            };
+        }
+
+        const existing = savedDocs.find(d => d.id === t.id || d.title?.toLowerCase() === t.title.toLowerCase());
+        if (existing && existing.fileName) {
+          return existing;
         }
 
         return {
@@ -446,7 +449,8 @@ export default function DocumentsPage() {
           if (docId === "pan_card") updatePayload.idProofFront = uploadedFileId;
           if (docId === "aadhaar_card_front") updatePayload.idProofBack = uploadedFileId;
           if (docId === "aadhaar_card_back") updatePayload.aadhaarCardBack = uploadedFileId;
-          if (docId === "property_proof" || docId === "business_registration") updatePayload.businessProof = uploadedFileId;
+          if (docId === "business_registration") updatePayload.businessProof = uploadedFileId;
+          if (docId === "property_proof") updatePayload.propertyProof = uploadedFileId;
           if (docId === "gst_certificate") updatePayload.gstCertificate = uploadedFileId;
           if (docId === "bank_cheque") updatePayload.bankCheque = uploadedFileId;
           if (docId === "fssai_license") updatePayload.fssaiLicense = uploadedFileId;

@@ -104,10 +104,10 @@ export default function HelpPage() {
             Can&apos;t find the answer you&apos;re looking for? Please contact our friendly support team and we&apos;ll get back to you as soon as possible.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 relative z-10">
-            <button className="bg-brand-coral hover:bg-[#d95d63] text-white px-8 py-3 rounded-xl font-bold transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5 flex items-center gap-2">
+            <a href="mailto:info@racoonn.com" className="bg-brand-coral hover:bg-[#d95d63] text-white px-8 py-3 rounded-xl font-bold transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5 flex items-center gap-2">
               <Mail className="w-5 h-5" />
               Contact Support
-            </button>
+            </a>
           </div>
         </div>
 

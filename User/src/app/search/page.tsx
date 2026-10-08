@@ -184,7 +184,7 @@ function SearchContent() {
   }, [properties]);
 
   const { absoluteMinPrice, absoluteMaxPrice } = React.useMemo(() => {
-    if (properties.length === 0) return { absoluteMinPrice: 1000, absoluteMaxPrice: 100000 };
+    if (properties.length === 0) return { absoluteMinPrice: 0, absoluteMaxPrice: 0 };
     
     let min = Infinity;
     let max = -Infinity;
@@ -193,7 +193,7 @@ function SearchContent() {
       if (p.price > max) max = p.price;
     });
     
-    if (min === Infinity || max === -Infinity) return { absoluteMinPrice: 1000, absoluteMaxPrice: 100000 };
+    if (min === Infinity || max === -Infinity) return { absoluteMinPrice: 0, absoluteMaxPrice: 0 };
     
     min = Math.floor(min / 500) * 500;
     max = Math.ceil(max / 500) * 500;
@@ -483,14 +483,13 @@ function SearchContent() {
   return (
     <div className="flex flex-col h-[calc(100vh-92px)] overflow-hidden">
       {/* Top Filter Bar */}
-      <div className="relative shrink-0 hidden lg:block z-40">
-        <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center gap-3 overflow-x-auto hide-scrollbar">
-          <button 
-            className="flex items-center gap-2 border border-gray-300 hover:border-gray-900 rounded-full px-4 py-2 transition-colors shrink-0 font-medium text-[14px] text-gray-700"
-            onClick={() => setIsFilterModalOpen(true)}
+      <div className="relative shrink-0 z-40">
+        <div className="bg-white border-b border-gray-200 px-4 lg:px-6 py-3 lg:py-4 flex items-center gap-3 overflow-x-auto hide-scrollbar">
+          <div 
+            className="flex items-center gap-2 border border-gray-300 rounded-full px-4 py-2 shrink-0 font-medium text-[14px] text-gray-700 cursor-default select-none"
           >
             <SlidersHorizontal size={16} /> Filters
-          </button>
+          </div>
           
           <div className="h-8 w-px bg-gray-200 shrink-0 mx-1" />
           
@@ -550,7 +549,7 @@ function SearchContent() {
           className="absolute left-0 right-0 flex flex-col bg-slate-50 rounded-t-[32px]
             lg:static lg:h-full lg:min-h-0 lg:w-[55%] xl:w-[60%]
             lg:rounded-2xl lg:border border-gray-200 lg:order-1
-            lg:shadow-[0_4px_24px_rgba(0,0,0,0.06)] z-[100] lg:z-auto"
+            lg:shadow-[0_4px_24px_rgba(0,0,0,0.06)] z-100 lg:z-auto"
           style={{
             // Mobile: top slides between 50% (peek) and 0 (full screen)
             top: isListExpanded ? '0' : '50%',
@@ -650,14 +649,7 @@ function SearchContent() {
 
       </div>
 
-      {/* Filter Modal */}
-      <FilterModal 
-        isOpen={isFilterModalOpen} 
-        onClose={() => setIsFilterModalOpen(false)} 
-        initialFilters={advancedFilters || undefined}
-        onApply={(filters) => setAdvancedFilters(filters)}
-        matchCount={filteredProperties.length}
-      />
+
 
       {/* Price Popover */}
       <PricePopover

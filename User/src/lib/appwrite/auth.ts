@@ -1,4 +1,4 @@
-import { ID, OAuthProvider } from 'appwrite';
+import { ID, OAuthProvider, Query } from 'appwrite';
 import { account, databases } from './config';
 
 const DATABASE_ID = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID || 'RacoonnDB';
@@ -75,18 +75,51 @@ export const authService = {
       const savedHotels = profile.savedHotels || [];
       let newSavedHotels;
       
-      if (savedHotels.includes(hotelId)) {
-        newSavedHotels = savedHotels.filter((id: string) => id !== hotelId);
-      } else {
+      const isSaving = !savedHotels.includes(hotelId);
+      
+      if (isSaving) {
         newSavedHotels = [...savedHotels, hotelId];
+      } else {
+        newSavedHotels = savedHotels.filter((id: string) => id !== hotelId);
       }
 
-      return await databases.updateDocument(
+      const res = await databases.updateDocument(
         DATABASE_ID,
         PROFILES_COLLECTION_ID,
         userId,
         { savedHotels: newSavedHotels }
       );
+
+      // Sync with Wishlists collection
+      const WISHLISTS_COL = process.env.NEXT_PUBLIC_APPWRITE_WISHLISTS_COLLECTION_ID || '6a4372f4005095bc2d72';
+      try {
+        if (isSaving) {
+          const existing = await databases.listDocuments(DATABASE_ID, WISHLISTS_COL, [
+            Query.equal('userId', userId),
+            Query.equal('entityId', hotelId)
+          ]);
+          if (existing.total === 0) {
+            await databases.createDocument(DATABASE_ID, WISHLISTS_COL, ID.unique(), {
+              userId,
+              entityId: hotelId,
+              entityType: hotelId.length < 15 ? 'package' : 'property',
+              createdAt: new Date().toISOString()
+            });
+          }
+        } else {
+          const existing = await databases.listDocuments(DATABASE_ID, WISHLISTS_COL, [
+            Query.equal('userId', userId),
+            Query.equal('entityId', hotelId)
+          ]);
+          for (const doc of existing.documents) {
+            await databases.deleteDocument(DATABASE_ID, WISHLISTS_COL, doc.$id);
+          }
+        }
+      } catch (wishlistErr) {
+        console.warn("Could not sync wishlist to collection:", wishlistErr);
+      }
+
+      return res;
     } catch (error) {
       console.error("Appwrite service :: toggleSavedHotel :: error", error);
       throw error;

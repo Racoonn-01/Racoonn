@@ -222,8 +222,8 @@ export default function TermsPage() {
             </section>
 
             {/* Support / Contact Section */}
-            <section id="contact" className="bg-linear-to-br from-slate-900 to-slate-800 rounded-3xl shadow-xl p-8 md:p-12 text-white overflow-hidden relative">
-              <div className="absolute top-0 right-0 w-64 h-64 bg-rose-500/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+            <section id="contact" className="bg-brand-navy rounded-3xl shadow-xl p-8 md:p-12 text-white overflow-hidden relative">
+              <div className="absolute top-0 right-0 w-64 h-64 bg-brand-coral/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
               
               <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
                 <div>
@@ -234,11 +234,11 @@ export default function TermsPage() {
                 </div>
                 
                 <div className="flex flex-col gap-4 w-full md:w-auto shrink-0">
-                  <a href="mailto:legal@racoonn.com" className="flex items-center justify-center gap-3 bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/20 text-white px-6 py-4 rounded-2xl font-bold transition-all group">
+                  <a href="mailto:info@racoonn.com" className="flex items-center justify-center gap-3 bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/20 text-white px-6 py-4 rounded-2xl font-bold transition-all group">
                     <Mail size={20} className="group-hover:scale-110 transition-transform" />
-                    legal@racoonn.com
+                    info@racoonn.com
                   </a>
-                  <Link href="/help" className="flex items-center justify-center gap-3 bg-rose-500 hover:bg-rose-600 text-white px-6 py-4 rounded-2xl font-bold transition-all shadow-lg shadow-rose-500/30">
+                  <Link href="/help" className="flex items-center justify-center gap-3 bg-[#E86A70] hover:opacity-90 text-white px-6 py-4 rounded-2xl font-bold transition-all shadow-lg shadow-[#E86A70]/30">
                     Visit Help Center
                   </Link>
                 </div>

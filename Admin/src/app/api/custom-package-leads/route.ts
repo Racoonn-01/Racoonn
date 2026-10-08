@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { unstable_noStore as noStore } from "next/cache";
-import { Client, Databases, Query } from "node-appwrite";
+import { Client, Databases, Query, Models } from "node-appwrite";
 
 export async function GET() {
   noStore();
@@ -18,7 +18,7 @@ export async function GET() {
     ]);
     
     // Map Appwrite documents back to exactly what Admin frontend expects
-    const leads = response.documents.map((doc: any) => ({
+    const leads = response.documents.map((doc: Models.Document) => ({
       ...doc,
       id: doc.$id,
       createdAt: doc.$createdAt

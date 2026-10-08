@@ -3,13 +3,16 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useAuthStore } from '@/store/authStore';
 import { Hotel, mockHotels } from '@/data/mockHotels';
+
+type SavedItem = Hotel & { type?: 'property' | 'package' };
+
 import { isActiveProperty } from '@/lib/utils';
 import { getProperties } from '@/lib/appwrite/api';
 import { useState, useEffect } from 'react';
 
 export default function SavedHotelsGrid() {
   const { profile, toggleSavedHotel, isAuthenticated } = useAuthStore();
-  const [properties, setProperties] = useState<Hotel[]>(mockHotels);
+  const [properties, setProperties] = useState<SavedItem[]>(mockHotels as SavedItem[]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -17,13 +20,13 @@ export default function SavedHotelsGrid() {
       try {
         const [data, pkgsRes] = await Promise.all([
           getProperties(),
-          fetch('/api/cms/packages').catch(() => null)
+          fetch('/api/cms/packages', { cache: 'no-store' }).catch(() => null)
         ]);
 
-        let allItems: any[] = [];
+        let allItems: SavedItem[] = [];
 
         if (data && data.length > 0) {
-          const mappedProperties = data.map((doc: any) => ({
+          const mappedProperties: SavedItem[] = data.map((doc: Record<string, unknown>) => ({
             id: doc.$id,
             name: doc.propertyName || doc.title || 'Unknown Property',
             location: doc.location || `${doc.city || ''}, ${doc.state || ''}`,
@@ -40,7 +43,7 @@ export default function SavedHotelsGrid() {
         if (pkgsRes) {
           const pkgsJson = await pkgsRes.json();
           if (pkgsJson.success && Array.isArray(pkgsJson.packages)) {
-            const mappedPkgs = pkgsJson.packages.map((pkg: any) => ({
+            const mappedPkgs: SavedItem[] = pkgsJson.packages.map((pkg: Record<string, unknown>) => ({
               id: pkg.id || pkg.$id,
               name: pkg.title || 'Unknown Package',
               location: pkg.location || '',
@@ -55,7 +58,7 @@ export default function SavedHotelsGrid() {
           }
         }
 
-        setProperties([...mockHotels, ...allItems] as any[]);
+        setProperties([...(mockHotels as SavedItem[]), ...allItems]);
       } catch (error) {
         console.error("Failed to load saved items:", error);
       } finally {
@@ -70,10 +73,10 @@ export default function SavedHotelsGrid() {
     .filter(isActiveProperty)
     .filter(hotel => savedHotelIds.includes(hotel.id));
 
-  const savedProperties = savedHotelsList.filter((item: any) => item.type === 'property' || !item.type);
-  const savedPackages = savedHotelsList.filter((item: any) => item.type === 'package');
+  const savedProperties = savedHotelsList.filter((item: SavedItem) => item.type === 'property' || !item.type);
+  const savedPackages = savedHotelsList.filter((item: SavedItem) => item.type === 'package');
 
-  const renderGrid = (items: Hotel[], title: string, emptyMessage: string) => {
+  const renderGrid = (items: SavedItem[], title: string) => {
     if (items.length === 0) return null;
     return (
       <div className="mb-12 last:mb-0">
@@ -116,8 +119,8 @@ export default function SavedHotelsGrid() {
                 
                 <div className="mt-auto pt-4 border-t border-gray-50">
                   <Link 
-                    // @ts-ignore
-                    href={(hotel as any).type === 'package' ? `/packages/${hotel.id}` : `/property/${hotel.id}`}
+                    // @ts-expect-error type field is added to Hotel
+                    href={hotel.type === 'package' ? `/packages/${hotel.id}` : `/property/${hotel.id}`}
                     className="flex items-center justify-center w-full py-3 bg-brand-coral text-white font-bold rounded-xl text-[15px] hover:-translate-y-0.5 hover:shadow-md transition-all"
                   >
                     View Details
@@ -160,8 +163,8 @@ export default function SavedHotelsGrid() {
         </div>
       ) : (
         <div>
-          {renderGrid(savedProperties, "Saved Properties", "No saved properties.")}
-          {renderGrid(savedPackages, "Saved Packages", "No saved packages.")}
+          {renderGrid(savedProperties, "Saved Properties")}
+          {renderGrid(savedPackages, "Saved Packages")}
         </div>
       )}
     </div>

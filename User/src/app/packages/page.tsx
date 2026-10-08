@@ -37,9 +37,9 @@ function PackagesContent() {
               id: cmsPkg.id,
               title: cmsPkg.title,
               location: cmsPkg.location || cmsPkg.metaTitle || 'Uttarakhand',
-              duration: cmsPkg.itinerary && cmsPkg.itinerary.length > 0 
+              duration: String(cmsPkg.duration || (cmsPkg.itinerary && cmsPkg.itinerary.length > 0 
                 ? `${cmsPkg.itinerary.length + 1} Days / ${cmsPkg.itinerary.length} Nights` 
-                : '5 Days / 4 Nights',
+                : '5 Days / 4 Nights')),
             features: String(cmsPkg.features || 'Meals | Stay | Transfer'),
             price: `₹${minPrice.toLocaleString('en-IN')}`,
             badge: String(cmsPkg.badge || 'Featured'),
@@ -98,7 +98,7 @@ function PackagesContent() {
 
   // Calculate absolute min and max prices
   const { absoluteMinPrice, absoluteMaxPrice } = useMemo(() => {
-    if (packageList.length === 0) return { absoluteMinPrice: 1000, absoluteMaxPrice: 100000 };
+    if (packageList.length === 0) return { absoluteMinPrice: 0, absoluteMaxPrice: 0 };
     
     let min = Infinity;
     let max = -Infinity;
@@ -108,7 +108,7 @@ function PackagesContent() {
       if (pNum > max) max = pNum;
     });
     
-    if (min === Infinity || max === -Infinity) return { absoluteMinPrice: 1000, absoluteMaxPrice: 100000 };
+    if (min === Infinity || max === -Infinity) return { absoluteMinPrice: 0, absoluteMaxPrice: 0 };
     
     min = Math.floor(min / 1000) * 1000;
     max = Math.ceil(max / 1000) * 1000;
@@ -265,7 +265,7 @@ function PackagesContent() {
             animate={{ y: 0 }}
             exit={{ y: "100%" }}
             transition={{ type: "spring", damping: 25, stiffness: 200 }}
-            className="fixed inset-0 z-[100] bg-white md:hidden flex flex-col"
+            className="fixed inset-0 z-100 bg-white md:hidden flex flex-col"
           >
             <div className="flex items-center justify-between p-4 border-b border-gray-200">
               <h2 className="text-lg font-bold text-gray-900">Filters</h2>

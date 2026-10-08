@@ -1,5 +1,742 @@
 [
   {
+    "id": "1791450368011",
+    "title": "Divine Kumaon",
+    "location": "Uttarakhand",
+    "duration": "2 Days / 1 Nights",
+    "features": "Meals | Stay | Transfer",
+    "badge": "Bestseller",
+    "images": [
+      "https://sgp.cloud.appwrite.io/v1/storage/buckets/6a3e398000280b2b3d20/files/6ac76605003c230ac537/view?project=6a3bce6900381359c3ce",
+      "https://sgp.cloud.appwrite.io/v1/storage/buckets/6a3e398000280b2b3d20/files/6ac7660800354a406bbe/view?project=6a3bce6900381359c3ce",
+      "https://sgp.cloud.appwrite.io/v1/storage/buckets/6a3e398000280b2b3d20/files/6ac7660a000b6a7f4626/view?project=6a3bce6900381359c3ce",
+      "https://sgp.cloud.appwrite.io/v1/storage/buckets/6a3e398000280b2b3d20/files/6ac7660c00278686b7b3/view?project=6a3bce6900381359c3ce",
+      "https://sgp.cloud.appwrite.io/v1/storage/buckets/6a3e398000280b2b3d20/files/6ac7660d003cbea9dc30/view?project=6a3bce6900381359c3ce"
+    ],
+    "pricing": [
+      {
+        "id": "1791448404519",
+        "minPersons": 1,
+        "maxPersons": 2,
+        "pricePerPerson": 18999
+      }
+    ],
+    "hotelOptions": [
+      {
+        "id": "h1",
+        "title": "Premium Hotel Stay",
+        "description": "Experience maximum comfort in our handpicked 3 or 4-star properties.",
+        "image": "https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=600&auto=format&fit=crop",
+        "tags": [
+          "AC Rooms",
+          "Breakfast Included"
+        ],
+        "pricePerNight": 3500,
+        "isDefault": true
+      },
+      {
+        "id": "h2",
+        "title": "Experiential Swiss Camps",
+        "description": "For applicable locations, enjoy a night under the stars in our luxury swiss tents.",
+        "image": "https://images.unsplash.com/photo-1523987355523-c7b5b0dd90a7?q=80&w=600&auto=format&fit=crop",
+        "tags": [
+          "Luxury Tents",
+          "All Meals"
+        ],
+        "pricePerNight": 4200,
+        "isDefault": false
+      }
+    ],
+    "activityOptions": [
+      {
+        "id": "a1",
+        "title": "Guided Local Sightseeing",
+        "description": "Explore the best landmarks and hidden gems with our expert local guides.",
+        "image": "https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=600&auto=format&fit=crop",
+        "pricePerPerson": 0,
+        "priceLabel": "Included in Package"
+      },
+      {
+        "id": "a2",
+        "title": "Adventure Sports Pass",
+        "description": "Get an adrenaline rush with our adventure sports pass.",
+        "image": "https://images.unsplash.com/photo-1593693397690-362cb9666fc2?q=80&w=600&auto=format&fit=crop",
+        "pricePerPerson": 2500,
+        "priceLabel": "+ ₹2,500 / person"
+      }
+    ],
+    "metaTitle": "Divine Kumaon",
+    "metaDescription": "Divine Kumaon",
+    "metaKeywords": [
+      "Divine Kumaon"
+    ],
+    "itinerary": [
+      {
+        "id": "1791448404519",
+        "dayNumber": 1,
+        "title": "Haldwani/Kathgodam → Kainchi Dham → Bhimtal → Nainital",
+        "activities": "Check-in and local sightseeing",
+        "points": [
+          {
+            "title": "Morning",
+            "description": "Pickup from Haldwani/Kathgodam and begin your scenic journey into the Kumaon Himalayas",
+            "hasHotelActions": false
+          },
+          {
+            "title": "Kainchi Dham",
+            "description": "Visit the famous Kainchi Dham, a spiritual destination associated with Neem Karoli Baba. Spend some peaceful time at the ashram.",
+            "hasHotelActions": false
+          },
+          {
+            "title": "Bhimtal",
+            "description": "Continue towards Bhimtal and enjoy the beautiful lake surroundings. Guests can optionally enjoy boating, subject to availability and weather.",
+            "hasHotelActions": false
+          },
+          {
+            "title": "Nainital",
+            "description": "Proceed to Nainital, check in at the hotel and freshen up.\n\nIn the evening, explore:\n\nNaini Lake\nMall Road\nTibetan Market\nLocal cafés and viewpoints",
+            "hasHotelActions": false
+          }
+        ]
+      },
+      {
+        "id": "1791450613501",
+        "dayNumber": 2,
+        "title": "Nainital Sightseeing → Haldwani/Kathgodam",
+        "activities": "",
+        "points": [
+          {
+            "title": "Visit",
+            "description": "Naina Devi Temple\nSnow View Point / another suitable viewpoint\nThe Mall Road\nEco Cave Gardens or another local attraction, depending on time\n\nEnjoy some free time for shopping and local Kumaoni souvenirs.\nAfter sightseeing, depart for Haldwani/Kathgodam with beautiful memories of the Kumaon hills.",
+            "hasHotelActions": false
+          }
+        ]
+      }
+    ],
+    "status": "published",
+    "videoTestimonials": []
+  },
+  {
+    "id": "1791450043024",
+    "title": "Three wonders of kumaon",
+    "location": "Uttarakhand",
+    "duration": "3 Days / 2 Nights",
+    "features": "Meals | Stay | Transfer",
+    "badge": "Bestseller",
+    "images": [
+      "https://sgp.cloud.appwrite.io/v1/storage/buckets/6a3e398000280b2b3d20/files/6ac7655a001191b45421/view?project=6a3bce6900381359c3ce",
+      "https://sgp.cloud.appwrite.io/v1/storage/buckets/6a3e398000280b2b3d20/files/6ac7655d002b45ae70c8/view?project=6a3bce6900381359c3ce",
+      "https://sgp.cloud.appwrite.io/v1/storage/buckets/6a3e398000280b2b3d20/files/6ac7656000027ce803ab/view?project=6a3bce6900381359c3ce",
+      "https://sgp.cloud.appwrite.io/v1/storage/buckets/6a3e398000280b2b3d20/files/6ac76561002fad047eed/view?project=6a3bce6900381359c3ce",
+      "https://sgp.cloud.appwrite.io/v1/storage/buckets/6a3e398000280b2b3d20/files/6ac7656500237ff74c91/view?project=6a3bce6900381359c3ce"
+    ],
+    "pricing": [
+      {
+        "id": "1791448404519",
+        "minPersons": 1,
+        "maxPersons": 2,
+        "pricePerPerson": 18999
+      }
+    ],
+    "hotelOptions": [
+      {
+        "id": "h1",
+        "title": "Premium Hotel Stay",
+        "description": "Experience maximum comfort in our handpicked 3 or 4-star properties.",
+        "image": "https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=600&auto=format&fit=crop",
+        "tags": [
+          "AC Rooms",
+          "Breakfast Included"
+        ],
+        "pricePerNight": 3500,
+        "isDefault": true
+      },
+      {
+        "id": "h2",
+        "title": "Experiential Swiss Camps",
+        "description": "For applicable locations, enjoy a night under the stars in our luxury swiss tents.",
+        "image": "https://images.unsplash.com/photo-1523987355523-c7b5b0dd90a7?q=80&w=600&auto=format&fit=crop",
+        "tags": [
+          "Luxury Tents",
+          "All Meals"
+        ],
+        "pricePerNight": 4200,
+        "isDefault": false
+      }
+    ],
+    "activityOptions": [
+      {
+        "id": "a1",
+        "title": "Guided Local Sightseeing",
+        "description": "Explore the best landmarks and hidden gems with our expert local guides.",
+        "image": "https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=600&auto=format&fit=crop",
+        "pricePerPerson": 0,
+        "priceLabel": "Included in Package"
+      },
+      {
+        "id": "a2",
+        "title": "Adventure Sports Pass",
+        "description": "Get an adrenaline rush with our adventure sports pass.",
+        "image": "https://images.unsplash.com/photo-1593693397690-362cb9666fc2?q=80&w=600&auto=format&fit=crop",
+        "pricePerPerson": 2500,
+        "priceLabel": "+ ₹2,500 / person"
+      }
+    ],
+    "metaTitle": "Three wonders of kumaon",
+    "metaDescription": "Three wonders of kumaon",
+    "metaKeywords": [
+      "Three wonders of kumaon"
+    ],
+    "itinerary": [
+      {
+        "id": "1791448404519",
+        "dayNumber": 1,
+        "title": "Haldwani/Kathgodam → Nainital → Ranikhet → Corbett",
+        "activities": "Check-in and local sightseeing",
+        "points": [
+          {
+            "title": "Morning",
+            "description": "Pick-up from Haldwani/Kathgodam and proceed towards Nainital.",
+            "hasHotelActions": false
+          },
+          {
+            "title": "Afternoon",
+            "description": "Proceed towards Ranikhet, the peaceful hill station known for Himalayan views, pine/deodar landscapes and its cantonment character",
+            "hasHotelActions": false
+          },
+          {
+            "title": "Evening",
+            "description": "Continue towards Jim Corbett / Ramnagar.\n\nCheck in at the resort, relax and enjoy the evening at leisure.",
+            "hasHotelActions": false
+          }
+        ]
+      },
+      {
+        "id": "1791450271118",
+        "dayNumber": 2,
+        "title": "Corbett Jungle Experience → Departure",
+        "activities": "",
+        "points": [
+          {
+            "title": "Early Morning",
+            "description": "Optional Jeep Safari in an available Corbett zone, subject to permit and availability.",
+            "hasHotelActions": false
+          },
+          {
+            "title": "Late Morning",
+            "description": "Garjiya Devi Temple\nKosi River\nCorbett-area sightseeing, time permitting",
+            "hasHotelActions": false
+          },
+          {
+            "title": "Afternoon",
+            "description": "Departure towards Haldwani/Kathgodam.\n\nTour Ends with beautiful memories of Kumaon.",
+            "hasHotelActions": false
+          }
+        ]
+      }
+    ],
+    "status": "published",
+    "videoTestimonials": []
+  },
+  {
+    "id": "1791449661712",
+    "title": "Soulful Trail",
+    "location": "Uttarakhand",
+    "duration": "2 Days / 1 Nights",
+    "features": "Meals | Stay | Transfer",
+    "badge": "Bestseller",
+    "images": [
+      "https://sgp.cloud.appwrite.io/v1/storage/buckets/6a3e398000280b2b3d20/files/6ac764ac003476dc3461/view?project=6a3bce6900381359c3ce",
+      "https://sgp.cloud.appwrite.io/v1/storage/buckets/6a3e398000280b2b3d20/files/6ac764ae002fbf53204c/view?project=6a3bce6900381359c3ce",
+      "https://sgp.cloud.appwrite.io/v1/storage/buckets/6a3e398000280b2b3d20/files/6ac764af003bd43f7b11/view?project=6a3bce6900381359c3ce",
+      "https://sgp.cloud.appwrite.io/v1/storage/buckets/6a3e398000280b2b3d20/files/6ac764b00035f8996906/view?project=6a3bce6900381359c3ce",
+      "https://sgp.cloud.appwrite.io/v1/storage/buckets/6a3e398000280b2b3d20/files/6ac764b2002600e13f1e/view?project=6a3bce6900381359c3ce"
+    ],
+    "pricing": [
+      {
+        "id": "1791448404519",
+        "minPersons": 1,
+        "maxPersons": 2,
+        "pricePerPerson": 18999
+      }
+    ],
+    "hotelOptions": [
+      {
+        "id": "h1",
+        "title": "Premium Hotel Stay",
+        "description": "Experience maximum comfort in our handpicked 3 or 4-star properties.",
+        "image": "https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=600&auto=format&fit=crop",
+        "tags": [
+          "AC Rooms",
+          "Breakfast Included"
+        ],
+        "pricePerNight": 3500,
+        "isDefault": true
+      },
+      {
+        "id": "h2",
+        "title": "Experiential Swiss Camps",
+        "description": "For applicable locations, enjoy a night under the stars in our luxury swiss tents.",
+        "image": "https://images.unsplash.com/photo-1523987355523-c7b5b0dd90a7?q=80&w=600&auto=format&fit=crop",
+        "tags": [
+          "Luxury Tents",
+          "All Meals"
+        ],
+        "pricePerNight": 4200,
+        "isDefault": false
+      }
+    ],
+    "activityOptions": [
+      {
+        "id": "a1",
+        "title": "Guided Local Sightseeing",
+        "description": "Explore the best landmarks and hidden gems with our expert local guides.",
+        "image": "https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=600&auto=format&fit=crop",
+        "pricePerPerson": 0,
+        "priceLabel": "Included in Package"
+      },
+      {
+        "id": "a2",
+        "title": "Adventure Sports Pass",
+        "description": "Get an adrenaline rush with our adventure sports pass.",
+        "image": "https://images.unsplash.com/photo-1593693397690-362cb9666fc2?q=80&w=600&auto=format&fit=crop",
+        "pricePerPerson": 2500,
+        "priceLabel": "+ ₹2,500 / person"
+      }
+    ],
+    "metaTitle": "Soulful Trail",
+    "metaDescription": "Soulful Trail",
+    "metaKeywords": [
+      "Soulful Trail"
+    ],
+    "itinerary": [
+      {
+        "id": "1791448404519",
+        "dayNumber": 1,
+        "title": "Arrival & Himalayan Exploration",
+        "activities": "Check-in and local sightseeing",
+        "points": [
+          {
+            "title": "Morning",
+            "description": "Arrival at the designated pickup point.\nMeet and greet with the Soulful Trail team.\nDrive towards the destination through scenic Himalayan roads.\nCheck-in at the hotel/resort.",
+            "hasHotelActions": false
+          },
+          {
+            "title": "Afternoon",
+            "description": "Freshen up and enjoy lunch.\nVisit nearby sightseeing spots and explore the natural beauty of the area.\nEnjoy panoramic mountain views and peaceful surroundings.",
+            "hasHotelActions": false
+          },
+          {
+            "title": "Evening",
+            "description": "Spend leisure time at the property.\nEnjoy sunset views and photography.\nRelax with a bonfire/cultural evening, subject to hotel availability.",
+            "hasHotelActions": false
+          },
+          {
+            "title": "Night",
+            "description": "Dinner at the hotel/resort.\nOvernight stay.",
+            "hasHotelActions": false
+          }
+        ]
+      },
+      {
+        "id": "1791449979516",
+        "dayNumber": 2,
+        "title": "Nature, Local Experience & Departure",
+        "activities": "",
+        "points": [
+          {
+            "title": "Morning",
+            "description": "Wake up to beautiful Himalayan views.\nBreakfast at the hotel.\nExplore nearby attractions and local surroundings.\nEnjoy nature walks and photography.",
+            "hasHotelActions": false
+          },
+          {
+            "title": "Afternoon",
+            "description": "Check out from the hotel.\nHave lunch/refreshments.\nBegin the return journey.",
+            "hasHotelActions": false
+          },
+          {
+            "title": "Evening",
+            "description": "Drop-off at the designated point.\nEnd of the Soulful Trail journey with beautiful Himalayan memories.",
+            "hasHotelActions": false
+          }
+        ]
+      }
+    ],
+    "status": "published",
+    "videoTestimonials": []
+  },
+  {
+    "id": "1791449361776",
+    "title": "Mystic Kumaon weekend",
+    "location": "Uttarakhand",
+    "duration": "2 Days / 1 Nights",
+    "features": "Meals | Stay | Transfer",
+    "badge": "Bestseller",
+    "images": [
+      "https://sgp.cloud.appwrite.io/v1/storage/buckets/6a3e398000280b2b3d20/files/6ac763e4003aa9271177/view?project=6a3bce6900381359c3ce",
+      "https://sgp.cloud.appwrite.io/v1/storage/buckets/6a3e398000280b2b3d20/files/6ac763e70021c8206fd1/view?project=6a3bce6900381359c3ce",
+      "https://sgp.cloud.appwrite.io/v1/storage/buckets/6a3e398000280b2b3d20/files/6ac763e9001dc5e87661/view?project=6a3bce6900381359c3ce",
+      "https://sgp.cloud.appwrite.io/v1/storage/buckets/6a3e398000280b2b3d20/files/6ac763ec002a6ab3ffa7/view?project=6a3bce6900381359c3ce",
+      "https://sgp.cloud.appwrite.io/v1/storage/buckets/6a3e398000280b2b3d20/files/6ac763f0002ea8248449/view?project=6a3bce6900381359c3ce"
+    ],
+    "pricing": [
+      {
+        "id": "1791448404519",
+        "minPersons": 1,
+        "maxPersons": 2,
+        "pricePerPerson": 18999
+      }
+    ],
+    "hotelOptions": [
+      {
+        "id": "h1",
+        "title": "Premium Hotel Stay",
+        "description": "Experience maximum comfort in our handpicked 3 or 4-star properties.",
+        "image": "https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=600&auto=format&fit=crop",
+        "tags": [
+          "AC Rooms",
+          "Breakfast Included"
+        ],
+        "pricePerNight": 3500,
+        "isDefault": true
+      },
+      {
+        "id": "h2",
+        "title": "Experiential Swiss Camps",
+        "description": "For applicable locations, enjoy a night under the stars in our luxury swiss tents.",
+        "image": "https://images.unsplash.com/photo-1523987355523-c7b5b0dd90a7?q=80&w=600&auto=format&fit=crop",
+        "tags": [
+          "Luxury Tents",
+          "All Meals"
+        ],
+        "pricePerNight": 4200,
+        "isDefault": false
+      }
+    ],
+    "activityOptions": [
+      {
+        "id": "a1",
+        "title": "Guided Local Sightseeing",
+        "description": "Explore the best landmarks and hidden gems with our expert local guides.",
+        "image": "https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=600&auto=format&fit=crop",
+        "pricePerPerson": 0,
+        "priceLabel": "Included in Package"
+      },
+      {
+        "id": "a2",
+        "title": "Adventure Sports Pass",
+        "description": "Get an adrenaline rush with our adventure sports pass.",
+        "image": "https://images.unsplash.com/photo-1593693397690-362cb9666fc2?q=80&w=600&auto=format&fit=crop",
+        "pricePerPerson": 2500,
+        "priceLabel": "+ ₹2,500 / person"
+      }
+    ],
+    "metaTitle": "Mystic Kumaon weekend",
+    "metaDescription": "Mystic Kumaon weekend",
+    "metaKeywords": [
+      "Mystic Kumaon weekend"
+    ],
+    "itinerary": [
+      {
+        "id": "1791448404519",
+        "dayNumber": 1,
+        "title": "Kathgodam/Haldwani → Bhimtal → Sattal → Mukteshwar",
+        "activities": "Check-in and local sightseeing",
+        "points": [
+          {
+            "title": "Morning",
+            "description": "Pickup from Kathgodam/Haldwani\nDrive towards Bhimtal through the scenic Kumaon hills\nVisit Bhimtal Lake\nEnjoy the peaceful lakeside surroundings and optional boating",
+            "hasHotelActions": false
+          },
+          {
+            "title": "Afternoon",
+            "description": "Proceed towards Sattal\nExplore the interconnected lakes and forest surroundings\nEnjoy nature walks and photography\nLunch at a local restaurant/café",
+            "hasHotelActions": false
+          },
+          {
+            "title": "Evening",
+            "description": "Drive towards Mukteshwar\nHotel check-in\nRelax and enjoy the mountain atmosphere\nSunset / Himalayan views, subject to weather\nDinner & overnight stay at Mukteshwar",
+            "hasHotelActions": false
+          }
+        ]
+      },
+      {
+        "id": "1791449563969",
+        "dayNumber": 2,
+        "title": "Mukteshwar Sightseeing → Haldwani/Kathgodam",
+        "activities": "",
+        "points": [
+          {
+            "title": "Early Morning",
+            "description": "Wake up to the mountain views\nBreakfast at the hotel",
+            "hasHotelActions": false
+          },
+          {
+            "title": "Morning Sightseeing",
+            "description": "Visit Mukteshwar Temple\nExplore Chauli Ki Jali\nEnjoy panoramic views of the Kumaon Himalayas",
+            "hasHotelActions": false
+          },
+          {
+            "title": "Afternoon",
+            "description": "Check out from the hotel\nLunch en route\nBegin return journey towards Haldwani/Kathgodam",
+            "hasHotelActions": false
+          },
+          {
+            "title": "Evening",
+            "description": "Drop at Haldwani/Kathgodam\nTour ends with beautiful Kumaon memories",
+            "hasHotelActions": false
+          }
+        ]
+      }
+    ],
+    "status": "published",
+    "videoTestimonials": []
+  },
+  {
+    "id": "1791448982779",
+    "title": "Clouds, Pins & Blessing",
+    "location": "Uttarakhand",
+    "duration": "2 Days / 1 Nights",
+    "features": "Meals | Stay | Transfer",
+    "badge": "Bestseller",
+    "images": [
+      "https://sgp.cloud.appwrite.io/v1/storage/buckets/6a3e398000280b2b3d20/files/6ac762d60002cfb1da1e/view?project=6a3bce6900381359c3ce",
+      "https://sgp.cloud.appwrite.io/v1/storage/buckets/6a3e398000280b2b3d20/files/6ac762db001da759ee89/view?project=6a3bce6900381359c3ce",
+      "https://sgp.cloud.appwrite.io/v1/storage/buckets/6a3e398000280b2b3d20/files/6ac762e00026bbcf204c/view?project=6a3bce6900381359c3ce",
+      "https://sgp.cloud.appwrite.io/v1/storage/buckets/6a3e398000280b2b3d20/files/6ac762e5002cc61958df/view?project=6a3bce6900381359c3ce",
+      "https://sgp.cloud.appwrite.io/v1/storage/buckets/6a3e398000280b2b3d20/files/6ac762ea001eef60907b/view?project=6a3bce6900381359c3ce"
+    ],
+    "pricing": [
+      {
+        "id": "1791448404519",
+        "minPersons": 1,
+        "maxPersons": 2,
+        "pricePerPerson": 18999
+      }
+    ],
+    "hotelOptions": [
+      {
+        "id": "h1",
+        "title": "Premium Hotel Stay",
+        "description": "Experience maximum comfort in our handpicked 3 or 4-star properties.",
+        "image": "https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=600&auto=format&fit=crop",
+        "tags": [
+          "AC Rooms",
+          "Breakfast Included"
+        ],
+        "pricePerNight": 3500,
+        "isDefault": true
+      },
+      {
+        "id": "h2",
+        "title": "Experiential Swiss Camps",
+        "description": "For applicable locations, enjoy a night under the stars in our luxury swiss tents.",
+        "image": "https://images.unsplash.com/photo-1523987355523-c7b5b0dd90a7?q=80&w=600&auto=format&fit=crop",
+        "tags": [
+          "Luxury Tents",
+          "All Meals"
+        ],
+        "pricePerNight": 4200,
+        "isDefault": false
+      }
+    ],
+    "activityOptions": [
+      {
+        "id": "a1",
+        "title": "Guided Local Sightseeing",
+        "description": "Explore the best landmarks and hidden gems with our expert local guides.",
+        "image": "https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=600&auto=format&fit=crop",
+        "pricePerPerson": 0,
+        "priceLabel": "Included in Package"
+      },
+      {
+        "id": "a2",
+        "title": "Adventure Sports Pass",
+        "description": "Get an adrenaline rush with our adventure sports pass.",
+        "image": "https://images.unsplash.com/photo-1593693397690-362cb9666fc2?q=80&w=600&auto=format&fit=crop",
+        "pricePerPerson": 2500,
+        "priceLabel": "+ ₹2,500 / person"
+      }
+    ],
+    "metaTitle": "Clouds, Pins & Blessing",
+    "metaDescription": "Clouds, Pins & Blessing",
+    "metaKeywords": [
+      "Clouds, Pins & Blessing"
+    ],
+    "itinerary": [
+      {
+        "id": "1791448404519",
+        "dayNumber": 1,
+        "title": "Arrival → Mountain Exploration → Scenic Evening",
+        "activities": "Check-in and local sightseeing",
+        "points": [
+          {
+            "title": "Morning",
+            "description": "Pickup from the designated arrival point.\nDrive towards the hills through scenic mountain roads.\nEn-route photography stops at beautiful viewpoints.\nCheck-in at the hotel/resort.\nFreshen up and relax.",
+            "hasHotelActions": false
+          },
+          {
+            "title": "Afternoon",
+            "description": "Lunch at the hotel/local restaurant.\nVisit nearby scenic attractions and viewpoints.\nEnjoy the surrounding pine forests and mountain landscapes.\nFree time for photography and exploring the local area.",
+            "hasHotelActions": false
+          },
+          {
+            "title": "Evening",
+            "description": "Return to the hotel.\nEnjoy a peaceful sunset/mountain-view experience.\nOptional bonfire & music, subject to hotel availability.\nDinner and overnight stay.",
+            "hasHotelActions": false
+          }
+        ]
+      },
+      {
+        "id": "1791449272386",
+        "dayNumber": 2,
+        "title": "Sunrise → Local Sightseeing → Departure",
+        "activities": "",
+        "points": [
+          {
+            "title": "Early Morning",
+            "description": "Wake up to the mountain views.\nOptional sunrise point visit.\nBreakfast at the hotel.",
+            "hasHotelActions": false
+          },
+          {
+            "title": "Morning",
+            "description": "Check out.\nExplore remaining nearby attractions.\nVisit a local market/café or cultural spot.\nPhotography and leisure time.",
+            "hasHotelActions": false
+          },
+          {
+            "title": "Afternoon",
+            "description": "Lunch.\nBegin return journey.\nDrop-off at the designated departure point.",
+            "hasHotelActions": false
+          }
+        ]
+      }
+    ],
+    "status": "published",
+    "videoTestimonials": []
+  },
+  {
+    "id": "1791448416378",
+    "title": "Beyond nainital",
+    "location": "Uttarakhand",
+    "duration": "2 Days / 1 Nights",
+    "features": "Meals | Stay | Transfer",
+    "badge": "Bestseller",
+    "images": [
+      "https://sgp.cloud.appwrite.io/v1/storage/buckets/6a3e398000280b2b3d20/files/6ac761de002b0d5c2210/view?project=6a3bce6900381359c3ce",
+      "https://sgp.cloud.appwrite.io/v1/storage/buckets/6a3e398000280b2b3d20/files/6ac761e0003a14b4457a/view?project=6a3bce6900381359c3ce",
+      "https://sgp.cloud.appwrite.io/v1/storage/buckets/6a3e398000280b2b3d20/files/6ac761e4003dd838f82e/view?project=6a3bce6900381359c3ce",
+      "https://sgp.cloud.appwrite.io/v1/storage/buckets/6a3e398000280b2b3d20/files/6ac761ea0028d86a1a1c/view?project=6a3bce6900381359c3ce",
+      "https://sgp.cloud.appwrite.io/v1/storage/buckets/6a3e398000280b2b3d20/files/6ac761ec00296ff8f978/view?project=6a3bce6900381359c3ce"
+    ],
+    "pricing": [
+      {
+        "id": "1791448404519",
+        "minPersons": 1,
+        "maxPersons": 2,
+        "pricePerPerson": 18999
+      }
+    ],
+    "hotelOptions": [
+      {
+        "id": "h1",
+        "title": "Premium Hotel Stay",
+        "description": "Experience maximum comfort in our handpicked 3 or 4-star properties.",
+        "image": "https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=600&auto=format&fit=crop",
+        "tags": [
+          "AC Rooms",
+          "Breakfast Included"
+        ],
+        "pricePerNight": 3500,
+        "isDefault": true
+      },
+      {
+        "id": "h2",
+        "title": "Experiential Swiss Camps",
+        "description": "For applicable locations, enjoy a night under the stars in our luxury swiss tents.",
+        "image": "https://images.unsplash.com/photo-1523987355523-c7b5b0dd90a7?q=80&w=600&auto=format&fit=crop",
+        "tags": [
+          "Luxury Tents",
+          "All Meals"
+        ],
+        "pricePerNight": 4200,
+        "isDefault": false
+      }
+    ],
+    "activityOptions": [
+      {
+        "id": "a1",
+        "title": "Guided Local Sightseeing",
+        "description": "Explore the best landmarks and hidden gems with our expert local guides.",
+        "image": "https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=600&auto=format&fit=crop",
+        "pricePerPerson": 0,
+        "priceLabel": "Included in Package"
+      },
+      {
+        "id": "a2",
+        "title": "Adventure Sports Pass",
+        "description": "Get an adrenaline rush with our adventure sports pass.",
+        "image": "https://images.unsplash.com/photo-1593693397690-362cb9666fc2?q=80&w=600&auto=format&fit=crop",
+        "pricePerPerson": 2500,
+        "priceLabel": "+ ₹2,500 / person"
+      }
+    ],
+    "metaTitle": "Beyond nainital",
+    "metaDescription": "Beyond nainital",
+    "metaKeywords": [
+      "Beyond nainital"
+    ],
+    "itinerary": [
+      {
+        "id": "1791448404519",
+        "dayNumber": 1,
+        "title": "Arrival in Nainital | Lake & Local Exploration",
+        "activities": "Check-in and local sightseeing",
+        "points": [
+          {
+            "title": "Morning",
+            "description": "Pickup from Haldwani/Kathgodam\nScenic drive towards Nainital\nHotel check-in and freshen up\nBreakfast/lunch depending on arrival time",
+            "hasHotelActions": false
+          },
+          {
+            "title": "Afternoon",
+            "description": "Visit Naina Devi Temple\nExplore the beautiful Naini Lake\nOptional boating experience\nVisit Eco Cave Gardens",
+            "hasHotelActions": false
+          },
+          {
+            "title": "Evening",
+            "description": "Explore Mall Road\nShopping for local handicrafts, candles and souvenirs\nWalk around Mallital & Tallital\nCafé/restaurant time\nReturn to hotel",
+            "hasHotelActions": false
+          },
+          {
+            "title": "Night",
+            "description": "Dinner at hotel\nOvernight stay in Nainital",
+            "hasHotelActions": false
+          }
+        ]
+      },
+      {
+        "id": "1791448778966",
+        "dayNumber": 2,
+        "title": "Himalayan Views | Snow View & Departure",
+        "activities": "",
+        "points": [
+          {
+            "title": "Morning",
+            "description": "Breakfast at hotel\nCheck-out\nVisit Snow View Point\nEnjoy panoramic Himalayan views",
+            "hasHotelActions": false
+          },
+          {
+            "title": "Afternoon",
+            "description": "Lunch\nBegin return journey towards Haldwani/Kathgodam\nTour ends with beautiful Himalayan memories",
+            "hasHotelActions": false
+          }
+        ]
+      }
+    ],
+    "status": "published",
+    "videoTestimonials": []
+  },
+  {
     "id": "1791192708482",
     "title": "Divine Trails Of Kumaon ",
     "location": "Uttarakhand",

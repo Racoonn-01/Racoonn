@@ -1,44 +1,48 @@
 export const dynamic = "force-dynamic";
 export const fetchCache = "force-no-store";
 export const revalidate = 0;
-
 import { NextResponse } from "next/server";
 import { unstable_noStore as noStore } from "next/cache";
 import fs from "fs";
-
 import { databases } from "@/lib/appwrite/config";
+import { Query } from "appwrite";
 
 const SHARED_FILE_PATH = "/tmp/racoonn_hero_section_cms.json";
-const DATABASE_ID = process.env.APPWRITE_DATABASE_ID || process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID || "6a3cec630035d63ea963";
-const COLLECTION_ID = process.env.NEXT_PUBLIC_APPWRITE_PROPERTY_COLLECTION_ID || "properties";
-const DOC_ID = "cms_hero_section_v1";
+const DATABASE_ID = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID || "6a3cec630035d63ea963";
+const COLLECTION_ID = "hero_section";
 
 export async function GET() {
   noStore();
+  try {
+    const docs = await databases.listDocuments(
+      DATABASE_ID,
+      COLLECTION_ID,
+      [Query.limit(100)]
+    );
+
+    if (!docs || docs.documents.length === 0) {
+      throw new Error("No images found in Appwrite collection");
+    }
+
+    const images = docs.documents.map((doc: any) => ({
+      id: doc.$id,
+      url: doc.url || "",
+      isActive: doc.isActive !== undefined ? doc.isActive : true,
+      order: doc.order || 0
+    }));
+
+    return NextResponse.json({ success: true, images });
+  } catch (err) {
+    console.warn("Appwrite read failed in User app, trying local file:", err);
+  }
+
   try {
     if (fs.existsSync(SHARED_FILE_PATH)) {
       const fileData = fs.readFileSync(SHARED_FILE_PATH, "utf-8");
       const images = JSON.parse(fileData);
       return NextResponse.json({ success: true, images });
     }
-  } catch (err) {
-    console.warn("File read failed, trying Appwrite DB:", err);
-  }
-
-  try {
-    const doc = await databases.getDocument(
-      DATABASE_ID,
-      COLLECTION_ID,
-      DOC_ID
-    );
-    const images = doc.details ? JSON.parse(doc.details) : [];
-    
-    // Auto-create the cache file for next time
-    try {
-      fs.writeFileSync(SHARED_FILE_PATH, JSON.stringify(images), "utf-8");
-    } catch (e) {}
-
-    return NextResponse.json({ success: true, images });
+    return NextResponse.json({ success: true, images: [] });
   } catch {
     return NextResponse.json({ success: true, images: [] });
   }

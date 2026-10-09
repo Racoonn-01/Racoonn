@@ -52,26 +52,15 @@ export default async function CheckoutPage({ searchParams }: { searchParams: Pro
               <Image src={logo} alt="Racoonn Logo" width={150} height={38} className="h-6 md:h-8 w-auto" />
             </a>
             
-            {/* Mobile Customer Care Button */}
-            <div className="lg:hidden flex items-center">
-              <button className="flex items-center gap-1.5 text-xs font-medium text-brand-navy hover:text-brand-coral bg-brand-sand px-3 py-1.5 rounded-full">
-                <Headphones className="w-3.5 h-3.5" />
-                <span>Support</span>
-              </button>
-            </div>
           </div>
 
           <div className="flex-1 w-full max-w-3xl mx-auto overflow-x-auto hide-scrollbar pb-1 md:pb-0">
-            <CheckoutProgress />
+            <Suspense fallback={<div className="h-10 animate-pulse bg-gray-100 rounded-lg w-full"></div>}>
+              <CheckoutProgress />
+            </Suspense>
           </div>
 
-          {/* Desktop Customer Care Button */}
-          <div className="shrink-0 hidden lg:flex justify-end min-w-37.5">
-            <button className="flex items-center gap-2 text-sm font-medium text-brand-navy hover:text-brand-coral transition-colors bg-brand-sand hover:bg-brand-coral/10 px-4 py-2 rounded-full">
-              <Headphones className="w-4 h-4" />
-              <span className="whitespace-nowrap">Customer Care</span>
-            </button>
-          </div>
+
         </div>
       </div>
 

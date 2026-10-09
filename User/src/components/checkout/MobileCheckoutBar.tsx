@@ -35,7 +35,7 @@ export function MobileCheckoutBar({ total: serverTotal }: { total: number }) {
   const propertyAddons = useCheckoutStore(state => state.propertyAddons);
   const hotelId = searchParams.get('hotelId') || useCheckoutStore.getState().selectedHotelId || 'hotel-123';
 
-  const displayAddons = propertyAddons === null ? [] : (propertyAddons.length > 0 ? propertyAddons : DEFAULT_ADDONS);
+  const displayAddons = propertyAddons === null ? [] : propertyAddons;
 
   const dynamicAddonsTotal = selectedAddons.reduce((sum, addonId) => {
     const addon = displayAddons.find(a => a.id === addonId);

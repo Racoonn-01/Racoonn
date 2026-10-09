@@ -11,10 +11,12 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
-import { getAllCabs, CabOwnerData, getCabCategories, createCabCategory, createCab, deleteCab, CabCategory } from "./actions"
+import { getAllCabs, CabOwnerData, getCabCategories, createCabCategory, updateCabCategory, deleteCabCategory, createCab, deleteCab, CabCategory } from "./actions"
+import { Pencil, Trash2 } from "lucide-react"
 
 export default function CabsPage() {
   const [activeTab, setActiveTab] = useState("all")
+  const [activeCategory, setActiveCategory] = useState("all")
   const [cabs, setCabs] = useState<CabOwnerData[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [newMandatoryField, setNewMandatoryField] = useState("")
@@ -22,9 +24,13 @@ export default function CabsPage() {
   const [categories, setCategories] = useState<CabCategory[]>([])
   const [newCategoryName, setNewCategoryName] = useState("")
   const [isAddCategoryOpen, setIsAddCategoryOpen] = useState(false)
+  const [isManageCategoriesOpen, setIsManageCategoriesOpen] = useState(false)
+  const [editingCategory, setEditingCategory] = useState<CabCategory | null>(null)
+  const [contactToDelete, setContactToDelete] = useState<{id: string, name: string} | null>(null)
+  const [categoryToDelete, setCategoryToDelete] = useState<{id: string, name: string} | null>(null)
   const [isAddCabOpen, setIsAddCabOpen] = useState(false)
   const [newCabData, setNewCabData] = useState({
-    name: '', contactNo: '', location: '', dlNumber: '', cabNumber: '', category: ''
+    name: '', contactNo: '', location: '', category: ''
   })
   const [customData, setCustomData] = useState<Record<string, string>>({})
 
@@ -56,8 +62,6 @@ export default function CabsPage() {
       name: newCabData.name,
       contactNo: newCabData.contactNo,
       address: newCabData.location,
-      dlNumber: newCabData.dlNumber,
-      vehicleNo: newCabData.cabNumber,
       category: newCabData.category,
       status: 'active',
       joined: new Date().toISOString(),
@@ -67,7 +71,7 @@ export default function CabsPage() {
     // Update local state immediately
     setCabs(prev => [tempCab, ...prev])
     setIsAddCabOpen(false)
-    setNewCabData({ name: '', contactNo: '', location: '', dlNumber: '', cabNumber: '', category: '' })
+    setNewCabData({ name: '', contactNo: '', location: '', category: '' })
     setCustomData({})
     
     // Persist to database
@@ -75,8 +79,9 @@ export default function CabsPage() {
   }
 
   const filteredCabs = cabs.filter(c => {
-    if (activeTab === "all") return true;
-    return c.status === activeTab;
+    const matchesTab = activeTab === "all" || c.status === activeTab;
+    const matchesCategory = activeCategory === "all" || c.category === activeCategory;
+    return matchesTab && matchesCategory;
   })
 
   return (
@@ -84,8 +89,8 @@ export default function CabsPage() {
       {/* Header Section */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h2 className="text-3xl font-black tracking-tight text-foreground">Cab Details</h2>
-          <p className="text-muted-foreground mt-1 text-lg">Manage cab owners, vehicle details, and contact information.</p>
+          <h2 className="text-3xl font-black tracking-tight text-foreground">Useful Contacts</h2>
+          <p className="text-muted-foreground mt-1 text-lg">Manage useful contacts, service providers, and their details.</p>
         </div>
         <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
           <div className="relative w-full sm:w-64">
@@ -95,10 +100,20 @@ export default function CabsPage() {
           <Button variant="outline" onClick={() => setIsAddCategoryOpen(true)} className="h-11 px-6 rounded-full shadow-sm hover:shadow-md transition-all w-full sm:w-auto">
             Add Category
           </Button>
-          <Dialog open={isAddCategoryOpen} onOpenChange={setIsAddCategoryOpen}>
+          <Button variant="outline" onClick={() => setIsManageCategoriesOpen(true)} className="h-11 px-6 rounded-full shadow-sm hover:shadow-md transition-all w-full sm:w-auto">
+            Manage Categories
+          </Button>
+          <Dialog open={isAddCategoryOpen} onOpenChange={(open) => {
+            setIsAddCategoryOpen(open);
+            if (!open) {
+              setEditingCategory(null);
+              setNewCategoryName("");
+              setMandatoryFields([]);
+            }
+          }}>
             <DialogContent className="sm:max-w-md">
               <DialogHeader>
-                <DialogTitle>Add New Category</DialogTitle>
+                <DialogTitle>{editingCategory ? "Edit Category" : "Add New Category"}</DialogTitle>
               </DialogHeader>
               <div className="grid gap-4 py-4">
                 <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
@@ -108,7 +123,16 @@ export default function CabsPage() {
                   <Input id="name" autoComplete="off" className="flex-1" value={newCategoryName} onChange={(e) => setNewCategoryName(e.target.value)} />
                 </div>
 
-                
+                <div className="pt-2 border-t mt-2">
+                  <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wider">Default Fields</p>
+                  <div className="flex flex-wrap gap-2">
+                    {['Name', 'Contact no', 'Location'].map((field) => (
+                      <Badge key={field} variant="outline" className="px-2.5 py-1 text-xs bg-slate-50 text-slate-500 border-slate-200">
+                        {field}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
                 {mandatoryFields.length > 0 && (
                   <div className="flex flex-wrap gap-2">
                     {mandatoryFields.map((field, idx) => (
@@ -165,29 +189,83 @@ export default function CabsPage() {
                     const name = newCategoryName.trim()
                     
                     // Optimistic update
-                    if (!categories.find(c => c.name === name)) {
-                      setCategories([...categories, { name, customFields: mandatoryFields }]);
+                    if (editingCategory && editingCategory.id) {
+                      if (categories.find(c => c.name === name && c.id !== editingCategory.id)) return;
+                      setCategories(categories.map(c => c.id === editingCategory.id ? { ...c, name, customFields: mandatoryFields } : c));
+                      await updateCabCategory(editingCategory.id, name, mandatoryFields);
+                    } else {
+                      if (!categories.find(c => c.name === name)) {
+                        setCategories([...categories, { name, customFields: mandatoryFields }]);
+                      }
+                      await createCabCategory(name, mandatoryFields);
                     }
                     setNewCategoryName("");
                     setIsAddCategoryOpen(false);
                     setMandatoryFields([]);
                     setNewMandatoryField("");
-                    
-                    // Persist to database
-                    await createCabCategory(name, mandatoryFields);
+                    setEditingCategory(null);
                   }
-                }}>Save Category</Button>
+                }}>{editingCategory ? "Update Category" : "Save Category"}</Button>
               </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          <Dialog open={isManageCategoriesOpen} onOpenChange={setIsManageCategoriesOpen}>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>Manage Categories</DialogTitle>
+              </DialogHeader>
+              <div className="grid gap-2 py-4 max-h-[60vh] overflow-y-auto">
+                {categories.length === 0 ? (
+                  <p className="text-muted-foreground text-center">No categories found.</p>
+                ) : (
+                  categories.map(cat => (
+                    <div key={cat.id || cat.name} className="flex items-center justify-between p-3 border rounded-lg hover:bg-slate-50 transition-colors">
+                      <div>
+                        <p className="font-semibold">{cat.name}</p>
+                        <p className="text-xs text-muted-foreground">{cat.customFields.length} custom fields</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button 
+                          variant="ghost" 
+                          size="icon"
+                          onClick={() => {
+                            setEditingCategory(cat);
+                            setNewCategoryName(cat.name);
+                            setMandatoryFields([...cat.customFields]);
+                            setIsManageCategoriesOpen(false);
+                            setIsAddCategoryOpen(true);
+                          }}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="icon"
+                          className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                          onClick={() => {
+                            if (cat.id) {
+                              setCategoryToDelete({ id: cat.id, name: cat.name })
+                            }
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
             </DialogContent>
           </Dialog>
           
           <Button onClick={() => setIsAddCabOpen(true)} className="h-11 px-6 rounded-full shadow-lg hover:shadow-xl transition-all w-full sm:w-auto">
-            <UserPlus className="mr-2 h-5 w-5" /> Add Cab
+            <UserPlus className="mr-2 h-5 w-5" /> Add Contact
           </Button>
           <Dialog open={isAddCabOpen} onOpenChange={setIsAddCabOpen}>
             <DialogContent className="sm:max-w-md">
               <DialogHeader>
-                <DialogTitle>Add New Cab</DialogTitle>
+                <DialogTitle>Add New Contact</DialogTitle>
               </DialogHeader>
               <div className="grid gap-4 py-4 max-h-[60vh] overflow-y-auto">
                 <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
@@ -218,11 +296,6 @@ export default function CabsPage() {
                       <Label className="text-left font-semibold sm:w-28 shrink-0 text-slate-800">Location</Label>
                       <Input placeholder="e.g. Mumbai" className="flex-1" value={newCabData.location} onChange={e => setNewCabData({...newCabData, location: e.target.value})} />
                     </div>
-
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
-                      <Label className="text-left font-semibold sm:w-28 shrink-0 text-slate-800">Cab Number</Label>
-                      <Input placeholder="e.g. MH 01 AB 1234" className="flex-1" value={newCabData.cabNumber} onChange={e => setNewCabData({...newCabData, cabNumber: e.target.value})} />
-                    </div>
                   </>
                 )}
 
@@ -241,7 +314,7 @@ export default function CabsPage() {
 
               </div>
               <DialogFooter>
-                <Button type="button" disabled={!newCabData.name.trim() || !newCabData.category} onClick={handleAddCab}>Save Cab</Button>
+                <Button type="button" disabled={!newCabData.name.trim() || !newCabData.category} onClick={handleAddCab}>Save Contact</Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
@@ -255,7 +328,7 @@ export default function CabsPage() {
           <div className="flex items-center gap-2 w-full sm:w-auto">
             <div className="relative w-full sm:w-80">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Search cabs by owner or vehicle no..." className="w-full pl-9 bg-background border-muted-foreground/20 rounded-full h-10" />
+              <Input placeholder="Search contacts by name or detail..." className="w-full pl-9 bg-background border-muted-foreground/20 rounded-full h-10" />
             </div>
           </div>
           
@@ -275,11 +348,40 @@ export default function CabsPage() {
                 </button>
               ))}
             </div>
-            <Button variant="outline" size="sm" className="h-9 rounded-full border-muted-foreground/20">
-              <Filter className="mr-2 h-4 w-4" /> Filters
-            </Button>
           </div>
         </div>
+
+        {/* Category Filters */}
+        {categories.length > 0 && (
+          <div className="flex items-center overflow-x-auto pb-4 pt-2 px-2 hide-scrollbar">
+            <span className="text-sm font-semibold text-muted-foreground mr-6 shrink-0 tracking-wide">Categories:</span>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setActiveCategory('all')}
+                className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all shrink-0 ${
+                  activeCategory === 'all' 
+                    ? "bg-primary text-primary-foreground shadow-sm" 
+                    : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
+                }`}
+              >
+                All
+              </button>
+              {categories.map((cat) => (
+                <button
+                  key={cat.name}
+                  onClick={() => setActiveCategory(cat.name)}
+                  className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all shrink-0 ${
+                    activeCategory === cat.name 
+                      ? "bg-primary text-primary-foreground shadow-sm" 
+                      : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
+                  }`}
+                >
+                  {cat.name}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Table */}
         <div className="overflow-x-auto">
@@ -289,8 +391,7 @@ export default function CabsPage() {
                 <TableHead className="font-semibold h-12">Name</TableHead>
                 <TableHead className="font-semibold h-12">Contact no</TableHead>
                 <TableHead className="font-semibold h-12">Location</TableHead>
-                <TableHead className="font-semibold h-12">DL (Driving License)</TableHead>
-                <TableHead className="font-semibold h-12">Cab Number</TableHead>
+                <TableHead className="font-semibold h-12">Additional Info</TableHead>
                 <TableHead className="font-semibold h-12">Status</TableHead>
                 <TableHead className="text-right font-semibold h-12">Actions</TableHead>
               </TableRow>
@@ -307,8 +408,7 @@ export default function CabsPage() {
                     </TableCell>
                     <TableCell><Skeleton className="h-4 w-24" /></TableCell>
                     <TableCell><Skeleton className="h-4 w-40" /></TableCell>
-                    <TableCell><Skeleton className="h-4 w-28" /></TableCell>
-                    <TableCell><Skeleton className="h-4 w-28" /></TableCell>
+                    <TableCell><Skeleton className="h-4 w-32" /></TableCell>
                     <TableCell><Skeleton className="h-6 w-20 rounded-full" /></TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end">
@@ -319,8 +419,8 @@ export default function CabsPage() {
                 ))
               ) : filteredCabs.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="h-32 text-center text-muted-foreground">
-                    No cabs found.
+                  <TableCell colSpan={6} className="h-32 text-center text-muted-foreground">
+                    No contacts found.
                   </TableCell>
                 </TableRow>
               ) : (
@@ -350,14 +450,16 @@ export default function CabsPage() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="font-medium text-muted-foreground">
-                        {cab.dlNumber}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1.5 font-medium text-foreground">
-                        <Car className="h-4 w-4 text-muted-foreground" />
-                        {cab.vehicleNo}
+                      {cab.category && <Badge variant="outline" className="mb-1 mr-1 bg-slate-50">{cab.category}</Badge>}
+                      <div className="flex flex-wrap gap-1 max-w-[200px]">
+                        {cab.customData && Object.entries(cab.customData).map(([key, value]) => (
+                          value ? (
+                            <span key={key} className="text-[11px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded truncate max-w-full">
+                              <span className="font-medium mr-1">{key}:</span>
+                              {String(value)}
+                            </span>
+                          ) : null
+                        ))}
                       </div>
                     </TableCell>
                     <TableCell>
@@ -406,12 +508,11 @@ export default function CabsPage() {
                             <DropdownMenuSeparator />
                             <DropdownMenuItem 
                               className="text-red-600 focus:text-red-600 cursor-pointer rounded-md"
-                              onClick={async () => {
-                                setCabs(cabs.filter(c => c.id !== cab.id));
-                                await deleteCab(cab.id);
+                              onClick={() => {
+                                setContactToDelete({ id: cab.id, name: cab.name })
                               }}
                             >
-                              <Ban className="mr-2 h-4 w-4" /> Delete Cab
+                              <Ban className="mr-2 h-4 w-4" /> Delete Contact
                             </DropdownMenuItem>
                           </DropdownMenuGroup>
                         </DropdownMenuContent>
@@ -426,12 +527,49 @@ export default function CabsPage() {
         
         {/* Pagination/Footer */}
         <div className="p-4 border-t border-muted/30 bg-muted/5 flex items-center justify-between text-sm text-muted-foreground">
-          <span>Showing 1 to {filteredCabs.length} of {cabs.length} cabs</span>
+          <span>Showing 1 to {filteredCabs.length} of {cabs.length} contacts</span>
           <div className="flex gap-1">
             <Button variant="outline" size="sm" className="rounded-full h-8 px-4" disabled>Previous</Button>
             <Button variant="outline" size="sm" className="rounded-full h-8 px-4">Next</Button>
           </div>
         </div>
+        <Dialog open={!!categoryToDelete} onOpenChange={(open) => !open && setCategoryToDelete(null)}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Confirm Deletion</DialogTitle>
+            </DialogHeader>
+            <p className="py-4 text-slate-600">Are you sure you want to delete the category "{categoryToDelete?.name}"? This action cannot be undone.</p>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setCategoryToDelete(null)}>Cancel</Button>
+              <Button variant="destructive" onClick={async () => {
+                if (categoryToDelete) {
+                  setCategories(categories.filter(c => c.id !== categoryToDelete.id));
+                  await deleteCabCategory(categoryToDelete.id);
+                  setCategoryToDelete(null);
+                }
+              }}>Delete</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={!!contactToDelete} onOpenChange={(open) => !open && setContactToDelete(null)}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Confirm Deletion</DialogTitle>
+            </DialogHeader>
+            <p className="py-4 text-slate-600">Are you sure you want to delete the contact "{contactToDelete?.name}"? This action cannot be undone.</p>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setContactToDelete(null)}>Cancel</Button>
+              <Button variant="destructive" onClick={async () => {
+                if (contactToDelete) {
+                  setCabs(cabs.filter(c => c.id !== contactToDelete.id));
+                  await deleteCab(contactToDelete.id);
+                  setContactToDelete(null);
+                }
+              }}>Delete</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   )

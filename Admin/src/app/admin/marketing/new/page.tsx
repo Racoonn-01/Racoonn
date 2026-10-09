@@ -79,7 +79,7 @@ export default function NewMarketingOfferPage() {
       
       // Upload image
       const uploadedFile = await storage.createFile(BUCKET_ID, ID.unique(), imageFile);
-      const imageUrl = `https://sgp.cloud.appwrite.io/v1/storage/buckets/${BUCKET_ID}/files/${uploadedFile.$id}/view?project=${appwriteConfig.projectId}`;
+      const imageUrl = `https://sgp.cloud.appwrite.io/v1/storage/buckets/${BUCKET_ID}/files/${uploadedFile.$id}/preview?project=${appwriteConfig.projectId}&output=webp`;
 
       // Create database document
       const docData: any = {

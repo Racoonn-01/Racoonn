@@ -175,7 +175,7 @@ export default function VendorFullPageReviewScreen({ params }: { params: Promise
 
           // 2. Second priority: Fallback to Realtime/dashboard uploaded documents (rawDocs/cookies)
           if (rawDocs && rawDocs.length > 0) {
-            let searchId = template.id;
+            const searchId = template.id;
             let legacySearchId = template.id;
             if (template.id === "aadhaar_card_front") legacySearchId = "aadhaar_card";
             
@@ -402,7 +402,7 @@ export default function VendorFullPageReviewScreen({ params }: { params: Promise
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
           <div className="flex items-center gap-4">
             <button 
-              onClick={() => router.push('/admin/verification/kyc')}
+              onClick={() => router.push('/admin/verification/pending')}
               className="h-11 w-11 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-700 hover:bg-slate-200 transition-colors cursor-pointer"
               title="Return to Verification Dashboard"
             >
@@ -425,7 +425,15 @@ export default function VendorFullPageReviewScreen({ params }: { params: Promise
                     {vendorInfo.status}
                   </span>
                 </div>
-                <p className="text-xs text-slate-500 font-medium mt-0.5">Verification ID: <span className="font-mono text-slate-800 font-bold">{vendorId}</span> • Registered Email: <span className="font-semibold text-slate-800">{vendorInfo.email}</span></p>
+                <p className="text-xs text-slate-500 font-medium mt-1">
+                  ID: <span className="font-mono text-slate-800 font-bold">{vendorId}</span> • 
+                  Email: <span className="font-semibold text-slate-800">{vendorInfo.email}</span>
+                </p>
+                <div className="flex flex-wrap items-center gap-3 md:gap-5 mt-2 text-xs text-slate-600 font-medium">
+                  <div className="flex items-center gap-1.5 bg-slate-100/80 px-2 py-1 rounded-md"><Building className="w-3.5 h-3.5 text-blue-500"/>{vendorInfo.owner}</div>
+                  <div className="flex items-center gap-1.5 bg-slate-100/80 px-2 py-1 rounded-md"><Phone className="w-3.5 h-3.5 text-emerald-500"/>{vendorInfo.phone}</div>
+                  <div className="flex items-center gap-1.5 bg-slate-100/80 px-2 py-1 rounded-md max-w-[250px] truncate"><MapPin className="w-3.5 h-3.5 text-amber-500"/><span className="truncate">{vendorInfo.address}</span></div>
+                </div>
               </div>
             </div>
           </div>
@@ -457,45 +465,6 @@ export default function VendorFullPageReviewScreen({ params }: { params: Promise
         </div>
 
 
-        {/* Vendor Essential Information Bar */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card className="bg-white border border-slate-200 shadow-sm rounded-2xl p-4 flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
-              <Building className="w-5 h-5" />
-            </div>
-            <div>
-              <p className="text-xs text-slate-400 font-medium">Owner Name</p>
-              <p className="text-sm font-bold text-slate-800">{vendorInfo.owner}</p>
-            </div>
-          </Card>
-          <Card className="bg-white border border-slate-200 shadow-sm rounded-2xl p-4 flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl bg-violet-50 text-violet-600 flex items-center justify-center shrink-0">
-              <Mail className="w-5 h-5" />
-            </div>
-            <div>
-              <p className="text-xs text-slate-400 font-medium">Contact Email</p>
-              <p className="text-sm font-bold text-slate-800 truncate max-w-40">{vendorInfo.email}</p>
-            </div>
-          </Card>
-          <Card className="bg-white border border-slate-200 shadow-sm rounded-2xl p-4 flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
-              <Phone className="w-5 h-5" />
-            </div>
-            <div>
-              <p className="text-xs text-slate-400 font-medium">Phone Number</p>
-              <p className="text-sm font-bold text-slate-800">{vendorInfo.phone}</p>
-            </div>
-          </Card>
-          <Card className="bg-white border border-slate-200 shadow-sm rounded-2xl p-4 flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
-              <MapPin className="w-5 h-5" />
-            </div>
-            <div>
-              <p className="text-xs text-slate-400 font-medium">Address</p>
-              <p className="text-sm font-bold text-slate-800 truncate max-w-40">{vendorInfo.address}</p>
-            </div>
-          </Card>
-        </div>
 
         {/* Main Work Workspace: Interactive Document Inspector & Audit Checklist */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">

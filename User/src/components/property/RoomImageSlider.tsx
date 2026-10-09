@@ -1,4 +1,5 @@
 "use client";
+import { optimizeAppwriteImage } from "@/lib/optimizeImage";
 
 import { useState } from 'react';
 import Image from 'next/image';
@@ -75,11 +76,11 @@ export default function RoomImageSlider({ images, isPopular = false }: RoomImage
           {validImages.map(({ img, idx }) => (
             <div key={idx} className="relative w-full h-full shrink-0">
               <Image 
-                src={img} 
+                src={optimizeAppwriteImage(img)} 
                 alt={`Room image ${idx + 1}`} 
                 fill 
                 className="object-cover transition-transform duration-500 group-hover:scale-105"
-                onError={() => handleImageError(idx)}
+                onError={() => handleImageError(idx)} priority={idx === 0}
               />
             </div>
           ))}
@@ -135,7 +136,7 @@ export default function RoomImageSlider({ images, isPopular = false }: RoomImage
           
           <div className="relative w-full max-w-5xl aspect-video mx-4" onClick={e => e.stopPropagation()}>
             <Image 
-              src={validImages.find(v => v.idx === lightboxIndex)?.img || ""} 
+              src={optimizeAppwriteImage(validImages.find(v => v.idx === lightboxIndex)?.img || "")} 
               alt="Room Lightbox Image" 
               fill 
               className="object-contain"

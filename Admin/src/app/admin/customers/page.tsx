@@ -30,7 +30,7 @@ export type CustomerData = {
 export default function CustomersPage() {
   const [activeTab, setActiveTab] = useState("all")
   const [searchQuery, setSearchQuery] = useState("")
-  const [timeFilter, setTimeFilter] = useState("today")
+  const [timeFilter, setTimeFilter] = useState("lifetime")
   const [customers, setCustomers] = useState<CustomerData[]>([])
   const [isLoading, setIsLoading] = useState(true)
 

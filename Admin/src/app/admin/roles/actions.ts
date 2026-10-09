@@ -37,7 +37,7 @@ let memoryRoles: RoleItem[] = [
   { id: "ROLE-05", name: "Marketing & Promotions Lead", usersCount: 0, access: "Promotions, Coupon Codes, Banners, Campaigns", lastUpdated: "System Default" }
 ];
 
-let memoryStaff: StaffUserItem[] = [];
+const memoryStaff: StaffUserItem[] = [];
 
 export async function getRolesAndStaffData() {
   try {

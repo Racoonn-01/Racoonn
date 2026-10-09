@@ -9,6 +9,7 @@ import { databases, appwriteConfig, client } from "@/lib/appwrite/client";
 import { Query } from "appwrite";
 import { useAuthStore } from "@/store/authStore";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   AreaChart,
   Area,
@@ -41,40 +42,13 @@ const stats = [
     bgClass: "bg-emerald-50",
   },
   {
-    title: "Monthly Revenue",
+    title: "Net Revenue",
     value: "₹0",
     icon: IndianRupee,
     trend: "0% vs last month",
     trendPositive: true,
     colorClass: "text-amber-600",
     bgClass: "bg-amber-50",
-  },
-  {
-    title: "Occupancy Rate",
-    value: "0%",
-    icon: Percent,
-    trend: "0% vs last month",
-    trendPositive: true,
-    colorClass: "text-violet-600",
-    bgClass: "bg-violet-50",
-  },
-  {
-    title: "Average Rating",
-    value: "0.0",
-    icon: Star,
-    trend: "0.0 vs last month",
-    trendPositive: true,
-    colorClass: "text-orange-600",
-    bgClass: "bg-orange-50",
-  },
-  {
-    title: "Pending Check-ins",
-    value: "0",
-    icon: Clock,
-    trend: "No pending check-ins",
-    trendPositive: true,
-    colorClass: "text-sky-600",
-    bgClass: "bg-sky-50",
   },
 ];
 
@@ -116,12 +90,11 @@ const avatarColors = [
 ];
 
 export default function DashboardOverview() {
-  const { user } = useAuthStore();
+  const router = useRouter();
+  const { user, profile } = useAuthStore();
   const [propertyCount, setPropertyCount] = useState<number>(0);
   const [totalBookings, setTotalBookings] = useState<number>(0);
   const [monthlyRevenue, setMonthlyRevenue] = useState<number>(0);
-  const [pendingCheckins, setPendingCheckins] = useState<number>(0);
-  const [averageRating, setAverageRating] = useState<number>(0);
   const [timeframe, setTimeframe] = useState<string>("today");
   const [recentBookings, setRecentBookings] = useState<any[]>([]);
   const [chartData, setChartData] = useState([
@@ -216,19 +189,43 @@ export default function DashboardOverview() {
         ];
 
         bookings.forEach(booking => {
-          // Calculate revenue only if the booking is not cancelled
+          // Calculate net revenue only if the booking is not cancelled
           if (booking.status !== 'Cancelled') {
             const payment = paymentsRes.documents.find(p => p.bookingId === booking.$id);
-            if (payment && payment.totalAmount) {
-              const amount = Number(payment.totalAmount);
-              revenue += amount;
-              
-              const date = new Date(booking.$createdAt);
-              const dayName = days[date.getDay()];
-              const dayData = newChartData.find(d => d.name === dayName);
-              if (dayData) {
-                dayData.total += amount;
-              }
+            let totalPaidNum = payment ? Number(payment.totalAmount) : (booking.totalAmount ? Number(booking.totalAmount) : (booking.priceAfterTax ? Number(booking.priceAfterTax) : 0));
+            let baseRoomAmount = payment ? Number(payment.roomPrice) : (booking.priceBeforeTax ? Number(booking.priceBeforeTax) : 0);
+            const addonsNum = payment ? Number(payment.serviceFees) : (booking.addons ? Number(booking.addons) : 0);
+            const discountNum = payment ? Number(payment.discount) : (booking.discount ? Number(booking.discount) : 0);
+
+            if (!baseRoomAmount && totalPaidNum) {
+              let deducedRate = 5;
+              if (totalPaidNum <= 1000) deducedRate = 0;
+              else if (totalPaidNum <= 7875) deducedRate = 5;
+              else deducedRate = 18;
+              baseRoomAmount = Math.round((totalPaidNum / (1 + deducedRate / 100)) * 100) / 100;
+            }
+
+            let vendorDiscount = 0;
+            
+            if (booking.specialRequests) {
+              const vdMatch = booking.specialRequests.match(/VendorDiscount=₹?([0-9.]+)/);
+              if (vdMatch) vendorDiscount = parseFloat(vdMatch[1]);
+            } else {
+              vendorDiscount = discountNum;
+            }
+
+            const vendorGross = baseRoomAmount + addonsNum - vendorDiscount;
+            const feePercent = profile?.allow24PercentGst ? 24 : 18;
+            const platformCommissionAmount = Math.round(vendorGross * (feePercent / 100) * 100) / 100;
+            const netVendorPayout = Math.round((vendorGross - platformCommissionAmount) * 100) / 100;
+
+            revenue += netVendorPayout;
+            
+            const date = new Date(booking.$createdAt);
+            const dayName = days[date.getDay()];
+            const dayData = newChartData.find(d => d.name === dayName);
+            if (dayData) {
+              dayData.total += netVendorPayout;
             }
           }
           
@@ -255,8 +252,6 @@ export default function DashboardOverview() {
           });
 
         setMonthlyRevenue(revenue);
-        setPendingCheckins(pending);
-        setAverageRating(avgRating);
         setRecentBookings(mappedRecentBookings);
         setChartData(newChartData);
 
@@ -289,14 +284,8 @@ export default function DashboardOverview() {
     if (stat.title === "Total Bookings") {
       return { ...stat, value: totalBookings.toString() };
     }
-    if (stat.title === "Monthly Revenue") {
+    if (stat.title === "Net Revenue") {
       return { ...stat, value: `₹${monthlyRevenue.toLocaleString()}` };
-    }
-    if (stat.title === "Pending Check-ins") {
-      return { ...stat, value: pendingCheckins.toString() };
-    }
-    if (stat.title === "Average Rating") {
-      return { ...stat, value: averageRating.toFixed(1) };
     }
     return stat;
   });
@@ -432,7 +421,7 @@ export default function DashboardOverview() {
             {recentBookings.length > 0 ? (
               <div className="space-y-4">
                 {recentBookings.map((booking) => (
-                  <div key={booking.id} className="flex items-center justify-between p-3 rounded-xl hover:bg-slate-50 transition-colors cursor-pointer group">
+                  <div key={booking.id} onClick={() => router.push(`/vendor/bookings?bookingId=${booking.id}`)} className="flex items-center justify-between p-3 rounded-xl hover:bg-slate-50 transition-colors cursor-pointer group">
                     <div className="flex items-center gap-3">
                       <div className="h-10 w-10 rounded-full bg-primary/10 text-primary flex items-center justify-center text-sm font-bold">
                         {booking.guestName.split(' ').map((n: string) => n[0]).join('')}

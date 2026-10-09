@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import nodemailer from 'nodemailer';
+import { Client, Databases } from 'node-appwrite';
 
 export async function POST(req: Request) {
   try {
@@ -15,6 +16,7 @@ export async function POST(req: Request) {
       email = '',
       firstName = 'Guest',
       bookingId = 'N/A',
+      hotelId = null,
     } = data;
 
     if (!email) {
@@ -72,6 +74,58 @@ export async function POST(req: Request) {
     });
 
     console.log("Cancellation email sent: %s", info.messageId);
+
+    // 3. Notify Vendor if hotelId is provided
+    if (hotelId) {
+      try {
+        const client = new Client()
+          .setEndpoint(process.env.APPWRITE_ENDPOINT || process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT || 'https://sgp.cloud.appwrite.io/v1')
+          .setProject(process.env.APPWRITE_PROJECT_ID || process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID || '6a3bce6900381359c3ce')
+          .setKey(process.env.APPWRITE_API_KEY || '');
+          
+        const db = new Databases(client);
+        const dbId = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID || '6a3cec630035d63ea963';
+        
+        const property = await db.getDocument(dbId, 'properties', hotelId);
+        if (property && (property.vendorId || property.userId)) {
+          const vendor = await db.getDocument(dbId, '6a3e0fd9da7df0d38588', property.vendorId || property.userId);
+          
+          if (vendor && vendor.email) {
+            const vendorHtml = `
+              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #333; line-height: 1.6;">
+                <div style="background-color: #E86A6F; padding: 20px; text-align: center; border-radius: 10px 10px 0 0;">
+                  <h1 style="color: white; margin: 0;">Booking Cancelled Alert!</h1>
+                </div>
+                <div style="padding: 20px; border: 1px solid #ddd; border-top: none; border-radius: 0 0 10px 10px;">
+                  <p>Hi ${vendor.businessName || vendor.firstName || 'Vendor'},</p>
+                  <p>A booking at <strong>${hotelName}</strong> has been cancelled.</p>
+                  <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin: 20px 0;">
+                    <p style="margin: 5px 0;"><strong>Booking ID:</strong> ${bookingId}</p>
+                    <p style="margin: 5px 0;"><strong>Guest Name:</strong> ${firstName}</p>
+                    <p style="margin: 5px 0;"><strong>Check-in:</strong> ${checkIn}</p>
+                    <p style="margin: 5px 0;"><strong>Check-out:</strong> ${checkOut}</p>
+                    <p style="margin: 5px 0;"><strong>Guests:</strong> ${adults || 1} Adult(s)</p>
+                    <p style="margin: 5px 0;"><strong>Nights:</strong> ${nights}</p>
+                  </div>
+                  <p>The dates have been freed up in your inventory. No action is required.</p>
+                  <p><strong>The Racoonn Team</strong></p>
+                </div>
+              </div>
+            `;
+            
+            await transporter.sendMail({
+              from: '"Racoonn Bookings" <' + process.env.SMTP_USER + '>',
+              to: vendor.email,
+              subject: `Booking Cancelled: ${hotelName}`,
+              html: vendorHtml
+            });
+            console.log("Vendor cancellation notification sent to:", vendor.email);
+          }
+        }
+      } catch (vendorErr) {
+        console.error("Failed to notify vendor about cancellation:", vendorErr);
+      }
+    }
 
     return NextResponse.json({ success: true, messageId: info.messageId });
   } catch (error: any) {

@@ -62,7 +62,7 @@ export default function NewActivityPage() {
       // Upload all images to storage
       const uploadPromises = imageFiles.map(async (file) => {
         const uploadedFile = await storage.createFile(BUCKET_ID, ID.unique(), file);
-        return `https://sgp.cloud.appwrite.io/v1/storage/buckets/${BUCKET_ID}/files/${uploadedFile.$id}/view?project=${appwriteConfig.projectId}`;
+        return `https://sgp.cloud.appwrite.io/v1/storage/buckets/${BUCKET_ID}/files/${uploadedFile.$id}/preview?project=${appwriteConfig.projectId}&output=webp`;
       });
 
       const imageUrls = await Promise.all(uploadPromises);

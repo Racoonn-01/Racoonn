@@ -421,7 +421,7 @@ export default function PopularStaysCMSPage() {
                         }`}
                       >
                         <div className="relative w-12 h-12 rounded-lg overflow-hidden shrink-0 bg-gray-200">
-                          <Image src={prop.image} alt={prop.title} fill className="object-cover" unoptimized />
+                          <Image src={prop.image} alt={prop.title} fill className="object-cover" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <h4 className="text-xs font-bold text-gray-900 truncate">{prop.title}</h4>
@@ -548,7 +548,7 @@ export default function PopularStaysCMSPage() {
                         }`}
                       >
                         <div className="relative w-12 h-12 rounded-lg overflow-hidden shrink-0 bg-gray-200">
-                          <Image src={prop.image} alt={prop.title} fill className="object-cover" unoptimized />
+                          <Image src={prop.image} alt={prop.title} fill className="object-cover" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <h4 className="text-xs font-bold text-gray-900 truncate">{prop.title}</h4>

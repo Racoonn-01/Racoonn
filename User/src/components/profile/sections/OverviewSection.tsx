@@ -1,3 +1,4 @@
+import { optimizeAppwriteImage } from "@/lib/optimizeImage";
 import { motion } from 'framer-motion';
 import { Wallet, Plane, CheckCircle, Heart, Award, Clock } from 'lucide-react';
 import { UserProfile } from '@/store/authStore';
@@ -57,7 +58,7 @@ export default function OverviewSection({ profile }: { profile: UserProfile | nu
           </div>
           <div className="flex gap-4">
             <div className="w-24 h-24 rounded-xl overflow-hidden shrink-0 relative">
-              <Image src={recentBooking.image} alt="Hotel" fill className="object-cover" />
+              <Image src={optimizeAppwriteImage(recentBooking.image)} alt="Hotel" fill className="object-cover" />
             </div>
             <div className="flex flex-col justify-center">
               <h4 className="font-bold text-brand-navy mb-1">{recentBooking.hotel}</h4>

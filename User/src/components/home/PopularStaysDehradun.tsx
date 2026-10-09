@@ -1,4 +1,6 @@
 "use client";
+import { generatePropertySlug } from "@/lib/utils";
+import { optimizeAppwriteImage } from "@/lib/optimizeImage";
 
 import { useRef, useState, useEffect } from 'react';
 import Image from 'next/image';
@@ -147,11 +149,11 @@ export default function PopularStaysDehradun() {
           className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 pb-4"
         >
           {properties.filter(isActiveProperty).slice(0, 4).map((stay) => (
-            <Link href={`/property/${stay.id}`} key={stay.id} className="w-full group/card cursor-pointer flex flex-col h-full">
+            <Link href={`/property/${generatePropertySlug(stay.id, stay.name || stay.title || stay.propertyName || "")}`} key={stay.id} className="w-full group/card cursor-pointer flex flex-col h-full">
               {/* Image */}
               <div className="relative w-full aspect-4/3 shrink-0 rounded-2xl overflow-hidden mb-3 bg-gray-200">
                 <Image
-                  src={stay.image}
+                  src={optimizeAppwriteImage(stay.image)}
                   alt={stay.title}
                   fill
                   sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"

@@ -150,7 +150,7 @@ export function CheckoutFlow() {
   }
   
   const roomTotal = isPackage ? price : baseRoomAmount + extraGuestAmount;
-  const displayAddons = propertyAddons === null ? [] : (propertyAddons.length > 0 ? propertyAddons : DEFAULT_ADDONS);
+  const displayAddons = propertyAddons === null ? [] : propertyAddons;
 
   const dynamicAddonsTotal = selectedAddons.reduce((sum, addonId) => {
     const addon = displayAddons.find(a => (a.id === addonId || a.$id === addonId));
@@ -381,7 +381,7 @@ export function CheckoutFlow() {
                     <div className="h-32 bg-gray-200 rounded-xl hidden lg:block"></div>
                   </div>
                 </div>
-              ) : (
+              ) : displayAddons.length > 0 ? (
                 <div id="addon-section" className={`transition-all duration-700 rounded-2xl ${highlightAddonSection ? "ring-2 ring-brand-coral ring-offset-4 shadow-lg shadow-brand-coral/20" : ""}`}>
                   <div 
                     className={`grid transition-[grid-template-rows,opacity,margin] duration-500 ease-in-out ${highlightAddonSection ? 'grid-rows-[1fr] opacity-100 mb-6' : 'grid-rows-[0fr] opacity-0 mb-0'}`}
@@ -398,7 +398,7 @@ export function CheckoutFlow() {
                   </div>
                   <AddonSelector addons={displayAddons} guests={adults} />
                 </div>
-              )
+              ) : null
             )}
           </div>
           <div className="hidden md:flex flex-col items-end gap-2">

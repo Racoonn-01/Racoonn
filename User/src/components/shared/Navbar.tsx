@@ -1,4 +1,5 @@
 'use client';
+import { optimizeAppwriteImage } from "@/lib/optimizeImage";
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
@@ -52,7 +53,7 @@ export default function Navbar() {
         <div className="container mx-auto px-6 lg:px-8 h-19 flex items-center justify-between bg-white lg:bg-white/70 lg:backdrop-blur-xl border border-white shadow-[0_8px_30px_rgb(0,0,0,0.06)] rounded-full pointer-events-auto transition-all duration-300">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-            <Image src={logoImg} alt="Racoonn Logo" width={180} height={45} className="h-9 w-auto" />
+            <Image src={optimizeAppwriteImage(logoImg)} alt="Racoonn Logo" width={180} height={45} className="h-9 w-auto" />
           </Link>
 
           {/* Desktop Navigation / SearchBar */}

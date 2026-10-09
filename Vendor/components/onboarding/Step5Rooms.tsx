@@ -8,6 +8,7 @@ import { useState, useEffect } from "react";
 import { databases, storage, appwriteConfig } from "@/lib/appwrite/client";
 import { ID, Query, Permission, Role } from "appwrite";
 import { useAuthStore } from "@/store/authStore";
+import { compressImage } from "@/lib/image-compression";
 import { Loader2 } from "lucide-react";
 
 interface Room {
@@ -107,12 +108,13 @@ export function Step5Rooms({ onNext, onBack }: { onNext: () => void, onBack: () 
         if (room.photoFiles && room.photoFiles.length > 0) {
           for (const file of room.photoFiles) {
             try {
+              const compressedFile = await compressImage(file);
               const uploadedFile = await storage.createFile(
                 appwriteConfig.roomImagesBucketId,
                 ID.unique(),
-                file
+                compressedFile
               );
-              const fileUrl = storage.getFileView(
+              const fileUrl = storage.getFilePreview(
                 appwriteConfig.roomImagesBucketId,
                 uploadedFile.$id
               ).toString();
@@ -137,7 +139,7 @@ export function Step5Rooms({ onNext, onBack }: { onNext: () => void, onBack: () 
             isTaxInclusive: false,
             occupancy: parseInt(room.occupancy) || 1,
             size: parseInt(room.size) || 0,
-            photos: uploadedPhotoUrls
+            photos: [...(room.photos || []).filter(p => !p.startsWith('blob:')), ...uploadedPhotoUrls]
           },
           [
             Permission.read(Role.user(currentUser.$id)),
@@ -173,6 +175,12 @@ export function Step5Rooms({ onNext, onBack }: { onNext: () => void, onBack: () 
     visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } }
   };
 
+  const removeRoom = (id: number) => {
+    if (rooms.length > 1) {
+      setRooms(rooms.filter(room => room.id !== id));
+    }
+  };
+
   const addRoom = () => {
     setRooms([...rooms, { id: Date.now(), name: "Standard Room", price: "1500", occupancy: "2", size: "250", photos: [] }]);
   }
@@ -187,6 +195,32 @@ export function Step5Rooms({ onNext, onBack }: { onNext: () => void, onBack: () 
         photoFiles: [...(room.photoFiles || []), ...filesArray]
       } : room));
     }
+  };
+
+
+  const removeRoomPhoto = (roomId: number, photoIndex: number) => {
+    setRooms(rooms.map(room => {
+      if (room.id === roomId) {
+        const newPhotos = [...(room.photos || [])];
+        const removedPhotoUrl = newPhotos[photoIndex];
+        newPhotos.splice(photoIndex, 1);
+        
+        const newPhotoFiles = [...(room.photoFiles || [])];
+        if (removedPhotoUrl && removedPhotoUrl.startsWith('blob:')) {
+            const blobIndex = (room.photos || []).filter(p => p.startsWith('blob:')).indexOf(removedPhotoUrl);
+            if (blobIndex !== -1 && blobIndex < newPhotoFiles.length) {
+                newPhotoFiles.splice(blobIndex, 1);
+            }
+        }
+        
+        return {
+          ...room,
+          photos: newPhotos,
+          photoFiles: newPhotoFiles
+        };
+      }
+      return room;
+    }));
   };
 
   return (
@@ -217,8 +251,8 @@ export function Step5Rooms({ onNext, onBack }: { onNext: () => void, onBack: () 
           <div key={room.id} className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow relative group">
             
             <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-              <button className="w-8 h-8 rounded-full bg-slate-50 hover:bg-slate-100 flex items-center justify-center text-slate-500"><Edit2 className="w-4 h-4" /></button>
-              <button className="w-8 h-8 rounded-full bg-rose-50 hover:bg-rose-100 flex items-center justify-center text-rose-500"><Trash2 className="w-4 h-4" /></button>
+              
+              {rooms.length > 1 && <button onClick={() => removeRoom(room.id)} className="w-8 h-8 rounded-full bg-rose-50 hover:bg-rose-100 flex items-center justify-center text-rose-500"><Trash2 className="w-4 h-4" /></button>}
             </div>
 
             <div className="space-y-4">
@@ -252,6 +286,7 @@ export function Step5Rooms({ onNext, onBack }: { onNext: () => void, onBack: () 
                       <div key={idx} className="relative w-24 h-24 rounded-xl overflow-hidden shrink-0 border border-slate-200">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img src={photo} alt="Room" className="w-full h-full object-cover" />
+                        <button onClick={() => removeRoomPhoto(room.id, idx)} className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/50 hover:bg-black/80 flex items-center justify-center text-white transition-colors"><Trash2 className="w-3 h-3" /></button>
                       </div>
                     ))}
                     <div className="relative w-24 h-24 rounded-xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center text-slate-500 hover:bg-slate-50 hover:border-brand-coral/50 transition-colors cursor-pointer shrink-0 group/upload">

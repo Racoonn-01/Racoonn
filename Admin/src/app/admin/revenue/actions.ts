@@ -16,6 +16,17 @@ export interface TransactionItem {
   amount: number;
   roomPrice: number;
   taxes: number;
+  addons?: number;
+  discounts?: number;
+  checkIn?: string;
+  checkOut?: string;
+  nights?: number;
+  adults?: number;
+  email?: string;
+  rawBookingId?: string;
+  hotelLocation?: string;
+  gstRate?: number;
+  rawAddonsList?: any;
   commission: number;
   status: string;
   date: string;
@@ -27,7 +38,7 @@ export async function getRevenueData() {
   try {
     const db = appwriteServer.databases;
 
-    const [paymentsReq, bookingsReq, guestsReq] = await Promise.all([
+    const [paymentsReq, bookingsReq, guestsReq, propsReq, profilesReq] = await Promise.all([
       db.listDocuments(
         DATABASE_ID,
         'booking_payments',
@@ -42,107 +53,109 @@ export async function getRevenueData() {
         DATABASE_ID,
         'booking_guests',
         [Query.limit(500)]
+      ).catch(() => ({ documents: [] })),
+      db.listDocuments(
+        DATABASE_ID,
+        'properties',
+        [Query.limit(500)]
+      ).catch(() => ({ documents: [] })),
+      db.listDocuments(
+        DATABASE_ID,
+        'vendor_profiles',
+        [Query.limit(500)]
       ).catch(() => ({ documents: [] }))
     ]);
 
     let totalRevenue = 0;
     let monthlyRecurring = 0;
     let platformCommissions = 0;
-    let refundLosses = 0;
-    let transactions: TransactionItem[] = [];
+    const refundLosses = 0;
+    const transactions: TransactionItem[] = [];
 
     const now = new Date();
     const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
 
-    // Process payments
-    paymentsReq.documents.forEach((payment: any) => {
-      const booking = bookingsReq.documents.find((b: any) => b.$id === payment.bookingId);
-      const guest = guestsReq.documents.find((g: any) => g.bookingId === payment.bookingId);
+    bookingsReq.documents.forEach((booking: any) => {
+      const payment = paymentsReq.documents.find((p: any) => p.bookingId === booking.$id);
+      const guest = guestsReq.documents.find((g: any) => g.bookingId === booking.$id);
+      const property = propsReq.documents.find((p: any) => p.$id === booking.hotelId);
+      const vendorProfile = property ? profilesReq.documents.find((vp: any) => vp.userId === property.vendorId || vp.vendorId === property.vendorId) : null;
       
-      const amt = Number(payment.totalAmount || payment.amount || 0);
-      const roomPrice = Number(payment.roomPrice || Math.round(amt / 1.05));
-      const taxes = Number(payment.taxes || (amt - roomPrice));
-      const commission = Number(payment.serviceFees || payment.commission || Math.round(roomPrice * 0.18));
-      const status = payment.status || 'Completed';
-      const date = new Date(payment.$createdAt);
+      const isCancelled = booking.status?.toLowerCase() === 'cancelled' || booking.status?.toLowerCase() === 'canceled';
 
-      if (status.toLowerCase() !== 'failed' && status.toLowerCase() !== 'cancelled') {
-        totalRevenue += amt;
+      let totalPaidNum = payment ? Number(payment.totalAmount) : (booking.totalAmount ? Number(booking.totalAmount) : (booking.priceAfterTax ? Number(booking.priceAfterTax) : 0));
+      let baseRoomAmount = payment ? Number(payment.roomPrice) : (booking.priceBeforeTax ? Number(booking.priceBeforeTax) : 0);
+      const addonsNum = payment ? Number(payment.serviceFees) : (booking.addons ? Number(booking.addons) : 0);
+      const discountNum = payment ? Number(payment.discount) : (booking.discount ? Number(booking.discount) : 0);
+      let taxes = payment ? Number(payment.taxes) : (booking.gstAmount ? Number(booking.gstAmount) : 0);
+
+      let deducedRate = 18;
+      if (!baseRoomAmount && totalPaidNum) {
+        if (totalPaidNum <= 1000) deducedRate = 0;
+        else if (totalPaidNum <= 7875) deducedRate = 5;
+        else deducedRate = 18;
+        baseRoomAmount = Math.round((totalPaidNum / (1 + deducedRate / 100)) * 100) / 100;
+        taxes = Math.round((totalPaidNum - baseRoomAmount) * 100) / 100;
+      } else if (baseRoomAmount && taxes) {
+        deducedRate = Math.round((taxes / baseRoomAmount) * 100);
+      }
+
+      let vendorDiscount = 0;
+      if (booking.specialRequests) {
+        const vdMatch = booking.specialRequests.match(/VendorDiscount=₹?([0-9.]+)/);
+        if (vdMatch) vendorDiscount = parseFloat(vdMatch[1]);
+      } else {
+        vendorDiscount = discountNum;
+      }
+
+      const vendorGross = baseRoomAmount + addonsNum - vendorDiscount;
+      const feePercent = vendorProfile?.allow24PercentGst ? 24 : 18;
+      const commission = Math.round(vendorGross * (feePercent / 100) * 100) / 100;
+
+      const date = new Date(booking.$createdAt);
+
+      if (!isCancelled) {
+        totalRevenue += totalPaidNum;
         platformCommissions += commission;
 
         if (date >= currentMonthStart) {
-          monthlyRecurring += amt;
+          monthlyRecurring += totalPaidNum;
         }
       }
 
-      const bookingCode = booking ? `BK-${booking.$id.substring(0, 6).toUpperCase()}` : (payment.bookingId ? `#${payment.bookingId.slice(-4).toUpperCase()}` : 'Direct');
-      const customerName = guest ? `${guest.firstName} ${guest.lastName}`.trim() : (booking?.guestName || 'Guest User');
-      const propertyName = booking?.hotelName || 'Racoonn Property';
+      const bookingCode = `BK-${booking.$id.substring(0, 6).toUpperCase()}`;
+      const customerName = guest ? `${guest.firstName} ${guest.lastName}`.trim() : (booking.guestName || 'Guest User');
+      const propertyName = property?.name || booking.hotelName || 'Racoonn Property';
 
       transactions.push({
-        id: payment.transactionId || `REV-${payment.$id.slice(-4).toUpperCase()}`,
-        realId: payment.$id,
-        type: payment.type || (commission > 0 ? "Commission" : "Booking Payment"),
+        id: payment?.transactionId || `REV-${booking.$id.slice(-4).toUpperCase()}`,
+        realId: payment?.$id || booking.$id,
+        type: commission > 0 ? "Commission" : "Booking Payment",
         source: `Booking ${bookingCode}`,
         bookingCode,
         customerName,
         propertyName,
-        amount: amt,
-        roomPrice,
+        amount: totalPaidNum,
+        roomPrice: baseRoomAmount,
         taxes,
+        addons: addonsNum,
+        discounts: discountNum,
+        checkIn: booking.checkIn || booking.checkInDate || booking.startDate || 'N/A',
+        checkOut: booking.checkOut || booking.checkOutDate || booking.endDate || 'N/A',
+        nights: booking.nights || booking.totalNights || booking.numberOfDays || 1,
+        adults: booking.adults || booking.guests || 1,
+        email: guest?.email || booking.email || '',
+        rawBookingId: booking.$id,
+        hotelLocation: property?.city || booking.hotelLocation || '',
+        gstRate: deducedRate,
+        rawAddonsList: booking.snapshotRoomConfig ? JSON.parse(booking.snapshotRoomConfig).addonsList : null,
         commission,
-        status: status.charAt(0).toUpperCase() + status.slice(1).toLowerCase(),
+        status: isCancelled ? 'Cancelled' : 'Completed',
         date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) + `, ${date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}`,
-        createdAt: payment.$createdAt,
-        paymentMethod: payment.paymentMethod || 'Online (Razorpay / UPI)'
+        createdAt: payment?.$createdAt || booking.$createdAt,
+        paymentMethod: payment?.paymentMethod || 'Online Payment'
       });
     });
-
-    // Process bookings fallback if payments were empty
-    if (paymentsReq.documents.length === 0) {
-      bookingsReq.documents.forEach((b: any) => {
-        const guest = guestsReq.documents.find((g: any) => g.bookingId === b.$id);
-        const date = new Date(b.$createdAt);
-        const isCancelled = b.status?.toLowerCase() === 'cancelled' || b.status?.toLowerCase() === 'canceled';
-
-        let bookingAmt = 0;
-        if (typeof b.totalAmount === 'number') bookingAmt = b.totalAmount;
-        else if (typeof b.amount === 'number') bookingAmt = b.amount;
-        else if (typeof b.amount === 'string') bookingAmt = parseFloat(b.amount.replace(/[^0-9.]/g, '')) || 0;
-        else if (typeof b.price === 'number') bookingAmt = b.price;
-
-        const roomPrice = Math.round(bookingAmt / 1.05);
-        const taxes = bookingAmt - roomPrice;
-        const commission = Math.round(roomPrice * 0.18);
-
-        if (!isCancelled) {
-          totalRevenue += bookingAmt;
-          platformCommissions += commission;
-          if (date >= currentMonthStart) monthlyRecurring += bookingAmt;
-
-          const bookingCode = `BK-${b.$id.substring(0, 6).toUpperCase()}`;
-          const customerName = guest ? `${guest.firstName} ${guest.lastName}`.trim() : (b.guestName || 'Guest User');
-
-          transactions.push({
-            id: `REV-${b.$id.slice(-4).toUpperCase()}`,
-            realId: b.$id,
-            type: "Commission",
-            source: `Booking ${bookingCode}`,
-            bookingCode,
-            customerName,
-            propertyName: b.hotelName || 'Racoonn Property',
-            amount: bookingAmt,
-            roomPrice,
-            taxes,
-            commission,
-            status: b.status === 'confirmed' || b.status === 'completed' ? 'Completed' : 'Pending',
-            date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) + `, ${date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}`,
-            createdAt: b.$createdAt,
-            paymentMethod: 'Online Payment'
-          });
-        }
-      });
-    }
 
     transactions.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 

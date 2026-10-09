@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, MapPin, BedDouble, Star, Image as ImageIcon, Building2, Calendar, User, Clock, ShieldCheck, Users, Maximize } from "lucide-react";
 import { SafeImage } from "@/components/ui/safe-image";
 import PhotosGallery from "./PhotosGallery";
+import AdminPhotoManager from "@/components/admin/AdminPhotoManager";
 
 const DATABASE_ID = process.env.APPWRITE_DATABASE_ID || "6a3cec630035d63ea963";
 const VENDOR_COLLECTION = "6a3e0fd9da7df0d38588";
@@ -207,32 +208,9 @@ export default async function PropertyViewPage({ params }: { params: Promise<{ i
                 <div className="divide-y">
                   {roomsList.map((room) => (
                     <div key={room.$id} className="p-6 flex flex-col sm:flex-row gap-6 hover:bg-muted/30 transition-colors">
-                      <div className="w-full sm:w-64 shrink-0 flex gap-3 overflow-x-auto snap-x pb-2" style={{ scrollbarWidth: 'thin' }}>
-                        {room.photos && room.photos.length > 0 ? (
-                          room.photos.map((photo: string, index: number) => {
-                             const url = getImageUrl(photo);
-                             if (!url) return null;
-                             return (
-                               <div key={index} className="w-48 h-32 bg-muted rounded-xl overflow-hidden shrink-0 relative flex items-center justify-center snap-center">
-                                 <SafeImage 
-                                   src={url} 
-                                   alt={`${room.roomName || "Room"} ${index + 1}`} 
-                                   className="w-full h-full object-cover absolute inset-0 hover:scale-105 transition-transform duration-300"
-                                   fallbackIconClassName="h-8 w-8 text-muted-foreground opacity-30"
-                                   fallbackContainerClassName="w-full h-full hidden items-center justify-center absolute inset-0 bg-muted"
-                                 />
-                               </div>
-                             );
-                          })
-                        ) : (
-                          <div className="w-48 h-32 bg-muted rounded-xl overflow-hidden shrink-0 relative flex items-center justify-center">
-                            <ImageIcon className="h-8 w-8 text-muted-foreground opacity-30" />
-                          </div>
-                        )}
-                      </div>
                       <div className="flex-1 space-y-2">
                         <div className="flex justify-between items-start">
-                          <h4 className="text-lg font-bold">{room.roomName || room.title || "Unnamed Room"}</h4>
+                          <h4 className="text-lg font-bold">{room.name || room.roomName || room.title || "Unnamed Room"}</h4>
                           <div className="text-right">
                             {room.discountPrice && room.discountPrice < room.price ? (
                               <>
@@ -268,6 +246,15 @@ export default async function PropertyViewPage({ params }: { params: Promise<{ i
                             )}
                           </div>
                         )}
+                        <div className="mt-4 pt-4 border-t w-full">
+                           <AdminPhotoManager 
+                             title="Manage Room Photos" 
+                             collectionId="rooms" 
+                             documentId={room.$id} 
+                             photos={room.photos || []} 
+                             bucketId={process.env.NEXT_PUBLIC_APPWRITE_ROOM_IMAGES_BUCKET_ID || '6a3e398000280b2b3d20'} 
+                           />
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -339,7 +326,16 @@ export default async function PropertyViewPage({ params }: { params: Promise<{ i
           </Card>
 
           {/* Photos Side Gallery */}
-          <PhotosGallery photos={photos} />
+          
+
+            <AdminPhotoManager 
+              title="Manage Property Photos" 
+              collectionId="properties" 
+              documentId={id} 
+              photos={rawPhotos} 
+              bucketId="6a3e398000280b2b3d20" 
+            />
+
         </div>
       </div>
     </div>

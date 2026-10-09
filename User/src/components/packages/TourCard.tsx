@@ -1,4 +1,5 @@
 'use client';
+import { optimizeAppwriteImage } from "@/lib/optimizeImage";
 
 import Image from 'next/image';
 import Link from 'next/link';
@@ -38,10 +39,10 @@ export default function TourCard({ pkg }: { pkg: TourCardPackage }) {
           {pkg.images.map((img, i) => (
             <SwiperSlide key={i}>
               <Image
-                src={img}
+                src={optimizeAppwriteImage(img)}
                 alt={`${pkg.title} ${i + 1}`}
                 fill
-                unoptimized
+               
                 onError={(e) => {
                   e.currentTarget.src = "https://images.unsplash.com/photo-1519999482648-25049ddd37b1?q=80&w=800&auto=format&fit=crop";
                 }}

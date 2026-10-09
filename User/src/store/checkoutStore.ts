@@ -332,7 +332,7 @@ export const useCheckoutStore = create<CheckoutState>((set, get) => ({
       if (isFirst) {
         const currentCoupon = get().appliedCoupon;
         if (!currentCoupon) {
-          set({ appliedCoupon: { code: 'WELCOMERACOONN', type: 'percentage', value: 10 } });
+          set({ appliedCoupon: { code: 'WELCOMERACOONN', type: 'percentage', value: 10, issuer: 'racoonn' } });
         }
       } else {
         const currentCoupon = get().appliedCoupon;
@@ -569,10 +569,12 @@ export const useCheckoutStore = create<CheckoutState>((set, get) => ({
           email: guestDetails.email,
           firstName: guestDetails.firstName,
           lastName: guestDetails.lastName,
-          bookingId: bookingId.substring(0, 8).toUpperCase(),
+          bookingId: bookingId,
+          displayBookingId: bookingId.substring(0, 8).toUpperCase(),
           addonsList: addonsList,
           gstRate: gstRate,
           gstAmount: gstAmount,
+          hotelId: bookingData.hotelId,
           isPackage: (bookingData.roomName || '').startsWith('Package:') || (bookingData.roomName || '').toLowerCase().includes('package') || (bookingData.hotelId || '').startsWith('pkg-')
         })
       }).catch(err => console.error("Background email task failed:", err));

@@ -1,4 +1,5 @@
 'use client';
+import { optimizeAppwriteImage } from "@/lib/optimizeImage";
 
 import Link from 'next/link';
 import Image from 'next/image';
@@ -97,7 +98,7 @@ export default function Footer() {
             <div className="lg:col-span-4">
               <Link href="/" className="inline-block mb-6">
                 <Image 
-                  src={logoImg} 
+                  src={optimizeAppwriteImage(logoImg)} 
                   alt="Racoonn Logo" 
                   height={50}
                   className="h-10 w-auto object-contain mix-blend-screen opacity-90 hover:opacity-100 transition-opacity"

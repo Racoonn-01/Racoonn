@@ -42,7 +42,7 @@ export async function getCampaignsData() {
       [Query.limit(100)]
     ).catch(() => ({ documents: [] }));
 
-    let campaignsList: CampaignItem[] = [...memoryCampaigns];
+    const campaignsList: CampaignItem[] = [...memoryCampaigns];
 
     if (promotionsReq.documents && promotionsReq.documents.length > 0) {
       const dbCampaigns: CampaignItem[] = promotionsReq.documents.map((doc: any) => ({

@@ -1,4 +1,5 @@
 'use client';
+import { optimizeAppwriteImage } from "@/lib/optimizeImage";
 
 import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
@@ -193,12 +194,12 @@ export default function HeroSection() {
       {/* Background Image Slideshow */}
       <div className="absolute inset-0 overflow-hidden rounded-b-[50px] z-0 pointer-events-none">
         {heroImages.map((src, index) => (
-          <Image
+          <Image 
             key={src}
-            src={src}
+            src={optimizeAppwriteImage(src)}
             alt={`Beautiful tropical destination ${index + 1}`}
             fill
-            unoptimized
+           
             priority={index === 0}
             className={`object-cover transition-opacity duration-1000 ease-in-out transform-gpu will-change-opacity ${
               index === currentImageIndex ? 'opacity-100' : 'opacity-0'
@@ -251,7 +252,7 @@ export default function HeroSection() {
                 className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-brand-coral/10 hover:bg-brand-coral/20 border border-brand-coral/20 transition-all hover:scale-105 active:scale-95 text-brand-navy font-bold text-sm mb-1.5 whitespace-nowrap shadow-sm"
               >
                 <div className="w-6 h-6 relative rounded-full overflow-hidden shrink-0 bg-white">
-                  <Image src={chatbotLogo} alt="AI Assistant" fill className="object-contain p-0.5" />
+                  <Image priority  src={optimizeAppwriteImage(chatbotLogo)} alt="AI Assistant" fill className="object-contain p-0.5" />
                 </div>
                 {isChatMode ? 'Classic Search' : 'Ask AI'}
               </button>
@@ -291,7 +292,7 @@ export default function HeroSection() {
                           className="absolute inset-0 rounded-full bg-brand-coral"
                         />
                         <div className="absolute inset-0 bg-white rounded-full shadow-lg z-10 flex items-center justify-center overflow-hidden">
-                          <Image src={chatbotLogo} alt="Analyzing" fill className="object-contain p-3 animate-pulse" />
+                          <Image priority  src={optimizeAppwriteImage(chatbotLogo)} alt="Analyzing" fill className="object-contain p-3 animate-pulse" />
                         </div>
                       </div>
                       <motion.div 
@@ -308,7 +309,7 @@ export default function HeroSection() {
                     <>
                       <div className="flex items-start gap-4 border border-brand-coral/30 rounded-2xl p-5 bg-brand-coral/5 transition-colors focus-within:border-brand-coral/60 focus-within:bg-white shadow-inner relative">
                         <div className="w-8 h-8 relative rounded-full overflow-hidden shrink-0 bg-white shadow-sm mt-0.5 border border-gray-100">
-                          <Image src={chatbotLogo} alt="AI Assistant" fill className="object-contain p-1" />
+                          <Image priority  src={optimizeAppwriteImage(chatbotLogo)} alt="AI Assistant" fill className="object-contain p-1" />
                         </div>
                         <textarea 
                           placeholder="e.g. Find me a beachfront villa in Bali for 2 adults next weekend with a private pool..."

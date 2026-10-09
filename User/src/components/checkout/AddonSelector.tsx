@@ -40,7 +40,7 @@ export function AddonSelector({ addons, guests = 1 }: AddonSelectorProps) {
   const selected = useCheckoutStore(state => state.selectedAddons);
   const toggle = useCheckoutStore(state => state.toggleAddon);
 
-  const displayAddons = addons && addons.length > 0 ? addons : DEFAULT_ADDONS;
+  const displayAddons = addons || [];
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-brand-sky p-6 md:p-8">

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import nodemailer from 'nodemailer';
+import { Client, Databases, Query } from 'node-appwrite';
 import PDFDocument from 'pdfkit';
 import fs from 'fs';
 import path from 'path';
@@ -58,8 +59,10 @@ function generateInvoicePdf(data: any): Promise<Buffer> {
       // Invoice Meta (Right Aligned)
       doc.fontSize(28).font('Helvetica-Bold').fillColor(COLORS.textDark).text('INVOICE', 350, 45, { align: 'right' });
       doc.fontSize(10).font('Helvetica').fillColor(COLORS.textLight).text(`Date: ${new Date().toLocaleDateString('en-GB')}`, 350, 80, { align: 'right' });
-      doc.text(`Booking Ref: ${bookingId}`, 350, 95, { align: 'right' });
-      doc.text(`Invoice No: INV-12345678`, 350, 110, { align: 'right' });
+      doc.text(`Booking Ref: ${bookingId.substring(0, 8).toUpperCase()}`, 350, 95, { align: 'right' });
+      
+      const invoiceNo = data.invoiceNumber || `INV-${bookingId.substring(0, 8).toUpperCase()}`;
+      doc.text(`Invoice No: ${invoiceNo}`, 350, 110, { align: 'right' });
 
       // Divider
       doc.moveTo(50, 175).lineTo(545, 175).strokeColor(COLORS.border).lineWidth(1).stroke();
@@ -186,7 +189,8 @@ export async function POST(req: Request) {
       addonsList = [],
       gstRate = 18,
       gstAmount = 0,
-      isPackage = false
+      isPackage = false,
+      hotelId = null
     } = data;
 
     if (!email) {
@@ -194,6 +198,30 @@ export async function POST(req: Request) {
         { error: 'Email is required' },
         { status: 400 }
       );
+    }
+
+    if (data.bookingId && !data.invoiceNumber) {
+      try {
+        const client = new Client()
+          .setEndpoint(process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT || "https://cloud.appwrite.io/v1")
+          .setProject(process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID || "")
+          .setKey(process.env.APPWRITE_API_KEY || "");
+        
+        const databases = new Databases(client);
+        const dbId = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID || "6a3cec630035d63ea963";
+        const collId = process.env.NEXT_PUBLIC_APPWRITE_BOOKING_COLLECTION_ID || "bookings";
+
+        const bookingDoc = await databases.getDocument(dbId, collId, data.bookingId);
+        
+        const response = await databases.listDocuments(dbId, collId, [
+          Query.lessThanEqual('$createdAt', bookingDoc.$createdAt),
+          Query.limit(1)
+        ]);
+        
+        data.invoiceNumber = `INV-${response.total.toString().padStart(3, '0')}`;
+      } catch (err) {
+        console.error("Failed to generate serial invoice number:", err);
+      }
     }
 
     // 1. Generate PDF Buffer
@@ -221,7 +249,7 @@ export async function POST(req: Request) {
           
           <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin: 20px 0;">
             <h3 style="margin-top: 0; color: #E86A6F;">Booking Details</h3>
-            <p style="margin: 5px 0;"><strong>Booking ID:</strong> ${bookingId || 'N/A'}</p>
+            <p style="margin: 5px 0;"><strong>Booking ID:</strong> ${data.displayBookingId || bookingId?.substring(0, 8).toUpperCase() || 'N/A'}</p>
             <p style="margin: 5px 0;"><strong>${isPackage ? 'Package Name' : 'Hotel'}:</strong> ${hotelName} ${hotelLocation ? '(' + hotelLocation + ')' : ''}</p>
             ${isPackage ? `
               <p style="margin: 5px 0;"><strong>Starting date:</strong> ${checkIn}</p>
@@ -252,7 +280,7 @@ export async function POST(req: Request) {
       html: htmlContent,
       attachments: [
         {
-          filename: `Invoice-${bookingId || 'Booking'}.pdf`,
+          filename: `Invoice-${data.displayBookingId || bookingId?.substring(0, 8).toUpperCase() || 'Booking'}.pdf`,
           content: pdfBuffer,
           contentType: 'application/pdf'
         }
@@ -260,6 +288,58 @@ export async function POST(req: Request) {
     });
 
     console.log("Message sent with invoice attached: %s", info.messageId);
+
+    // 3. Notify Vendor if hotelId is provided
+    if (hotelId) {
+      try {
+        const client = new Client()
+          .setEndpoint(process.env.APPWRITE_ENDPOINT || process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT || 'https://sgp.cloud.appwrite.io/v1')
+          .setProject(process.env.APPWRITE_PROJECT_ID || process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID || '6a3bce6900381359c3ce')
+          .setKey(process.env.APPWRITE_API_KEY || '');
+          
+        const db = new Databases(client);
+        const dbId = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID || '6a3cec630035d63ea963';
+        
+        const property = await db.getDocument(dbId, 'properties', hotelId);
+        if (property && (property.vendorId || property.userId)) {
+          const vendor = await db.getDocument(dbId, '6a3e0fd9da7df0d38588', property.vendorId || property.userId);
+          
+          if (vendor && vendor.email) {
+            const vendorHtml = `
+              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #333; line-height: 1.6;">
+                <div style="background-color: #E86A6F; padding: 20px; text-align: center; border-radius: 10px 10px 0 0;">
+                  <h1 style="color: white; margin: 0;">New Booking Alert!</h1>
+                </div>
+                <div style="padding: 20px; border: 1px solid #ddd; border-top: none; border-radius: 0 0 10px 10px;">
+                  <p>Hi ${vendor.businessName || vendor.firstName || 'Vendor'},</p>
+                  <p>You have received a new booking for <strong>${hotelName}</strong>.</p>
+                  <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin: 20px 0;">
+                    <p style="margin: 5px 0;"><strong>Booking ID:</strong> ${bookingId}</p>
+                    <p style="margin: 5px 0;"><strong>Guest Name:</strong> ${firstName} ${lastName || ''}</p>
+                    <p style="margin: 5px 0;"><strong>Check-in:</strong> ${checkIn}</p>
+                    <p style="margin: 5px 0;"><strong>Check-out:</strong> ${checkOut}</p>
+                    <p style="margin: 5px 0;"><strong>Guests:</strong> ${adults || 1} Adult(s)</p>
+                    <p style="margin: 5px 0;"><strong>Nights:</strong> ${nights}</p>
+                  </div>
+                  <p>Please log in to your vendor dashboard to manage this booking.</p>
+                  <p><strong>The Racoonn Team</strong></p>
+                </div>
+              </div>
+            `;
+            
+            await transporter.sendMail({
+              from: '"Racoonn Bookings" <' + process.env.SMTP_USER + '>',
+              to: vendor.email,
+              subject: `New Booking Alert: ${hotelName}`,
+              html: vendorHtml
+            });
+            console.log("Vendor notification sent to:", vendor.email);
+          }
+        }
+      } catch (vendorErr) {
+        console.error("Failed to notify vendor:", vendorErr);
+      }
+    }
 
     return NextResponse.json({ success: true, messageId: info.messageId });
   } catch (error: any) {

@@ -1,4 +1,5 @@
 'use client';
+import { optimizeAppwriteImage } from "@/lib/optimizeImage";
 
 import { useState } from 'react';
 import Image from 'next/image';
@@ -53,7 +54,7 @@ export default function PropertyPhotoGallery({ images }: PropertyPhotoGalleryPro
       <div className="relative h-[35vh] md:h-[55vh] min-h-[300px] md:min-h-[400px] max-h-[500px] w-full rounded-2xl overflow-hidden mb-6 md:mb-10 flex gap-2">
         {/* Main Large Image */}
         <div className="relative w-full md:w-1/2 h-full group cursor-pointer overflow-hidden" onClick={() => setIsModalOpen(true)}>
-          <Image src={images[0]} alt="Property Main" fill className="object-cover transition-transform duration-500 group-hover:scale-105" priority />
+          <Image src={optimizeAppwriteImage(images[0])} alt="Property Main" fill className="object-cover transition-transform duration-500 group-hover:scale-105" priority />
           <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
         </div>
 
@@ -61,7 +62,7 @@ export default function PropertyPhotoGallery({ images }: PropertyPhotoGalleryPro
         <div className="hidden md:grid w-1/2 h-full grid-cols-2 grid-rows-2 gap-2">
           {images.slice(1, 5).map((img, i) => (
             <div key={i} className="relative w-full h-full group cursor-pointer overflow-hidden" onClick={() => setIsModalOpen(true)}>
-              <Image src={img} alt={`Property ${i + 1}`} fill className="object-cover transition-transform duration-500 group-hover:scale-105" />
+              <Image src={optimizeAppwriteImage(img)} alt={`Property ${i + 1}`} fill className="object-cover transition-transform duration-500 group-hover:scale-105" priority />
               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
             </div>
           ))}
@@ -131,7 +132,7 @@ export default function PropertyPhotoGallery({ images }: PropertyPhotoGalleryPro
                       onClick={() => setSelectedImageId(img.id)}
                     >
                       <Image 
-                        src={img.src} 
+                        src={optimizeAppwriteImage(img.src)} 
                         alt={`Gallery Image ${img.id}`} 
                         width={800} 
                         height={600} 
@@ -203,7 +204,7 @@ export default function PropertyPhotoGallery({ images }: PropertyPhotoGalleryPro
                 className="relative w-full h-full"
               >
                 <Image 
-                  src={filteredImages.find(img => img.id === selectedImageId)?.src || ''} 
+                  src={optimizeAppwriteImage(filteredImages.find(img => img.id === selectedImageId)?.src || '')} 
                   alt="Selected Image" 
                   fill 
                   className="object-contain" 

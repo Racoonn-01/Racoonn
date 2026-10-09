@@ -1,4 +1,6 @@
 "use client";
+import { generatePropertySlug } from "@/lib/utils";
+import { optimizeAppwriteImage } from "@/lib/optimizeImage";
 
 import { useRef, useState, useEffect } from 'react';
 import Image from 'next/image';
@@ -30,6 +32,7 @@ export default function PopularStays() {
       if (data && data.length > 0) {
         // Fetch rooms for room price mapping
         const roomsMap: Record<string, number> = {};
+        const roomsPhotoMap: Record<string, string[]> = {};
         try {
           const roomColId = process.env.NEXT_PUBLIC_APPWRITE_ROOM_COLLECTION_ID || 'rooms';
           const roomsRes = await databases.listDocuments(DATABASE_ID, roomColId, [Query.limit(500)]);
@@ -41,6 +44,13 @@ export default function PopularStays() {
                 roomsMap[pId] = p;
               }
             }
+            if (pId && Array.isArray(room.photos) && room.photos.length > 0) {
+              if (!roomsPhotoMap[pId]) {
+                roomsPhotoMap[pId] = room.photos as string[];
+              } else {
+                roomsPhotoMap[pId] = [...roomsPhotoMap[pId], ...(room.photos as string[])];
+              }
+            }
           });
         } catch (e) {
           console.error("Could not fetch rooms for price mapping:", e);
@@ -49,7 +59,14 @@ export default function PopularStays() {
         const mappedProperties: Hotel[] = data.map((d: Models.Document) => {
           const doc = d as unknown as Record<string, unknown>;
           const rawPrice = Number(doc.price || doc.startingPrice || doc.minPrice || doc.basePrice || doc.pricePerNight || roomsMap[String(doc.$id)] || 0);
-          const photos = Array.isArray(doc.photos) ? doc.photos : [];
+          const propertyPhotos = Array.isArray(doc.photos) && doc.photos.filter(p => typeof p === 'string' && p.trim().length > 0).length > 0 
+            ? doc.photos.filter(p => typeof p === 'string' && p.trim().length > 0) 
+            : null;
+          const roomPhotos = roomsPhotoMap[String(doc.$id)] && roomsPhotoMap[String(doc.$id)].filter(p => typeof p === 'string' && p.trim().length > 0).length > 0 
+            ? roomsPhotoMap[String(doc.$id)].filter(p => typeof p === 'string' && p.trim().length > 0) 
+            : null;
+          const finalPhotos = propertyPhotos || roomPhotos || ['https://images.unsplash.com/photo-1542314831-c6a4d14d837e?q=80&w=800&auto=format&fit=crop'];
+
           return {
             id: String(doc.$id || ''),
             name: String(doc.propertyName || doc.title || 'Unknown Property'),
@@ -57,7 +74,7 @@ export default function PopularStays() {
             rating: Number(doc.rating || 0),
             reviews: Number(doc.reviewsCount || 0),
             price: rawPrice > 0 ? rawPrice : 3500,
-            image: photos[0] ? String(photos[0]) : 'https://images.unsplash.com/photo-1542314831-c6a4d14d837e?q=80&w=800&auto=format&fit=crop',
+            image: String(finalPhotos[0]),
             status: typeof doc.status === 'string' ? doc.status.toLowerCase() : undefined,
           };
         });
@@ -120,16 +137,16 @@ export default function PopularStays() {
                   className="w-full min-w-full md:min-w-0 md:w-[calc(50%-12px)] lg:w-[calc(25%-18px)] shrink-0 snap-center md:snap-start"
                 >
                   <Link 
-                    href={`/property/${stay.id}`} 
+                    href={`/property/${generatePropertySlug(stay.id, stay.name || stay.title || stay.propertyName || "")}`} 
                     className="bg-white rounded-2xl p-3 shadow-[0_2px_15px_rgb(0,0,0,0.05)] border border-brand-sky/30 group/card cursor-pointer transition-all duration-300 hover:-translate-y-1.5 hover:shadow-lg flex flex-col h-full overflow-hidden w-full"
                   >
                     {/* Image */}
                     <div className="relative w-full h-48 sm:h-52 shrink-0 rounded-xl overflow-hidden mb-4 bg-gray-100">
                       <Image
-                        src={stay.image}
+                        src={optimizeAppwriteImage(stay.image)}
                         alt={stay.name}
                         fill
-                        unoptimized
+                       
                         onError={(e) => {
                           e.currentTarget.src = "https://images.unsplash.com/photo-1542314831-c6a4d14d837e?q=80&w=800&auto=format&fit=crop";
                         }}

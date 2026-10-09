@@ -32,12 +32,21 @@ export async function getPayoutsData() {
   try {
     const db = appwriteServer.databases;
 
-    const [bookingsReq, paymentsReq, guestsReq, vendorsReq] = await Promise.all([
-      db.listDocuments(DATABASE_ID, 'bookings', [Query.limit(500), Query.orderDesc('$createdAt')]).catch(() => ({ documents: [] })),
-      db.listDocuments(DATABASE_ID, 'booking_payments', [Query.limit(500), Query.orderDesc('$createdAt')]).catch(() => ({ documents: [] })),
-      db.listDocuments(DATABASE_ID, 'booking_guests', [Query.limit(500)]).catch(() => ({ documents: [] })),
+    // Fetch vendors, invoices, bookings, properties, and payments in parallel
+    const [vendorsReq, invoicesDoc, bookingsReq, paymentsReq, propertiesReq] = await Promise.all([
       db.listDocuments(DATABASE_ID, VENDOR_COLLECTION, [Query.limit(500)]).catch(() => ({ documents: [] })),
+      db.getDocument(DATABASE_ID, 'properties', 'cms_invoices_v1').catch(() => null),
+      db.listDocuments(DATABASE_ID, 'bookings', [Query.limit(1000), Query.orderDesc('$createdAt')]).catch(() => ({ documents: [] })),
+      db.listDocuments(DATABASE_ID, 'booking_payments', [Query.limit(1000), Query.orderDesc('$createdAt')]).catch(() => ({ documents: [] })),
+      db.listDocuments(DATABASE_ID, 'properties', [Query.limit(500)]).catch(() => ({ documents: [] }))
     ]);
+
+    const propertyVendorMap: Record<string, string> = {};
+    propertiesReq.documents.forEach((p: any) => {
+      if (p.vendorId) {
+        propertyVendorMap[p.$id] = p.vendorId;
+      }
+    });
 
     const vendorMap: Record<string, any> = {};
     vendorsReq.documents.forEach((v: any) => {
@@ -47,86 +56,164 @@ export async function getPayoutsData() {
     let pendingCount = 0;
     let pendingTotal = 0;
     let processedThisWeek = 0;
-    let vendorCount = vendorsReq.documents.length || 1;
+    const vendorCount = vendorsReq.documents.length || 1;
     let escrowBalance = 0;
-    let payouts: PayoutItem[] = [];
+    const payouts: PayoutItem[] = [];
 
-    const now = new Date();
-    const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    let allInvoices = invoicesDoc?.details ? JSON.parse(invoicesDoc.details) : [];
+    const withdrawalInvoices = allInvoices.filter((inv: any) => inv.type === "withdrawal");
+
+    // 1. Collect all already invoiced booking IDs
+    const invoicedBookingIds = new Set<string>();
+    withdrawalInvoices.forEach((inv: any) => {
+      if (inv.bookingIds && Array.isArray(inv.bookingIds)) {
+        inv.bookingIds.forEach((id: string) => invoicedBookingIds.add(id));
+      }
+    });
+
+    // 2. Identify Bookings > 2m old that are not invoiced
+    const nowMs = Date.now();
+    const TWO_MINUTES_MS = 2 * 60 * 1000;
+    let newlyGeneratedInvoices = false;
+
+    // Group eligible bookings by vendorId
+    const pendingByVendor: Record<string, any[]> = {};
 
     bookingsReq.documents.forEach((b: any) => {
-      const payment = paymentsReq.documents.find((p: any) => p.bookingId === b.$id);
-      const guest = guestsReq.documents.find((g: any) => g.bookingId === b.$id);
-      const vendorObj = vendorMap[b.vendorId] || {};
+      const is2mOld = (nowMs - new Date(b.$createdAt).getTime()) >= TWO_MINUTES_MS;
+      const isCompleted = b.status === "completed" || b.status === "Completed" || b.status === "confirmed" || b.status === "Confirmed" || b.status === "Pending Withdrawal" || b.status === "Paid_Vendor" || b.status === "Paid";
+      const resolvedVendorId = b.vendorId || propertyVendorMap[b.hotelId] || "unknown_vendor";
 
-      const guestName = guest ? `${guest.firstName} ${guest.lastName}`.trim() : (b.guestName || 'Guest User');
-      const vendorName = b.hotelName || b.vendorName || vendorObj.hotelName || vendorObj.businessName || "Partner Hotel";
-
-      // Calculate total paid and payout breakdown
-      let grossAmount = 0;
-      if (payment && Number(payment.totalAmount) > 0) {
-        grossAmount = Number(payment.totalAmount);
-      } else if (typeof b.totalAmount === 'number' && b.totalAmount > 0) {
-        grossAmount = b.totalAmount;
-      } else if (typeof b.amount === 'number' && b.amount > 0) {
-        grossAmount = b.amount;
-      } else if (typeof b.amount === 'string') {
-        grossAmount = parseFloat(b.amount.replace(/[^0-9.]/g, '')) || 0;
-      } else if (typeof b.price === 'number') {
-        grossAmount = b.price * (b.nights || 1);
+      if (is2mOld && isCompleted && !invoicedBookingIds.has(b.$id)) {
+        if (!pendingByVendor[resolvedVendorId]) pendingByVendor[resolvedVendorId] = [];
+        pendingByVendor[resolvedVendorId].push(b);
       }
+    });
 
-      // Check specialRequests for embedded VendorPayout info
-      let extractedPayout = 0;
-      if (b.specialRequests && b.specialRequests.includes('VendorPayout=')) {
-        const match = b.specialRequests.match(/VendorPayout=₹?([0-9.]+)/);
-        if (match && match[1]) {
-          extractedPayout = parseFloat(match[1]) || 0;
-        }
+    // 3. Auto-generate invoices for each vendor
+    for (const [vendorId, bookings] of Object.entries(pendingByVendor)) {
+      const vendorObj = vendorMap[vendorId] || {};
+      
+      let grossTotal = 0;
+      let platformFeeTotal = 0;
+      let netTotal = 0;
+      const bIds: string[] = [];
+
+      bookings.forEach((b: any) => {
+        const payment = paymentsReq.documents.find((p: any) => p.bookingId === b.$id);
+        let gross = b.totalAmount || b.priceAfterTax || 0;
+        if (payment && Number(payment.totalAmount) > 0) gross = Number(payment.totalAmount);
+        
+        const effectiveFeePercent = vendorObj?.allow24PercentGst ? 24 : 18;
+        const fee = Math.round(gross * (effectiveFeePercent / 100));
+        const net = Math.max(1, gross - fee);
+
+        grossTotal += gross;
+        platformFeeTotal += fee;
+        netTotal += net;
+        bIds.push(b.$id);
+      });
+
+      if (bIds.length > 0) {
+        const newInvoiceId = `W-AUTO-${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
+        const newInvoice = {
+          id: newInvoiceId,
+          invoiceNumber: newInvoiceId,
+          type: "withdrawal",
+          vendorId: vendorId,
+          vendorName: vendorObj.businessName || vendorObj.hotelName || "Partner Vendor",
+          vendorBusiness: vendorObj.businessName || vendorObj.hotelName || "Partner Property",
+          vendorEmail: vendorObj.email || "vendor@racoonn.com",
+          vendorPhone: vendorObj.phone || "",
+          vendorAddress: vendorObj.address || "",
+          bookingIds: bIds,
+          grossAmount: grossTotal,
+          platformFeeRate: vendorObj?.allow24PercentGst ? 24 : 18,
+          platformFeeAmount: platformFeeTotal,
+          subtotal: grossTotal,
+          taxRate: 0,
+          taxAmount: 0,
+          discount: 0,
+          totalAmount: netTotal,
+          status: "Sent", // Instantly push to Admin
+          bankName: vendorObj.bankName || "",
+          accountHolder: vendorObj.accountHolder || "",
+          accountNumber: vendorObj.accountNumber || "",
+          ifsc: vendorObj.ifsc || "",
+          upiId: vendorObj.upiId || "",
+          issueDate: new Date().toISOString(),
+          dueDate: new Date(nowMs + 7 * 24 * 60 * 60 * 1000).toISOString(),
+          items: [
+            {
+              id: `item-${Date.now()}`,
+              description: `Auto-withdrawal for ${bIds.length} bookings (>2min old)`,
+              quantity: 1,
+              unitPrice: netTotal,
+              amount: netTotal
+            }
+          ]
+        };
+
+        allInvoices.unshift(newInvoice);
+        withdrawalInvoices.unshift(newInvoice);
+        newlyGeneratedInvoices = true;
       }
+    }
 
-      // Standard platform commission fee (18% + 18% GST = 21.24%)
-      const platformFee = Math.round(grossAmount * 0.2124);
-      const netPayout = extractedPayout > 0 ? extractedPayout : (grossAmount > 0 ? Math.max(1, grossAmount - platformFee) : 0);
+    // 4. Save back to Appwrite if we generated new invoices
+    if (newlyGeneratedInvoices) {
+      try {
+        await db.updateDocument(DATABASE_ID, 'properties', 'cms_invoices_v1', {
+          details: JSON.stringify(allInvoices)
+        });
+      } catch (err) {
+        console.warn("Could not save auto-generated invoices to Appwrite:", err);
+      }
+    }
 
-      const status = (b.status || 'pending').toLowerCase();
-      const date = new Date(b.$createdAt);
+    // 5. Parse UI mapping
+
+    withdrawalInvoices.forEach((inv: any) => {
+      const vendorObj = vendorMap[inv.vendorId] || {};
+      
+      const netPayout = inv.totalAmount || 0;
+      const grossAmount = inv.grossAmount || 0;
+      const platformFee = inv.platformFeeAmount || 0;
+      const status = inv.status || 'Draft';
+      const date = new Date(inv.issueDate || new Date().toISOString());
 
       let pStatus = "Processing";
-      if (status === 'completed' || b.paymentStatus === 'Paid_Vendor') {
+      if (status === 'Paid' || status === 'Approved') {
         pStatus = "Processed";
         processedThisWeek += netPayout;
-        escrowBalance += netPayout;
-      } else if (status === 'confirmed') {
+      } else if (status === 'Sent' || status === 'Pending Withdrawal') {
         pStatus = "Processing";
         pendingCount++;
         pendingTotal += netPayout;
-      } else if (status === 'cancelled' || status === 'canceled') {
+      } else if (status === 'Cancelled' || status === 'Rejected') {
         pStatus = "On Hold";
       }
 
-      const pId = `PO-${b.$id.slice(-5).toUpperCase()}`;
-
       payouts.push({
-        id: pId,
-        realId: b.$id,
-        vendor: vendorName,
-        vendorEmail: vendorObj.email || "vendor@racoonn.com",
-        propertyName: b.hotelName || "Partner Property",
-        guestName,
+        id: inv.invoiceNumber || inv.id,
+        realId: inv.id,
+        vendor: inv.vendorBusiness || inv.vendorName || "Partner Hotel",
+        vendorEmail: inv.vendorEmail || vendorObj.email || "vendor@racoonn.com",
+        propertyName: inv.vendorBusiness || vendorObj.businessName || "Partner Property",
+        guestName: inv.bookingIds?.length ? `${inv.bookingIds.length} Bookings` : "1 Booking",
         grossAmount,
         platformFee,
         netPayout,
         amount: netPayout,
-        account: vendorObj.accountNumber ? `••••${vendorObj.accountNumber.slice(-4)}` : "HDFC ••••4019",
-        method: b.paymentMethod || "Direct NEFT / Bank",
+        account: inv.accountNumber ? `••••${inv.accountNumber.slice(-4)}` : (inv.upiId || "Bank / UPI"),
+        method: inv.upiId ? "UPI" : "Direct NEFT / Bank",
         status: pStatus,
         date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) + `, ${date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}`,
-        createdAt: b.$createdAt,
-        bankName: vendorObj.bankName || "HDFC Bank",
-        accountHolder: vendorObj.accountHolder || vendorName,
-        accountNumber: vendorObj.accountNumber || "109847562019",
-        ifsc: vendorObj.ifsc || "HDFC0001234"
+        createdAt: inv.issueDate || new Date().toISOString(),
+        bankName: inv.bankName || vendorObj.bankName || "N/A",
+        accountHolder: inv.accountHolder || vendorObj.accountHolder || "N/A",
+        accountNumber: inv.accountNumber || vendorObj.accountNumber || "N/A",
+        ifsc: inv.ifsc || vendorObj.ifsc || "N/A"
       });
     });
 
@@ -153,3 +240,4 @@ export async function getPayoutsData() {
     };
   }
 }
+

@@ -560,7 +560,7 @@ export default function DevelopersPage() {
               </div>
 
               <div className="rounded-xl border border-slate-800 bg-[#060911] p-4 text-xs font-mono text-slate-300">
-                <span className="text-slate-500">// Node.js verification snippet</span><br />
+                <span className="text-slate-500">{"//"} Node.js verification snippet</span><br />
                 const crypto = require(&apos;crypto&apos;);<br />
                 const expected = crypto.createHmac(&apos;sha256&apos;, webhookSecret).update(rawBody).digest(&apos;hex&apos;);<br />
                 const isValid = crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(signature));

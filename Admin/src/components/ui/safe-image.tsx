@@ -9,6 +9,8 @@ interface SafeImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
   fallbackContainerClassName?: string;
 }
 
+import { optimizeAppwriteImage } from "@/lib/optimizeImage";
+
 export function SafeImage({ 
   src, 
   alt, 
@@ -18,8 +20,10 @@ export function SafeImage({
   ...props 
 }: SafeImageProps) {
   const [error, setError] = useState(false);
+  
+  const optimizedSrc = optimizeAppwriteImage(src);
 
-  if (error || !src) {
+  if (error || !optimizedSrc) {
     return (
       <div className={cn(fallbackContainerClassName, className)}>
         <ImageIcon className={fallbackIconClassName} />
@@ -29,7 +33,7 @@ export function SafeImage({
 
   return (
     <img
-      src={src}
+      src={optimizedSrc}
       alt={alt}
       className={className}
       onError={() => setError(true)}

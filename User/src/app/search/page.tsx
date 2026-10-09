@@ -209,18 +209,28 @@ function SearchContent() {
       setLoading(true);
       const data = await getProperties();
       
-      // Fetch rooms to calculate accurate min starting price for properties without a valid price
+      // Fetch rooms to calculate accurate min starting price for properties without a valid price, and collect room photos
       const roomsMap: Record<string, number> = {};
+      const roomsPhotoMap: Record<string, string[]> = {};
       try {
+        const { Query } = await import("appwrite");
         const roomsRes = await databases.listDocuments(
           DATABASE_ID,
-          process.env.NEXT_PUBLIC_APPWRITE_ROOM_COLLECTION_ID || '6791e8430032e5ce6c98'
+          process.env.NEXT_PUBLIC_APPWRITE_ROOM_COLLECTION_ID || '6791e8430032e5ce6c98',
+          [Query.limit(5000)]
         );
-        roomsRes.documents.forEach((room: Record<string, string | number | null | undefined>) => {
+        roomsRes.documents.forEach((room: Record<string, string | number | null | undefined | any>) => {
           const roomPrice = Number(room.price || 0);
           if (room.propertyId && roomPrice > 0) {
             if (!roomsMap[room.propertyId] || roomPrice < roomsMap[room.propertyId]) {
               roomsMap[room.propertyId] = roomPrice;
+            }
+          }
+          if (room.propertyId && room.photos && Array.isArray(room.photos) && room.photos.length > 0) {
+            if (!roomsPhotoMap[room.propertyId]) {
+               roomsPhotoMap[room.propertyId] = room.photos;
+            } else {
+               roomsPhotoMap[room.propertyId] = [...roomsPhotoMap[room.propertyId], ...room.photos];
             }
           }
         });
@@ -273,6 +283,14 @@ function SearchContent() {
             : (doc.rating || 0);
           const computedReviewsCount = pReviews ? pReviews.count : (doc.reviewsCount || 0);
 
+          const propertyPhotos = (doc.photos && Array.isArray(doc.photos) && doc.photos.filter((p: string) => p && typeof p === 'string' && p.trim().length > 0).length > 0) 
+            ? doc.photos.filter((p: string) => p && typeof p === 'string' && p.trim().length > 0) 
+            : null;
+          const roomPhotos = roomsPhotoMap[doc.$id] && roomsPhotoMap[doc.$id].filter(p => p && typeof p === 'string' && p.trim().length > 0).length > 0 
+            ? roomsPhotoMap[doc.$id].filter(p => p && typeof p === 'string' && p.trim().length > 0) 
+            : null;
+          const finalImages = propertyPhotos || roomPhotos || ['https://images.unsplash.com/photo-1542314831-c6a4d14d837e?q=80&w=800&auto=format&fit=crop'];
+
           return {
             id: doc.$id,
             title: doc.propertyName || doc.title || 'Unknown Property',
@@ -286,7 +304,7 @@ function SearchContent() {
             rating: computedRating,
             reviews: computedReviewsCount,
             price: rawPrice > 0 ? rawPrice : 3500,
-            images: (doc.photos && doc.photos.length > 0) ? doc.photos : ['https://images.unsplash.com/photo-1542314831-c6a4d14d837e?q=80&w=800&auto=format&fit=crop'],
+            images: finalImages,
             status: doc.status?.toLowerCase() || 'active',
             bedrooms: numBedrooms,
             beds: numBeds,

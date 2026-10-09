@@ -59,6 +59,7 @@ export default function CancelBookingModal({ isOpen, onClose, booking, onSuccess
             email: booking.email || booking.customerEmail || user?.email || '',
             firstName: booking.firstName || booking.customerName || user?.name || 'Guest',
             bookingId: booking.id,
+            hotelId: booking.hotelId || booking.rawHotelId || null,
           }),
         });
       } catch (emailError) {
@@ -120,7 +121,7 @@ export default function CancelBookingModal({ isOpen, onClose, booking, onSuccess
                   {cancellationFeeAmount}
                 </p>
                 {hasCancellationFee && (
-                  <p className="text-xs text-red-400 mt-1">Because you are cancelling within 24 hours of check-in, the property's specific penalty applies.</p>
+                  <p className="text-xs text-red-400 mt-1">Because you are cancelling within 24 hours of check-in, the property&apos;s specific penalty applies.</p>
                 )}
               </div>
             </div>

@@ -338,7 +338,7 @@ export function Step8Banking({ onNext, onBack }: { onNext: () => void, onBack: (
 
             <div className="space-y-2">
               <label className="text-xs font-bold text-slate-700 uppercase tracking-wide flex justify-between">
-                Upload Cancelled Cheque
+                <div>Upload Cancelled Cheque <span className="text-slate-400 lowercase normal-case text-[10px] ml-1">(Optional)</span></div>
                 {verified && <span className="text-emerald-500 flex items-center gap-1"><ShieldCheck className="w-3 h-3"/> Verified</span>}
               </label>
               <input 

@@ -537,7 +537,7 @@ export default function AdminWithdrawalManagementPage() {
 
     if (realB) {
       const grossNum = parseInt(String(realB.amount || "").replace(/[^0-9]/g, ""), 10) || 0;
-      const slab = inv.platformFeeRate || 25;
+      const slab = inv.platformFeeRate || 18;
       const feeNum = Math.round((grossNum * slab) / 100);
       const earningsNum = grossNum - feeNum;
 
@@ -562,7 +562,7 @@ export default function AdminWithdrawalManagementPage() {
     // Fallback directly from invoice items
     const matchingItem = inv.items.find((item) => item.bookingId === bId || item.id.includes(bId));
     const grossNum = matchingItem ? Math.abs(matchingItem.amount) : (inv.grossAmount || inv.subtotal);
-    const slab = inv.platformFeeRate || 25;
+    const slab = inv.platformFeeRate || 18;
     const feeNum = Math.round((grossNum * slab) / 100);
     const earningsNum = grossNum - feeNum;
 
@@ -942,7 +942,7 @@ export default function AdminWithdrawalManagementPage() {
                   </div>
                   <div className="flex items-center gap-2 bg-white p-2 rounded-xl border border-emerald-100">
                     <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
-                    <span>Commission Slab ({selectedInvoice.platformFeeRate || 25}%) verified</span>
+                    <span>Commission Slab ({selectedInvoice.platformFeeRate || 18}%) verified</span>
                   </div>
                   <div className="flex items-center gap-2 bg-white p-2 rounded-xl border border-emerald-100">
                     <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
@@ -983,7 +983,7 @@ export default function AdminWithdrawalManagementPage() {
                   </span>
                 </div>
                 <div>
-                  <span className="text-rose-600 uppercase font-bold block text-[10px]">Platform Fee ({selectedInvoice.platformFeeRate || 25}%)</span>
+                  <span className="text-rose-600 uppercase font-bold block text-[10px]">Platform Fee ({selectedInvoice.platformFeeRate || 18}%)</span>
                   <span className="font-bold text-rose-600 text-base">
                     -₹{(selectedInvoice.platformFeeAmount || 0).toLocaleString("en-IN")}
                   </span>
@@ -1352,7 +1352,7 @@ export default function AdminWithdrawalManagementPage() {
               <div className="flex justify-between items-start border-b pb-6">
                 <div>
                   <div className="relative w-44 h-16 mb-2">
-                    <Image src="/Racoonn-Logo-02.png" alt="Racoonn Logo" fill className="object-contain object-left" unoptimized />
+                    <Image src="/Racoonn-Logo-02.png" alt="Racoonn Logo" fill className="object-contain object-left" />
                   </div>
                   <p className="text-xs text-gray-500 font-medium">Racoonn Hospitality Technologies Private Limited</p>
                   <p className="text-xs text-gray-500">Devbhoomi Uttarakhand, India</p>

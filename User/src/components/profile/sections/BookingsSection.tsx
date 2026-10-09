@@ -1,4 +1,5 @@
 'use client';
+import { optimizeAppwriteImage } from "@/lib/optimizeImage";
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Clock, MapPin, Star, Loader2 } from 'lucide-react';
@@ -160,7 +161,7 @@ export default function BookingsSection() {
                 >
                   {/* Image */}
                   <div className="w-full md:w-64 h-48 rounded-2xl overflow-hidden relative shrink-0">
-                    <Image src={booking.image} alt={booking.hotel} fill className="object-cover" />
+                    <Image src={optimizeAppwriteImage(booking.image)} alt={booking.hotel} fill className="object-cover" />
                     <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-bold text-brand-navy uppercase">
                       {booking.status}
                     </div>

@@ -24,7 +24,6 @@ function VerificationLayoutContent({ children }: { children: React.ReactNode }) 
   }
   
   const tabs = [
-    { label: "KYC Verification", value: "kyc" },
     { label: "Pending", value: "pending" },
     { label: "Under Review", value: "under-review" },
     { label: "Approved", value: "approved" },
@@ -72,6 +71,7 @@ function VerificationLayoutContent({ children }: { children: React.ReactNode }) 
                 <div className="relative w-full sm:w-64">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input 
+                    key={searchParams.get('q') || 'empty'}
                     placeholder="Search documents..." 
                     className="w-full pl-9 bg-background border-muted-foreground/20 rounded-full h-10" 
                     defaultValue={searchParams.get('q') || ''}

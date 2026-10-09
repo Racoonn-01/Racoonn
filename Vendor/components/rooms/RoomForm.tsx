@@ -1,4 +1,5 @@
 "use client";
+import { compressImage } from "@/lib/image-compression";
 
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
@@ -158,7 +159,8 @@ export function RoomForm({ roomId }: RoomFormProps) {
     try {
       const uploadedUrls: string[] = [];
       for (const file of selectedImageFiles) {
-        const uploadedFile = await storage.createFile(appwriteConfig.roomImagesBucketId, ID.unique(), file);
+        const compressedFile = await compressImage(file);
+        const uploadedFile = await storage.createFile(appwriteConfig.roomImagesBucketId, ID.unique(), compressedFile);
         uploadedUrls.push(uploadedFile.$id);
       }
 

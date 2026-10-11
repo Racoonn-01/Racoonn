@@ -1,10 +1,23 @@
-import React from 'react';
+import { Metadata } from 'next';
 import Link from 'next/link';
 import { ShieldCheck, UserCircle, CreditCard, RefreshCcw, Building2, AlertTriangle, Copyright, Mail, ChevronRight } from 'lucide-react';
 
-export const metadata = {
-  title: 'Terms & Conditions | Racoonn',
-  description: 'Terms and Conditions for using the Racoonn hotel booking platform.',
+const siteUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://racoonn.com';
+
+export const metadata: Metadata = {
+  title: 'Terms & Conditions | Platform Policies & Guidelines',
+  description: 'Read the terms, booking policies, guest responsibilities, cancellation terms, and guidelines for using the Racoonn travel platform.',
+  alternates: {
+    canonical: `${siteUrl}/terms`,
+  },
+  openGraph: {
+    title: 'Terms & Conditions | Racoonn',
+    description: 'Read the terms and conditions for booking hotels and packages on Racoonn.',
+    url: `${siteUrl}/terms`,
+    siteName: 'Racoonn',
+    locale: 'en_IN',
+    type: 'website',
+  },
 };
 
 const sections = [

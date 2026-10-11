@@ -32,7 +32,11 @@ function PackagesContent() {
       if (json.success && Array.isArray(json.packages)) {
           const publishedOnly = json.packages.filter((p: any) => p.status === 'published');
           const mapped = publishedOnly.map((cmsPkg: any) => {
-            const minPrice = cmsPkg.pricing && cmsPkg.pricing[0] ? cmsPkg.pricing[0].pricePerPerson : 0;
+            const citiesList: any[] = Array.isArray(cmsPkg.departureCities) ? cmsPkg.departureCities : [];
+            const defaultCity = citiesList.find((c: any) => c.isDefault) || citiesList[0] || null;
+            const minPrice = defaultCity 
+              ? (Number(defaultCity.pricePerPerson) || 0)
+              : (cmsPkg.pricing && cmsPkg.pricing[0] ? cmsPkg.pricing[0].pricePerPerson : 0);
             return {
               id: cmsPkg.id,
               title: cmsPkg.title,
@@ -40,16 +44,18 @@ function PackagesContent() {
               duration: String(cmsPkg.duration || (cmsPkg.itinerary && cmsPkg.itinerary.length > 0 
                 ? `${cmsPkg.itinerary.length + 1} Days / ${cmsPkg.itinerary.length} Nights` 
                 : '5 Days / 4 Nights')),
-            features: String(cmsPkg.features || 'Meals | Stay | Transfer'),
-            price: `₹${minPrice.toLocaleString('en-IN')}`,
-            badge: String(cmsPkg.badge || 'Featured'),
-            badgeColor: 'text-brand-coral',
-            images: cmsPkg.images && cmsPkg.images.length > 0 
-              ? cmsPkg.images 
-              : ["https://images.unsplash.com/photo-1595815771614-ade9d652a65d?w=800&q=80"],
-            rawSearchText: JSON.stringify(cmsPkg).toLowerCase()
-          };
-        });
+              features: String(cmsPkg.features || 'Meals | Stay | Transfer'),
+              price: `₹${minPrice.toLocaleString('en-IN')}`,
+              badge: String(cmsPkg.badge || 'Featured'),
+              badgeColor: 'text-brand-coral',
+              images: cmsPkg.images && cmsPkg.images.length > 0 
+                ? cmsPkg.images 
+                : ["https://images.unsplash.com/photo-1595815771614-ade9d652a65d?w=800&q=80"],
+              departureCityName: defaultCity?.cityName,
+              departureCitiesCount: citiesList.length,
+              rawSearchText: JSON.stringify(cmsPkg).toLowerCase()
+            };
+          });
         setPackageList(mapped);
       } else {
         setPackageList([]);

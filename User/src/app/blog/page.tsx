@@ -4,11 +4,48 @@ import { Search, ChevronRight, Calendar, Clock, Map, TrendingUp, Compass, Newspa
 import Image from 'next/image';
 import { databases } from '@/lib/appwrite/config';
 import { Query } from 'appwrite';
+import { Metadata } from 'next';
 import RealtimeViews from './RealtimeViews';
 
-export const metadata = {
-  title: 'Blog | Racoonn',
-  description: 'Travel tips, destination guides, and hospitality insights from Racoonn.',
+const siteUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://racoonn.com';
+
+export const metadata: Metadata = {
+  title: 'Travel Blog | Guides, Itineraries & Destination Tips',
+  description: 'Explore expert travel guides, holiday itineraries, hotel trends, packing tips, and destination inspiration from the Racoonn travel team.',
+  keywords: [
+    'travel blog India',
+    'destination guides',
+    'hotel tips',
+    'travel itineraries',
+    'Uttarakhand travel tips',
+    'Racoonn blog',
+    'vacation planning',
+  ],
+  alternates: {
+    canonical: `${siteUrl}/blog`,
+  },
+  openGraph: {
+    title: 'Travel Blog & Guides | Racoonn',
+    description: 'Expert travel tips, destination guides, and vacation inspiration from Racoonn.',
+    url: `${siteUrl}/blog`,
+    siteName: 'Racoonn',
+    locale: 'en_IN',
+    type: 'website',
+    images: [
+      {
+        url: `${siteUrl}/icon.jpg`,
+        width: 1200,
+        height: 630,
+        alt: 'Racoonn Travel Blog',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Travel Blog & Guides | Racoonn',
+    description: 'Expert travel tips and destination guides from Racoonn.',
+    images: [`${siteUrl}/icon.jpg`],
+  },
 };
 
 const DATABASE_ID = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID || "6a3cec630035d63ea963";

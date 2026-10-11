@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { 
   Plus, Trash2, Image as ImageIcon, ArrowLeft, Pencil, 
   IndianRupee, ChevronLeft, ChevronRight, X, Check,
-  Building, Loader2, Search, Compass
+  Building, Loader2, Search, Compass, MapPin
 } from "lucide-react"
 import { storage } from "@/lib/appwrite/client";
 import { ID } from "appwrite";
@@ -21,6 +21,14 @@ type PricingSlab = {
   minPersons: number;
   maxPersons: number;
   pricePerPerson: number;
+}
+
+type DepartureCity = {
+  id: string;
+  cityName: string;
+  pricePerPerson: number;
+  isDefault: boolean;
+  pricing?: PricingSlab[];
 }
 
 type ItineraryPoint = {
@@ -68,6 +76,7 @@ type Package = {
   badge: string;
   images: string[];
   pricing: PricingSlab[];
+  departureCities?: DepartureCity[];
   hotelOptions: HotelOption[];
   activityOptions: ActivityOption[];
   metaTitle: string;
@@ -87,6 +96,38 @@ const emptyForm: Package = {
   badge: "Bestseller",
   images: [],
   pricing: [{ id: Date.now().toString(), minPersons: 1, maxPersons: 2, pricePerPerson: 18999 }],
+  departureCities: [
+    { 
+      id: "c1", 
+      cityName: "Delhi", 
+      pricePerPerson: 18999, 
+      isDefault: true,
+      pricing: [
+        { id: "c1-s1", minPersons: 1, maxPersons: 2, pricePerPerson: 18999 },
+        { id: "c1-s2", minPersons: 3, maxPersons: 4, pricePerPerson: 16999 }
+      ]
+    },
+    { 
+      id: "c2", 
+      cityName: "Mumbai", 
+      pricePerPerson: 22499, 
+      isDefault: false,
+      pricing: [
+        { id: "c2-s1", minPersons: 1, maxPersons: 2, pricePerPerson: 22499 },
+        { id: "c2-s2", minPersons: 3, maxPersons: 4, pricePerPerson: 19999 }
+      ]
+    },
+    { 
+      id: "c3", 
+      cityName: "Dehradun", 
+      pricePerPerson: 15999, 
+      isDefault: false,
+      pricing: [
+        { id: "c3-s1", minPersons: 1, maxPersons: 2, pricePerPerson: 15999 },
+        { id: "c3-s2", minPersons: 3, maxPersons: 4, pricePerPerson: 13999 }
+      ]
+    }
+  ],
   hotelOptions: [
     {
       id: "h1",
@@ -326,6 +367,7 @@ export default function PackagesPage() {
         ...pkg,
         images: pkg.images || [],
         pricing: pkg.pricing || [],
+        departureCities: (pkg.departureCities && Array.isArray(pkg.departureCities)) ? pkg.departureCities : [],
         hotelOptions: pkg.hotelOptions || [],
         activityOptions: pkg.activityOptions || [],
         metaKeywords: pkg.metaKeywords || [],
@@ -382,10 +424,19 @@ export default function PackagesPage() {
     if (formData.images.length < 4 || formData.images.length > 6) {
       return showToast(`Please upload between 4 and 6 images. Currently you have ${formData.images.length}.`, 'error')
     }
-    if (formData.pricing.length === 0) return showToast("At least one pricing slab is required", 'error')
+    if (!formData.departureCities || formData.departureCities.length === 0) {
+      return showToast("At least one departure city with pricing is required", 'error')
+    }
     
     // Sync fresh activity and hotel data before saving
     const syncedFormData = { ...formData };
+    
+    // Auto-sync default city slabs to package base pricing for backwards compatibility
+    const cities = syncedFormData.departureCities || [];
+    const defaultCity = cities.find(c => c.isDefault) || cities[0];
+    syncedFormData.pricing = (defaultCity?.pricing && defaultCity.pricing.length > 0)
+      ? defaultCity.pricing
+      : [{ id: 's1', minPersons: 1, maxPersons: 2, pricePerPerson: defaultCity?.pricePerPerson || 0 }];
     
     if (syncedFormData.activityOptions) {
       syncedFormData.activityOptions = syncedFormData.activityOptions.map(a => {
@@ -421,34 +472,112 @@ export default function PackagesPage() {
     }
   }
 
-  // Pricing Handlers
-  const addPricingSlab = () => {
+  // Departure Cities Handlers
+  const addDepartureCity = (name = "Delhi", price = 18999) => {
     setFormData(prev => {
-      const lastSlab = prev.pricing[prev.pricing.length - 1];
-      const nextMin = lastSlab ? (lastSlab.maxPersons || lastSlab.minPersons) + 1 : 1;
-      const nextMax = nextMin + 1;
+      const cities = prev.departureCities || [];
+      const isFirst = cities.length === 0;
+      const newCityId = Date.now().toString() + Math.random().toString(36).substring(2, 6);
       return {
         ...prev,
-        pricing: [...prev.pricing, { id: Date.now().toString(), minPersons: nextMin, maxPersons: nextMax, pricePerPerson: 0 }]
+        departureCities: [
+          ...cities,
+          {
+            id: newCityId,
+            cityName: name,
+            pricePerPerson: price,
+            isDefault: isFirst,
+            pricing: [
+              { id: newCityId + '-s1', minPersons: 1, maxPersons: 2, pricePerPerson: price }
+            ]
+          }
+        ]
       };
-    })
-  }
+    });
+  };
 
-  const updatePricingSlab = (id: string, field: keyof PricingSlab, value: number) => {
+  const updateDepartureCity = (id: string, field: keyof DepartureCity, value: any) => {
+    setFormData(prev => {
+      let cities = [...(prev.departureCities || [])];
+      if (field === 'isDefault' && value === true) {
+        cities = cities.map(c => ({ ...c, isDefault: c.id === id }));
+      } else {
+        cities = cities.map(c => {
+          if (c.id === id) {
+            const updated = { ...c, [field]: value };
+            if (field === 'pricePerPerson' && updated.pricing && updated.pricing.length === 1) {
+              updated.pricing[0].pricePerPerson = Number(value) || 0;
+            }
+            return updated;
+          }
+          return c;
+        });
+      }
+      return { ...prev, departureCities: cities };
+    });
+  };
+
+  const removeDepartureCity = (id: string) => {
+    setFormData(prev => {
+      const filtered = (prev.departureCities || []).filter(c => c.id !== id);
+      if (filtered.length > 0 && !filtered.some(c => c.isDefault)) {
+        filtered[0].isDefault = true;
+      }
+      return { ...prev, departureCities: filtered };
+    });
+  };
+
+  // Per-City Slab Handlers
+  const addCityPricingSlab = (cityId: string) => {
     setFormData(prev => ({
       ...prev,
-      pricing: prev.pricing.map(slab => 
-        slab.id === id ? { ...slab, [field]: value } : slab
-      )
-    }))
-  }
+      departureCities: (prev.departureCities || []).map(city => {
+        if (city.id !== cityId) return city;
+        const slabs = city.pricing || [];
+        const lastSlab = slabs[slabs.length - 1];
+        const nextMin = lastSlab ? (lastSlab.maxPersons || lastSlab.minPersons) + 1 : 1;
+        const nextMax = nextMin + 1;
+        const defaultRate = lastSlab ? Math.max(0, lastSlab.pricePerPerson - 1500) : city.pricePerPerson || 0;
+        return {
+          ...city,
+          pricing: [
+            ...slabs,
+            { id: Date.now().toString() + Math.random().toString(36).substring(2, 6), minPersons: nextMin, maxPersons: nextMax, pricePerPerson: defaultRate }
+          ]
+        };
+      })
+    }));
+  };
 
-  const removePricingSlab = (id: string) => {
+  const updateCityPricingSlab = (cityId: string, slabId: string, field: keyof PricingSlab, value: number) => {
     setFormData(prev => ({
       ...prev,
-      pricing: prev.pricing.filter(slab => slab.id !== id)
-    }))
-  }
+      departureCities: (prev.departureCities || []).map(city => {
+        if (city.id !== cityId) return city;
+        const updatedSlabs = (city.pricing || []).map(slab => 
+          slab.id === slabId ? { ...slab, [field]: value } : slab
+        );
+        return {
+          ...city,
+          pricing: updatedSlabs,
+          pricePerPerson: updatedSlabs[0] ? updatedSlabs[0].pricePerPerson : city.pricePerPerson
+        };
+      })
+    }));
+  };
+
+  const removeCityPricingSlab = (cityId: string, slabId: string) => {
+    setFormData(prev => ({
+      ...prev,
+      departureCities: (prev.departureCities || []).map(city => {
+        if (city.id !== cityId) return city;
+        return {
+          ...city,
+          pricing: (city.pricing || []).filter(slab => slab.id !== slabId)
+        };
+      })
+    }));
+  };
 
   // Image Handlers
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -770,63 +899,199 @@ export default function PackagesPage() {
             </div>
           </section>
 
-          {/* Section 3: Dynamic Pricing */}
+          {/* Section 3: Departure Cities & Traveler Slabs */}
           <section className="bg-white p-8 rounded-2xl shadow-sm border border-slate-100">
-            <div className="flex justify-between items-center mb-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
               <div>
-                <h3 className="text-lg font-bold text-[#1F2E4A]">3. Pricing / Person</h3>
-                <p className="text-sm text-muted-foreground mt-1">Define pricing slabs based on the number of travelers.</p>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-lg font-bold text-[#1F2E4A]">3. Departure Cities &amp; Traveler Slabs</h3>
+                  <span className="text-xs bg-emerald-50 text-emerald-700 font-semibold px-2.5 py-0.5 rounded-full border border-emerald-200">
+                    Live Dropdown
+                  </span>
+                </div>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Define origin departure cities and their person pricing slabs. Customers select their departure city on the website and see real-time group rates.
+                </p>
               </div>
-              <Button type="button" variant="outline" onClick={addPricingSlab} className="rounded-full gap-2 border-slate-200">
-                <Plus className="w-4 h-4" /> Add Slab
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => addDepartureCity("New City", 18999)} 
+                className="rounded-full gap-2 border-slate-200 hover:bg-slate-50 text-sm font-medium"
+              >
+                <Plus className="w-4 h-4" /> Add City
               </Button>
             </div>
 
-            <div className="space-y-4">
-              {formData.pricing.map((slab) => (
-                <div key={slab.id} className="flex flex-col sm:flex-row items-end gap-4 p-5 bg-slate-50 border border-slate-100 rounded-2xl relative group">
-                  <div className="grid gap-2 flex-1 w-full sm:w-auto">
-                    <Label className="text-xs uppercase tracking-wider text-slate-500 font-bold">Min Persons</Label>
-                    <Input 
-                      type="number" min={1}
-                      value={slab.minPersons || ''} 
-                      onChange={(e) => updatePricingSlab(slab.id, 'minPersons', parseInt(e.target.value) || 0)}
-                      className="bg-white border-slate-200 h-11"
-                    />
-                  </div>
-                  <div className="grid gap-2 flex-1 w-full sm:w-auto">
-                    <Label className="text-xs uppercase tracking-wider text-slate-500 font-bold">Max Persons</Label>
-                    <Input 
-                      type="number" min={1}
-                      value={slab.maxPersons || ''} 
-                      onChange={(e) => updatePricingSlab(slab.id, 'maxPersons', parseInt(e.target.value) || 0)}
-                      className="bg-white border-slate-200 h-11"
-                    />
-                  </div>
-                  <div className="grid gap-2 flex-1 w-full sm:w-auto">
-                    <Label className="text-xs uppercase tracking-wider text-slate-500 font-bold">Total Package Price (₹)</Label>
-                    <div className="relative">
-                      <IndianRupee className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                      <Input 
-                        type="number" min={0}
-                        value={slab.pricePerPerson || ''} 
-                        onChange={(e) => updatePricingSlab(slab.id, 'pricePerPerson', parseInt(e.target.value) || 0)}
-                        className="bg-white border-slate-200 pl-9 h-11"
-                      />
+            {/* Cities List */}
+            <div className="space-y-3">
+              {(formData.departureCities || []).length === 0 ? (
+                <div className="p-8 text-center border border-dashed border-slate-200 rounded-2xl bg-slate-50/50">
+                  <p className="text-sm text-slate-600 font-semibold">No departure cities configured yet</p>
+                  <p className="text-xs text-slate-400 mt-1 max-w-md mx-auto">
+                    Click &quot;Add City&quot; above to configure origin cities like Delhi, Mumbai, etc., along with their specific package rates.
+                  </p>
+                </div>
+              ) : (
+                (formData.departureCities || []).map((city, idx) => (
+                  <div 
+                    key={city.id} 
+                    className={`p-5 rounded-2xl border transition-all space-y-4 ${
+                      city.isDefault 
+                        ? 'bg-amber-50/30 border-amber-200 shadow-xs' 
+                        : 'bg-slate-50/70 border-slate-200/80 hover:border-slate-300'
+                    }`}
+                  >
+                    {/* Top Row: City info */}
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                      <div className="flex items-center gap-1.5 text-slate-500 font-mono text-xs shrink-0">
+                        <MapPin className="w-4 h-4 text-brand-coral" />
+                        <span className="font-bold">#{idx + 1}</span>
+                      </div>
+
+                      <div className="flex-1 w-full sm:w-auto">
+                        <Label className="text-xs text-slate-500 font-medium mb-1 block">Departure City Name</Label>
+                        <Input 
+                          type="text" 
+                          placeholder="e.g. Delhi, Mumbai, Kolkata"
+                          value={city.cityName} 
+                          onChange={(e) => updateDepartureCity(city.id, 'cityName', e.target.value)}
+                          className="bg-white border-slate-200 h-10 font-semibold text-slate-800"
+                        />
+                      </div>
+
+                      <div className="w-full sm:w-48">
+                        <Label className="text-xs text-slate-500 font-medium mb-1 block">Default Base Rate / Person (₹)</Label>
+                        <div className="relative">
+                          <IndianRupee className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                          <Input 
+                            type="number" 
+                            min={0}
+                            placeholder="Rate"
+                            value={city.pricePerPerson || ''} 
+                            onChange={(e) => updateDepartureCity(city.id, 'pricePerPerson', parseInt(e.target.value) || 0)}
+                            className="bg-white border-slate-200 pl-8 h-10 font-semibold text-slate-800"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between sm:justify-start gap-4 w-full sm:w-auto pt-1 sm:pt-5">
+                        <label className="flex items-center gap-2 cursor-pointer text-xs font-medium text-slate-600 select-none">
+                          <input 
+                            type="radio"
+                            name="defaultDepartureCity"
+                            checked={city.isDefault}
+                            onChange={() => updateDepartureCity(city.id, 'isDefault', true)}
+                            className="w-4 h-4 text-emerald-600 focus:ring-emerald-500 border-slate-300 accent-emerald-600 cursor-pointer"
+                          />
+                          <span className={city.isDefault ? 'font-semibold text-emerald-700' : 'text-slate-500'}>
+                            {city.isDefault ? 'Default City' : 'Set as Default'}
+                          </span>
+                        </label>
+
+                        <Button 
+                          type="button" 
+                          variant="ghost" 
+                          size="icon" 
+                          onClick={() => removeDepartureCity(city.id)}
+                          className="h-9 w-9 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg ml-auto sm:ml-0"
+                          title="Remove city"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* Nested: Traveler Slabs for this City */}
+                    <div className="bg-white p-4 rounded-xl border border-slate-200/70 space-y-3">
+                      <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                        <div>
+                          <p className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                            <span>Traveler Pricing Slabs for {city.cityName || 'this City'}</span>
+                            <span className="text-[11px] font-semibold text-slate-400 lowercase">({(city.pricing || []).length} slabs)</span>
+                          </p>
+                          <p className="text-[11px] text-slate-400 mt-0.5">
+                            Rates apply according to number of travelers selecting this departure city.
+                          </p>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => addCityPricingSlab(city.id)}
+                          className="h-8 rounded-full text-xs gap-1 border-slate-200 hover:bg-slate-50 font-medium"
+                        >
+                          <Plus className="w-3.5 h-3.5" /> Add Slab
+                        </Button>
+                      </div>
+
+                      {(city.pricing || []).length === 0 ? (
+                        <div className="py-2 text-center text-xs text-slate-400">
+                          Using single rate of ₹{(city.pricePerPerson || 0).toLocaleString('en-IN')}/person. Click &quot;Add Slab&quot; to configure group size discounts.
+                        </div>
+                      ) : (
+                        <div className="space-y-2 pt-1">
+                          {(city.pricing || []).map((slab, sIdx) => (
+                            <div key={slab.id} className="flex flex-col sm:flex-row items-end sm:items-center gap-3 p-3 bg-slate-50/80 rounded-lg border border-slate-100">
+                              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider w-14 shrink-0">
+                                Slab #{sIdx + 1}
+                              </span>
+
+                              <div className="grid gap-1 flex-1 w-full sm:w-auto">
+                                <Label className="text-[11px] text-slate-500 font-medium">Min Persons</Label>
+                                <Input 
+                                  type="number" 
+                                  min={1}
+                                  value={slab.minPersons || ''} 
+                                  onChange={(e) => updateCityPricingSlab(city.id, slab.id, 'minPersons', parseInt(e.target.value) || 0)}
+                                  className="bg-white border-slate-200 h-9 text-xs font-semibold"
+                                />
+                              </div>
+
+                              <div className="grid gap-1 flex-1 w-full sm:w-auto">
+                                <Label className="text-[11px] text-slate-500 font-medium">Max Persons</Label>
+                                <Input 
+                                  type="number" 
+                                  min={1}
+                                  value={slab.maxPersons || ''} 
+                                  onChange={(e) => updateCityPricingSlab(city.id, slab.id, 'maxPersons', parseInt(e.target.value) || 0)}
+                                  className="bg-white border-slate-200 h-9 text-xs font-semibold"
+                                />
+                              </div>
+
+                              <div className="grid gap-1 flex-1 w-full sm:w-auto">
+                                <Label className="text-[11px] text-slate-500 font-medium">Rate / Person (₹)</Label>
+                                <div className="relative">
+                                  <IndianRupee className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                                  <Input 
+                                    type="number" 
+                                    min={0}
+                                    value={slab.pricePerPerson || ''} 
+                                    onChange={(e) => updateCityPricingSlab(city.id, slab.id, 'pricePerPerson', parseInt(e.target.value) || 0)}
+                                    className="bg-white border-slate-200 pl-7 h-9 text-xs font-semibold text-slate-900"
+                                  />
+                                </div>
+                              </div>
+
+                              <Button 
+                                type="button" 
+                                variant="ghost" 
+                                size="icon" 
+                                onClick={() => removeCityPricingSlab(city.id, slab.id)}
+                                className="h-9 w-9 shrink-0 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg"
+                                disabled={(city.pricing || []).length === 1}
+                                title="Remove slab"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
-                  <Button 
-                    type="button" 
-                    variant="ghost" 
-                    size="icon" 
-                    onClick={() => removePricingSlab(slab.id)}
-                    className="h-11 w-11 shrink-0 text-red-500 hover:text-red-600 hover:bg-red-50"
-                    disabled={formData.pricing.length === 1}
-                  >
-                    <Trash2 className="w-5 h-5" />
-                  </Button>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </section>
 
@@ -1311,7 +1576,14 @@ export default function PackagesPage() {
                           {pkg.status}
                         </span>
                       </div>
-                      <span className="text-sm text-slate-500 font-medium">{(pkg.pricing || []).length} Pricing Slab(s)</span>
+                      {(pkg.departureCities || []).length > 0 ? (
+                        <span className="text-sm text-emerald-600 font-medium flex items-center gap-1">
+                          <MapPin className="w-3.5 h-3.5" />
+                          {(pkg.departureCities || []).length} Departure Cities (Ex-{(pkg.departureCities || []).find(c => c.isDefault)?.cityName || (pkg.departureCities || [])[0]?.cityName})
+                        </span>
+                      ) : (
+                        <span className="text-sm text-slate-500 font-medium">No departure cities configured</span>
+                      )}
                     </div>
                   </div>
                   <div className="flex gap-2">

@@ -190,7 +190,7 @@ export default function BookingsPage() {
     setExportError("");
 
     const ws = XLSX.utils.json_to_sheet(exportData.map(b => ({
-      "Booking ID": b.id,
+      "Booking Ref.": b.id,
       "Customer": b.customer,
       "Email": b.guestEmail,
       "Phone": b.guestPhone,
@@ -346,7 +346,7 @@ export default function BookingsPage() {
             <div className="relative w-full sm:w-80">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input 
-                placeholder="Search bookings by ID, Customer..." 
+                placeholder="Search bookings by Booking Ref., Customer..." 
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-9 bg-background border-muted-foreground/20 rounded-full h-10" 
@@ -392,7 +392,7 @@ export default function BookingsPage() {
           <Table>
             <TableHeader className="bg-muted/30">
               <TableRow className="hover:bg-transparent">
-                <TableHead className="font-semibold h-12">Booking ID</TableHead>
+                <TableHead className="font-semibold h-12">Booking Ref.</TableHead>
                 <TableHead className="font-semibold h-12">Customer & Property</TableHead>
                 <TableHead className="font-semibold h-12">Dates</TableHead>
                 <TableHead className="font-semibold h-12">Amount</TableHead>
@@ -432,8 +432,8 @@ export default function BookingsPage() {
                         className="group cursor-pointer border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted"
                       >
                         <TableCell className="py-4">
-                          <span className="font-bold text-foreground bg-muted px-2.5 py-1 rounded-md">{booking.id}</span>
-                          <div className="text-xs text-muted-foreground mt-1.5">Booked: {booking.bookedAt}</div>
+                          <div className="font-medium text-muted-foreground">{booking.id}</div>
+                          <div className="text-xs text-muted-foreground/70 mt-1">Booked: {booking.bookedAt}</div>
                         </TableCell>
                         <TableCell>
                           <div className="flex flex-col gap-1">

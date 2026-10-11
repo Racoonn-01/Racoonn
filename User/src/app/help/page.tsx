@@ -1,5 +1,44 @@
-import React from 'react';
+import { Metadata } from 'next';
 import { Mail, Phone, MessageSquare, ChevronDown, BookOpen } from 'lucide-react';
+
+const siteUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://racoonn.com';
+
+export const metadata: Metadata = {
+  title: 'Help Center & Frequently Asked Questions (FAQs)',
+  description: 'Find answers to common questions about booking stays, modifying reservation dates, cancellation policies, payments, and pet-friendly hotels on Racoonn.',
+  keywords: [
+    'Racoonn help center',
+    'booking FAQs',
+    'hotel cancellation policy',
+    'modify booking dates',
+    'travel support',
+  ],
+  alternates: {
+    canonical: `${siteUrl}/help`,
+  },
+  openGraph: {
+    title: 'Help Center & FAQs | Racoonn',
+    description: 'Find answers to frequently asked questions about bookings, payments, and cancellations on Racoonn.',
+    url: `${siteUrl}/help`,
+    siteName: 'Racoonn',
+    locale: 'en_IN',
+    type: 'website',
+    images: [
+      {
+        url: `${siteUrl}/icon.jpg`,
+        width: 1200,
+        height: 630,
+        alt: 'Racoonn Help Center',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Help Center & FAQs | Racoonn',
+    description: 'Find answers to frequently asked questions about bookings and payments on Racoonn.',
+    images: [`${siteUrl}/icon.jpg`],
+  },
+};
 
 export default function HelpPage() {
   const faqs = [
@@ -7,7 +46,6 @@ export default function HelpPage() {
       question: "How do I book a stay?",
       answer: "You can book a stay by searching for your desired destination, selecting your dates, and choosing a hotel from the results. Follow the checkout process to confirm your reservation."
     },
-
     {
       question: "How can I change my booking dates?",
       answer: "To change your booking dates, please go to 'My Account' > 'My Bookings', select the booking you wish to modify, and choose the 'Modify Dates' option. Please note that changes are subject to availability and may incur additional charges."
@@ -22,8 +60,25 @@ export default function HelpPage() {
     }
   ];
 
+  const faqSchema = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: faqs.map(f => ({
+      "@type": "Question",
+      name: f.question,
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: f.answer,
+      },
+    })),
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+      />
       {/* Hero Section */}
       <section className="bg-brand-navy pt-32 pb-24 relative overflow-hidden">
         <div className="absolute top-0 inset-x-0 h-px bg-linear-to-r from-transparent via-brand-coral/30 to-transparent"></div>

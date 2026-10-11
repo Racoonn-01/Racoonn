@@ -167,6 +167,10 @@ export function CheckoutFlow() {
     } else if (appliedCoupon.type === 'percentage') {
       dynamicDiscount = Math.floor(roomTotal * (appliedCoupon.value / 100));
     }
+    if (appliedCoupon.maxDiscountCap && dynamicDiscount > appliedCoupon.maxDiscountCap) {
+      dynamicDiscount = appliedCoupon.maxDiscountCap;
+    }
+    dynamicDiscount = Math.min(dynamicDiscount, roomTotal);
   }
 
   const effectivePerNightPrice = roomTotal / (nights * rooms);

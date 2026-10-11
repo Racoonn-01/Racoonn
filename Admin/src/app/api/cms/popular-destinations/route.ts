@@ -30,7 +30,10 @@ export async function GET() {
       city: doc.city || "",
       description: doc.description || "",
       price: doc.price || "",
-      image: doc.image || ""
+      image: doc.image || "",
+      metaTitle: doc.metaTitle || "",
+      metaDescription: doc.metaDescription || "",
+      metaKeywords: doc.metaKeywords || "",
     }));
 
     return NextResponse.json({ success: true, destinations });
@@ -76,12 +79,15 @@ export async function POST(request: Request) {
     }
 
     for (const dest of destinations) {
-      const data = {
+      const data: Record<string, any> = {
         city: dest.city || '',
         description: dest.description || '',
         price: dest.price || '',
-        image: dest.image || ''
+        image: dest.image || '',
       };
+      if (typeof dest.metaTitle === 'string') data.metaTitle = dest.metaTitle;
+      if (typeof dest.metaDescription === 'string') data.metaDescription = dest.metaDescription;
+      if (typeof dest.metaKeywords === 'string') data.metaKeywords = dest.metaKeywords;
 
       try {
         await appwriteServer.databases.updateDocument(DATABASE_ID, COLLECTION_ID, dest.id, data);

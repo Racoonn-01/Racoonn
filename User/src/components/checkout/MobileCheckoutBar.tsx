@@ -51,6 +51,10 @@ export function MobileCheckoutBar({ total: serverTotal }: { total: number }) {
       } else if (appliedCoupon.type === 'percentage') {
         dynamicDiscount = Math.floor(roomTotal * (appliedCoupon.value / 100));
       }
+      if (appliedCoupon.maxDiscountCap && dynamicDiscount > appliedCoupon.maxDiscountCap) {
+        dynamicDiscount = appliedCoupon.maxDiscountCap;
+      }
+      dynamicDiscount = Math.min(dynamicDiscount, roomTotal);
     }
     const taxes = Math.floor(roomTotal * 0.1);
     finalTotal = roomTotal + taxes + dynamicAddonsTotal - dynamicDiscount;

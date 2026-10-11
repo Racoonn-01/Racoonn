@@ -43,6 +43,7 @@ export async function GET() {
       hotelOptions: safeParse(doc.hotelOptions, []),
       activityOptions: safeParse(doc.activityOptions, []),
       itinerary: safeParse(doc.itinerary, []),
+      departureCities: safeParse(doc.departureCities, []),
       metaTitle: doc.metaTitle || "",
       metaDescription: doc.metaDescription || "",
       metaKeywords: doc.metaKeywords || [],

@@ -20,6 +20,8 @@ export interface TourCardPackage {
   badge: string;
   badgeColor: string;
   images: string[];
+  departureCityName?: string;
+  departureCitiesCount?: number;
 }
 
 export default function TourCard({ pkg }: { pkg: TourCardPackage }) {
@@ -38,7 +40,7 @@ export default function TourCard({ pkg }: { pkg: TourCardPackage }) {
         >
           {pkg.images.map((img, i) => (
             <SwiperSlide key={i}>
-              <Image
+              <Image 
                 src={optimizeAppwriteImage(img)}
                 alt={`${pkg.title} ${i + 1}`}
                 fill
@@ -71,6 +73,11 @@ export default function TourCard({ pkg }: { pkg: TourCardPackage }) {
         <div className="flex items-center gap-1 text-gray-500 mb-4">
           <MapPin size={14} className="text-brand-coral" />
           <span className="text-xs font-medium">{pkg.location}</span>
+          {Boolean(pkg.departureCitiesCount && pkg.departureCitiesCount > 0) && (
+            <span className="text-[11px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full ml-auto">
+              {pkg.departureCitiesCount} Departure{(pkg.departureCitiesCount || 0) > 1 ? 's' : ''}
+            </span>
+          )}
         </div>
 
         <div className="flex flex-col gap-2 mb-4">
@@ -90,7 +97,9 @@ export default function TourCard({ pkg }: { pkg: TourCardPackage }) {
         {/* Bottom Row */}
         <div className="flex items-end justify-between mt-auto">
           <div>
-            <p className="text-[10px] text-gray-500 font-medium mb-0.5">Starting from</p>
+            <p className="text-[10px] text-gray-500 font-medium mb-0.5">
+              {pkg.departureCityName ? `Ex-${pkg.departureCityName}` : 'Starting from'}
+            </p>
             <p className="font-bold text-brand-coral text-lg">{pkg.price}</p>
           </div>
           <Link 

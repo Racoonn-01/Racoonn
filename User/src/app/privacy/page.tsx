@@ -1,10 +1,23 @@
-import React from 'react';
+import { Metadata } from 'next';
 import Link from 'next/link';
 import { ShieldCheck, Database, Eye, Share2, Lock, Cookie, Server, Mail, ChevronRight } from 'lucide-react';
 
-export const metadata = {
-  title: 'Privacy Policy | Racoonn',
-  description: 'Privacy Policy and data handling practices for the Racoonn hotel booking platform.',
+const siteUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://racoonn.com';
+
+export const metadata: Metadata = {
+  title: 'Privacy Policy | Data Protection & Security',
+  description: 'Learn how Racoonn collects, uses, encrypts, and protects your personal data, payment information, and booking history.',
+  alternates: {
+    canonical: `${siteUrl}/privacy`,
+  },
+  openGraph: {
+    title: 'Privacy Policy | Racoonn',
+    description: 'Learn how Racoonn protects your personal information and privacy.',
+    url: `${siteUrl}/privacy`,
+    siteName: 'Racoonn',
+    locale: 'en_IN',
+    type: 'website',
+  },
 };
 
 const sections = [

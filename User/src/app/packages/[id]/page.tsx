@@ -83,6 +83,7 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
   const [quoteForm, setQuoteForm] = useState({ name: '', phone: '', email: '', message: '', destination: '', departureCity: '' });
   const [isQuoteSubmitting, setIsQuoteSubmitting] = useState(false);
   const [selectedHotel, setSelectedHotel] = useState<number>(0);
+  const [selectedCityId, setSelectedCityId] = useState<string>('');
   const [selectedActivities, setSelectedActivities] = useState<number[]>([]);
   const [adultsCount, setAdultsCount] = useState<number>(1);
   const [isHotelModalOpen, setIsHotelModalOpen] = useState(false);
@@ -139,8 +140,17 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
               basePriceNum: minPrice,
               badge: cmsFound.badge || (cmsFound.status === 'published' ? 'Featured' : 'Draft'),
               badgeColor: 'text-brand-coral',
+              departureCities: cmsFound.departureCities || [],
               images: cmsFound.images && cmsFound.images.length > 0 ? cmsFound.images : ['https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?q=80&w=2000&auto=format&fit=crop']
             });
+
+            if (cmsFound.departureCities && Array.isArray(cmsFound.departureCities) && cmsFound.departureCities.length > 0) {
+              const defaultCity = cmsFound.departureCities.find((c: any) => c.isDefault) || cmsFound.departureCities[0];
+              if (defaultCity) {
+                setSelectedCityId(defaultCity.id);
+                setQuoteForm(prev => ({ ...prev, departureCity: defaultCity.cityName }));
+              }
+            }
 
             if (cmsFound.itinerary && Array.isArray(cmsFound.itinerary) && cmsFound.itinerary.length > 0) {
               setItinerary(cmsFound.itinerary);
@@ -252,9 +262,15 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
   const nightsMatch = String(pkg.duration || '').match(/(\d+)\s*Nights?/i);
   const nightsCount = nightsMatch ? parseInt(nightsMatch[1], 10) : 1;
 
-  // Find the absolute maximum allowed travelers across all slabs (default 999 if no limit defined)
-  const maxTravelersLimit = pkg.pricing && Array.isArray(pkg.pricing) && pkg.pricing.length > 0
-    ? Math.max(...pkg.pricing.map((slab: any) => Math.max(slab.maxPersons || 1, slab.minPersons || 1)))
+  // Find the absolute maximum allowed travelers across slabs
+  const currentDepartureCities: any[] = (pkg.departureCities && Array.isArray(pkg.departureCities)) ? pkg.departureCities : [];
+  const activeCityObj = currentDepartureCities.find((c: any) => c.id === selectedCityId) || currentDepartureCities.find((c: any) => c.isDefault) || currentDepartureCities[0];
+  const activeSlabsForLimit = (activeCityObj && Array.isArray(activeCityObj.pricing) && activeCityObj.pricing.length > 0)
+    ? activeCityObj.pricing
+    : (pkg.pricing && Array.isArray(pkg.pricing) ? pkg.pricing : []);
+
+  const maxTravelersLimit = activeSlabsForLimit.length > 0
+    ? Math.max(...activeSlabsForLimit.map((slab: any) => Math.max(slab.maxPersons || 1, slab.minPersons || 1)))
     : 999;
 
   const currentReviewsCount = reviewsData.length;
@@ -276,31 +292,78 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
   };
 
   
-  // Calculate base price from pricing slabs based on adults count, fallback to default price
-  const defaultBasePriceNum = parseInt(pkg.price.replace(/[^\d]/g, ''), 10) || 0;
-  let groupBasePrice = defaultBasePriceNum * adultsCount;
+  // Find selected departure city if configured
+  const departureCitiesList: any[] = (pkg.departureCities && Array.isArray(pkg.departureCities)) ? pkg.departureCities : [];
+  const selectedCity = departureCitiesList.find((c: any) => c.id === selectedCityId) || 
+                       departureCitiesList.find((c: any) => c.isDefault) || 
+                       departureCitiesList[0] || null;
+  const defaultCity = departureCitiesList.find((c: any) => c.isDefault) || departureCitiesList[0] || null;
 
-  if (pkg.pricing && Array.isArray(pkg.pricing) && pkg.pricing.length > 0) {
-    const sortedSlabs = [...pkg.pricing].sort((a: any, b: any) => {
+  // Check if selected departure city has its own custom pricing slabs!
+  const citySlabs: any[] = (selectedCity && Array.isArray(selectedCity.pricing) && selectedCity.pricing.length > 0)
+    ? selectedCity.pricing
+    : [];
+
+  let groupBasePrice = 0;
+
+  // 1. If city has its own custom slabs, use them directly
+  if (citySlabs.length > 0) {
+    const sortedCitySlabs = [...citySlabs].sort((a: any, b: any) => {
       const aMin = Math.min(a.minPersons || 1, a.maxPersons || 999);
       const bMin = Math.min(b.minPersons || 1, b.maxPersons || 999);
       return aMin - bMin;
     });
 
-    let applicableSlab = sortedSlabs.find((slab: any) => {
+    let applicableSlab = sortedCitySlabs.find((slab: any) => {
       const min = Math.min(slab.minPersons || 1, slab.maxPersons || 999);
       const max = Math.max(slab.minPersons || 1, slab.maxPersons || 999);
       return adultsCount >= min && adultsCount <= max;
     });
 
-    // If there's a gap between slabs or adultsCount exceeds the maximum of all slabs, fallback gracefully
     if (!applicableSlab) {
-      const lowerSlabs = sortedSlabs.filter((slab: any) => Math.min(slab.minPersons || 1, slab.maxPersons || 999) <= adultsCount);
-      applicableSlab = lowerSlabs.length > 0 ? lowerSlabs[lowerSlabs.length - 1] : sortedSlabs[0];
+      const lowerSlabs = sortedCitySlabs.filter((slab: any) => Math.min(slab.minPersons || 1, slab.maxPersons || 999) <= adultsCount);
+      applicableSlab = lowerSlabs.length > 0 ? lowerSlabs[lowerSlabs.length - 1] : sortedCitySlabs[0];
     }
 
     if (applicableSlab) {
-      groupBasePrice = (applicableSlab.pricePerPerson || 0) * adultsCount;
+      groupBasePrice = (Number(applicableSlab.pricePerPerson) || 0) * adultsCount;
+    } else {
+      groupBasePrice = (Number(selectedCity?.pricePerPerson) || 0) * adultsCount;
+    }
+  } else {
+    // 2. Fallback to package base slabs with city delta or flat price
+    let cityRateDelta = 0;
+    if (selectedCity && defaultCity && departureCitiesList.length > 0) {
+      cityRateDelta = (Number(selectedCity.pricePerPerson) || 0) - (Number(defaultCity.pricePerPerson) || 0);
+    }
+
+    const defaultBasePriceNum = selectedCity 
+      ? (Number(selectedCity.pricePerPerson) || 0) 
+      : (parseInt(pkg.price.replace(/[^\d]/g, ''), 10) || 0);
+    groupBasePrice = defaultBasePriceNum * adultsCount;
+
+    if (pkg.pricing && Array.isArray(pkg.pricing) && pkg.pricing.length > 0) {
+      const sortedSlabs = [...pkg.pricing].sort((a: any, b: any) => {
+        const aMin = Math.min(a.minPersons || 1, a.maxPersons || 999);
+        const bMin = Math.min(b.minPersons || 1, b.maxPersons || 999);
+        return aMin - bMin;
+      });
+
+      let applicableSlab = sortedSlabs.find((slab: any) => {
+        const min = Math.min(slab.minPersons || 1, slab.maxPersons || 999);
+        const max = Math.max(slab.minPersons || 1, slab.maxPersons || 999);
+        return adultsCount >= min && adultsCount <= max;
+      });
+
+      if (!applicableSlab) {
+        const lowerSlabs = sortedSlabs.filter((slab: any) => Math.min(slab.minPersons || 1, slab.maxPersons || 999) <= adultsCount);
+        applicableSlab = lowerSlabs.length > 0 ? lowerSlabs[lowerSlabs.length - 1] : sortedSlabs[0];
+      }
+
+      if (applicableSlab) {
+        const slabBase = (applicableSlab.pricePerPerson || 0) + cityRateDelta;
+        groupBasePrice = Math.max(0, slabBase) * adultsCount;
+      }
     }
   }
 
@@ -363,14 +426,22 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
     const finalAdults = adultsCount > 0 ? adultsCount : 1;
     const finalPackagePrice = adultsCount > 0 ? totalPriceNum : effectivePricePerPerson;
 
+    const departureCityName = selectedCity ? selectedCity.cityName : '';
+    const packageRoomTitle = departureCityName 
+      ? `Package: ${pkg.title} (Ex-${departureCityName})` 
+      : `Package: ${pkg.title}`;
+    const packageLocationStr = departureCityName 
+      ? `${pkg.location} • Ex-${departureCityName}` 
+      : pkg.location;
+
     // Store room / package details in checkout store
     setRoomDetails(
       `pkg-${pkgIdStr}`,
-      `Package: ${pkg.title}`,
+      packageRoomTitle,
       finalPackagePrice,
       pkg.title,
       pkgImage,
-      pkg.location
+      packageLocationStr
     );
 
     // Build URL search params for checkout page
@@ -379,12 +450,15 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
     }
     const query = new URLSearchParams();
     query.set('hotelId', `pkg-${pkgIdStr}`);
-    query.set('roomName', `Package: ${pkg.title}`);
+    query.set('roomName', packageRoomTitle);
     query.set('price', finalPackagePrice.toString());
     query.set('hotelName', pkg.title);
-    query.set('hotelLocation', pkg.location);
+    query.set('hotelLocation', packageLocationStr);
     query.set('guests', finalAdults.toString());
     query.set('adults', finalAdults.toString());
+    if (departureCityName) {
+      query.set('departureCity', departureCityName);
+    }
     
     if (startDate) {
       query.set('checkIn', startDate.toISOString().split('T')[0]);
@@ -549,9 +623,9 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
           {/* Booking Bar (Horizontal on Desktop, Stacked on Mobile) */}
           <div className="bg-white border border-gray-200 rounded-2xl shadow-[0_4px_12px_rgba(0,0,0,0.08)] p-4 sm:p-5 mb-10 flex flex-col md:flex-row items-center gap-4 md:gap-6 justify-between">
             
-            <div className="flex flex-col md:flex-row md:items-center gap-4 md:gap-8 w-full">
+            <div className="flex flex-col md:flex-row md:items-center gap-4 md:gap-6 w-full">
               {/* Price */}
-              <div className="flex flex-col shrink-0 pl-1">
+              <div className="flex flex-col shrink-0 pl-1 min-w-[130px]">
                 <div className="flex items-baseline gap-1 overflow-hidden h-8">
                   <AnimatePresence mode="wait">
                     <motion.span 
@@ -598,7 +672,39 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
 
               {/* Booking Inputs */}
               <div className="flex w-full flex-row border border-gray-300 rounded-xl overflow-hidden divide-x divide-gray-300">
-                <div className="flex w-1/2">
+                {departureCitiesList.length > 0 && (
+                  <div className="relative flex-1 min-w-0 p-2.5 sm:p-3 hover:bg-gray-50 transition-colors flex flex-col justify-center group cursor-pointer">
+                    <div className="text-[10px] font-bold uppercase tracking-wider text-gray-900 group-hover:text-brand-coral transition-colors flex items-center justify-between">
+                      <span className="truncate">Departure City</span>
+                    </div>
+                    <div className="relative mt-0.5 flex items-center justify-between gap-1">
+                      <span className="text-[12px] sm:text-[13px] font-semibold text-gray-800 truncate">
+                        {selectedCity?.cityName || departureCitiesList[0]?.cityName || 'Select city'}
+                      </span>
+                      <ChevronDown size={14} className="text-gray-400 group-hover:text-gray-600 transition-colors shrink-0" />
+                    </div>
+                    <select
+                      value={selectedCityId || selectedCity?.id || ''}
+                      onChange={(e) => {
+                        setSelectedCityId(e.target.value);
+                        const found = departureCitiesList.find((c: any) => c.id === e.target.value);
+                        if (found) {
+                          setQuoteForm(prev => ({ ...prev, departureCity: found.cityName }));
+                        }
+                      }}
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                      title="Select Departure City"
+                    >
+                      {departureCitiesList.map((city: any) => (
+                        <option key={city.id} value={city.id}>
+                          {city.cityName}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                <div className="flex flex-1 min-w-0">
                   {/* Start Date Popover */}
                   <Popover open={isStartOpen} onOpenChange={setIsStartOpen}>
                     <PopoverTrigger className="w-full p-2.5 sm:p-3 cursor-pointer hover:bg-gray-50 transition-colors text-left outline-none group">
@@ -626,16 +732,16 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
                     </PopoverContent>
                   </Popover>
                 </div>
-                <div className="w-1/2 p-2.5 sm:p-3 transition-colors flex flex-col justify-center">
+                <div className="flex-1 min-w-0 p-2.5 sm:p-3 transition-colors flex flex-col justify-center">
                   <div className="text-[10px] font-bold uppercase tracking-wider text-gray-900 mb-0.5">Travelers</div>
-                  <div className="flex items-center gap-1 sm:gap-3">
+                  <div className="flex items-center gap-1 sm:gap-2">
                     <button 
                       onClick={() => setAdultsCount(Math.max(1, adultsCount - 1))} 
                       className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 hover:bg-gray-300 hover:text-gray-900 transition-colors shrink-0"
                     >
                       -
                     </button>
-                    <span className="text-[12px] sm:text-[14px] text-gray-900 font-medium min-w-10 sm:min-w-12.5 text-center truncate">{adultsCount} {adultsCount === 1 ? 'adult' : 'adults'}</span>
+                    <span className="text-[12px] sm:text-[14px] text-gray-900 font-medium min-w-9 text-center truncate">{adultsCount} {adultsCount === 1 ? 'adult' : 'adults'}</span>
                     <button 
                       onClick={() => setAdultsCount(Math.min(maxTravelersLimit, adultsCount + 1))} 
                       disabled={adultsCount >= maxTravelersLimit}

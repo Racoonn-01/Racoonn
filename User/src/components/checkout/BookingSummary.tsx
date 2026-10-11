@@ -22,7 +22,8 @@ export function BookingSummary({
   discount = 0,
   roomImage,
   baseRoomAmount = 0,
-  extraGuestAmount = 0
+  extraGuestAmount = 0,
+  departureCity
 }: {
   roomName?: string;
   pricePerNight?: number;
@@ -41,6 +42,7 @@ export function BookingSummary({
   roomImage?: string;
   baseRoomAmount?: number;
   extraGuestAmount?: number;
+  departureCity?: string;
 }) {
   const isPackage = roomName.startsWith('Package:') || roomName.toLowerCase().includes('package');
   const roomPrice = isPackage ? pricePerNight : baseRoomAmount + extraGuestAmount;
@@ -56,7 +58,7 @@ export function BookingSummary({
   const handleApplyCoupon = async () => {
     if (!couponInput.trim() || isApplying) return;
     setIsApplying(true);
-    const res = await applyCoupon(couponInput.trim());
+    const res = await applyCoupon(couponInput.trim(), roomPrice);
     if (!res.success) {
       setErrorMsg(res.message);
     } else {
@@ -118,6 +120,12 @@ export function BookingSummary({
           <span className="text-gray-500 flex items-center gap-2"><Users className="w-4 h-4 text-brand-coral" /> Guests</span>
           <span className="font-medium text-brand-navy">{guests}</span>
         </div>
+        {isPackage && departureCity && (
+          <div className="flex justify-between items-center">
+            <span className="text-gray-500 flex items-center gap-2"><MapPin className="w-4 h-4 text-brand-coral" /> Origin City</span>
+            <span className="font-semibold text-brand-navy bg-brand-coral/10 text-brand-coral px-2.5 py-0.5 rounded-full text-xs">Ex-{departureCity}</span>
+          </div>
+        )}
         {!isPackage && (
           <div className="flex justify-between items-center">
             <span className="text-gray-500 flex items-center gap-2"><BedDouble className="w-4 h-4 text-brand-coral" /> Room</span>

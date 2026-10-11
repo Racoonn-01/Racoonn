@@ -38,6 +38,8 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   const resolvedParams = await params;
   const slug = resolvedParams?.id || '1';
   const id = extractIdFromSlug(slug);
+  const siteUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://racoonn.com';
+  const canonicalUrl = `${siteUrl}/property/${slug}`;
 
   try {
     const dbId = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID;
@@ -46,14 +48,56 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
       const property = await databases.getDocument(dbId, colId, id);
       if (property) {
         const title = property.propertyName || property.title || 'Racoonn Property';
-        const description = property.description ? property.description.substring(0, 160) : `Book your stay at ${title} with Racoonn.`;
+        const locationStr = [property.city, property.state].filter(Boolean).join(', ') || 'India';
+        const description = property.description 
+          ? property.description.substring(0, 160) 
+          : `Book your stay at ${title} in ${locationStr} with Racoonn. Verified rooms, luxury amenities, best rate guarantee.`;
         const category = property.category || 'Hotel';
-        const keywords = `${title}, ${property.city || ''}, ${property.state || ''}, ${category}, Racoonn bookings, vacation rental, accommodation, stay in ${property.city || 'India'}`;
+        const keywords = `${title}, hotels in ${property.city || ''}, ${property.state || ''} stays, ${category}, Racoonn bookings, vacation rental, accommodation, luxury stay ${property.city || 'India'}`;
         
+        const propertyBucketId = process.env.NEXT_PUBLIC_APPWRITE_PROPERTY_IMAGES_BUCKET_ID || '6a3e398000280b2b3d20';
+        const project = process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID || '6a3bce6900381359c3ce';
+        let ogImage = `${siteUrl}/icon.jpg`;
+        if (property.photos && property.photos.length > 0) {
+          const firstPhoto = property.photos[0];
+          ogImage = firstPhoto.startsWith('http') 
+            ? firstPhoto 
+            : `https://sgp.cloud.appwrite.io/v1/storage/buckets/${propertyBucketId}/files/${firstPhoto}/preview?output=webp&project=${project}`;
+        }
+
         return {
-          title: `${title} | Racoonn`,
+          title: `${title} - ${category} in ${locationStr}`,
           description,
           keywords,
+          alternates: {
+            canonical: canonicalUrl,
+          },
+          openGraph: {
+            title: `${title} | Racoonn`,
+            description,
+            url: canonicalUrl,
+            siteName: 'Racoonn',
+            locale: 'en_IN',
+            type: 'website',
+            images: [
+              {
+                url: ogImage,
+                width: 1200,
+                height: 630,
+                alt: title,
+              },
+            ],
+          },
+          twitter: {
+            card: 'summary_large_image',
+            title: `${title} | Racoonn`,
+            description,
+            images: [ogImage],
+          },
+          robots: {
+            index: true,
+            follow: true,
+          },
         };
       }
     }
@@ -61,7 +105,10 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   
   return {
     title: 'Property Details | Racoonn',
-    description: 'View property details and book your stay with Racoonn.'
+    description: 'View property details and book your stay with Racoonn.',
+    alternates: {
+      canonical: canonicalUrl,
+    },
   };
 }
 
@@ -197,8 +244,45 @@ export default async function PropertyDetails({ params }: { params: Promise<{ id
     console.error("Appwrite fetch failed or property not found, falling back to mock:", error);
   }
 
+  const schemaData = {
+    "@context": "https://schema.org",
+    "@type": realProperty?.category === "Resort" ? "Resort" : "Hotel",
+    name: title,
+    description: description ? description.substring(0, 300) : undefined,
+    image: images && images.length > 0 ? images : undefined,
+    url: `${process.env.NEXT_PUBLIC_APP_URL || 'https://racoonn.com'}/property/${slug}`,
+    address: {
+      "@type": "PostalAddress",
+      streetAddress: location,
+      addressLocality: realProperty?.city || "",
+      addressRegion: realProperty?.state || "",
+      addressCountry: "IN",
+    },
+    ...(realProperty?.price ? { priceRange: `₹${realProperty.price}` } : {}),
+    ...(reviewCount > 0 ? {
+      aggregateRating: {
+        "@type": "AggregateRating",
+        ratingValue: averageRating,
+        reviewCount: reviewCount,
+        bestRating: "5",
+        worstRating: "1",
+      }
+    } : {}),
+    ...(amenitiesList.length > 0 ? {
+      amenityFeature: amenitiesList.map(a => ({
+        "@type": "LocationFeatureSpecification",
+        name: a,
+        value: true,
+      }))
+    } : {})
+  };
+
   return (
     <div className="min-h-screen bg-white text-[#222222]">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(schemaData) }}
+      />
 
       {/* Container */}
       <div className="max-w-280 mx-auto px-6 pt-8 pb-24">

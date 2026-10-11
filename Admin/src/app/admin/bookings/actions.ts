@@ -49,7 +49,7 @@ export async function getAllBookings() {
       const customerName = guest ? `${guest.firstName} ${guest.lastName}`.trim() : (booking.guestName || 'Guest User');
       
       return {
-        id: `BK-${booking.$id.substring(0, 6).toUpperCase()}`,
+        id: booking.$id.substring(0, 8).toUpperCase(),
         realId: booking.$id,
         customer: customerName,
         guestEmail: guest?.email || booking.guestEmail || 'N/A',

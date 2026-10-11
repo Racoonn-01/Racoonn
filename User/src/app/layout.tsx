@@ -18,9 +18,74 @@ const poppins = Poppins({
   weight: ["400", "500", "600", "700"],
 });
 
+const siteUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://racoonn.com';
+
 export const metadata: Metadata = {
-  title: "Racoonn - Hotel Booking",
-  description: "Find Your Perfect Stay, Effortlessly with Racoonn.",
+  metadataBase: new URL(siteUrl),
+  title: {
+    default: "Racoonn | Book Luxury Hotels, Resorts & Tour Packages",
+    template: "%s | Racoonn",
+  },
+  description: "Find Your Perfect Stay & Holiday Tour Packages Effortlessly with Racoonn. Verified hotels, luxury resorts, cozy homestays, and curated itineraries.",
+  keywords: [
+    "hotel booking",
+    "luxury resorts",
+    "holiday packages",
+    "tour packages India",
+    "homestays in Uttarakhand",
+    "Racoonn stays",
+    "vacation rentals",
+    "travel packages",
+    "weekend getaways",
+  ],
+  authors: [{ name: "Racoonn Hospitality" }],
+  creator: "Racoonn",
+  publisher: "Racoonn",
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
+  },
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    type: "website",
+    locale: "en_IN",
+    url: siteUrl,
+    siteName: "Racoonn",
+    title: "Racoonn | Book Luxury Hotels, Resorts & Tour Packages",
+    description: "Discover boutique stays, luxury resorts, and curated holiday packages across top destinations in India.",
+    images: [
+      {
+        url: "/icon.jpg",
+        width: 1200,
+        height: 630,
+        alt: "Racoonn - Hotel Booking & Holiday Packages",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Racoonn | Book Luxury Hotels, Resorts & Tour Packages",
+    description: "Discover boutique stays, luxury resorts, and curated holiday packages with Racoonn.",
+    images: ["/icon.jpg"],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
+  icons: {
+    icon: "/icon.jpg",
+    apple: "/icon.jpg",
+  },
 };
 
 export default function RootLayout({

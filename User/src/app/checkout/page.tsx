@@ -13,6 +13,10 @@ import { calculateRoomGst } from "@/lib/gst";
 export const metadata = {
   title: "Checkout | Racoonn Hotel Booking",
   description: "Complete your hotel booking securely on Racoonn.",
+  robots: {
+    index: false,
+    follow: false,
+  },
 };
 
 export default async function CheckoutPage({ searchParams }: { searchParams: Promise<{ [key: string]: string | string[] | undefined }> }) {

@@ -29,7 +29,10 @@ export async function GET() {
       city: doc.city || "",
       description: doc.description || "",
       price: doc.price || "",
-      image: doc.image || ""
+      image: doc.image || "",
+      metaTitle: doc.metaTitle || "",
+      metaDescription: doc.metaDescription || "",
+      metaKeywords: doc.metaKeywords || "",
     }));
 
     return NextResponse.json({ success: true, destinations });

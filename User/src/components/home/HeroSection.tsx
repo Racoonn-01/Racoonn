@@ -217,48 +217,52 @@ export default function HeroSection() {
           <div className="bg-white rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.15)] relative">
 
             {/* Tabs & Chatbot Container */}
-            <div className="flex items-center justify-between px-6 pt-5 pb-0 overflow-x-auto hide-scrollbar">
-              
-              {/* Left Side: Tabs */}
-              <div className="flex items-center gap-1 transition-all duration-300">
-                {!isChatMode && tabs.map((tab) => {
-                  const Icon = tab.icon;
-                  const isActive = activeTab === tab.id;
-                  return (
-                    <button
-                      key={tab.id}
-                      onClick={() => setActiveTab(tab.id)}
-                      className={`flex items-center gap-2 px-4 py-2.5 rounded-t-xl whitespace-nowrap text-sm font-medium transition-all relative ${isActive
-                        ? 'text-brand-coral'
-                        : 'text-brand-charcoal/60 hover:text-brand-navy'
-                        }`}
-                    >
-                      <Icon size={16} />
-                      {tab.label}
-                      {isActive && (
-                        <motion.div 
-                          layoutId="activeTabIndicator"
-                          className="absolute bottom-0 left-2 right-2 h-0.5 bg-brand-coral rounded-full" 
-                        />
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
+            {!isChatMode && (
+              <>
+                <div className="flex items-center justify-between px-2 sm:px-6 pt-5 pb-0 overflow-x-auto hide-scrollbar">
+                  
+                  {/* Left Side: Tabs */}
+                  <div className="flex items-center justify-between sm:justify-start w-full sm:w-auto gap-1 transition-all duration-300">
+                    {tabs.map((tab) => {
+                      const Icon = tab.icon;
+                      const isActive = activeTab === tab.id;
+                      return (
+                        <button
+                          key={tab.id}
+                          onClick={() => setActiveTab(tab.id)}
+                          className={`flex-1 sm:flex-none flex items-center justify-center gap-1.5 sm:gap-2 px-2 sm:px-4 py-2.5 rounded-t-xl whitespace-nowrap text-[13px] sm:text-sm font-medium transition-all relative ${isActive
+                            ? 'text-brand-coral'
+                            : 'text-brand-charcoal/60 hover:text-brand-navy'
+                            }`}
+                        >
+                          <Icon size={16} />
+                          {tab.label}
+                          {isActive && (
+                            <motion.div 
+                              layoutId="activeTabIndicator"
+                              className="absolute bottom-0 left-2 right-2 h-0.5 bg-brand-coral rounded-full" 
+                            />
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
 
-              {/* Right Side: Chatbot Button */}
-              <button 
-                onClick={() => setIsChatMode(!isChatMode)}
-                className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-brand-coral/10 hover:bg-brand-coral/20 border border-brand-coral/20 transition-all hover:scale-105 active:scale-95 text-brand-navy font-bold text-sm mb-1.5 whitespace-nowrap shadow-sm"
-              >
-                <div className="w-6 h-6 relative rounded-full overflow-hidden shrink-0 bg-white">
-                  <Image priority  src={optimizeAppwriteImage(chatbotLogo)} alt="AI Assistant" fill className="object-contain p-0.5" />
+                  {/* Right Side: Chatbot Button */}
+                  <button 
+                    onClick={() => setIsChatMode(true)}
+                    className="hidden sm:flex items-center gap-2 px-4 py-1.5 rounded-full bg-brand-coral/10 hover:bg-brand-coral/20 border border-brand-coral/20 transition-all hover:scale-105 active:scale-95 text-brand-navy font-bold text-sm mb-1.5 whitespace-nowrap shadow-sm"
+                  >
+                    <div className="w-6 h-6 relative rounded-full overflow-hidden shrink-0 bg-white">
+                      <Image priority  src={optimizeAppwriteImage(chatbotLogo)} alt="AI Assistant" fill className="object-contain p-0.5" />
+                    </div>
+                    Ask AI
+                  </button>
                 </div>
-                {isChatMode ? 'Classic Search' : 'Ask AI'}
-              </button>
-            </div>
 
-            <div className="h-px bg-gray-100" />
+                <div className="h-px bg-gray-100" />
+              </>
+            )}
 
             {/* Search Fields / Chat Mode */}
             <div className="p-6 space-y-4 min-h-55 relative">
@@ -330,13 +334,20 @@ export default function HeroSection() {
                           {isRecording ? <MicOff size={20} /> : <Mic size={20} />}
                         </button>
                       </div>
-                      <div className="flex justify-end">
+                      <div className="flex flex-row items-stretch sm:items-center justify-center gap-3 sm:gap-4">
+                        <button 
+                          onClick={() => setIsChatMode(false)}
+                          className="flex items-center justify-center gap-2 px-4 sm:px-5 py-3.5 rounded-full bg-brand-coral/10 hover:bg-brand-coral/20 border border-brand-coral/20 transition-all text-brand-navy font-bold text-[14px] shadow-sm flex-1 sm:flex-none whitespace-nowrap"
+                        >
+                          Classic Search
+                        </button>
+
                         <button 
                           onClick={() => handleAiSearch()}
-                          className="bg-linear-to-r from-brand-coral to-[#e84f57] hover:shadow-[0_8px_20px_rgba(232,106,112,0.3)] text-white pl-7 pr-5 py-3.5 rounded-full font-bold flex items-center justify-center gap-3 transition-all hover:-translate-y-0.5 text-[15px] sm:w-55"
+                          className="bg-linear-to-r from-brand-coral to-[#e84f57] hover:shadow-[0_8px_20px_rgba(232,106,112,0.3)] text-white pl-4 pr-3 sm:pl-7 sm:pr-5 py-3.5 rounded-full font-bold flex items-center justify-center gap-2 sm:gap-3 transition-all hover:-translate-y-0.5 text-[14px] sm:text-[15px] flex-1 sm:flex-none sm:w-55"
                         >
-                          Ask Racoonn AI
-                          <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
+                          Ask AI
+                          <div className="w-7 h-7 sm:w-8 sm:h-8 bg-white/20 rounded-full flex items-center justify-center shrink-0">
                             <ArrowRight size={16} />
                           </div>
                         </button>
@@ -606,7 +617,18 @@ export default function HeroSection() {
               </div>
 
               {/* Bottom Actions */}
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-4 pt-2">
+              <div className="flex flex-row items-stretch sm:items-center justify-center gap-3 sm:gap-4 pt-2">
+                
+                {/* Mobile Ask AI Button */}
+                <button 
+                  onClick={() => setIsChatMode(!isChatMode)}
+                  className="sm:hidden flex items-center justify-center gap-2 px-2 py-3.5 rounded-full bg-brand-coral/10 hover:bg-brand-coral/20 border border-brand-coral/20 transition-all text-brand-navy font-bold text-[14px] shadow-sm flex-1 whitespace-nowrap"
+                >
+                  <div className="w-5 h-5 relative rounded-full overflow-hidden shrink-0 bg-white">
+                    <Image priority src={optimizeAppwriteImage(chatbotLogo)} alt="AI Assistant" fill className="object-contain p-0.5" />
+                  </div>
+                  {isChatMode ? 'Classic' : 'Ask AI'}
+                </button>
 
                 <Link 
                   href={
@@ -614,10 +636,10 @@ export default function HeroSection() {
                     activeTab === 'activities' ? `/activities?search=${encodeURIComponent(destination)}` : 
                     `/search?location=${encodeURIComponent(destination)}&checkIn=${checkIn?.toISOString() || ''}&checkOut=${checkOut?.toISOString() || ''}&adults=${adults}&children=${children}&rooms=${rooms}`
                   } 
-                  className="bg-brand-coral hover:bg-brand-coral/90 text-white pl-7 pr-5 py-3.5 rounded-full font-bold flex items-center justify-center gap-3 transition-all hover:-translate-y-0.5 text-[15px] w-full sm:w-auto min-w-50"
+                  className="bg-brand-coral hover:bg-brand-coral/90 text-white pl-4 pr-3 sm:pl-7 sm:pr-5 py-3.5 rounded-full font-bold flex items-center justify-center gap-2 sm:gap-3 transition-all hover:-translate-y-0.5 text-[14px] sm:text-[15px] flex-1 sm:flex-none sm:w-auto sm:min-w-50"
                 >
                   Search
-                  <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
+                  <div className="w-7 h-7 sm:w-8 sm:h-8 bg-white/20 rounded-full flex items-center justify-center shrink-0">
                     <ArrowRight size={16} />
                   </div>
                 </Link>

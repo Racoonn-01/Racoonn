@@ -71,20 +71,20 @@ export async function getPayoutsData() {
       }
     });
 
-    // 2. Identify Bookings > 2m old that are not invoiced
+    // 2. Identify Bookings > 72 hours old that are not invoiced
     const nowMs = Date.now();
-    const TWO_MINUTES_MS = 2 * 60 * 1000;
+    const SEVENTY_TWO_HOURS_MS = 72 * 60 * 60 * 1000;
     let newlyGeneratedInvoices = false;
 
     // Group eligible bookings by vendorId
     const pendingByVendor: Record<string, any[]> = {};
 
     bookingsReq.documents.forEach((b: any) => {
-      const is2mOld = (nowMs - new Date(b.$createdAt).getTime()) >= TWO_MINUTES_MS;
+      const is72hOld = (nowMs - new Date(b.$createdAt).getTime()) >= SEVENTY_TWO_HOURS_MS;
       const isCompleted = b.status === "completed" || b.status === "Completed" || b.status === "confirmed" || b.status === "Confirmed" || b.status === "Pending Withdrawal" || b.status === "Paid_Vendor" || b.status === "Paid";
       const resolvedVendorId = b.vendorId || propertyVendorMap[b.hotelId] || "unknown_vendor";
 
-      if (is2mOld && isCompleted && !invoicedBookingIds.has(b.$id)) {
+      if (is72hOld && isCompleted && !invoicedBookingIds.has(b.$id)) {
         if (!pendingByVendor[resolvedVendorId]) pendingByVendor[resolvedVendorId] = [];
         pendingByVendor[resolvedVendorId].push(b);
       }

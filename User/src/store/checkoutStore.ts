@@ -13,6 +13,7 @@ interface GuestDetails {
   email: string;
   phone: string;
   country: string;
+  state: string;
   specialRequests: string;
 }
 
@@ -99,7 +100,8 @@ export const useCheckoutStore = create<CheckoutState>((set, get) => ({
     lastName: '',
     email: '',
     phone: '',
-    country: '',
+    country: 'India',
+    state: '',
     specialRequests: ''
   },
   additionalTravelers: [],

@@ -3,7 +3,7 @@ import { optimizeAppwriteImage } from "@/lib/optimizeImage";
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Menu, X, User, Home, Building, Package, Tag, Compass, HelpCircle, Heart } from 'lucide-react';
+import { Menu, X, User, Home, Building, Package, Tag, Compass, HelpCircle, Heart, SlidersHorizontal, Search } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
@@ -23,8 +23,10 @@ const navLinks = [
 export default function Navbar() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
   const [authModalView, setAuthModalView] = useState<'signin' | 'signup'>('signin');
   const pathname = usePathname();
+  const isSearchPage = pathname?.startsWith('/search');
   
   const { isAuthenticated, checkAuth, profile, logout } = useAuthStore();
 
@@ -52,17 +54,19 @@ export default function Navbar() {
       <header className="sticky top-0 z-50 w-full pt-4 px-4 bg-transparent pointer-events-none">
         <div className="container mx-auto px-6 lg:px-8 h-19 flex items-center justify-between bg-white lg:bg-white/70 lg:backdrop-blur-xl border border-white shadow-[0_8px_30px_rgb(0,0,0,0.06)] rounded-full pointer-events-auto transition-all duration-300">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-            <Image src={optimizeAppwriteImage(logoImg)} alt="Racoonn Logo" width={180} height={45} className="h-9 w-auto" />
-          </Link>
+          <div className="flex-1 flex items-center">
+            <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+              <Image src={optimizeAppwriteImage(logoImg)} alt="Racoonn Logo" width={180} height={45} className="h-9 w-auto" />
+            </Link>
+          </div>
 
           {/* Desktop Navigation / SearchBar */}
-          <div className="hidden lg:flex items-center justify-center flex-1 px-8">
+          <div className="hidden lg:flex items-center justify-center shrink-0 px-4">
             <SearchBar />
           </div>
 
           {/* CTA Button */}
-          <div className="hidden lg:flex items-center gap-5">
+          <div className="hidden lg:flex items-center justify-end flex-1 gap-5">
             <Link
               href="https://partner.racoonn.com"
               className="text-[15px] font-bold text-brand-navy hover:text-brand-coral transition-colors"
@@ -97,15 +101,45 @@ export default function Navbar() {
             </button>
           </div>
 
-          {/* Mobile Menu Toggle */}
-          <button
-            className="lg:hidden p-2 text-brand-navy hover:bg-brand-coral/10 hover:text-brand-coral rounded-full transition-colors pointer-events-auto"
-            onClick={() => setIsSidebarOpen(true)}
-          >
-            <Menu size={24} />
-          </button>
+          {/* Mobile Menu Toggle / Search Button */}
+          {isSearchPage ? (
+            <button
+              className="lg:hidden p-2 text-brand-navy hover:bg-brand-coral/10 hover:text-brand-coral rounded-full transition-colors pointer-events-auto relative"
+              onClick={() => setIsMobileSearchOpen(true)}
+            >
+              <Search size={22} />
+            </button>
+          ) : (
+            <button
+              className="lg:hidden p-2 text-brand-navy hover:bg-brand-coral/10 hover:text-brand-coral rounded-full transition-colors pointer-events-auto"
+              onClick={() => setIsSidebarOpen(true)}
+            >
+              <Menu size={24} />
+            </button>
+          )}
         </div>
       </header>
+
+      {/* Mobile Search Modal Overlay */}
+      <AnimatePresence>
+        {isMobileSearchOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 z-9999 bg-black/40 backdrop-blur-sm lg:hidden flex flex-col pt-4 px-4 pb-20 overflow-y-auto"
+            onClick={(e) => { if (e.target === e.currentTarget) setIsMobileSearchOpen(false); }}
+          >
+            <div className="flex justify-end mb-4">
+              <button onClick={() => setIsMobileSearchOpen(false)} className="bg-white rounded-full p-2 text-brand-navy shadow-md">
+                <X size={24} />
+              </button>
+            </div>
+            <SearchBar onComplete={() => setIsMobileSearchOpen(false)} />
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Hardware Accelerated Sidebar Overlay */}
       <AnimatePresence>

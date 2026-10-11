@@ -23,6 +23,7 @@ export interface TransactionItem {
   nights?: number;
   adults?: number;
   email?: string;
+  invoiceNumber?: string;
   rawBookingId?: string;
   hotelLocation?: string;
   gstRate?: number;
@@ -38,7 +39,7 @@ export async function getRevenueData() {
   try {
     const db = appwriteServer.databases;
 
-    const [paymentsReq, bookingsReq, guestsReq, propsReq, profilesReq] = await Promise.all([
+    const [paymentsReq, bookingsReq, guestsReq, propsReq, profilesReq, invoicesReq] = await Promise.all([
       db.listDocuments(
         DATABASE_ID,
         'booking_payments',
@@ -63,7 +64,12 @@ export async function getRevenueData() {
         DATABASE_ID,
         'vendor_profiles',
         [Query.limit(500)]
-      ).catch(() => ({ documents: [] }))
+      ).catch(() => ({ documents: [] })),
+      db.getDocument(
+        DATABASE_ID,
+        'properties',
+        'cms_invoices_v1'
+      ).catch(() => ({ details: "[]" }))
     ]);
 
     let totalRevenue = 0;
@@ -75,11 +81,19 @@ export async function getRevenueData() {
     const now = new Date();
     const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
 
+    let allInvoices: any[] = [];
+    try {
+      allInvoices = (invoicesReq as any).details ? JSON.parse((invoicesReq as any).details) : [];
+    } catch(e) {}
+
+    let dummyInvoiceCounter = 1;
+
     bookingsReq.documents.forEach((booking: any) => {
       const payment = paymentsReq.documents.find((p: any) => p.bookingId === booking.$id);
       const guest = guestsReq.documents.find((g: any) => g.bookingId === booking.$id);
       const property = propsReq.documents.find((p: any) => p.$id === booking.hotelId);
       const vendorProfile = property ? profilesReq.documents.find((vp: any) => vp.userId === property.vendorId || vp.vendorId === property.vendorId) : null;
+      const invoice = allInvoices.find((inv: any) => inv.bookingIds && inv.bookingIds.includes(booking.$id));
       
       const isCancelled = booking.status?.toLowerCase() === 'cancelled' || booking.status?.toLowerCase() === 'canceled';
 
@@ -108,8 +122,17 @@ export async function getRevenueData() {
         vendorDiscount = discountNum;
       }
 
-      const vendorGross = baseRoomAmount + addonsNum - vendorDiscount;
+      let vendorGross = baseRoomAmount + addonsNum - vendorDiscount;
+      
+      // Safety check: if baseRoomAmount was saved as totalPaidNum (common issue in DB)
+      if (baseRoomAmount >= totalPaidNum && totalPaidNum > 0) {
+        vendorGross = Math.round((totalPaidNum / (1 + deducedRate / 100)) * 100) / 100;
+      }
+      
       const feePercent = vendorProfile?.allow24PercentGst ? 24 : 18;
+      
+      // Enforce formula: User Pays Base - Commission = Taxable Amount
+      // So commission must strictly be calculated on the Base Amount before GST
       const commission = Math.round(vendorGross * (feePercent / 100) * 100) / 100;
 
       const date = new Date(booking.$createdAt);
@@ -145,6 +168,7 @@ export async function getRevenueData() {
         nights: booking.nights || booking.totalNights || booking.numberOfDays || 1,
         adults: booking.adults || booking.guests || 1,
         email: guest?.email || booking.email || '',
+        invoiceNumber: invoice?.invoiceNumber || `INV-${dummyInvoiceCounter.toString().padStart(6, '0')}`,
         rawBookingId: booking.$id,
         hotelLocation: property?.city || booking.hotelLocation || '',
         gstRate: deducedRate,
@@ -155,6 +179,8 @@ export async function getRevenueData() {
         createdAt: payment?.$createdAt || booking.$createdAt,
         paymentMethod: payment?.paymentMethod || 'Online Payment'
       });
+      
+      if (!invoice?.invoiceNumber) dummyInvoiceCounter++;
     });
 
     transactions.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());

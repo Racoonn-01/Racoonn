@@ -223,6 +223,30 @@ export function GuestDetailsForm() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  const formatPhoneNumber = (value: string, dialCode: string) => {
+    const digits = value.replace(/\D/g, '');
+    
+    if (dialCode === '+1') {
+      if (digits.length <= 3) return digits;
+      if (digits.length <= 6) return `(${digits.slice(0,3)}) ${digits.slice(3)}`;
+      return `(${digits.slice(0,3)}) ${digits.slice(3,6)}-${digits.slice(6,10)}`;
+    } else if (dialCode === '+91') {
+      if (digits.length <= 5) return digits;
+      return `${digits.slice(0,5)} ${digits.slice(5,10)}`;
+    } else if (dialCode === '+44') {
+      if (digits.length <= 4) return digits;
+      return `${digits.slice(0,4)} ${digits.slice(4,10)}`;
+    } else if (dialCode === '+61') {
+      if (digits.length <= 3) return digits;
+      if (digits.length <= 6) return `${digits.slice(0,3)} ${digits.slice(3)}`;
+      return `${digits.slice(0,3)} ${digits.slice(3,6)} ${digits.slice(6,10)}`;
+    }
+    
+    if (digits.length <= 3) return digits;
+    if (digits.length <= 6) return `${digits.slice(0,3)} ${digits.slice(3)}`;
+    return `${digits.slice(0,3)} ${digits.slice(3,6)} ${digits.slice(6,14)}`;
+  };
+
   const filteredCountries = COUNTRIES.filter(c => c.name.toLowerCase().includes(searchQuery.toLowerCase()));
   const filteredPhoneCountries = COUNTRIES.filter(c => c.name.toLowerCase().includes(phoneSearchQuery.toLowerCase()) || c.dialCode.includes(phoneSearchQuery));
   const selectedCountry = COUNTRIES.find(c => c.name === guestDetails.country);
@@ -324,10 +348,28 @@ export function GuestDetailsForm() {
                   </div>
                 </div>
               )}
-              <input suppressHydrationWarning value={guestDetails.phone} onChange={e => updateGuestDetails({ phone: e.target.value })} type="tel" placeholder="(555) 000-0000" className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-brand-coral focus:border-brand-coral outline-none transition-all" />
+              <input 
+                suppressHydrationWarning 
+                value={guestDetails.phone} 
+                onChange={e => updateGuestDetails({ phone: formatPhoneNumber(e.target.value, phoneCountry?.dialCode || '+91') })} 
+                type="tel" 
+                placeholder={phoneCountry?.dialCode === '+1' ? "(555) 000-0000" : phoneCountry?.dialCode === '+91' ? "98765 43210" : "555 000 0000"}
+                className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-brand-coral focus:border-brand-coral outline-none transition-all" 
+              />
             </div>
           </div>
-          <div className="space-y-2 md:col-span-2 relative" ref={dropdownRef}>
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-gray-700">State / Province</label>
+            <input 
+              suppressHydrationWarning 
+              value={guestDetails.state || ''} 
+              onChange={e => updateGuestDetails({ state: e.target.value })} 
+              type="text" 
+              placeholder="e.g. Maharashtra" 
+              className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-brand-coral focus:border-brand-coral outline-none transition-all" 
+            />
+          </div>
+          <div className="space-y-2 relative" ref={dropdownRef}>
             <label className="text-sm font-medium text-gray-700 flex items-center gap-1"><MapPin className="w-4 h-4 text-gray-400" /> Country/Region</label>
             <button 
               type="button" 

@@ -1,17 +1,36 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Calendar as CalendarIcon, RefreshCw, CalendarDays } from 'lucide-react';
 import { format, addDays } from 'date-fns';
+import { useSearchParams } from 'next/navigation';
 import GuestSelector from './GuestSelector';
 import { usePropertyFilterStore } from '@/store/propertyFilterStore';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 
 export default function PropertyFilterBar() {
-  const { checkIn, checkOut, setCheckIn, setCheckOut, reset } = usePropertyFilterStore();
+  const { checkIn, checkOut, setCheckIn, setCheckOut, reset, setAdults, setChildren, setInfants, setPets } = usePropertyFilterStore();
   const [isCheckInOpen, setIsCheckInOpen] = useState(false);
   const [isCheckOutOpen, setIsCheckOutOpen] = useState(false);
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    if (!searchParams) return;
+    const checkInParam = searchParams.get('checkIn');
+    const checkOutParam = searchParams.get('checkOut');
+    const adultsParam = searchParams.get('adults');
+    const childrenParam = searchParams.get('children');
+    const infantsParam = searchParams.get('infants');
+    const petsParam = searchParams.get('pets');
+
+    if (checkInParam) setCheckIn(checkInParam.split('T')[0]);
+    if (checkOutParam) setCheckOut(checkOutParam.split('T')[0]);
+    if (adultsParam) setAdults(parseInt(adultsParam, 10) || 0);
+    if (childrenParam) setChildren(parseInt(childrenParam, 10) || 0);
+    if (infantsParam) setInfants(parseInt(infantsParam, 10) || 0);
+    if (petsParam) setPets(parseInt(petsParam, 10) || 0);
+  }, [searchParams, setCheckIn, setCheckOut, setAdults, setChildren, setInfants, setPets]);
 
   // Parse YYYY-MM-DD safely into Date object without timezone shift
   const parseDateString = (dateStr: string): Date | undefined => {

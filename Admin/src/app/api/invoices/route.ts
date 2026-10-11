@@ -36,14 +36,20 @@ export async function POST(request: Request) {
   try {
     const newInvoice = await request.json();
     let currentInvoices: any[] = [];
-
-    if (fs.existsSync(SHARED_INVOICE_FILE)) {
-      try {
-        const fileData = fs.readFileSync(SHARED_INVOICE_FILE, "utf-8");
-        currentInvoices = JSON.parse(fileData);
-      } catch (e) {
-        currentInvoices = [];
+    try {
+      const doc = await appwriteServer.databases.getDocument(
+        DATABASE_ID,
+        COLLECTION_ID,
+        DOC_ID
+      );
+      if (doc.details) {
+        currentInvoices = JSON.parse(doc.details);
       }
+    } catch (dbErr: any) {
+      if (dbErr.code !== 404) {
+        console.error("Failed to read from Appwrite", dbErr);
+      }
+      // If 404, we start with empty array
     }
 
     // Add or update invoice
@@ -77,8 +83,15 @@ export async function POST(request: Request) {
             COLLECTION_ID,
             DOC_ID,
             {
-              propertyName: "CMS Invoices Storage",
-              title: "CMS Invoices Storage",
+              vendorId: 'admin',
+              propertyName: 'CMS Invoices Storage',
+              propertyType: 'hotel',
+              city: 'Delhi',
+              state: 'Delhi',
+              location: 'Admin Dashboard',
+              status: 'active',
+              title: 'CMS Invoices Storage',
+              price: 0,
               details: jsonStr,
             }
           );
@@ -100,13 +113,24 @@ export async function PATCH(request: Request) {
     const { id, status, adminRemarks } = await request.json();
     let currentInvoices: any[] = [];
 
-    if (fs.existsSync(SHARED_INVOICE_FILE)) {
-      const fileData = fs.readFileSync(SHARED_INVOICE_FILE, "utf-8");
-      currentInvoices = JSON.parse(fileData);
+    try {
+      const doc = await appwriteServer.databases.getDocument(
+        DATABASE_ID,
+        COLLECTION_ID,
+        DOC_ID
+      );
+      if (doc.details) {
+        currentInvoices = JSON.parse(doc.details);
+      }
+    } catch (dbErr: any) {
+      if (dbErr.code !== 404) {
+        console.error("Failed to read from Appwrite", dbErr);
+      }
+      // If 404, we start with empty array
     }
 
     currentInvoices = currentInvoices.map((inv) =>
-      inv.id === id
+      inv.id === id || inv.invoiceNumber === id
         ? {
             ...inv,
             status,
@@ -117,7 +141,11 @@ export async function PATCH(request: Request) {
     );
 
     const jsonStr = JSON.stringify(currentInvoices, null, 2);
-    fs.writeFileSync(SHARED_INVOICE_FILE, jsonStr, "utf-8");
+    try {
+      fs.writeFileSync(SHARED_INVOICE_FILE, jsonStr, "utf-8");
+    } catch (fileErr) {
+      console.warn("Invoice file write warning:", fileErr);
+    }
 
     try {
       await appwriteServer.databases.updateDocument(

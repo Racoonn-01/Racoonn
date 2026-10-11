@@ -5,6 +5,7 @@ import { optimizeAppwriteImage } from "@/lib/optimizeImage";
 import Image from 'next/image';
 import { Heart, Star } from 'lucide-react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
 
 export interface Property {
@@ -33,6 +34,7 @@ export interface Property {
   bathrooms?: number;
   propertyType?: string;
   amenities?: string[];
+  hasRooms?: boolean;
 }
 
 export default function PropertyCard({ 
@@ -58,9 +60,13 @@ export default function PropertyCard({
     if (onSelect) onSelect(property.id);
   };
 
+  const searchParams = useSearchParams();
+  const queryString = searchParams?.toString();
+  const href = `/property/${generatePropertySlug(property.id, property.name || property.title || property.propertyName || "")}${queryString ? `?${queryString}` : ''}`;
+
   return (
     <Link 
-      href={`/property/${generatePropertySlug(property.id, property.name || property.title || property.propertyName || "")}`} 
+      href={href} 
       id={`property-card-${property.id}`}
       onClick={handleClick}
       className={`group flex flex-col gap-3 p-2 rounded-2xl transition-all duration-300 ${

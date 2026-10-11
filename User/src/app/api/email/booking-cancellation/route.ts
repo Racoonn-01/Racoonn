@@ -66,14 +66,19 @@ export async function POST(req: Request) {
       </div>
     `;
 
-    const info = await transporter.sendMail({
-      from: `"Racoonn Bookings" <${process.env.SMTP_USER}>`,
-      to: email,
-      subject: `Booking Cancelled: ${hotelName}`,
-      html: htmlContent,
-    });
-
-    console.log("Cancellation email sent: %s", info.messageId);
+    let messageId = 'unknown';
+    try {
+      const info = await transporter.sendMail({
+        from: `"Racoonn Bookings" <${process.env.SMTP_USER}>`,
+        to: email,
+        subject: `Booking Cancelled: ${hotelName}`,
+        html: htmlContent,
+      });
+      messageId = info.messageId;
+      console.log("Cancellation email sent: %s", messageId);
+    } catch (emailErr) {
+      console.error("Failed to send user cancellation email:", emailErr);
+    }
 
     // 3. Notify Vendor if hotelId is provided
     if (hotelId) {
@@ -113,13 +118,17 @@ export async function POST(req: Request) {
               </div>
             `;
             
-            await transporter.sendMail({
-              from: '"Racoonn Bookings" <' + process.env.SMTP_USER + '>',
-              to: vendor.email,
-              subject: `Booking Cancelled: ${hotelName}`,
-              html: vendorHtml
-            });
-            console.log("Vendor cancellation notification sent to:", vendor.email);
+            try {
+              await transporter.sendMail({
+                from: '"Racoonn Bookings" <' + process.env.SMTP_USER + '>',
+                to: vendor.email,
+                subject: `Booking Cancelled: ${hotelName}`,
+                html: vendorHtml
+              });
+              console.log("Vendor cancellation notification sent to:", vendor.email);
+            } catch (vendorEmailErr) {
+              console.error("Failed to send vendor cancellation notification:", vendorEmailErr);
+            }
           }
         }
       } catch (vendorErr) {

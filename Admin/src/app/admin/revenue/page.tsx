@@ -249,19 +249,29 @@ export default function RevenuePage() {
                       return;
                     }
 
-                    const excelData = txsForDate.map(tx => ({
-                      "Invoice No.": "INV-12345678",
-                      "Booking Ref.": tx.rawBookingId ? tx.rawBookingId.substring(0, 8).toUpperCase() : tx.source,
-                      "Customer Name": tx.customerName || "N/A",
-                      "Room Price": tx.roomPrice,
-                      "Addons": tx.addons || 0,
-                      "Discounts": tx.discounts || 0,
-                      "Taxes (GST)": tx.taxes,
-                      "Commission": tx.commission,
-                      "Total Amount": tx.amount,
-                      "Status": tx.status,
-                      "Date": tx.date
-                    }));
+                    const excelData = txsForDate.map(tx => {
+                      const valueAfterCommission = Number(((tx.amount || 0) - (tx.commission || 0)).toFixed(2));
+                      const nights = 1; // approximation for excel
+                      const pricePerNight = valueAfterCommission / nights;
+                      const gstRate = pricePerNight <= 7500 ? 0.05 : 0.18;
+                      const taxableBeforeGst = Number((valueAfterCommission / (1 + gstRate)).toFixed(2));
+                      const derivedGst = Number((valueAfterCommission - taxableBeforeGst).toFixed(2));
+                      return {
+                        "Invoice No.": tx.invoiceNumber || "N/A",
+                        "Booking Ref.": tx.rawBookingId ? tx.rawBookingId.substring(0, 8).toUpperCase() : tx.source,
+                        "Customer Name": tx.customerName || "N/A",
+                        "Room Price": tx.roomPrice,
+                        "Addons": tx.addons || 0,
+                        "Discounts": tx.discounts || 0,
+                        "Taxable value before gst": taxableBeforeGst,
+                        "Taxes (GST)": derivedGst,
+                        "Total Amount": tx.amount,
+                        "Commission": tx.commission,
+                        "Invoice value after commission": valueAfterCommission,
+                        "Status": tx.status,
+                        "Date": tx.date
+                      };
+                    });
 
                     const worksheet = XLSX.utils.json_to_sheet(excelData);
                     const workbook = XLSX.utils.book_new();
@@ -284,47 +294,7 @@ export default function RevenuePage() {
         </div>
       </div>
 
-      {/* KPI Cards */}
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card className="rounded-2xl border border-border shadow-xs">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-            <BadgeDollarSign className="h-4 w-4 text-emerald-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-medium">{formatCurrencyCompact(displayData.totalRevenue)}</div>
-            <p className="text-xs text-emerald-500 flex items-center gap-1 mt-1 font-medium">
-              <TrendingUp className="h-3 w-3" /> Realtime totals
-            </p>
-          </CardContent>
-        </Card>
 
-        <Card className="rounded-2xl border border-border shadow-xs">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Platform Commissions</CardTitle>
-            <TrendingUp className="h-4 w-4 text-purple-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-medium">{formatCurrencyCompact(displayData.platformCommissions)}</div>
-            <p className="text-xs text-emerald-500 flex items-center gap-1 mt-1 font-medium">
-              <TrendingUp className="h-3 w-3" /> 18% Platform Fee
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="rounded-2xl border border-border shadow-xs">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Refund Losses</CardTitle>
-            <TrendingDown className="h-4 w-4 text-red-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-medium">{formatCurrencyCompact(displayData.refundLosses)}</div>
-            <p className="text-xs text-red-500 flex items-center gap-1 mt-1 font-medium">
-              <TrendingDown className="h-3 w-3" /> From cancelled bookings
-            </p>
-          </CardContent>
-        </Card>
-      </div>
 
       {/* Income Streams Table */}
       <Card className="rounded-2xl border border-border shadow-xs overflow-hidden">
@@ -352,6 +322,7 @@ export default function RevenuePage() {
                   <TableHead className="font-semibold h-12">Discounts</TableHead>
                   <TableHead className="font-semibold h-12">GST</TableHead>
                   <TableHead className="font-semibold h-12">Total Amount</TableHead>
+                  <TableHead className="font-semibold h-12">Racoonn Payment</TableHead>
                   <TableHead className="font-semibold h-12">Status</TableHead>
                   <TableHead className="font-semibold h-12">Date</TableHead>
                   <TableHead className="text-right font-semibold h-12">Receipt</TableHead>
@@ -363,7 +334,7 @@ export default function RevenuePage() {
                     key={tx.id}
                     className="hover:bg-muted/30 transition-colors group"
                   >
-                    <TableCell className="font-medium font-mono text-xs text-foreground">INV-12345678</TableCell>
+                    <TableCell className="font-medium font-mono text-xs text-foreground">{tx.invoiceNumber || 'N/A'}</TableCell>
                     <TableCell className="font-medium text-muted-foreground">{tx.rawBookingId ? tx.rawBookingId.substring(0, 8).toUpperCase() : tx.source}</TableCell>
                     <TableCell className="font-medium">{formatCurrencyExact(tx.roomPrice)}</TableCell>
                     <TableCell className="font-medium text-muted-foreground">
@@ -375,6 +346,9 @@ export default function RevenuePage() {
                     <TableCell className="font-medium">{formatCurrencyExact(tx.taxes)}</TableCell>
                     <TableCell className={`font-medium ${tx.type === 'Refund Fee' ? 'text-red-500' : 'text-emerald-600'}`}>
                       {tx.type === 'Refund Fee' ? '-' : '+'}{formatCurrencyExact(tx.amount)}
+                    </TableCell>
+                    <TableCell className="font-semibold text-purple-600">
+                      {formatCurrencyExact(tx.commission || 0)}
                     </TableCell>
                     <TableCell>
                       <Badge 

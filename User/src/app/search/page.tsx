@@ -3,10 +3,11 @@
 "use client";
 
 import React, { useState, Suspense, useEffect, useRef } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import PropertyCard, { Property } from '@/components/search/PropertyCard';
-import MapMockup from '@/components/search/MapMockup';
-import { SlidersHorizontal, ChevronDown } from 'lucide-react';
+import dynamic from 'next/dynamic';
+const MapMockup = dynamic(() => import('@/components/search/MapMockup'), { ssr: false });
+import { SlidersHorizontal, ChevronDown, ArrowLeft, Search } from 'lucide-react';
 import FilterModal, { FilterState } from '@/components/search/FilterModal';
 import PricePopover from '@/components/search/PricePopover';
 import { isActiveProperty, parseLocationGeo } from '@/lib/utils';
@@ -130,6 +131,7 @@ function checkPropertyAmenity(property: Property, filterKey: string, searchStrin
 
 function SearchContent() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const location = searchParams.get('location') || searchParams.get('destination') || 'anywhere';
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
@@ -311,9 +313,18 @@ function SearchContent() {
             bathrooms: numBathrooms,
             propertyType: doc.title || doc.description || '',
             amenities: amenitiesArr,
+            hasRooms: !!roomsMap[doc.$id] || (roomsPhotoMap[doc.$id] && roomsPhotoMap[doc.$id].length > 0)
           };
         });
-        setProperties(mappedProperties);
+        
+        // Sort properties so that those with available rooms appear first
+        const sortedProperties = mappedProperties.sort((a, b) => {
+          if (a.hasRooms && !b.hasRooms) return -1;
+          if (!a.hasRooms && b.hasRooms) return 1;
+          return 0;
+        });
+
+        setProperties(sortedProperties);
       }
       setLoading(false);
     }
@@ -332,7 +343,30 @@ function SearchContent() {
     const aiQuery = searchParams.get('ai');
     const parsedAiQuery = React.useMemo(() => {
       if (!aiQuery || aiQuery.trim() === '') return null;
-      const q = aiQuery.toLowerCase();
+      let q = aiQuery.toLowerCase();
+      
+      // Expand abbreviations and correct common typos
+      q = q.replace(/\bac\b/g, 'air conditioning')
+           .replace(/\bwi-?fi\b/g, 'internet')
+           .replace(/\btv\b/g, 'television')
+           .replace(/\bswiming\b/g, 'pool')
+           .replace(/\bswimmimg\b/g, 'pool');
+
+      // Hinglish dictionary for dynamic matching
+      const hinglishMap: Record<string, string> = {
+        'sasta': 'budget', 'saste': 'budget', 'mahnga': 'luxury', 'mahanga': 'luxury',
+        'pani': 'pool', 'tarak': 'pool', 'bacche': 'kids', 'bache': 'kids',
+        'parivar': 'family', 'shadi': 'event', 'shaadi': 'event', 'kutta': 'pet',
+        'billi': 'pet', 'janwar': 'pet', 'khana': 'restaurant', 'bhojan': 'restaurant',
+        'badiya': 'best', 'achha': 'good', 'mast': 'awesome', 'jabardast': 'awesome',
+        'saundarya': 'beautiful', 'kamar': 'room', 'kamra': 'room', 'sardi': 'heater',
+        'garmi': 'air conditioning', 'thanda': 'air conditioning', 'hawa': 'air conditioning'
+      };
+
+      Object.entries(hinglishMap).forEach(([hinglish, english]) => {
+        const regex = new RegExp(`\\b${hinglish}\\b`, 'gi');
+        q = q.replace(regex, english);
+      });
       
       // Parse Budget
       let maxBudget = Infinity;
@@ -348,7 +382,7 @@ function SearchContent() {
         minGuests = parseInt(guestMatch[1], 10);
       } else if (q.includes('couple') || q.includes('2 people') || q.includes('two people') || q.includes('two guests')) {
         minGuests = 2;
-      } else if (q.includes('family of 4') || q.includes('4 people') || q.includes('four people')) {
+      } else if (q.includes('family of 4') || q.includes('4 people') || q.includes('four people') || q.includes('kids')) {
         minGuests = 4;
       }
       
@@ -384,7 +418,7 @@ function SearchContent() {
       // 1. Budget check
       if (property.price > parsedAiQuery.maxBudget) return false;
       
-      // 2. Guests check (assuming 1 bed = 2 guests roughly)
+      // 2. Guests check
       const estimatedCapacity = Math.max((property.beds || 1) * 2, (property.bedrooms || 1) * 2);
       if (estimatedCapacity < parsedAiQuery.minGuests) return false;
       
@@ -395,7 +429,7 @@ function SearchContent() {
         if (!hasType) return false;
       }
       
-      // 4. Keyword check
+      // 4. Smart Keyword check
       const amenitiesStr = property.amenities ? (Array.isArray(property.amenities) ? property.amenities.join(' ') : property.amenities) : '';
       const aiSearchString = `${property.title} ${property.subtitle} ${property.details} ${property.location} ${property.city} ${property.state} ${amenitiesStr}`.toLowerCase();
       
@@ -403,8 +437,12 @@ function SearchContent() {
         ? parsedAiQuery.keywords 
         : (parsedAiQuery.maxBudget === Infinity && parsedAiQuery.minGuests === 1 && parsedAiQuery.requiredTypes.length === 0 ? parsedAiQuery.rawWords : []);
       
-      const matchesAi = wordsToMatch.every(w => aiSearchString.includes(w));
-      if (!matchesAi && wordsToMatch.length > 0) return false;
+      if (wordsToMatch.length > 0) {
+        // Require all keywords if 1-2 words. If 3+, require 60% match to be flexible.
+        const matchCount = wordsToMatch.filter(w => aiSearchString.includes(w)).length;
+        const requiredMatches = wordsToMatch.length <= 2 ? wordsToMatch.length : Math.ceil(wordsToMatch.length * 0.6);
+        if (matchCount < requiredMatches) return false;
+      }
     }
 
     const searchString = `${property.title} ${property.subtitle} ${property.details} ${property.location} ${property.city} ${property.state}`.toLowerCase();
@@ -481,6 +519,12 @@ function SearchContent() {
     return true;
   });
 
+  const recommendedProperties = React.useMemo(() => {
+    if (filteredProperties.length > 0) return [];
+    // Grab 4 active properties to suggest as alternatives
+    return properties.filter(p => isActiveProperty(p)).slice(0, 4);
+  }, [filteredProperties.length, properties]);
+
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
@@ -498,18 +542,25 @@ function SearchContent() {
     return () => observer.disconnect();
   }, [loading, filteredProperties.length]);
 
+  useEffect(() => {
+    const handleOpenFilter = () => setIsFilterModalOpen(true);
+    window.addEventListener('open-filter-modal', handleOpenFilter);
+    return () => window.removeEventListener('open-filter-modal', handleOpenFilter);
+  }, []);
+
   return (
     <div className="flex flex-col h-[calc(100vh-92px)] overflow-hidden">
       {/* Top Filter Bar */}
       <div className="relative shrink-0 z-40">
         <div className="bg-white border-b border-gray-200 px-4 lg:px-6 py-3 lg:py-4 flex items-center gap-3 overflow-x-auto hide-scrollbar">
           <div 
-            className="flex items-center gap-2 border border-gray-300 rounded-full px-4 py-2 shrink-0 font-medium text-[14px] text-gray-700 cursor-default select-none"
+            onClick={() => setIsFilterModalOpen(true)}
+            className="hidden lg:flex items-center gap-2 border border-gray-300 rounded-full px-4 py-2 shrink-0 font-medium text-[14px] text-gray-700 cursor-pointer select-none hover:border-gray-900 transition-colors"
           >
             <SlidersHorizontal size={16} /> Filters
           </div>
           
-          <div className="h-8 w-px bg-gray-200 shrink-0 mx-1" />
+          <div className="hidden lg:block h-8 w-px bg-gray-200 shrink-0 mx-1" />
           
           {dynamicFilters.map((filter, idx) => {
             const isDropdown = filter === 'Price';
@@ -622,7 +673,7 @@ function SearchContent() {
               <div>
                 <h1 className="text-[24px] lg:text-[28px] font-bold text-gray-900">
                   {filteredProperties.length === 0 
-                    ? 'No properties found' 
+                    ? (recommendedProperties.length > 0 ? 'Recommended alternatives' : 'No properties found')
                     : filteredProperties.length === 1 
                       ? '1 property found' 
                       : `${filteredProperties.length} properties available`}
@@ -651,9 +702,22 @@ function SearchContent() {
                   />
                 ))
               ) : (
-                <div className="col-span-1 sm:col-span-2 text-center py-12 text-gray-500">
-                  No properties found matching your filters.
-                </div>
+                <>
+                  {recommendedProperties.length > 0 ? (
+                    recommendedProperties.map((property) => (
+                      <PropertyCard 
+                        key={property.id} 
+                        property={property} 
+                        isSelected={selectedPropertyId === property.id}
+                        onSelect={(id) => setSelectedPropertyId(id)}
+                      />
+                    ))
+                  ) : (
+                    <div className="col-span-1 sm:col-span-2 text-center py-12 text-gray-500">
+                      No properties found matching your exact search.
+                    </div>
+                  )}
+                </>
               )}
             </div>
             
@@ -696,6 +760,27 @@ function SearchContent() {
         onClear={() => {
           setAdvancedFilters((prev) => (prev ? { ...prev, minPrice: absoluteMinPrice, maxPrice: absoluteMaxPrice } : null));
           setSelectedFilters((prev) => prev.filter((f) => f !== 'Price'));
+        }}
+      />
+
+      {/* Filter Modal */}
+      <FilterModal
+        isOpen={isFilterModalOpen}
+        onClose={() => setIsFilterModalOpen(false)}
+        initialState={advancedFilters || undefined}
+        absoluteMin={absoluteMinPrice}
+        absoluteMax={absoluteMaxPrice}
+        matchCount={filteredProperties.length}
+        onApply={(filters) => {
+          setAdvancedFilters(filters);
+          if (filters.minPrice > absoluteMinPrice || filters.maxPrice < absoluteMaxPrice) {
+            if (!selectedFilters.includes('Price')) {
+              setSelectedFilters((prev) => [...prev, 'Price']);
+            }
+          }
+        }}
+        onClear={() => {
+          setAdvancedFilters(null);
         }}
       />
     </div>

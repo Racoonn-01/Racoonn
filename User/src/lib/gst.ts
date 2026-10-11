@@ -42,12 +42,10 @@ export function calculateRoomGst(
     gstStatus = "GST @ 18%";
     itcNote = "GST @ 18% (Packages)";
   } else {
-    // Original slab logic
-    if (taxableBase <= 1000) {
-      gstRate = 0;
-      gstStatus = "GST @ 0%";
-      itcNote = "GST Exempt";
-    } else if (taxableBase <= 7500) {
+    // Calculate effective price per night to determine GST slab correctly
+    const effectivePricePerNight = taxableBase / (cleanNights * cleanRooms);
+    
+    if (effectivePricePerNight <= 7500) {
       gstRate = 5;
       gstStatus = "GST @ 5%";
       itcNote = "GST @ 5% (Input Tax Credit Not Allowed)";

@@ -7,11 +7,11 @@
     "features": "Test",
     "badge": "Featured",
     "images": [
-      "https://sgp.cloud.appwrite.io/v1/storage/buckets/6a3e398000280b2b3d20/files/6aae40610005ccc24e74/view?project=6a3bce6900381359c3ce",
-      "https://sgp.cloud.appwrite.io/v1/storage/buckets/6a3e398000280b2b3d20/files/6aae40610035c11efd06/view?project=6a3bce6900381359c3ce",
-      "https://sgp.cloud.appwrite.io/v1/storage/buckets/6a3e398000280b2b3d20/files/6aae406200237f8a7d52/view?project=6a3bce6900381359c3ce",
-      "https://sgp.cloud.appwrite.io/v1/storage/buckets/6a3e398000280b2b3d20/files/6aae406c0029fc0bb8ae/view?project=6a3bce6900381359c3ce",
-      "https://sgp.cloud.appwrite.io/v1/storage/buckets/6a3e398000280b2b3d20/files/6aae406d0034f28396f1/view?project=6a3bce6900381359c3ce"
+      "https://sgp.cloud.appwrite.io/v1/storage/buckets/6a3e398000280b2b3d20/files/6aae40610005ccc24e74/preview?project=6a3bce6900381359c3ce&output=webp",
+      "https://sgp.cloud.appwrite.io/v1/storage/buckets/6a3e398000280b2b3d20/files/6aae40610035c11efd06/preview?project=6a3bce6900381359c3ce&output=webp",
+      "https://sgp.cloud.appwrite.io/v1/storage/buckets/6a3e398000280b2b3d20/files/6aae406200237f8a7d52/preview?project=6a3bce6900381359c3ce&output=webp",
+      "https://sgp.cloud.appwrite.io/v1/storage/buckets/6a3e398000280b2b3d20/files/6aae406c0029fc0bb8ae/preview?project=6a3bce6900381359c3ce&output=webp",
+      "https://sgp.cloud.appwrite.io/v1/storage/buckets/6a3e398000280b2b3d20/files/6aae406d0034f28396f1/preview?project=6a3bce6900381359c3ce&output=webp"
     ],
     "pricing": [
       {
@@ -62,7 +62,7 @@
         "id": "6aa79dde00272702c418",
         "title": "Hotel Grand ",
         "description": "Stay at Hotel Grand  situated in Dewalchaurh kham, Haldwani, Uttarakhand [GEO: 29.214275, 79.528070], Haldwani, Uttarakhand.",
-        "image": "https://sgp.cloud.appwrite.io/v1/storage/buckets/6a3e398000280b2b3d20/files/6aa79df90011eb5ebbc8/view?project=6a3bce6900381359c3ce",
+        "image": "https://sgp.cloud.appwrite.io/v1/storage/buckets/6a3e398000280b2b3d20/files/6aa79df90011eb5ebbc8/preview?project=6a3bce6900381359c3ce&output=webp",
         "tags": [
           "AC Rooms",
           "Breakfast Included"
@@ -79,7 +79,7 @@
         "id": "6a69abfa00163684a891",
         "title": "Full Testing",
         "description": "Elevate your travel experience with curated adventures and memorable local activities.\nElevate your travel experience with curated adventures and memorable local activities.\n",
-        "image": "https://sgp.cloud.appwrite.io/v1/storage/buckets/6a3e398000280b2b3d20/files/6a69abf90010ec46ba4b/view?project=6a3bce6900381359c3ce",
+        "image": "https://sgp.cloud.appwrite.io/v1/storage/buckets/6a3e398000280b2b3d20/files/6a69abf90010ec46ba4b/preview?project=6a3bce6900381359c3ce&output=webp",
         "pricePerPerson": 1500,
         "priceLabel": "+ ₹1500 / person"
       }
@@ -223,11 +223,11 @@
     "features": "Meals | Stay | Transfer",
     "badge": "Bestseller",
     "images": [
-      "https://sgp.cloud.appwrite.io/v1/storage/buckets/6a3e398000280b2b3d20/files/6aae33e7001d31745c91/view?project=6a3bce6900381359c3ce",
-      "https://sgp.cloud.appwrite.io/v1/storage/buckets/6a3e398000280b2b3d20/files/6aae33e80015011fb72e/view?project=6a3bce6900381359c3ce",
-      "https://sgp.cloud.appwrite.io/v1/storage/buckets/6a3e398000280b2b3d20/files/6aae33f00009195ae0cc/view?project=6a3bce6900381359c3ce",
-      "https://sgp.cloud.appwrite.io/v1/storage/buckets/6a3e398000280b2b3d20/files/6aae33f0003607ef2156/view?project=6a3bce6900381359c3ce",
-      "https://sgp.cloud.appwrite.io/v1/storage/buckets/6a3e398000280b2b3d20/files/6aae33f10022c807595b/view?project=6a3bce6900381359c3ce"
+      "https://sgp.cloud.appwrite.io/v1/storage/buckets/6a3e398000280b2b3d20/files/6aae33e7001d31745c91/preview?project=6a3bce6900381359c3ce&output=webp",
+      "https://sgp.cloud.appwrite.io/v1/storage/buckets/6a3e398000280b2b3d20/files/6aae33e80015011fb72e/preview?project=6a3bce6900381359c3ce&output=webp",
+      "https://sgp.cloud.appwrite.io/v1/storage/buckets/6a3e398000280b2b3d20/files/6aae33f00009195ae0cc/preview?project=6a3bce6900381359c3ce&output=webp",
+      "https://sgp.cloud.appwrite.io/v1/storage/buckets/6a3e398000280b2b3d20/files/6aae33f0003607ef2156/preview?project=6a3bce6900381359c3ce&output=webp",
+      "https://sgp.cloud.appwrite.io/v1/storage/buckets/6a3e398000280b2b3d20/files/6aae33f10022c807595b/preview?project=6a3bce6900381359c3ce&output=webp"
     ],
     "pricing": [
       {
@@ -266,7 +266,7 @@
         "id": "6aa52d130005b3aba844",
         "title": "Himdarshan home stay ",
         "description": "Stay at Himdarshan home stay  situated in Almora, Uttarakhand, Almora, Uttarakhand.",
-        "image": "https://sgp.cloud.appwrite.io/v1/storage/buckets/6a3e398000280b2b3d20/files/6aa535a8000b209f23b1/view?project=6a3bce6900381359c3ce",
+        "image": "https://sgp.cloud.appwrite.io/v1/storage/buckets/6a3e398000280b2b3d20/files/6aa535a8000b209f23b1/preview?project=6a3bce6900381359c3ce&output=webp",
         "tags": [
           "AC Rooms",
           "Breakfast Included"
@@ -281,7 +281,7 @@
         "id": "6aa7ac9600174575a40c",
         "title": "Nihara hotel",
         "description": "Stay at Nihara hotel situated in Dehradun, Uttarakhand, Dehradun, Uttarakhand.",
-        "image": "https://sgp.cloud.appwrite.io/v1/storage/buckets/6a3e398000280b2b3d20/files/6aa7acbd003311f190ea/view?project=6a3bce6900381359c3ce",
+        "image": "https://sgp.cloud.appwrite.io/v1/storage/buckets/6a3e398000280b2b3d20/files/6aa7acbd003311f190ea/preview?project=6a3bce6900381359c3ce&output=webp",
         "tags": [
           "AC Rooms",
           "Breakfast Included"
@@ -296,7 +296,7 @@
         "id": "6aa79b7b002b15f3b037",
         "title": "Verma's Hotel",
         "description": "Stay at Verma's Hotel situated in Dewalchaurh kham, Haldwani, Uttarakhand [GEO: 29.214275, 79.528070], Haldwani, Uttarakhand.",
-        "image": "https://sgp.cloud.appwrite.io/v1/storage/buckets/6a3e398000280b2b3d20/files/6aa79be9000820128f91/view?project=6a3bce6900381359c3ce",
+        "image": "https://sgp.cloud.appwrite.io/v1/storage/buckets/6a3e398000280b2b3d20/files/6aa79be9000820128f91/preview?project=6a3bce6900381359c3ce&output=webp",
         "tags": [
           "AC Rooms",
           "Breakfast Included"
@@ -311,7 +311,7 @@
         "id": "6aa79dde00272702c418",
         "title": "Hotel Grand ",
         "description": "Stay at Hotel Grand  situated in Dewalchaurh kham, Haldwani, Uttarakhand [GEO: 29.214275, 79.528070], Haldwani, Uttarakhand.",
-        "image": "https://sgp.cloud.appwrite.io/v1/storage/buckets/6a3e398000280b2b3d20/files/6aa79df90011eb5ebbc8/view?project=6a3bce6900381359c3ce",
+        "image": "https://sgp.cloud.appwrite.io/v1/storage/buckets/6a3e398000280b2b3d20/files/6aa79df90011eb5ebbc8/preview?project=6a3bce6900381359c3ce&output=webp",
         "tags": [
           "AC Rooms",
           "Breakfast Included"
@@ -326,7 +326,7 @@
         "id": "6aa53d930005d015e972",
         "title": "Royal Angel",
         "description": "Stay at Royal Angel situated in Dewalchaurh kham manpur paschim , Haldwani, Uttarakhand [GEO: 29.185246, 79.507160], Haldwani, Uttarakhand.",
-        "image": "https://sgp.cloud.appwrite.io/v1/storage/buckets/6a3e398000280b2b3d20/files/6aa53dbd001d10a3b4e5/view?project=6a3bce6900381359c3ce",
+        "image": "https://sgp.cloud.appwrite.io/v1/storage/buckets/6a3e398000280b2b3d20/files/6aa53dbd001d10a3b4e5/preview?project=6a3bce6900381359c3ce&output=webp",
         "tags": [
           "AC Rooms",
           "Breakfast Included"
@@ -343,7 +343,7 @@
         "id": "6aacd7f70031a4b1ddf0",
         "title": "Latest Activity",
         "description": "Latest Activity",
-        "image": "https://sgp.cloud.appwrite.io/v1/storage/buckets/6a3e398000280b2b3d20/files/6aacd7f6002a1af92a4a/view?project=6a3bce6900381359c3ce",
+        "image": "https://sgp.cloud.appwrite.io/v1/storage/buckets/6a3e398000280b2b3d20/files/6aacd7f6002a1af92a4a/preview?project=6a3bce6900381359c3ce&output=webp",
         "pricePerPerson": 20000,
         "priceLabel": "+ ₹20000 / person"
       },
@@ -351,7 +351,7 @@
         "id": "6a69abfa00163684a891",
         "title": "Testing",
         "description": "Elevate your travel experience with curated adventures and memorable local activities.\nElevate your travel experience with curated adventures and memorable local activities.\n",
-        "image": "https://sgp.cloud.appwrite.io/v1/storage/buckets/6a3e398000280b2b3d20/files/6a69abf90010ec46ba4b/view?project=6a3bce6900381359c3ce",
+        "image": "https://sgp.cloud.appwrite.io/v1/storage/buckets/6a3e398000280b2b3d20/files/6a69abf90010ec46ba4b/preview?project=6a3bce6900381359c3ce&output=webp",
         "pricePerPerson": 1500,
         "priceLabel": "+ ₹1500 / person"
       }

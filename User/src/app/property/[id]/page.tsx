@@ -29,6 +29,7 @@ import { isActiveProperty, parseLocationGeo } from '@/lib/utils';
 import { databases } from '@/lib/appwrite/config';
 import { getReviews } from '@/lib/appwrite/api';
 import { Query } from 'appwrite';
+import PropertyAIChatbot from '@/components/property/PropertyAIChatbot';
 
 import { Metadata } from 'next';
 import { extractIdFromSlug } from '@/lib/utils';
@@ -102,6 +103,9 @@ export default async function PropertyDetails({ params }: { params: Promise<{ id
   let reviewCount = 241;
   let averageRating = '4.96';
   const project = process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID || '6a3bce6900381359c3ce';
+  
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let realProperty: any = null;
 
   // Try to fetch real data from Appwrite
   try {
@@ -111,7 +115,7 @@ export default async function PropertyDetails({ params }: { params: Promise<{ id
     const roomBucketId = process.env.NEXT_PUBLIC_APPWRITE_ROOM_IMAGES_BUCKET_ID || '6a3e398000280b2b3d20';
 
     if (dbId && colId) {
-      const realProperty = await databases.getDocument(dbId, colId, id);
+      realProperty = await databases.getDocument(dbId, colId, id);
       if (realProperty) {
         if (!isActiveProperty(realProperty as unknown as { status?: string })) {
           notFound();
@@ -321,6 +325,8 @@ export default async function PropertyDetails({ params }: { params: Promise<{ id
         </div>
       </div>
       <VendorPromoPopup propertyId={id} vendorId={vendorId} />
+      
+      {realProperty && <PropertyAIChatbot propertyData={JSON.parse(JSON.stringify(realProperty))} />}
     </div>
   );
 }

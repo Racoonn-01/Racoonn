@@ -58,8 +58,7 @@ const navItems: NavItem[] = [
 const financialItems: NavItem[] = [
   { title: "Revenue", url: "/admin/revenue", icon: BadgeDollarSign, key: "Revenue" },
   { title: "Payments", url: "/admin/payments", icon: CreditCard, key: "Payments" },
-  { title: "Payouts", url: "/admin/payouts", icon: HandCoins, key: "Payouts" },
-  { title: "Invoice System", url: "/admin/invoices", icon: FileText, key: "Invoices" },
+  { title: "Invoices", url: "/admin/invoices", icon: FileText, key: "Invoices" },
 ]
 
 const operationsItems: NavItem[] = [

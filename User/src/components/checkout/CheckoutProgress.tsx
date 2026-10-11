@@ -2,11 +2,20 @@
 import { Check } from "lucide-react";
 import { motion } from "framer-motion";
 import { useCheckoutStore } from "@/store/checkoutStore";
+import { useSearchParams } from "next/navigation";
 
 export function CheckoutProgress() {
   const currentStep = useCheckoutStore((state) => state.currentStep);
+  const searchParams = useSearchParams();
+  const hotelId = searchParams.get('hotelId') || useCheckoutStore.getState().selectedHotelId || '';
+  const isPackage = hotelId.startsWith('pkg-');
 
-  const steps = [
+  const steps = isPackage ? [
+    { id: 1, label: "Package Selected", completed: currentStep > 1, active: currentStep === 1 },
+    { id: 2, label: "Dates Selected", completed: currentStep > 2, active: currentStep === 2 },
+    { id: 3, label: "Guest Details", completed: currentStep > 3, active: currentStep === 3 },
+    { id: 4, label: "Confirmation", completed: currentStep > 4, active: currentStep === 4 },
+  ] : [
     { id: 1, label: "Hotel Selected", completed: currentStep > 1, active: currentStep === 1 },
     { id: 2, label: "Room Selected", completed: currentStep > 2, active: currentStep === 2 },
     { id: 3, label: "Guest Details", completed: currentStep > 3, active: currentStep === 3 },

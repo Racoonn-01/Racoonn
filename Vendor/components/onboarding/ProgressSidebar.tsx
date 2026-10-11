@@ -35,7 +35,7 @@ export function ProgressSidebar({ currentStep }: { currentStep: number }) {
       <div className="mb-8">
         <div className="flex items-center justify-between mb-2">
           <h2 className="text-2xl font-black text-brand-navy font-['Poppins',sans-serif]">Registration</h2>
-          <button 
+          <button
             onClick={() => setIsTutorialOpen(true)}
             className="flex items-center gap-1.5 text-xs font-bold text-brand-coral bg-brand-coral/10 hover:bg-brand-coral/20 px-3 py-1.5 rounded-full transition-colors"
           >
@@ -53,8 +53,8 @@ export function ProgressSidebar({ currentStep }: { currentStep: number }) {
           <span className="text-sm font-black text-brand-coral">{progressPercent.toFixed(0)}%</span>
         </div>
         <div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden mb-4">
-          <motion.div 
-            className="h-full bg-linear-to-r from-brand-coral to-[#f48a8e]" 
+          <motion.div
+            className="h-full bg-linear-to-r from-brand-coral to-[#f48a8e]"
             initial={{ width: 0 }}
             animate={{ width: `${progressPercent}%` }}
             transition={{ ease: "easeOut", duration: 0.8 }}
@@ -69,7 +69,7 @@ export function ProgressSidebar({ currentStep }: { currentStep: number }) {
       {/* Step List */}
       <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
         <div className="space-y-6 relative before:absolute before:inset-0 before:ml-3.75 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-linear-to-b before:from-transparent before:via-slate-200 before:to-transparent">
-          
+
           {STEPS.map((step) => {
             const isCompleted = step.id < currentStep;
             const isActive = step.id === currentStep;
@@ -82,7 +82,7 @@ export function ProgressSidebar({ currentStep }: { currentStep: number }) {
                 )}>
                   {isCompleted ? <Check className="w-4 h-4" /> : <span className="text-xs font-bold">{step.id}</span>}
                 </div>
-                
+
                 <div className={cn(
                   "w-[calc(100%-3rem)] md:w-[calc(50%-2rem)] p-4 rounded-xl transition-all duration-300 ml-4 md:ml-0 shadow-[0_0_15px_rgba(0,0,0,0.02)]",
                   isActive ? "bg-white border border-brand-coral/20 scale-105" : "bg-transparent border border-transparent"
@@ -113,14 +113,14 @@ export function ProgressSidebar({ currentStep }: { currentStep: number }) {
             <DialogTitle className="text-white">Partner Onboarding Tutorial</DialogTitle>
           </DialogHeader>
           <div className="aspect-video w-full bg-black">
-            <iframe 
-              width="100%" 
-              height="100%" 
-              src="https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1" 
-              title="Racoonn Partner Onboarding Tutorial" 
-              frameBorder="0" 
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
-              referrerPolicy="strict-origin-when-cross-origin" 
+            <iframe
+              width="100%"
+              height="100%"
+              src="https://www.youtube.com/embed/vekFlys7v9o?autoplay=1"
+              title="Racoonn Partner Onboarding Tutorial"
+              frameBorder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              referrerPolicy="strict-origin-when-cross-origin"
               allowFullScreen
             ></iframe>
           </div>

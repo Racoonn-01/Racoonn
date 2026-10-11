@@ -52,7 +52,7 @@ export default async function DashboardPage({ searchParams }: { searchParams?: P
     const payments = await db.listDocuments(DATABASE_ID, 'booking_payments', [Query.limit(1000), Query.orderDesc('$createdAt')]);
     
     // Fetch vendors
-    const vendors = await db.listDocuments(DATABASE_ID, VENDOR_COLLECTION, [Query.limit(20), Query.orderDesc('$createdAt')]);
+    const vendors = await db.listDocuments(DATABASE_ID, VENDOR_COLLECTION, [Query.limit(500), Query.orderDesc('$createdAt')]);
 
     // Current date logic for month comparisons
 
@@ -118,44 +118,6 @@ export default async function DashboardPage({ searchParams }: { searchParams?: P
     }
 
 
-    payments.documents.forEach(payment => {
-      const amount = payment.totalAmount || 0;
-      const commission = payment.serviceFees || (amount * 0.15);
-      
-      const date = new Date(payment.$createdAt);
-      
-      if (isLifetime) {
-        totalRevenue += amount;
-        totalCommission += commission;
-        currentPeriodRevenue += amount;
-      } else {
-        if (date >= currentPeriodStart) {
-          currentPeriodRevenue += amount;
-          totalRevenue += amount;
-          totalCommission += commission;
-        } else if (date >= previousPeriodStart && date <= previousPeriodEnd) {
-          previousPeriodRevenue += amount;
-          previousPeriodCommission += commission;
-        }
-      }
-
-      // Chart aggregation
-      let key = "";
-      if (filter === 'today') {
-        key = date.getHours() + ":00";
-      } else if (filter === 'weekly') {
-        key = date.toLocaleDateString('en-US', { weekday: 'short' });
-      } else if (filter === 'monthly') {
-        key = date.getDate().toString();
-      } else {
-        key = monthNames[date.getMonth()];
-      }
-      if (!chartDataMap[key]) chartDataMap[key] = 0;
-      if (isLifetime || date >= currentPeriodStart) {
-          chartDataMap[key] += amount;
-      }
-    });
-
     let currentPeriodBookings = 0;
     let previousPeriodBookings = 0;
     let totalRefund = 0;
@@ -165,43 +127,80 @@ export default async function DashboardPage({ searchParams }: { searchParams?: P
     bookings.documents.forEach(b => {
       const date = new Date(b.$createdAt);
       const isCancelled = b.status?.toLowerCase() === 'cancelled' || b.status?.toLowerCase() === 'canceled';
+      const payment = payments.documents.find((p: any) => p.bookingId === b.$id);
+      const property = properties.documents.find((p: any) => p.$id === b.hotelId);
+      const vendorProfile = property ? vendors.documents.find((vp: any) => vp.userId === property.vendorId || vp.vendorId === property.vendorId) : null;
 
-      if (isCancelled) {
-        let bookingAmt = 0;
-        if (typeof b.totalAmount === 'number') bookingAmt = b.totalAmount;
-        else if (typeof b.amount === 'number') bookingAmt = b.amount;
-        else if (typeof b.amount === 'string') bookingAmt = parseFloat(b.amount.replace(/[^0-9.]/g, '')) || 0;
-        else if (typeof b.price === 'number') bookingAmt = b.price;
-        else if (typeof b.price === 'string') bookingAmt = parseFloat(b.price.replace(/[^0-9.]/g, '')) || 0;
+      let totalPaidNum = payment ? Number(payment.totalAmount) : (b.totalAmount ? Number(b.totalAmount) : (b.priceAfterTax ? Number(b.priceAfterTax) : 0));
+      let baseRoomAmount = payment ? Number(payment.roomPrice) : (b.priceBeforeTax ? Number(b.priceBeforeTax) : 0);
+      const addonsNum = payment ? Number(payment.serviceFees) : (b.addons ? Number(b.addons) : 0);
+      const discountNum = payment ? Number(payment.discount) : (b.discount ? Number(b.discount) : 0);
+      let taxes = payment ? Number(payment.taxes) : (b.gstAmount ? Number(b.gstAmount) : 0);
 
-        let refundAmt = 0;
-        if (typeof b.refundAmount === 'number') {
-          refundAmt = b.refundAmount;
+      let deducedRate = 18;
+      if (!baseRoomAmount && totalPaidNum) {
+        if (totalPaidNum <= 1000) deducedRate = 0;
+        else if (totalPaidNum <= 7875) deducedRate = 5;
+        else deducedRate = 18;
+        baseRoomAmount = Math.round((totalPaidNum / (1 + deducedRate / 100)) * 100) / 100;
+        taxes = Math.round((totalPaidNum - baseRoomAmount) * 100) / 100;
+      }
+
+      let vendorDiscount = 0;
+      if (b.specialRequests) {
+        const vdMatch = b.specialRequests.match(/VendorDiscount=₹?([0-9.]+)/);
+        if (vdMatch) vendorDiscount = parseFloat(vdMatch[1]);
+      } else {
+        vendorDiscount = discountNum;
+      }
+
+      const vendorGross = baseRoomAmount + addonsNum - vendorDiscount;
+      const feePercent = vendorProfile?.allow24PercentGst ? 24 : 18;
+      const commission = Math.round(vendorGross * (feePercent / 100) * 100) / 100;
+
+      if (!isCancelled) {
+        if (isLifetime) {
+          totalRevenue += totalPaidNum;
+          totalCommission += commission;
+          currentPeriodRevenue += totalPaidNum;
         } else {
-          // Cancellation policy:
-          // > 48 hours before check-in: 100% refund
-          // 24 to 48 hours before check-in: 80% refund (20% fee)
-          // < 24 hours before check-in: 0% refund (100% fee)
-          const checkInRaw = b.checkIn || b.checkInDate || b.rawCheckIn;
-          const cancelledAtRaw = b.cancelledAt || b.updatedAt || b.$createdAt;
-
-          if (checkInRaw) {
-            const checkInDate = new Date(checkInRaw);
-            const cancelledDate = new Date(cancelledAtRaw);
-            const hoursUntilCheckIn = (checkInDate.getTime() - cancelledDate.getTime()) / (1000 * 60 * 60);
-
-            if (hoursUntilCheckIn >= 48) {
-              refundAmt = bookingAmt;
-            } else if (hoursUntilCheckIn >= 24) {
-              refundAmt = bookingAmt * 0.8;
-            } else if (hoursUntilCheckIn < 24 && hoursUntilCheckIn > 0) {
-              refundAmt = 0;
-            } else {
-              refundAmt = bookingAmt;
-            }
-          } else {
-            refundAmt = bookingAmt;
+          if (date >= currentPeriodStart) {
+            currentPeriodRevenue += totalPaidNum;
+            totalRevenue += totalPaidNum;
+            totalCommission += commission;
+          } else if (date >= previousPeriodStart && date <= previousPeriodEnd) {
+            previousPeriodRevenue += totalPaidNum;
+            previousPeriodCommission += commission;
           }
+        }
+
+        // Chart aggregation
+        let key = "";
+        if (filter === 'today') key = date.getHours() + ":00";
+        else if (filter === 'weekly') key = date.toLocaleDateString('en-US', { weekday: 'short' });
+        else if (filter === 'monthly') key = date.getDate().toString();
+        else key = monthNames[date.getMonth()];
+        
+        if (!chartDataMap[key]) chartDataMap[key] = 0;
+        if (isLifetime || date >= currentPeriodStart) {
+            chartDataMap[key] += totalPaidNum;
+        }
+      } else {
+        const checkInRaw = b.checkIn || b.checkInDate || b.rawCheckIn;
+        const cancelledAtRaw = b.cancelledAt || b.updatedAt || b.$createdAt;
+        let refundAmt = 0;
+
+        if (checkInRaw) {
+          const checkInDate = new Date(checkInRaw);
+          const cancelledDate = new Date(cancelledAtRaw);
+          const hoursUntilCheckIn = (checkInDate.getTime() - cancelledDate.getTime()) / (1000 * 60 * 60);
+
+          if (hoursUntilCheckIn >= 48) refundAmt = totalPaidNum;
+          else if (hoursUntilCheckIn >= 24) refundAmt = totalPaidNum * 0.8;
+          else if (hoursUntilCheckIn < 24 && hoursUntilCheckIn > 0) refundAmt = 0;
+          else refundAmt = totalPaidNum;
+        } else {
+          refundAmt = totalPaidNum;
         }
 
         totalRefund += refundAmt;
@@ -344,3 +343,4 @@ export default async function DashboardPage({ searchParams }: { searchParams?: P
 
   return <DashboardClient kpiData={kpiData} chartData={chartData} recentActivity={recentActivity} />;
 }
+

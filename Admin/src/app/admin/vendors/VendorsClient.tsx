@@ -47,6 +47,7 @@ export interface VendorsKPI {
   activeProperties: number;
   totalPayouts: string;
   pendingApproval: number;
+  suspendedVendors: number;
   newVendorsThisWeek: number;
   newPropertiesThisWeek: number;
 }
@@ -338,7 +339,8 @@ export default function VendorsClient({ vendors: initialVendors, kpi }: VendorsC
   };
 
   const filteredVendors = vendors.filter(vendor => {
-    const matchesTab = activeTab === "all" || vendor.status.toLowerCase() === activeTab.toLowerCase();
+    let matchesTab = activeTab === "all" || vendor.status.toLowerCase() === activeTab.toLowerCase();
+    if (activeTab === 'approved' && vendor.status.toLowerCase() === 'active') matchesTab = true;
     const matchesSearch = vendor.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
                           vendor.email.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesTab && matchesSearch;
@@ -364,6 +366,50 @@ export default function VendorsClient({ vendors: initialVendors, kpi }: VendorsC
 
       if (selectedVendor && selectedVendor.id === vendorId) {
         setSelectedVendor({ ...selectedVendor, status: newStatus });
+      }
+
+      // Send email notification
+      const vendorToUpdate = vendors.find(v => v.id === vendorId);
+      if (vendorToUpdate && vendorToUpdate.email) {
+        let emailHtml = "";
+        let emailSubject = "";
+
+        if (newStatus === "Suspended") {
+          emailSubject = "⚠️ Action Required: Your Racoonn Vendor Account has been Suspended";
+          emailHtml = `
+            <div style="font-family: Arial, sans-serif; padding: 24px; color: #1e293b; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 16px;">
+              <h1 style="color: #dc2626; font-size: 24px; text-align: center;">Account Suspended</h1>
+              <p>Dear ${vendorToUpdate.name},</p>
+              <p>We regret to inform you that your Racoonn Vendor account has been <strong>suspended</strong> by our compliance team.</p>
+              <p>During this time, your properties will not be visible to customers, and you will not receive new bookings. If you believe this is an error, please contact support.</p>
+              <p><strong>The Racoonn Team</strong></p>
+            </div>
+          `;
+        } else if (newStatus === "Active" || newStatus === "Approved") {
+          emailSubject = "🎉 Your Racoonn Vendor Account is Active!";
+          emailHtml = `
+            <div style="font-family: Arial, sans-serif; padding: 24px; color: #1e293b; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 16px;">
+              <h1 style="color: #059669; font-size: 24px; text-align: center;">Account Re-activated</h1>
+              <p>Dear ${vendorToUpdate.name},</p>
+              <p>Good news! Your Racoonn Vendor account status has been updated to <strong>Active</strong>.</p>
+              <p>You can now log in to your dashboard and manage your properties, pricing, and availability.</p>
+              <p><strong>The Racoonn Team</strong></p>
+            </div>
+          `;
+        }
+
+        if (emailHtml) {
+          fetch("/api/send-email", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              to: vendorToUpdate.email,
+              subject: emailSubject,
+              html: emailHtml,
+              vendorName: vendorToUpdate.name,
+            }),
+          }).catch(err => console.error("Failed to send status email", err));
+        }
       }
       
     } catch (error) {
@@ -434,9 +480,6 @@ export default function VendorsClient({ vendors: initialVendors, kpi }: VendorsC
                 <Users className="h-5 w-5 text-primary" />
               </div>
             </div>
-            <div className="mt-4 flex items-center text-sm text-emerald-500 font-medium">
-              <TrendingUp className="mr-1 h-4 w-4" /> +{kpi.newVendorsThisWeek} this week
-            </div>
           </CardContent>
         </Card>
 
@@ -451,13 +494,8 @@ export default function VendorsClient({ vendors: initialVendors, kpi }: VendorsC
                 <Building2 className="h-5 w-5 text-blue-500" />
               </div>
             </div>
-            <div className="mt-4 flex items-center text-sm text-emerald-500 font-medium">
-              <TrendingUp className="mr-1 h-4 w-4" /> +{kpi.newPropertiesThisWeek} new this week
-            </div>
           </CardContent>
         </Card>
-
-
 
         <Card className="bg-linear-to-br from-card to-card/50 border-muted/50 shadow-sm">
           <CardContent className="p-6">
@@ -470,8 +508,19 @@ export default function VendorsClient({ vendors: initialVendors, kpi }: VendorsC
                 <UserCheck className="h-5 w-5 text-amber-500" />
               </div>
             </div>
-            <div className="mt-4 flex items-center text-sm text-amber-500 font-medium">
-              Requires your attention
+          </CardContent>
+        </Card>
+
+        <Card className="bg-linear-to-br from-card to-card/50 border-muted/50 shadow-sm">
+          <CardContent className="p-6">
+            <div className="flex justify-between items-start">
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-muted-foreground">Suspended</p>
+                <p className="text-3xl font-bold">{kpi.suspendedVendors}</p>
+              </div>
+              <div className="p-3 bg-red-500/10 rounded-xl">
+                <UserX className="h-5 w-5 text-red-500" />
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -496,7 +545,7 @@ export default function VendorsClient({ vendors: initialVendors, kpi }: VendorsC
           
           <div className="flex items-center gap-3 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0 hide-scrollbar">
             <div className="flex p-1 bg-muted/50 rounded-full">
-              {['all', 'active', 'pending', 'suspended'].map((tab) => (
+              {['all', 'approved', 'pending', 'suspended'].map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
@@ -510,9 +559,6 @@ export default function VendorsClient({ vendors: initialVendors, kpi }: VendorsC
                 </button>
               ))}
             </div>
-            <Button variant="outline" size="sm" className="h-9 rounded-full border-muted-foreground/20">
-              <Filter className="mr-2 h-4 w-4" /> Filters
-            </Button>
           </div>
         </div>
 

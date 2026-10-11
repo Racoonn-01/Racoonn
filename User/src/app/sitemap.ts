@@ -1,3 +1,4 @@
+import { generatePropertySlug } from "@/lib/utils";
 import { MetadataRoute } from 'next';
 import { getProperties } from '@/lib/appwrite/api';
 import { databases } from '@/lib/appwrite/config';
@@ -44,7 +45,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   // Map dynamic property routes
   const propertyRoutes = properties.map((property) => ({
-    url: `${baseUrl}/property/${property.$id}`,
+    url: `${baseUrl}/property/${generatePropertySlug(property.$id, property.title || property.propertyName || "")}`,
     lastModified: new Date(property.$updatedAt || property.$createdAt || new Date()),
   }));
 

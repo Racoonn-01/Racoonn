@@ -1,4 +1,5 @@
 "use client";
+import { optimizeAppwriteImage } from "@/lib/optimizeImage";
 
 import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
@@ -33,7 +34,10 @@ export default function PopularDestinations() {
   };
 
   useEffect(() => {
-    void loadDestinations();
+    const initData = async () => {
+      await loadDestinations();
+    };
+    initData();
 
     window.addEventListener("cms_popular_destinations_updated", loadDestinations);
 
@@ -125,10 +129,10 @@ export default function PopularDestinations() {
                   className="w-full min-w-full md:min-w-0 md:w-[calc(50%-12px)] lg:w-[calc(25%-18px)] shrink-0 group/card relative rounded-3xl overflow-hidden cursor-pointer shadow-sm hover:shadow-xl transition-all duration-300 snap-center md:snap-start h-[360px] md:h-[450px] bg-gray-100"
                 >
                   <Image
-                    src={dest.image || "https://images.unsplash.com/photo-1626621341517-bbf3d9990a23?q=80&w=800&auto=format&fit=crop"}
+                    src={optimizeAppwriteImage(dest.image || "https://images.unsplash.com/photo-1626621341517-bbf3d9990a23?q=80&w=800&auto=format&fit=crop")}
                     alt={dest.city}
                     fill
-                    unoptimized
+                   
                     onError={(e) => {
                       e.currentTarget.src = "https://images.unsplash.com/photo-1626621341517-bbf3d9990a23?q=80&w=800&auto=format&fit=crop";
                     }}

@@ -28,6 +28,7 @@ export interface VendorProfile extends Models.Document {
   aadharNumber?: string;
   idProofFront?: string;
   idProofBack?: string;
+  aadhaarCardBack?: string;
   businessProof?: string;
   currentPropertyId?: string;
   bankName?: string;

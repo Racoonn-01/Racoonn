@@ -24,6 +24,11 @@ export async function GET() {
       throw new Error("No packages found in new Appwrite collection");
     }
 
+    const safeParse = (str: any, fallback: any) => {
+      if (!str || typeof str !== 'string') return fallback;
+      try { return JSON.parse(str); } catch { return fallback; }
+    };
+
     const packages = docs.documents.map((doc: any) => ({
       id: doc.$id,
       title: doc.title || "",
@@ -34,10 +39,10 @@ export async function GET() {
       badgeColor: doc.badgeColor || "",
       images: doc.images || [],
       price: doc.price || 0,
-      pricing: doc.pricing ? JSON.parse(doc.pricing) : [],
-      hotelOptions: doc.hotelOptions ? JSON.parse(doc.hotelOptions) : [],
-      activityOptions: doc.activityOptions ? JSON.parse(doc.activityOptions) : [],
-      itinerary: doc.itinerary ? JSON.parse(doc.itinerary) : [],
+      pricing: safeParse(doc.pricing, []),
+      hotelOptions: safeParse(doc.hotelOptions, []),
+      activityOptions: safeParse(doc.activityOptions, []),
+      itinerary: safeParse(doc.itinerary, []),
       metaTitle: doc.metaTitle || "",
       metaDescription: doc.metaDescription || "",
       metaKeywords: doc.metaKeywords || [],

@@ -437,20 +437,7 @@ export default function TermsPage() {
           <p>The Partner confirms that the selected fee slab has been reviewed before submitting the Partner Profile.</p>
         </section>
 
-        <section className="bg-brand-coral/5 p-6 rounded-xl border border-brand-coral/20 mt-6">
-          <h3 className="font-bold text-lg text-slate-800 mb-4">31. Digital Acceptance</h3>
-          <p className="mb-4">The Partner's acceptance may be recorded electronically through the Racoonn Partner Platform.</p>
-          <div className="flex items-start gap-3 mb-4">
-            <div className="w-5 h-5 mt-0.5 border-2 border-brand-coral rounded flex items-center justify-center bg-brand-coral text-white">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-            </div>
-            <p className="font-bold text-slate-700">
-              I have read and agree to the Racoonn Hotel Partner Agreement, including the applicable 18% / 24% fee structure.
-            </p>
-          </div>
-          <p className="mb-4">and clicking: <strong>“Submit Profile & Accept Agreement”</strong> (or equivalent), the Partner confirms its acceptance of this Agreement electronically.</p>
-          <p className="text-xs text-slate-500">The electronic acceptance, timestamp, registered account information, IP address, and other relevant technical records may be retained by Racoonn as evidence of acceptance, subject to applicable law.</p>
-        </section>
+
       </div>
     </div>
   );

@@ -113,7 +113,7 @@ export default function PopularDestinationsPage() {
       const BUCKET_ID = "6a3e398000280b2b3d20";
       const PROJECT_ID = "6a3bce6900381359c3ce";
       const uploadedFile = await storage.createFile(BUCKET_ID, ID.unique(), file);
-      const url = `https://sgp.cloud.appwrite.io/v1/storage/buckets/${BUCKET_ID}/files/${uploadedFile.$id}/view?project=${PROJECT_ID}`;
+      const url = `https://sgp.cloud.appwrite.io/v1/storage/buckets/${BUCKET_ID}/files/${uploadedFile.$id}/preview?project=${PROJECT_ID}&output=webp`;
       setNewImage(url);
     } catch (error) {
       console.error("Image upload failed", error);
@@ -260,7 +260,7 @@ export default function PopularDestinationsPage() {
                     src={getValidImageSrc(newImage)} 
                     alt="Preview" 
                     fill 
-                    unoptimized
+                   
                     className="object-cover"
                   />
                   <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/20 to-black/30" />
@@ -293,7 +293,7 @@ export default function PopularDestinationsPage() {
               src={getValidImageSrc(dest.image)} 
               alt={dest.city} 
               fill 
-              unoptimized
+             
               className="object-cover group-hover:scale-105 transition-transform duration-500"
             />
             <div className="absolute inset-0 bg-linear-to-t from-black/85 via-black/25 to-black/30" />

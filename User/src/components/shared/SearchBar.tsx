@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { MapPin, Calendar as CalendarIcon, Users, Plus, Minus } from 'lucide-react';
 import { format } from 'date-fns';
@@ -8,11 +8,19 @@ import { DateRange } from 'react-day-picker';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 
-export default function SearchBar() {
+export default function SearchBar({ onComplete }: { onComplete?: () => void }) {
   const router = useRouter();
   const [destination, setDestination] = useState('');
   const [date, setDate] = useState<DateRange | undefined>();
   const [guests, setGuests] = useState({ adults: 0, children: 0, infants: 0, pets: 0 });
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 1024);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   const totalGuests = guests.adults + guests.children;
   const guestDisplay = totalGuests === 0 
@@ -30,13 +38,14 @@ export default function SearchBar() {
     if (guests.pets > 0) params.append('pets', guests.pets.toString());
 
     router.push(`/search?${params.toString()}`);
+    if (onComplete) onComplete();
   };
 
   return (
-    <div className="bg-white/95 backdrop-blur-xl rounded-full shadow-[0_4px_20px_rgb(0,0,0,0.06)] p-1.5 flex items-center divide-x divide-gray-100 border border-white ring-1 ring-black/5 transition-all duration-300 hover:shadow-[0_4px_25px_rgb(0,0,0,0.08)]">
+    <div className="bg-white/95 backdrop-blur-xl lg:rounded-full rounded-3xl shadow-[0_4px_20px_rgb(0,0,0,0.06)] p-1.5 flex flex-col lg:flex-row lg:items-center divide-y lg:divide-y-0 lg:divide-x divide-gray-100 border border-white ring-1 ring-black/5 transition-all duration-300 hover:shadow-[0_4px_25px_rgb(0,0,0,0.08)]">
       
       {/* Destination */}
-      <div className="flex items-center px-4 py-2 hover:bg-brand-sky/10 rounded-full transition-colors cursor-text min-w-50">
+      <div className="flex items-center px-4 py-3 lg:py-2 hover:bg-brand-sky/10 lg:rounded-full rounded-2xl transition-colors cursor-text min-w-50">
         <MapPin className="text-brand-coral mr-3 shrink-0" size={20} />
         <div className="flex flex-col text-left w-full justify-center">
           <span className="text-[13px] font-extrabold text-brand-navy leading-tight">Where to?</span>
@@ -52,7 +61,7 @@ export default function SearchBar() {
       </div>
 
       {/* Dates */}
-      <div className="flex items-center px-4 py-2 hover:bg-brand-sky/10 rounded-full transition-colors min-w-55">
+      <div className="flex items-center px-4 py-3 lg:py-2 hover:bg-brand-sky/10 lg:rounded-full rounded-2xl transition-colors min-w-55">
         <CalendarIcon className="text-brand-coral mr-3 shrink-0" size={20} />
         <div className="flex flex-col text-left w-full justify-center">
           <span className="text-[13px] font-extrabold text-brand-navy leading-tight">Check in - Check out</span>
@@ -75,7 +84,7 @@ export default function SearchBar() {
                   defaultMonth={date?.from}
                   selected={date}
                   onSelect={setDate}
-                  numberOfMonths={2}
+                  numberOfMonths={isMobile ? 1 : 2}
                   disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
                   fixedWeeks
                   showOutsideDays
@@ -99,7 +108,7 @@ export default function SearchBar() {
       </div>
 
       {/* Guests */}
-      <div className="flex items-center px-4 py-2 hover:bg-brand-sky/10 rounded-full transition-colors cursor-pointer min-w-45">
+      <div className="flex items-center px-4 py-3 lg:py-2 hover:bg-brand-sky/10 lg:rounded-full rounded-2xl transition-colors cursor-pointer min-w-45">
         <Users className="text-brand-coral mr-3 shrink-0" size={20} />
         <div className="flex flex-col text-left w-full justify-center">
           <span className="text-[13px] font-extrabold text-brand-navy leading-tight">Guests</span>
@@ -195,8 +204,8 @@ export default function SearchBar() {
       </div>
 
       {/* Search Button */}
-      <div className="pl-1 pr-1.5 py-1">
-        <button onClick={handleSearch} className="bg-brand-coral hover:bg-opacity-90 text-white rounded-full px-6 py-2.5 flex items-center justify-center transition-all font-bold shadow-md shadow-brand-coral/30 hover:shadow-brand-coral/40 text-[15px]">
+      <div className="pl-1 pr-1.5 py-2 lg:py-1 w-full lg:w-auto mt-2 lg:mt-0">
+        <button onClick={handleSearch} className="bg-brand-coral w-full lg:w-auto hover:bg-opacity-90 text-white rounded-full px-6 py-3 lg:py-2.5 flex items-center justify-center transition-all font-bold shadow-md shadow-brand-coral/30 hover:shadow-brand-coral/40 text-[15px]">
           Search
         </button>
       </div>

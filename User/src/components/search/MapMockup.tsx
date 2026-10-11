@@ -1,4 +1,6 @@
 "use client";
+import { generatePropertySlug } from "@/lib/utils";
+import { optimizeAppwriteImage } from "@/lib/optimizeImage";
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import mapboxgl from 'mapbox-gl';
@@ -163,7 +165,7 @@ function PropertyOverlay({ property, position, containerW, containerH, onClose }
           {/* ── Image ── */}
           <div className="relative h-38.75 w-full overflow-hidden">
             <Image
-              src={imgUrl}
+              src={optimizeAppwriteImage(imgUrl)}
               alt={property.title}
               fill
               className="object-cover"
@@ -231,7 +233,7 @@ function PropertyOverlay({ property, position, containerW, containerH, onClose }
 
             {/* CTA */}
             <Link
-              href={`/property/${property.id}`}
+              href={`/property/${generatePropertySlug(property.id, property.title || property.propertyName || "")}`}
               className="flex items-center justify-center gap-1.5 w-full bg-brand-navy hover:bg-brand-coral text-white text-[13px] font-bold py-2.5 rounded-xl transition-all duration-200 cursor-pointer group"
             >
               View Property

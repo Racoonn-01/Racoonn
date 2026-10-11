@@ -1,4 +1,5 @@
 "use client";
+import { optimizeAppwriteImage } from "@/lib/optimizeImage";
 import { useState } from "react";
 import { MapPin, Calendar, Users, BedDouble, Tag, X, Loader2 } from "lucide-react";
 import Image from "next/image";
@@ -72,7 +73,7 @@ export function BookingSummary({
         <div className="flex gap-4 items-center">
           <div className="w-24 h-24 rounded-lg overflow-hidden relative shrink-0 bg-gray-100 shadow-sm border border-gray-200">
             <Image 
-              src={roomImage || hotelImage} 
+              src={optimizeAppwriteImage(roomImage || hotelImage)} 
               alt={roomName}
               fill
               className="object-cover"

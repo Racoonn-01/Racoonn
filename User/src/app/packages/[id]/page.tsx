@@ -119,6 +119,10 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
     async function loadCMSPackage() {
       try {
         const res = await fetch("/api/cms/packages");
+        const contentType = res.headers.get("content-type") || "";
+        if (!res.ok || !contentType.includes("application/json")) {
+          throw new Error("Failed to fetch packages");
+        }
         const json = await res.json();
         if (json.success && Array.isArray(json.packages) && json.packages.length > 0) {
           const cmsFound = json.packages.find((p: Record<string, any>) => String(p.id) === String(rawPkgId));
@@ -150,13 +154,13 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
                 fetch("/api/cms/activities").catch(() => null),
                 fetch("/api/cms/properties").catch(() => null)
               ]);
-              if (actRes) {
+              if (actRes && actRes.ok && (actRes.headers.get("content-type") || "").includes("application/json")) {
                 const actJson = await actRes.json();
                 if (actJson.success && Array.isArray(actJson.activities)) {
                   freshActivities = actJson.activities;
                 }
               }
-              if (propRes) {
+              if (propRes && propRes.ok && (propRes.headers.get("content-type") || "").includes("application/json")) {
                 const propJson = await propRes.json();
                 if (propJson.success && Array.isArray(propJson.properties)) {
                   freshProperties = propJson.properties;

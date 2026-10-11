@@ -1,3 +1,4 @@
+import { generatePropertySlug } from "@/lib/utils";
 import React from 'react';
 import Link from 'next/link';
 import { getProperties } from '@/lib/appwrite/api';
@@ -46,7 +47,7 @@ export default async function SitemapPage() {
             <ul className="list-disc pl-5 space-y-2 text-brand-coral">
               {properties.map((property) => (
                 <li key={property.$id}>
-                  <Link href={`/property/${property.$id}`} className="hover:underline">
+                  <Link href={`/property/${generatePropertySlug(property.$id, property.title || property.propertyName || "")}`} className="hover:underline">
                     {property.propertyName || property.title || 'Unnamed Property'} - {property.city || property.state ? `${property.city || ''}, ${property.state || ''}` : 'Location unknown'}
                   </Link>
                 </li>

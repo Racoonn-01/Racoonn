@@ -28,3 +28,16 @@ export function parseLocationGeo(rawLocation?: string): { cleanLocation: string;
   }
   return { cleanLocation: rawLocation.trim() };
 }
+
+export function generatePropertySlug(id: string, name: string): string {
+  if (!name) return id;
+  const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+  return `${slug}-${id}`;
+}
+
+export function extractIdFromSlug(slug: string): string {
+  if (!slug) return '';
+  if (!slug.includes('-')) return slug;
+  const parts = slug.split('-');
+  return parts[parts.length - 1];
+}

@@ -1,3 +1,4 @@
+import { optimizeAppwriteImage } from "@/lib/optimizeImage";
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, MapPin, Download, CheckCircle, Printer } from 'lucide-react';
 import Image from 'next/image';
@@ -64,7 +65,7 @@ export default function BookingDetailsModal({ isOpen, onClose, booking, mode }: 
             {/* Header Area */}
             <div className="flex flex-col md:flex-row gap-6 mb-8 print:flex-row">
               <div className="w-full md:w-48 h-32 rounded-2xl overflow-hidden relative shrink-0 print:hidden">
-                <Image src={booking.image} alt={booking.hotel} fill className="object-cover" />
+                <Image src={optimizeAppwriteImage(booking.image)} alt={booking.hotel} fill className="object-cover" />
               </div>
               <div className="flex-1">
                 <div className="flex justify-between items-start">

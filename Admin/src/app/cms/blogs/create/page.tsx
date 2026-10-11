@@ -63,7 +63,7 @@ export default function CreateBlogPage() {
 
       for (const file of selectedFiles) {
         const uploadedFile = await storage.createFile(BUCKET_ID, ID.unique(), file);
-        const url = `https://sgp.cloud.appwrite.io/v1/storage/buckets/${BUCKET_ID}/files/${uploadedFile.$id}/view?project=${PROJECT_ID}`;
+        const url = `https://sgp.cloud.appwrite.io/v1/storage/buckets/${BUCKET_ID}/files/${uploadedFile.$id}/preview?project=${PROJECT_ID}&output=webp`;
         imageUrls.push(url);
       }
 

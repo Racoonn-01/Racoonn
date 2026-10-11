@@ -2,12 +2,13 @@
 
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, ArrowLeft, UploadCloud, Image as ImageIcon, CheckCircle, Loader2, AlertCircle } from "lucide-react";
+import { ArrowRight, ArrowLeft, UploadCloud, Image as ImageIcon, CheckCircle, Loader2, AlertCircle, Trash2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { databases, storage, appwriteConfig } from "@/lib/appwrite/client";
 import { ID } from "appwrite";
 import { useAuthStore } from "@/store/authStore";
+import { compressImage } from "@/lib/image-compression";
 
 export function Step6Media({ onNext, onBack }: { onNext: () => void, onBack: () => void }) {
   const { profile } = useAuthStore();
@@ -68,12 +69,13 @@ export function Step6Media({ onNext, onBack }: { onNext: () => void, onBack: () 
             type: file.type || "image/jpeg"
           });
           
+          const compressedFile = await compressImage(file);
           const uploadedFile = await storage.createFile(
             appwriteConfig.propertyImagesBucketId,
             ID.unique(),
-            safeFile
+            compressedFile
           );
-          const fileUrl = storage.getFileView(
+          const fileUrl = storage.getFilePreview(
             appwriteConfig.propertyImagesBucketId,
             uploadedFile.$id
           ).toString();
@@ -122,6 +124,18 @@ export function Step6Media({ onNext, onBack }: { onNext: () => void, onBack: () 
     visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } }
   };
 
+
+  const removePhoto = (photoUrl: string) => {
+    setPhotos(prev => prev.filter(p => p !== photoUrl));
+    
+    // Cleanup category mapping if needed
+    setPhotoCategories(prev => {
+      const newCats = { ...prev };
+      delete newCats[photoUrl];
+      return newCats;
+    });
+  };
+
   return (
     <motion.div 
       initial="hidden" 
@@ -150,7 +164,7 @@ export function Step6Media({ onNext, onBack }: { onNext: () => void, onBack: () 
           
           <div className="flex justify-center gap-4 text-xs font-bold text-slate-400">
             <span className="flex items-center gap-1"><CheckCircle className="w-3 h-3 text-emerald-500" /> High Resolution</span>
-            <span className="flex items-center gap-1"><CheckCircle className="w-3 h-3 text-emerald-500" /> Min 10 Photos</span>
+            
           </div>
         </div>
 
@@ -169,7 +183,7 @@ export function Step6Media({ onNext, onBack }: { onNext: () => void, onBack: () 
 
         {/* Upload Progress/Preview Mock */}
         <div className="space-y-3">
-          <h4 className="text-sm font-bold text-slate-700">Uploaded Photos ({activeFilter === "All" ? photos.length : photos.filter(p => photoCategories[p] === activeFilter).length}/10)</h4>
+          <h4 className="text-sm font-bold text-slate-700">Uploaded Photos ({activeFilter === "All" ? photos.length : photos.filter(p => photoCategories[p] === activeFilter).length})</h4>
           <div className="grid grid-cols-4 gap-3">
             {(activeFilter === "All" ? photos : photos.filter(p => photoCategories[p] === activeFilter)).map((photo, idx) => (
               <div key={idx} className="aspect-square bg-slate-100 rounded-xl overflow-hidden relative group">
@@ -194,14 +208,10 @@ export function Step6Media({ onNext, onBack }: { onNext: () => void, onBack: () 
                     <span className="text-white text-xs font-bold">Cover</span>
                   </div>
                 )}
+                <button onClick={() => removePhoto(photo)} className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/50 hover:bg-black/80 flex items-center justify-center text-white transition-colors opacity-100"><Trash2 className="w-4 h-4" /></button>
               </div>
             ))}
-            {/* Empty slots */}
-            {Array.from({ length: Math.max(0, 8 - (activeFilter === "All" ? photos.length : photos.filter(p => photoCategories[p] === activeFilter).length)) }).map((_, i) => (
-              <div key={`empty-${i}`} className="aspect-square bg-slate-50 border border-slate-200 border-dashed rounded-xl flex items-center justify-center text-slate-300">
-                <ImageIcon className="w-6 h-6" />
-              </div>
-            ))}
+            
           </div>
         </div>
 

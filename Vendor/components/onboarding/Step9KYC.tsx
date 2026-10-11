@@ -126,6 +126,7 @@ export function Step9KYC({ onNext, onBack }: { onNext: () => void, onBack: () =>
         {
           idProofFront: docs.pan?.fileId || "",
           idProofBack: docs.aadhaarFront?.fileId || "",
+          aadhaarCardBack: docs.aadhaarBack?.fileId || "",
           businessProof: docs.lease?.fileId || ""
         }
       );

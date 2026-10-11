@@ -42,8 +42,8 @@ export async function getPaymentsData() {
     let gatewayBalance = 0;
     let failedCount = 0;
     let cancelledCount = 0;
-    let totalCount = bookingsReq.documents.length || paymentsReq.documents.length || 1;
-    let payments: PaymentItem[] = [];
+    const totalCount = bookingsReq.documents.length || paymentsReq.documents.length || 1;
+    const payments: PaymentItem[] = [];
 
     const now = new Date();
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());

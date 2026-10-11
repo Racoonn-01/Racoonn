@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import nodemailer from 'nodemailer';
+import { Client, Databases, Query } from 'node-appwrite';
 import PDFDocument from 'pdfkit';
 import fs from 'fs';
 import path from 'path';
@@ -58,8 +59,10 @@ function generateInvoicePdf(data: any): Promise<Buffer> {
       // Invoice Meta (Right Aligned)
       doc.fontSize(28).font('Helvetica-Bold').fillColor(COLORS.textDark).text('INVOICE', 350, 45, { align: 'right' });
       doc.fontSize(10).font('Helvetica').fillColor(COLORS.textLight).text(`Date: ${new Date().toLocaleDateString('en-GB')}`, 350, 80, { align: 'right' });
-      doc.text(`Booking Ref: ${bookingId}`, 350, 95, { align: 'right' });
-      doc.text(`Invoice No: INV-12345678`, 350, 110, { align: 'right' });
+      doc.text(`Booking Ref: ${bookingId.substring(0, 8).toUpperCase()}`, 350, 95, { align: 'right' });
+      
+      const invoiceNo = data.invoiceNumber || `INV-${bookingId.substring(0, 8).toUpperCase()}`;
+      doc.text(`Invoice No: ${invoiceNo}`, 350, 110, { align: 'right' });
 
       // Divider
       doc.moveTo(50, 175).lineTo(545, 175).strokeColor(COLORS.border).lineWidth(1).stroke();
@@ -182,11 +185,13 @@ export async function POST(req: Request) {
       adults = 1,
       email = '',
       firstName = 'Guest',
+      lastName = '',
       bookingId = 'N/A',
       addonsList = [],
       gstRate = 18,
       gstAmount = 0,
-      isPackage = false
+      isPackage = false,
+      hotelId = null
     } = data;
 
     if (!email) {
@@ -194,6 +199,30 @@ export async function POST(req: Request) {
         { error: 'Email is required' },
         { status: 400 }
       );
+    }
+
+    if (data.bookingId && !data.invoiceNumber) {
+      try {
+        const client = new Client()
+          .setEndpoint(process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT || "https://cloud.appwrite.io/v1")
+          .setProject(process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID || "")
+          .setKey(process.env.APPWRITE_API_KEY || "");
+        
+        const databases = new Databases(client);
+        const dbId = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID || "6a3cec630035d63ea963";
+        const collId = process.env.NEXT_PUBLIC_APPWRITE_BOOKING_COLLECTION_ID || "bookings";
+
+        const bookingDoc = await databases.getDocument(dbId, collId, data.bookingId);
+        
+        const response = await databases.listDocuments(dbId, collId, [
+          Query.lessThanEqual('$createdAt', bookingDoc.$createdAt),
+          Query.limit(1)
+        ]);
+        
+        data.invoiceNumber = `INV-${response.total.toString().padStart(3, '0')}`;
+      } catch (err) {
+        console.error("Failed to generate serial invoice number:", err);
+      }
     }
 
     // 1. Generate PDF Buffer
@@ -221,7 +250,7 @@ export async function POST(req: Request) {
           
           <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin: 20px 0;">
             <h3 style="margin-top: 0; color: #E86A6F;">Booking Details</h3>
-            <p style="margin: 5px 0;"><strong>Booking ID:</strong> ${bookingId || 'N/A'}</p>
+            <p style="margin: 5px 0;"><strong>Booking ID:</strong> ${data.displayBookingId || bookingId?.substring(0, 8).toUpperCase() || 'N/A'}</p>
             <p style="margin: 5px 0;"><strong>${isPackage ? 'Package Name' : 'Hotel'}:</strong> ${hotelName} ${hotelLocation ? '(' + hotelLocation + ')' : ''}</p>
             ${isPackage ? `
               <p style="margin: 5px 0;"><strong>Starting date:</strong> ${checkIn}</p>
@@ -245,23 +274,207 @@ export async function POST(req: Request) {
       </div>
     `;
 
-    const info = await transporter.sendMail({
-      from: `"Racoonn Bookings" <${process.env.SMTP_USER}>`,
-      to: email,
-      subject: `Booking Confirmed: ${hotelName}`,
-      html: htmlContent,
-      attachments: [
-        {
-          filename: `Invoice-${bookingId || 'Booking'}.pdf`,
-          content: pdfBuffer,
-          contentType: 'application/pdf'
+    try {
+      const info = await transporter.sendMail({
+        from: `"Racoonn Bookings" <${process.env.SMTP_USER}>`,
+        to: email,
+        subject: `Booking Confirmed: ${hotelName}`,
+        html: htmlContent,
+        attachments: [
+          {
+            filename: `Invoice-${data.displayBookingId || bookingId?.substring(0, 8).toUpperCase() || 'Booking'}.pdf`,
+            content: pdfBuffer,
+            contentType: 'application/pdf'
+          }
+        ]
+      });
+
+      console.log("Message sent with invoice attached: %s", info.messageId);
+    } catch (emailErr) {
+      console.error("Failed to send user confirmation email:", emailErr);
+    }
+
+    // 3. Notify Vendor if hotelId is provided
+    if (hotelId) {
+      try {
+        const client = new Client()
+          .setEndpoint(process.env.APPWRITE_ENDPOINT || process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT || 'https://sgp.cloud.appwrite.io/v1')
+          .setProject(process.env.APPWRITE_PROJECT_ID || process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID || '6a3bce6900381359c3ce')
+          .setKey(process.env.APPWRITE_API_KEY || '');
+          
+        const db = new Databases(client);
+        const dbId = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID || '6a3cec630035d63ea963';
+        
+        const property = await db.getDocument(dbId, 'properties', hotelId).catch(() => null);
+        
+        let vendor = null;
+        if (property && (property.vendorId || property.userId)) {
+          vendor = await db.getDocument(dbId, '6a3e0fd9da7df0d38588', property.vendorId || property.userId).catch(() => null);
         }
-      ]
-    });
+        
+        if (vendor && vendor.email) {
+            const vendorHtml = `
+              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #333; line-height: 1.6;">
+                <div style="background-color: #E86A6F; padding: 20px; text-align: center; border-radius: 10px 10px 0 0;">
+                  <h1 style="color: white; margin: 0;">New Booking Alert!</h1>
+                </div>
+                <div style="padding: 20px; border: 1px solid #ddd; border-top: none; border-radius: 0 0 10px 10px;">
+                  <p>Hi ${vendor.businessName || vendor.firstName || 'Vendor'},</p>
+                  <p>You have received a new booking for <strong>${hotelName}</strong>.</p>
+                  <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin: 20px 0;">
+                    <p style="margin: 5px 0;"><strong>Booking ID:</strong> ${bookingId}</p>
+                    <p style="margin: 5px 0;"><strong>Guest Name:</strong> ${firstName} ${lastName || ''}</p>
+                    <p style="margin: 5px 0;"><strong>Check-in:</strong> ${checkIn}</p>
+                    <p style="margin: 5px 0;"><strong>Check-out:</strong> ${checkOut}</p>
+                    <p style="margin: 5px 0;"><strong>Guests:</strong> ${adults || 1} Adult(s)</p>
+                    <p style="margin: 5px 0;"><strong>Nights:</strong> ${nights}</p>
+                  </div>
+                  <p>Please log in to your vendor dashboard to manage this booking.</p>
+                  <p><strong>The Racoonn Team</strong></p>
+                </div>
+              </div>
+            `;
+            
+            try {
+              await transporter.sendMail({
+                from: '"Racoonn Bookings" <' + process.env.SMTP_USER + '>',
+                to: vendor.email,
+                subject: `New Booking Alert: ${hotelName}`,
+                html: vendorHtml
+              });
+              console.log("Vendor notification sent to:", vendor.email);
+            } catch (vendorEmailErr) {
+              console.error("Failed to send vendor notification email:", vendorEmailErr);
+            }
+          }
+          
+          // --- INSTANT AUTO INVOICE GENERATION ---
+          try {
+              const invoicesDoc = await db.getDocument(dbId, 'properties', 'cms_invoices_v1').catch(() => null);
+              let allInvoices = invoicesDoc?.details ? JSON.parse(invoicesDoc.details) : [];
+              
+            const v = vendor || {};
+            const effectiveFeePercent = v.allow24PercentGst ? 24 : 18;
+            const invoiceTotal = Number(price) || 0; // Gross (e.g. 2100)
+            const pricePerNight = invoiceTotal / Math.max(1, nights || 1);
+            const gstRate = pricePerNight <= 7500 ? 0.05 : 0.18;
+            const gstMultiplier = 1 + gstRate;
+            
+            // Formula: User Pays Base - 18% = Taxable amount for vendor invoice
+            const userPaysBase = Number((invoiceTotal / gstMultiplier).toFixed(2)); // e.g. 2000
+            const commission = Math.round(userPaysBase * (effectiveFeePercent / 100)); // e.g. 360
+            const taxableValue = userPaysBase - commission; // e.g. 1640
+            
+            const isIgst = v.gstin ? !v.gstin.startsWith("05") : (v.state && v.state.toLowerCase() !== "uttarakhand");
+            const cgst = isIgst ? 0 : Number((taxableValue * (gstRate / 2)).toFixed(2)); // e.g. 41
+            const sgst = isIgst ? 0 : Number((taxableValue * (gstRate / 2)).toFixed(2)); // e.g. 41
+            const igst = isIgst ? Number((taxableValue * gstRate).toFixed(2)) : 0;
+            
+            const totalGst = cgst + sgst + igst; // e.g. 82
+            const netPayable = Math.max(1, taxableValue + totalGst); // e.g. 1722
 
-    console.log("Message sent with invoice attached: %s", info.messageId);
+            const cleanHotelName = (hotelName || "HT").replace(/[^a-zA-Z]/g, '').toUpperCase();
+              const hNamePart = cleanHotelName.substring(0, 2).padEnd(2, 'X');
+              const hIdPart = (hotelId || "00").substring((hotelId || "00").length - 2).toUpperCase();
+              const hotelCode = `${hNamePart}${hIdPart}`;
+              
+              const hotelInvoices = allInvoices.filter((inv: any) => inv.propertyId === hotelId || (inv.id && typeof inv.id === 'string' && inv.id.startsWith(`${hotelCode}/INV/`)));
+              const serialNumber = (hotelInvoices.length + 1).toString().padStart(3, '0');
+              
+              const newInvoiceId = `${hotelCode}/INV/${serialNumber}`;
+              
+              const newInvoice = {
+                id: newInvoiceId,
+                invoiceNumber: newInvoiceId,
+                type: "tax_invoice",
+                status: "Invoice Submitted",
+                // Admin / OTA Details
+                adminCompany: "CIELLE TRAVELS PRIVATE LIMITED",
+                adminPlatform: "Racoonn",
+                adminAddress: "B-81, Rose Villa, Samiah Lake City, Rudrapur, Kichha, Udham Singh Nagar - 263153, Uttarakhand",
+                adminEmail: "info@racoonn.com",
+                
+              // Vendor / Hotel Details
+              propertyId: hotelId || "",
+              vendorId: v.$id || property?.vendorId || property?.userId || 'unknown-vendor',
+              vendorName: v.businessName || v.hotelName || v.firstName || "Partner Vendor",
+              vendorBusiness: v.businessName || v.hotelName || "Partner Property",
+              vendorEmail: v.email || "vendor@racoonn.com",
+              vendorPhone: v.phone || "",
+              vendorAddress: [property?.address || v.address, property?.city || v.city, property?.state || v.state, property?.pincode || v.pincode].filter(Boolean).join(", ") || "Vendor Address",
+              vendorCity: property?.city || v.city || "",
+              vendorState: property?.state || v.state || "",
+              vendorGstin: v.gstin || "",
+              vendorPan: v.pan || "",
+              
+              // Booking Info
+                bookingIds: [bookingId],
+                checkIn,
+                checkOut,
+                nights,
+                
+                // Financials
+                taxableValue,
+                cgst,
+                sgst,
+                igst,
+                totalGst,
+                invoiceTotal,
+                otaCommission: commission,
+                netPayable,
+                
+              // Settlement
+              bankName: v.bankName || "",
+              accountHolder: v.accountHolder || "",
+              accountNumber: v.accountNumber || "",
+              ifsc: v.ifsc || "",
+              upiId: v.upiId || "",
+              issueDate: new Date().toISOString(),
+              placeOfSupply: "Uttarakhand (05)",
+                
+                items: [
+                  {
+                    id: `item-${Date.now()}`,
+                    description: `Room accommodation charges - OTA bookings settled through Racoonn`,
+                    sacCode: "996311",
+                    bookingId: bookingId,
+                    checkIn,
+                    checkOut,
+                    nights,
+                    taxableAmount: taxableValue
+                  }
+                ]
+              };
 
-    return NextResponse.json({ success: true, messageId: info.messageId });
+              allInvoices.unshift(newInvoice);
+              await db.updateDocument(dbId, 'properties', 'cms_invoices_v1', {
+                details: JSON.stringify(allInvoices)
+              }).catch(async (e) => {
+                if (e.code === 404) {
+                   await db.createDocument(dbId, 'properties', 'cms_invoices_v1', {
+                     vendorId: 'admin',
+                     propertyName: 'CMS Invoices Storage',
+                     propertyType: 'hotel',
+                     city: 'Delhi',
+                     state: 'Delhi',
+                     location: 'Admin Dashboard',
+                     status: 'active',
+                     title: 'CMS Invoices',
+                     price: 0,
+                     details: JSON.stringify(allInvoices)
+                   });
+                }
+              });
+              console.log("Instant vendor invoice generated:", newInvoiceId);
+            } catch (invoiceErr) {
+            console.error("Failed to generate instant vendor invoice:", invoiceErr);
+          }
+          // --- END INSTANT AUTO INVOICE ---
+      } catch (vendorErr) {
+        console.error("Failed to notify vendor:", vendorErr);
+      }
+    }
+    return NextResponse.json({ success: true, messageId: 'success' });
   } catch (error: any) {
     console.error('Error sending confirmation email:', error);
     return NextResponse.json(

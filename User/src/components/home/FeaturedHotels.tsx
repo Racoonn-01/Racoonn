@@ -1,3 +1,4 @@
+import { optimizeAppwriteImage } from "@/lib/optimizeImage";
 import Image from 'next/image';
 import { Star, MapPin } from 'lucide-react';
 import Link from 'next/link';
@@ -49,7 +50,7 @@ export default function FeaturedHotels() {
             <div key={hotel.id} className="bg-white border border-brand-sky/50 rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 group">
               <div className="relative aspect-4/3 overflow-hidden">
                 <Image
-                  src={hotel.image}
+                  src={optimizeAppwriteImage(hotel.image)}
                   alt={hotel.name}
                   fill
                   className="object-cover group-hover:scale-105 transition-transform duration-500"

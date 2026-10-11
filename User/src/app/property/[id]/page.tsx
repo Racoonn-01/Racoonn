@@ -29,10 +29,46 @@ import { isActiveProperty, parseLocationGeo } from '@/lib/utils';
 import { databases } from '@/lib/appwrite/config';
 import { getReviews } from '@/lib/appwrite/api';
 import { Query } from 'appwrite';
+import PropertyAIChatbot from '@/components/property/PropertyAIChatbot';
+
+import { Metadata } from 'next';
+import { extractIdFromSlug } from '@/lib/utils';
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const resolvedParams = await params;
+  const slug = resolvedParams?.id || '1';
+  const id = extractIdFromSlug(slug);
+
+  try {
+    const dbId = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID;
+    const colId = process.env.NEXT_PUBLIC_APPWRITE_PROPERTY_COLLECTION_ID || 'properties';
+    if (dbId && colId) {
+      const property = await databases.getDocument(dbId, colId, id);
+      if (property) {
+        const title = property.propertyName || property.title || 'Racoonn Property';
+        const description = property.description ? property.description.substring(0, 160) : `Book your stay at ${title} with Racoonn.`;
+        const category = property.category || 'Hotel';
+        const keywords = `${title}, ${property.city || ''}, ${property.state || ''}, ${category}, Racoonn bookings, vacation rental, accommodation, stay in ${property.city || 'India'}`;
+        
+        return {
+          title: `${title} | Racoonn`,
+          description,
+          keywords,
+        };
+      }
+    }
+  } catch (e) {}
+  
+  return {
+    title: 'Property Details | Racoonn',
+    description: 'View property details and book your stay with Racoonn.'
+  };
+}
 
 export default async function PropertyDetails({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = await params;
-  const id = resolvedParams?.id || '1';
+  const slug = resolvedParams?.id || '1';
+  const id = extractIdFromSlug(slug);
   
   const propertyFromList = allProperties.find(p => p.id === id) || mockHotels.find(h => h.id === id);
   if (propertyFromList && !isActiveProperty(propertyFromList)) {
@@ -67,6 +103,9 @@ export default async function PropertyDetails({ params }: { params: Promise<{ id
   let reviewCount = 241;
   let averageRating = '4.96';
   const project = process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID || '6a3bce6900381359c3ce';
+  
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let realProperty: any = null;
 
   // Try to fetch real data from Appwrite
   try {
@@ -76,7 +115,7 @@ export default async function PropertyDetails({ params }: { params: Promise<{ id
     const roomBucketId = process.env.NEXT_PUBLIC_APPWRITE_ROOM_IMAGES_BUCKET_ID || '6a3e398000280b2b3d20';
 
     if (dbId && colId) {
-      const realProperty = await databases.getDocument(dbId, colId, id);
+      realProperty = await databases.getDocument(dbId, colId, id);
       if (realProperty) {
         if (!isActiveProperty(realProperty as unknown as { status?: string })) {
           notFound();
@@ -89,7 +128,7 @@ export default async function PropertyDetails({ params }: { params: Promise<{ id
           images = realProperty.photos.map((fileId: string) => 
             fileId.startsWith('http') 
               ? fileId 
-              : `https://sgp.cloud.appwrite.io/v1/storage/buckets/${propertyBucketId}/files/${fileId}/view?project=${project}`
+              : `https://sgp.cloud.appwrite.io/v1/storage/buckets/${propertyBucketId}/files/${fileId}/preview?output=webp&project=${project}`
           );
         }
         if (realProperty.description) {
@@ -116,7 +155,7 @@ export default async function PropertyDetails({ params }: { params: Promise<{ id
                 ? room.photos.map((fileId: string) => 
                     fileId.startsWith('http') 
                       ? fileId 
-                      : `https://sgp.cloud.appwrite.io/v1/storage/buckets/${roomBucketId}/files/${fileId}/view?project=${project}`
+                      : `https://sgp.cloud.appwrite.io/v1/storage/buckets/${roomBucketId}/files/${fileId}/preview?project=${project}&output=webp`
                   )
                 : [];
               
@@ -125,6 +164,19 @@ export default async function PropertyDetails({ params }: { params: Promise<{ id
                 images: roomImages
               };
             });
+            
+            if (!realProperty.photos || realProperty.photos.length === 0) {
+              const allRoomImages = rooms.flatMap((r: any) => r.images || []);
+              if (allRoomImages.length > 0) {
+                images = Array.from(new Set(allRoomImages));
+              } else {
+                images = [];
+              }
+            }
+          } else {
+            if (!realProperty.photos || realProperty.photos.length === 0) {
+              images = [];
+            }
           }
         }
 
@@ -273,6 +325,9 @@ export default async function PropertyDetails({ params }: { params: Promise<{ id
         </div>
       </div>
       <VendorPromoPopup propertyId={id} vendorId={vendorId} />
+      
+      {realProperty && <PropertyAIChatbot propertyData={JSON.parse(JSON.stringify(realProperty))} />}
     </div>
   );
 }
+

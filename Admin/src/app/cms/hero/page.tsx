@@ -90,7 +90,7 @@ export default function HeroSectionCMSPage() {
       const BUCKET_ID = "6a3e398000280b2b3d20";
       const PROJECT_ID = "6a3bce6900381359c3ce";
       const uploadedFile = await storage.createFile(BUCKET_ID, ID.unique(), file);
-      const url = `https://sgp.cloud.appwrite.io/v1/storage/buckets/${BUCKET_ID}/files/${uploadedFile.$id}/view?project=${PROJECT_ID}`;
+      const url = `https://sgp.cloud.appwrite.io/v1/storage/buckets/${BUCKET_ID}/files/${uploadedFile.$id}/preview?project=${PROJECT_ID}&output=webp`;
       setUrlInput(url);
     } catch (error) {
       console.error("Image upload failed", error);
@@ -209,7 +209,7 @@ export default function HeroSectionCMSPage() {
 
             <CardContent className="p-0 flex flex-col bg-white">
               <div className="relative w-full h-48 bg-gray-100">
-                <Image src={img.url} alt={`Slide ${index + 1}`} fill className="object-cover" unoptimized />
+                <Image src={img.url} alt={`Slide ${index + 1}`} fill className="object-cover" />
               </div>
               <div className="p-4 flex flex-col gap-3">
                 <p className="text-xs text-gray-500 truncate" title={img.url}>{img.url}</p>
@@ -307,7 +307,7 @@ export default function HeroSectionCMSPage() {
                 </div>
               ) : (
                 <div className="relative w-full h-48 bg-gray-100 rounded-xl overflow-hidden border border-gray-200">
-                  <Image src={urlInput} alt="Preview" fill className="object-cover" unoptimized />
+                  <Image src={urlInput} alt="Preview" fill className="object-cover" />
                   <button
                     type="button"
                     onClick={() => setUrlInput("")}
@@ -370,7 +370,7 @@ export default function HeroSectionCMSPage() {
                 </div>
               ) : (
                 <div className="relative w-full h-48 bg-gray-100 rounded-xl overflow-hidden border border-gray-200">
-                  <Image src={urlInput} alt="Preview" fill className="object-cover" unoptimized />
+                  <Image src={urlInput} alt="Preview" fill className="object-cover" />
                   <button
                     type="button"
                     onClick={() => setUrlInput("")}

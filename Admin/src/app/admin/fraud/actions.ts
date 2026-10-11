@@ -36,7 +36,7 @@ export async function getFraudMonitoringData() {
       db.listDocuments(DATABASE_ID, 'userprofiles', [Query.limit(500)]).catch(() => ({ documents: [] })),
     ]);
 
-    let incidents: FraudIncidentItem[] = [];
+    const incidents: FraudIncidentItem[] = [];
     let highRiskCount = 0;
     let quarantinedVolume = 0;
     let totalProtectedVolume = 0;

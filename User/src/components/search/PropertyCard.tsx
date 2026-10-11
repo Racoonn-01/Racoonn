@@ -1,8 +1,11 @@
 "use client";
+import { generatePropertySlug } from "@/lib/utils";
+import { optimizeAppwriteImage } from "@/lib/optimizeImage";
 
 import Image from 'next/image';
 import { Heart, Star } from 'lucide-react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
 
 export interface Property {
@@ -31,6 +34,7 @@ export interface Property {
   bathrooms?: number;
   propertyType?: string;
   amenities?: string[];
+  hasRooms?: boolean;
 }
 
 export default function PropertyCard({ 
@@ -56,9 +60,13 @@ export default function PropertyCard({
     if (onSelect) onSelect(property.id);
   };
 
+  const searchParams = useSearchParams();
+  const queryString = searchParams?.toString();
+  const href = `/property/${generatePropertySlug(property.id, property.name || property.title || property.propertyName || "")}${queryString ? `?${queryString}` : ''}`;
+
   return (
     <Link 
-      href={`/property/${property.id}`} 
+      href={href} 
       id={`property-card-${property.id}`}
       onClick={handleClick}
       className={`group flex flex-col gap-3 p-2 rounded-2xl transition-all duration-300 ${
@@ -67,11 +75,11 @@ export default function PropertyCard({
     >
       {/* Property Image */}
       <div className="relative aspect-4/3 rounded-xl overflow-hidden bg-gray-200">
-        <Image 
-          src={property.images[0]} 
+        <Image priority 
+          src={optimizeAppwriteImage(property.images[0])} 
           alt={property.title} 
           fill 
-          unoptimized
+         
           onError={(e) => {
             e.currentTarget.src = "https://images.unsplash.com/photo-1542314831-c6a4d14d837e?q=80&w=800&auto=format&fit=crop";
           }}

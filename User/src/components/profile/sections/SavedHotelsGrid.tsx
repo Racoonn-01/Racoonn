@@ -1,3 +1,4 @@
+import { optimizeAppwriteImage } from "@/lib/optimizeImage";
 import { Heart, Star, MapPin, Loader2 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -87,7 +88,7 @@ export default function SavedHotelsGrid() {
               {/* Image */}
               <div className="w-full h-56 relative overflow-hidden">
                 <Image 
-                  src={hotel.image} 
+                  src={optimizeAppwriteImage(hotel.image)} 
                   alt={hotel.name} 
                   fill 
                   className="object-cover group-hover:scale-105 transition-transform duration-500"

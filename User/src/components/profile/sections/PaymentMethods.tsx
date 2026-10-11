@@ -13,6 +13,8 @@ interface Transaction {
   type: 'Debit' | 'Credit';
   description: string;
   paymentMethod: string;
+  rawBooking?: any;
+  rawPayment?: any;
 }
 const mockTransactions = [
   {
@@ -49,6 +51,7 @@ export default function PaymentMethods() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [isDownloading, setIsDownloading] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchTransactions = async () => {
@@ -74,7 +77,9 @@ export default function PaymentMethods() {
               status: isCancelled ? 'Refunded' : (booking.paymentStatus || 'Completed'),
               type: isCancelled ? 'Credit' : 'Debit',
               description: isCancelled ? `Refund: ${booking.hotelName || 'Hotel Booking'}` : (booking.hotelName || 'Hotel Booking'),
-              paymentMethod: 'Credit Card' // Default placeholder since we don't store actual card info yet
+              paymentMethod: 'Credit Card', // Default placeholder since we don't store actual card info yet
+              rawBooking: booking,
+              rawPayment: payment
             };
           });
           
@@ -94,6 +99,54 @@ export default function PaymentMethods() {
     t.description.toLowerCase().includes(searchTerm.toLowerCase()) || 
     t.id.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const handleDownloadInvoice = async (txn: Transaction) => {
+    if (!txn.rawBooking || !user) return;
+    try {
+      setIsDownloading(txn.id);
+      
+      const payload = {
+        hotelName: txn.rawBooking.hotelName,
+        hotelLocation: txn.rawBooking.hotelLocation || '',
+        price: txn.rawPayment?.totalAmount || (txn.rawBooking.price * txn.rawBooking.nights),
+        firstName: user.name?.split(' ')[0] || 'Guest',
+        lastName: user.name?.split(' ').slice(1).join(' ') || '',
+        email: user.email,
+        checkIn: txn.rawBooking.checkIn || txn.rawBooking.checkInDate || txn.rawBooking.startDate || 'N/A',
+        checkOut: txn.rawBooking.checkOut || txn.rawBooking.checkOutDate || txn.rawBooking.endDate || 'N/A',
+        nights: txn.rawBooking.nights || txn.rawBooking.totalNights || txn.rawBooking.numberOfDays || 1,
+        adults: txn.rawBooking.adults || txn.rawBooking.guests || 1,
+        bookingId: txn.rawBooking.$id,
+        displayBookingId: txn.rawBooking.$id.substring(0, 8).toUpperCase(),
+        gstRate: txn.rawBooking.gstPercentage || 18,
+        gstAmount: txn.rawPayment?.taxes || txn.rawBooking.gstAmount || 0,
+        addonsList: txn.rawBooking.snapshotRoomConfig ? JSON.parse(txn.rawBooking.snapshotRoomConfig).addonsList : (txn.rawPayment?.serviceFees ? [{ name: 'Additional Services', price: txn.rawPayment.serviceFees }] : []),
+        isPackage: (txn.rawBooking.roomId || '').startsWith('Package:') || (txn.rawBooking.roomId || '').toLowerCase().includes('package') || (txn.rawBooking.hotelId || '').startsWith('pkg-')
+      };
+
+      const res = await fetch('/api/invoice/download', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      
+      if (!res.ok) throw new Error("Download failed");
+      
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Invoice-${payload.displayBookingId}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      a.remove();
+    } catch (err) {
+      console.error("Failed to download invoice", err);
+    } finally {
+      setIsDownloading(null);
+    }
+  };
 
   return (
     <div className="space-y-8">
@@ -172,8 +225,16 @@ export default function PaymentMethods() {
                       <p className="text-sm text-gray-600">{txn.date}</p>
                     </td>
                     <td className="px-4 sm:px-6 py-4 text-right">
-                      <button className="p-2 text-gray-400 hover:text-brand-coral transition-colors rounded-lg hover:bg-brand-coral/5 inline-flex">
-                        <FileText size={18} />
+                      <button 
+                        onClick={() => handleDownloadInvoice(txn)}
+                        disabled={isDownloading === txn.id}
+                        className="p-2 text-gray-400 hover:text-brand-coral transition-colors rounded-lg hover:bg-brand-coral/5 inline-flex disabled:opacity-50"
+                      >
+                        {isDownloading === txn.id ? (
+                          <Loader2 size={18} className="animate-spin" />
+                        ) : (
+                          <FileText size={18} />
+                        )}
                       </button>
                     </td>
                   </tr>

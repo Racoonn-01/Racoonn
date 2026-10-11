@@ -31,6 +31,7 @@ export default async function VendorsPage() {
 
     let activePropertiesCount = 0;
     let pendingApprovalCount = 0;
+    let suspendedVendorsCount = 0;
     let newVendorsThisWeek = 0;
     let newPropertiesThisWeek = 0;
     let totalPayouts = 0;
@@ -78,6 +79,9 @@ export default async function VendorsPage() {
       if (vendor.status?.toLowerCase() === 'pending') {
         pendingApprovalCount++;
       }
+      if (vendor.status?.toLowerCase() === 'suspended') {
+        suspendedVendorsCount++;
+      }
       if (new Date(vendor.$createdAt) >= oneWeekAgo) {
         newVendorsThisWeek++;
       }
@@ -99,6 +103,7 @@ export default async function VendorsPage() {
       activeProperties: activePropertiesCount,
       totalPayouts: formatCurrency(totalPayouts),
       pendingApproval: pendingApprovalCount,
+      suspendedVendors: suspendedVendorsCount,
       newVendorsThisWeek,
       newPropertiesThisWeek
     };

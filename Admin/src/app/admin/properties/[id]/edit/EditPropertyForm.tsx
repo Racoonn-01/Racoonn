@@ -25,7 +25,7 @@ export default function EditPropertyForm({ property }: { property: Property }) {
     name: property.propertyName,
     location: property.location,
     type: property.propertyType || "",
-    status: property.status || "Pending"
+    status: (property.status === "Active" ? "Approved" : property.status) || "Pending"
   });
 
   const handleUpdateProperty = async (e: React.FormEvent) => {
@@ -142,7 +142,6 @@ export default function EditPropertyForm({ property }: { property: Property }) {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="Pending">Pending</SelectItem>
-                  <SelectItem value="Active">Active</SelectItem>
                   <SelectItem value="Approved">Approved</SelectItem>
                   <SelectItem value="Suspended">Suspended</SelectItem>
                   <SelectItem value="Rejected">Rejected</SelectItem>

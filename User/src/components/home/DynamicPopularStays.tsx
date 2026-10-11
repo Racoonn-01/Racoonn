@@ -1,4 +1,6 @@
 "use client";
+import { generatePropertySlug } from "@/lib/utils";
+import { optimizeAppwriteImage } from "@/lib/optimizeImage";
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
@@ -73,6 +75,7 @@ export default function DynamicPopularStays() {
         
         // 2. Fetch all rooms to determine the real starting price per property
         const propertyPriceMap: Record<string, number> = {};
+        const propertyRoomPhotosMap: Record<string, string[]> = {};
         if (typeof window !== "undefined") {
           // Dynamic import or direct fetch to avoid circular dependency / SSR issues if needed
           await fetch("/api/properties/rooms").catch(() => null);
@@ -95,6 +98,13 @@ export default function DynamicPopularStays() {
                     propertyPriceMap[propId] = p;
                   }
                 }
+                if (Array.isArray(room.photos) && room.photos.length > 0) {
+                  if (!propertyRoomPhotosMap[propId]) {
+                    propertyRoomPhotosMap[propId] = room.photos as string[];
+                  } else {
+                    propertyRoomPhotosMap[propId] = [...propertyRoomPhotosMap[propId], ...(room.photos as string[])];
+                  }
+                }
               }
             });
           } catch (e) {
@@ -113,7 +123,14 @@ export default function DynamicPopularStays() {
               rawPrice = propertyPriceMap[doc.$id as string];
             }
             
-            const photos = Array.isArray(doc.photos) ? doc.photos : [];
+            const propertyPhotos = Array.isArray(doc.photos) && doc.photos.filter(p => typeof p === 'string' && p.trim().length > 0).length > 0 
+              ? doc.photos.filter(p => typeof p === 'string' && p.trim().length > 0) 
+              : null;
+            const roomPhotos = typeof doc.$id === 'string' && propertyRoomPhotosMap[doc.$id] && propertyRoomPhotosMap[doc.$id].filter(p => typeof p === 'string' && p.trim().length > 0).length > 0 
+              ? propertyRoomPhotosMap[doc.$id].filter(p => typeof p === 'string' && p.trim().length > 0) 
+              : null;
+            const finalPhotos = propertyPhotos || roomPhotos || ["https://images.unsplash.com/photo-1542718610-a1d656d1884c?q=80&w=800&auto=format&fit=crop"];
+
             return {
               id: String(doc.$id || ""),
               title: String(doc.propertyName || doc.title || "Luxury Stay"),
@@ -124,9 +141,7 @@ export default function DynamicPopularStays() {
               rating: Number(doc.rating || 4.8),
               reviews: Number(doc.reviewsCount || 120),
               price: rawPrice > 0 ? rawPrice : 3500,
-              image: photos[0]
-                ? String(photos[0])
-                : "https://images.unsplash.com/photo-1542718610-a1d656d1884c?q=80&w=800&auto=format&fit=crop",
+              image: String(finalPhotos[0]),
               status: typeof doc.status === "string" ? doc.status.toLowerCase() : undefined,
             };
           });
@@ -249,16 +264,16 @@ export default function DynamicPopularStays() {
                   transition={{ duration: 0.4, delay: index * 0.08, ease: "easeOut" }}
                 >
                   <Link
-                    href={`/property/${stay.id}`}
+                    href={`/property/${generatePropertySlug(stay.id, stay.title || stay.name || stay.propertyName || "")}`}
                     className="w-full group/card cursor-pointer flex flex-col h-full"
                   >
                     {/* Image Card */}
                     <div className="relative w-full aspect-4/3 shrink-0 rounded-2xl overflow-hidden mb-3 bg-gray-100 shadow-xs">
                       <Image
-                        src={stay.image}
+                        src={optimizeAppwriteImage(stay.image)}
                         alt={stay.title}
                         fill
-                        unoptimized
+                       
                         onError={(e) => {
                           e.currentTarget.src = "https://images.unsplash.com/photo-1542314831-c6a4d14d837e?q=80&w=800&auto=format&fit=crop";
                         }}

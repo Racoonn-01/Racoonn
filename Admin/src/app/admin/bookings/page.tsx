@@ -66,7 +66,7 @@ export type BookingData = {
 
 export default function BookingsPage() {
   const [activeTab, setActiveTab] = useState("all")
-  const [timeFilter, setTimeFilter] = useState("Today")
+  const [timeFilter, setTimeFilter] = useState("Lifetime")
   const [bookings, setBookings] = useState<BookingData[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")

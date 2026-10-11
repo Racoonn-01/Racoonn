@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useCheckoutStore } from "@/store/checkoutStore";
 import { BookingSummary } from "@/components/checkout/BookingSummary";
 import { CancellationPolicy } from "@/components/checkout/CancellationPolicy";
@@ -38,7 +38,18 @@ export function CheckoutSidebar({
     checkFirstBooking();
   }, [checkFirstBooking]);
 
-  const displayAddons = propertyAddons === null ? [] : (propertyAddons.length > 0 ? propertyAddons : DEFAULT_ADDONS);
+  const [localHotelImage, setLocalHotelImage] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const storedImage = localStorage.getItem('racoonn_checkout_image');
+      if (storedImage) {
+        setLocalHotelImage(storedImage);
+      }
+    }
+  }, []);
+
+  const displayAddons = propertyAddons === null ? [] : propertyAddons;
 
   const numGuests = Number(searchParams.get('guests')) || 2;
   const dynamicAddonsTotal = selectedAddons.reduce((sum, addonId) => {
@@ -55,9 +66,13 @@ export function CheckoutSidebar({
   const clientHotelLocation = searchParams.get('hotelLocation');
   const clientRoomImage = searchParams.get('roomImage');
   
-  const hotelName = useCheckoutStore((state) => state.hotelName) || clientHotelName || "Grand Ocean Resort";
-  const hotelImage = useCheckoutStore((state) => state.hotelImage) || clientHotelImage || "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=400&q=80";
-  const hotelLocation = useCheckoutStore((state) => state.hotelLocation) || clientHotelLocation || "Dubai Marina, UAE";
+  const storeHotelName = useCheckoutStore((state) => state.hotelName);
+  const storeHotelImage = useCheckoutStore((state) => state.hotelImage);
+  const storeHotelLocation = useCheckoutStore((state) => state.hotelLocation);
+
+  const hotelName = storeHotelName || clientHotelName || "Grand Ocean Resort";
+  const hotelImage = localHotelImage || storeHotelImage || clientHotelImage || "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=400&q=80";
+  const hotelLocation = storeHotelLocation || clientHotelLocation || "Dubai Marina, UAE";
   
   // Note: we don't store roomImage in the checkoutStore currently, so we just use the client value
   const roomImage = clientRoomImage || undefined;
@@ -141,7 +156,7 @@ export function CheckoutSidebar({
           baseRoomAmount={totalBaseRoomAmount}
           extraGuestAmount={totalExtraGuestAmount}
         />
-        <CancellationPolicy />
+        <CancellationPolicy isPackage={hotelId.startsWith('pkg-')} />
       </div>
     </div>
   );

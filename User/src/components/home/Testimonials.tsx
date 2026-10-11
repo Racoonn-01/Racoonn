@@ -1,3 +1,4 @@
+import { optimizeAppwriteImage } from "@/lib/optimizeImage";
 import { Star, Quote } from 'lucide-react';
 import Image from 'next/image';
 
@@ -52,12 +53,12 @@ export default function Testimonials() {
                 ))}
               </div>
               
-              <p className="text-brand-charcoal/80 mb-8 italic">"{review.content}"</p>
+              <p className="text-brand-charcoal/80 mb-8 italic">&quot;{review.content}&quot;</p>
               
               <div className="flex items-center gap-4">
                 <div className="relative w-12 h-12 rounded-full overflow-hidden">
                   <Image 
-                    src={review.avatar} 
+                    src={optimizeAppwriteImage(review.avatar)} 
                     alt={review.name}
                     fill
                     className="object-cover"

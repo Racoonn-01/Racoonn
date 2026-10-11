@@ -1,4 +1,5 @@
 "use client";
+import { compressImage } from "@/lib/image-compression";
 
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -24,6 +25,7 @@ const steps = [
   { id: 2, title: "Amenities" },
   { id: 3, title: "Media & Photos" },
   { id: 4, title: "Rooms & Pricing" },
+  { id: 5, title: "Property Addons" },
 ];
 
 const AMENITIES_LIST = [
@@ -336,7 +338,7 @@ export function PropertyWizard({ propertyId }: PropertyWizardProps) {
       if (!success) return;
     }
     
-    if (currentStep < 4) {
+    if (currentStep < 5) {
       setDirection(1);
       setCurrentStep((prev) => prev + 1);
     }
@@ -421,7 +423,8 @@ export function PropertyWizard({ propertyId }: PropertyWizardProps) {
       try {
         const newUrls: string[] = [];
         for (const file of filesArray) {
-          const uploadedFile = await storage.createFile(appwriteConfig.propertyImagesBucketId, ID.unique(), file);
+          const compressedFile = await compressImage(file);
+          const uploadedFile = await storage.createFile(appwriteConfig.propertyImagesBucketId, ID.unique(), compressedFile);
           const fileUrl = storage.getFileView(appwriteConfig.propertyImagesBucketId, uploadedFile.$id).toString();
           newUrls.push(fileUrl);
         }
@@ -470,7 +473,8 @@ export function PropertyWizard({ propertyId }: PropertyWizardProps) {
         if (room.photoFiles && room.photoFiles.length > 0) {
           for (const file of room.photoFiles) {
             try {
-              const uploadedFile = await storage.createFile(appwriteConfig.roomImagesBucketId, ID.unique(), file);
+              const compressedFile = await compressImage(file);
+              const uploadedFile = await storage.createFile(appwriteConfig.roomImagesBucketId, ID.unique(), compressedFile);
               uploadedUrls.push(uploadedFile.$id);
             } catch (err: any) {
               console.error("Room photo upload failed", err);
@@ -539,7 +543,7 @@ export function PropertyWizard({ propertyId }: PropertyWizardProps) {
           <div>
             <h2 className="text-2xl font-heading font-black text-secondary tracking-tight">{propertyId ? "Edit Property" : "Add New Property"}</h2>
             <p className="text-sm font-medium text-slate-500">
-              Step {currentStep} of 4: {steps[currentStep - 1].title}
+              Step {currentStep} of 5: {steps[currentStep - 1].title}
             </p>
           </div>
         </div>
@@ -552,7 +556,7 @@ export function PropertyWizard({ propertyId }: PropertyWizardProps) {
               }`}>
                 {step.id}
               </div>
-              {step.id !== 4 && <div className={`w-8 h-0.5 mx-1 transition-colors ${currentStep > step.id ? "bg-primary" : "bg-slate-100"}`} />}
+              {step.id !== 5 && <div className={`w-8 h-0.5 mx-1 transition-colors ${currentStep > step.id ? "bg-primary" : "bg-slate-100"}`} />}
             </div>
           ))}
         </div>
@@ -772,9 +776,13 @@ export function PropertyWizard({ propertyId }: PropertyWizardProps) {
                        </div>
                     )}
                   </div>
+                </div>
+              )}
 
-                  {/* Addons Section */}
-                  <div className="pt-8 border-t border-slate-200 mt-8">
+              {/* STEP 5 */}
+              {currentStep === 5 && (
+                <div className="space-y-8 max-w-2xl mx-auto">
+                  <div className="space-y-6">
                     <div className="flex items-center justify-between mb-6">
                       <div>
                         <h3 className="text-xl font-heading font-bold text-secondary">Property Addons</h3>
@@ -815,7 +823,6 @@ export function PropertyWizard({ propertyId }: PropertyWizardProps) {
                       )}
                     </div>
                   </div>
-
                 </div>
               )}
             </motion.div>
@@ -827,7 +834,7 @@ export function PropertyWizard({ propertyId }: PropertyWizardProps) {
         <Button variant="outline" onClick={prevStep} disabled={currentStep === 1 || saving} className="h-12 px-6 rounded-xl font-bold border-slate-200 text-slate-600 hover:bg-slate-50">
           Back
         </Button>
-        {currentStep < 4 ? (
+        {currentStep < 5 ? (
           <Button onClick={nextStep} disabled={saving} className="h-12 px-8 rounded-xl font-bold bg-secondary hover:bg-secondary/90 text-white min-w-37.5">
             {saving ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : <>{steps[currentStep]?.title || "Next"} <ChevronRight className="w-4 h-4 ml-2" /></>}
           </Button>

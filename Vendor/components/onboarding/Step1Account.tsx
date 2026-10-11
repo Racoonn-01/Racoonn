@@ -28,7 +28,7 @@ export function Step1Account({ onNext }: { onNext: () => void }) {
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  const isFormValid = termsAccepted && firstName.trim() && lastName.trim() && email.trim() && phone.trim() && altPhone.trim();
+  const isFormValid = termsAccepted && firstName.trim() && lastName.trim() && email.trim() && phone.trim();
 
   const selectedPhone = COUNTRIES.find(c => c.name === phoneCountry) || COUNTRIES[0];
   const selectedAltPhone = COUNTRIES.find(c => c.name === altPhoneCountry) || COUNTRIES[0];
@@ -94,7 +94,7 @@ export function Step1Account({ onNext }: { onNext: () => void }) {
             firstName,
             lastName,
             phone: `${selectedPhone.code} ${phone}`,
-            altPhone: `${selectedAltPhone.code} ${altPhone}`,
+            altPhone: altPhone.trim() ? `${selectedAltPhone.code} ${altPhone.trim()}` : "",
           }
         );
       }
@@ -201,7 +201,7 @@ export function Step1Account({ onNext }: { onNext: () => void }) {
         </motion.div>
 
         <motion.div custom={4} variants={slideUpVariants} className="space-y-2.5">
-          <Label className="text-sm font-semibold text-slate-700">Alternative Number</Label>
+          <Label className="text-sm font-semibold text-slate-700">Alternative Number <span className="text-slate-400 font-normal">(Optional)</span></Label>
           <div className="flex gap-3">
             <Select value={altPhoneCountry} onValueChange={(val) => val && setAltPhoneCountry(val)}>
               <SelectTrigger className="h-12! w-25 shrink-0 rounded-xl border-slate-200 bg-slate-50/50 hover:bg-slate-50 focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-all shadow-sm font-medium">

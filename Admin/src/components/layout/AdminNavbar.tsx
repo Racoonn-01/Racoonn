@@ -40,18 +40,21 @@ export function AdminNavbar() {
   const [session, setSession] = useState<{ email?: string; name?: string; role?: string } | null>(null);
 
   useEffect(() => {
-    if (typeof document !== "undefined") {
-      try {
-        const cookies = document.cookie.split("; ");
-        const sessionCookie = cookies.find(row => row.startsWith("racoonn_admin_session="));
-        if (sessionCookie) {
-          const val = decodeURIComponent(sessionCookie.split("=")[1]);
-          setSession(JSON.parse(val));
+    const initSession = async () => {
+      if (typeof document !== "undefined") {
+        try {
+          const cookies = document.cookie.split("; ");
+          const sessionCookie = cookies.find(row => row.startsWith("racoonn_admin_session="));
+          if (sessionCookie) {
+            const val = decodeURIComponent(sessionCookie.split("=")[1]);
+            setSession(JSON.parse(val));
+          }
+        } catch (e) {
+          console.error("Failed to parse session cookie:", e);
         }
-      } catch (e) {
-        console.error("Failed to parse session cookie:", e);
       }
-    }
+    };
+    initSession();
   }, []);
 
   const handleLogout = async () => {

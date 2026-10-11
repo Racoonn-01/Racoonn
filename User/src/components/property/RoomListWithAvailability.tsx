@@ -1,4 +1,5 @@
 'use client';
+import { optimizeAppwriteImage } from "@/lib/optimizeImage";
 
 import { useState, useEffect } from 'react';
 import { Wifi, Coffee, Info, User, Maximize2, Bed, Snowflake, Monitor, Bath, CheckCircle, X, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -315,7 +316,7 @@ export default function RoomListWithAvailability({
               {selectedRoomForModal.images && selectedRoomForModal.images.length > 0 ? (
                 <>
                   <Image 
-                    src={selectedRoomForModal.images[modalImageIndex]} 
+                    src={optimizeAppwriteImage(selectedRoomForModal.images[modalImageIndex])} 
                     alt={selectedRoomForModal.name}
                     fill
                     className="object-cover opacity-90 transition-opacity duration-700 group-hover:opacity-100"

@@ -26,7 +26,7 @@ export default function SavedHotelsGrid() {
         let allItems: SavedItem[] = [];
 
         if (data && data.length > 0) {
-          const mappedProperties: SavedItem[] = data.map((doc: Record<string, unknown>) => ({
+          const mappedProperties: SavedItem[] = data.map((doc: any) => ({
             id: doc.$id,
             name: doc.propertyName || doc.title || 'Unknown Property',
             location: doc.location || `${doc.city || ''}, ${doc.state || ''}`,
@@ -43,7 +43,7 @@ export default function SavedHotelsGrid() {
         if (pkgsRes) {
           const pkgsJson = await pkgsRes.json();
           if (pkgsJson.success && Array.isArray(pkgsJson.packages)) {
-            const mappedPkgs: SavedItem[] = pkgsJson.packages.map((pkg: Record<string, unknown>) => ({
+            const mappedPkgs: SavedItem[] = pkgsJson.packages.map((pkg: any) => ({
               id: pkg.id || pkg.$id,
               name: pkg.title || 'Unknown Package',
               location: pkg.location || '',
@@ -119,7 +119,6 @@ export default function SavedHotelsGrid() {
                 
                 <div className="mt-auto pt-4 border-t border-gray-50">
                   <Link 
-                    // @ts-expect-error type field is added to Hotel
                     href={hotel.type === 'package' ? `/packages/${hotel.id}` : `/property/${hotel.id}`}
                     className="flex items-center justify-center w-full py-3 bg-brand-coral text-white font-bold rounded-xl text-[15px] hover:-translate-y-0.5 hover:shadow-md transition-all"
                   >

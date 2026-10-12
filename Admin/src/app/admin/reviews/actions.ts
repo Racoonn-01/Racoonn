@@ -39,7 +39,7 @@ export async function getAllReviews() {
       const propName = prop ? (prop.propertyName || prop.title) : undefined;
       
       return {
-        id: `REV-${review.$id.substring(0, 6).toUpperCase()}`,
+        id: `REV-${review.$id.substring(review.$id.length - 6).toUpperCase()}`,
         realId: review.$id,
         property: propName || review.propertyName || 'Unknown Property',
         author: review.userName || 'Anonymous',

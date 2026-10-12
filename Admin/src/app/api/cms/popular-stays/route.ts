@@ -5,10 +5,11 @@ export const revalidate = 0;
 import { NextResponse } from "next/server";
 import { unstable_noStore as noStore } from "next/cache";
 import fs from "fs";
+import path from "path";
 import { appwriteServer } from "@/lib/appwrite/server";
 import { Permission, Role, Query } from "node-appwrite";
 
-const SHARED_FILE_PATH = "/Users/haldwani/Documents/Working/Working/Racoonn/popular_stays_cms.json";
+const SHARED_FILE_PATH = path.join(process.cwd(), "popular_stays_cms.json");
 const DATABASE_ID = process.env.APPWRITE_DATABASE_ID || process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID || "6a3cec630035d63ea963";
 const COLLECTION_ID = "popular_stays";
 

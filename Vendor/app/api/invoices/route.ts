@@ -8,10 +8,11 @@ const client = new Client()
 
 const db = new Databases(client);
 const DATABASE_ID = process.env.APPWRITE_DATABASE_ID || "6a3cec630035d63ea963";
+const COLLECTION_ID = process.env.APPWRITE_CMS_INVOICES_COLLECTION_ID || process.env.NEXT_PUBLIC_APPWRITE_CMS_INVOICES_COLLECTION_ID || "cms_invoices";
 
 export async function GET() {
   try {
-    const doc = await db.getDocument(DATABASE_ID, "properties", "cms_invoices_v1");
+    const doc = await db.getDocument(DATABASE_ID, COLLECTION_ID, "cms_invoices_v1");
     const invoices = doc.details ? JSON.parse(doc.details) : [];
     return NextResponse.json({ success: true, invoices });
   } catch (err: any) {
@@ -28,7 +29,7 @@ export async function POST(request: Request) {
     let currentInvoices: any[] = [];
 
     try {
-      const doc = await db.getDocument(DATABASE_ID, "properties", "cms_invoices_v1");
+      const doc = await db.getDocument(DATABASE_ID, COLLECTION_ID, "cms_invoices_v1");
       if (doc.details) {
         currentInvoices = JSON.parse(doc.details);
       }
@@ -45,13 +46,14 @@ export async function POST(request: Request) {
     }
 
     try {
-      await db.getDocument(DATABASE_ID, "properties", "cms_invoices_v1");
-      await db.updateDocument(DATABASE_ID, "properties", "cms_invoices_v1", {
+      await db.getDocument(DATABASE_ID, COLLECTION_ID, "cms_invoices_v1");
+      await db.updateDocument(DATABASE_ID, COLLECTION_ID, "cms_invoices_v1", {
         details: JSON.stringify(currentInvoices)
       });
     } catch (e: any) {
       if (e.code === 404) {
-        await db.createDocument(DATABASE_ID, "properties", "cms_invoices_v1", {
+        await db.createDocument(DATABASE_ID, COLLECTION_ID, "cms_invoices_v1", {
+          title: "CMS Invoices Storage",
           details: JSON.stringify(currentInvoices)
         });
       } else {
@@ -72,7 +74,7 @@ export async function PATCH(request: Request) {
     let currentInvoices: any[] = [];
 
     try {
-      const doc = await db.getDocument(DATABASE_ID, "properties", "cms_invoices_v1");
+      const doc = await db.getDocument(DATABASE_ID, COLLECTION_ID, "cms_invoices_v1");
       if (doc.details) {
         currentInvoices = JSON.parse(doc.details);
       }
@@ -90,7 +92,7 @@ export async function PATCH(request: Request) {
     });
 
     if (updated) {
-      await db.updateDocument(DATABASE_ID, "properties", "cms_invoices_v1", {
+      await db.updateDocument(DATABASE_ID, COLLECTION_ID, "cms_invoices_v1", {
         details: JSON.stringify(currentInvoices)
       });
     }

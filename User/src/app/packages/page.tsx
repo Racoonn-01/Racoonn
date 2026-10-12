@@ -158,81 +158,159 @@ function PackagesContent() {
   });
 
   return (
-    <div className="min-h-screen bg-slate-50 pb-20">
-      {/* Filter Bar */}
-      <div className="bg-white border-b border-gray-200 sticky top-19 z-30 shadow-sm">
-        <div className="container mx-auto px-4 py-4 flex items-center gap-3 overflow-x-auto hide-scrollbar">
-          <div className="relative shrink-0 w-48 sm:w-64">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Search size={16} className="text-gray-400" />
+    <div className="min-h-screen bg-slate-50 pb-20 pt-4 sm:pt-6 md:pt-8">
+      {/* Sticky Filter Bar */}
+      <div className="bg-white/95 backdrop-blur-md border-y border-gray-200 sticky top-0 md:top-[88px] z-30 shadow-xs transition-all">
+        <div className="container mx-auto px-4 sm:px-6 py-3">
+          {/* Main Controls Row */}
+          <div className="flex items-center gap-2 sm:gap-3">
+            {/* Search Input */}
+            <div className="relative flex-1 max-w-md">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <Search size={16} className="text-gray-400" />
+              </div>
+              <input
+                type="text"
+                placeholder="Search packages, destinations..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9 pr-8 py-2 w-full border border-gray-300 rounded-full text-[14px] sm:text-sm text-gray-700 focus:outline-none focus:border-brand-coral focus:ring-1 focus:ring-brand-coral transition-colors bg-gray-50/50 focus:bg-white"
+              />
+              {searchQuery && (
+                <button 
+                  onClick={() => setSearchQuery('')}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                >
+                  <X size={14} />
+                </button>
+              )}
             </div>
-            <input
-              type="text"
-              placeholder="Search packages..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 pr-4 py-2 w-full border border-gray-300 rounded-full text-[14px] text-gray-700 focus:outline-none focus:border-brand-coral focus:ring-1 focus:ring-brand-coral transition-colors"
-            />
+
+            {/* Filter Drawer Trigger (Mobile & Tablet) */}
+            <button 
+              onClick={() => setIsMobileFiltersOpen(true)}
+              className="flex md:hidden items-center gap-1.5 border border-gray-300 hover:border-gray-900 rounded-full px-3.5 py-2 transition-colors shrink-0 font-medium text-[13px] text-gray-700 bg-white"
+            >
+              <SlidersHorizontal size={15} /> 
+              <span>Filters</span>
+              {(selectedFilters.length > 0 || priceRange !== null) && (
+                <span className="w-5 h-5 rounded-full bg-brand-coral text-white text-[11px] font-bold flex items-center justify-center">
+                  {selectedFilters.length}
+                </span>
+              )}
+            </button>
+
+            {/* Desktop Filters Button */}
+            <button 
+              onClick={() => setIsMobileFiltersOpen(true)}
+              className="hidden md:flex items-center gap-2 border border-gray-300 hover:border-gray-900 rounded-full px-4 py-2 transition-colors shrink-0 font-medium text-[14px] text-gray-700"
+            >
+              <SlidersHorizontal size={16} /> Filters
+            </button>
+            
+            <div className="h-7 w-px bg-gray-200 shrink-0 mx-0.5 hidden md:block" />
+            
+            {/* Desktop Filter Pills */}
+            <div className="hidden md:flex items-center gap-2 overflow-x-auto hide-scrollbar py-0.5">
+              {filters.map((filter, idx) => {
+                const isSelected = selectedFilters.includes(filter) || (filter === 'Price' && priceRange !== null);
+
+                if (filter === 'Price') {
+                  return (
+                    <button 
+                      key={idx}
+                      onClick={() => setIsPricePopoverOpen(true)}
+                      className={`flex items-center gap-1.5 border rounded-full px-3.5 py-2 transition-colors shrink-0 font-medium text-[14px] ${
+                        isSelected ? 'border-brand-coral bg-brand-coral/10 text-brand-coral font-semibold' : 'border-gray-300 hover:border-gray-900 text-gray-700'
+                      }`}
+                    >
+                      {filter} <ChevronDown size={14} className={isPricePopoverOpen ? "rotate-180 transition-transform" : "transition-transform"} />
+                    </button>
+                  );
+                }
+
+                return (
+                  <button 
+                    key={idx}
+                    onClick={() => toggleFilter(filter)}
+                    className={`border rounded-full px-3.5 py-2 transition-colors shrink-0 font-medium text-[14px] ${
+                      isSelected ? 'border-brand-coral bg-brand-coral text-white font-medium' : 'border-gray-300 hover:border-gray-900 text-gray-700 bg-white'
+                    }`}
+                  >
+                    {filter}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Clear All Button */}
+            {(selectedFilters.length > 0 || priceRange !== null || searchQuery) && (
+              <button
+                onClick={() => {
+                  setSelectedFilters([]);
+                  setPriceRange(null);
+                  setSearchQuery('');
+                }}
+                className="text-xs font-semibold text-brand-coral hover:underline shrink-0 whitespace-nowrap px-1 ml-auto"
+              >
+                Reset
+              </button>
+            )}
           </div>
 
-          <div className="h-8 w-px bg-gray-200 shrink-0 mx-1" />
+          {/* Mobile Quick Horizontal Pills Strip */}
+          <div className="flex md:hidden items-center gap-1.5 overflow-x-auto hide-scrollbar pt-2.5 pb-0.5 -mx-4 px-4">
+            <button 
+              onClick={() => setIsPricePopoverOpen(true)}
+              className={`flex items-center gap-1 border rounded-full px-3 py-1.5 shrink-0 text-xs font-medium transition-colors ${
+                priceRange ? 'border-brand-coral bg-brand-coral/10 text-brand-coral font-bold' : 'border-gray-300 bg-white text-gray-700'
+              }`}
+            >
+              <span>{priceRange ? `₹${priceRange.min/1000}k-₹${priceRange.max/1000}k` : 'Price'}</span>
+              <ChevronDown size={12} />
+            </button>
 
-          <button 
-            onClick={() => { if (window.innerWidth < 768) setIsMobileFiltersOpen(true); }}
-            className="flex items-center gap-2 border border-gray-300 hover:border-gray-900 rounded-full px-4 py-2 transition-colors shrink-0 font-medium text-[14px] text-gray-700"
-          >
-            <SlidersHorizontal size={16} /> Filters
-          </button>
-          
-          <div className="h-8 w-px bg-gray-200 shrink-0 mx-1 hidden md:block" />
-          
-          <div className="hidden md:flex items-center gap-3">
-          {filters.map((filter, idx) => {
-            const isSelected = selectedFilters.includes(filter) || (filter === 'Price' && priceRange !== null);
-
-            if (filter === 'Price') {
+            {filters.filter(f => f !== 'Price').map((filter, idx) => {
+              const isSelected = selectedFilters.includes(filter);
               return (
-                <button 
+                <button
                   key={idx}
-                  onClick={() => setIsPricePopoverOpen(true)}
-                  className={`flex items-center gap-2 border rounded-full px-4 py-2 transition-colors shrink-0 font-medium text-[14px] ${
-                    isSelected ? 'border-gray-900 bg-gray-100 text-gray-900 font-semibold' : 'border-gray-300 hover:border-gray-900 text-gray-700'
+                  onClick={() => toggleFilter(filter)}
+                  className={`border rounded-full px-3 py-1.5 shrink-0 text-xs font-medium transition-colors ${
+                    isSelected ? 'border-brand-coral bg-brand-coral text-white font-bold' : 'border-gray-300 bg-white text-gray-700'
                   }`}
                 >
-                  {filter} <ChevronDown size={14} className={isPricePopoverOpen ? "rotate-180 transition-transform" : "transition-transform"} />
+                  {filter}
                 </button>
               );
-            }
-
-            return (
-              <button 
-                key={idx}
-                onClick={() => toggleFilter(filter)}
-                className={`border rounded-full px-4 py-2 transition-colors shrink-0 font-medium text-[14px] ${
-                  isSelected ? 'border-gray-900 bg-gray-100 text-gray-900' : 'border-gray-300 hover:border-gray-900 text-gray-700'
-                }`}
-              >
-                {filter}
-              </button>
-            );
-          })}
+            })}
           </div>
         </div>
       </div>
 
       {/* Packages Grid */}
-      <section className="container mx-auto px-4 py-12">
+      <section className="container mx-auto px-4 sm:px-6 py-8 md:py-12">
         {isLoading ? (
           <div className="flex items-center justify-center py-32">
-            <div className="animate-spin rounded-full h-12 w-12 border-4 border-brand-coral border-t-transparent"></div>
+            <div className="animate-spin rounded-full h-10 w-10 border-3 border-brand-coral border-t-transparent"></div>
           </div>
         ) : filteredPackages.length === 0 ? (
-          <div className="text-center py-32 text-gray-500">
-            <h3 className="text-xl font-medium mb-2">No packages found</h3>
-            <p>Try adjusting your filters to find what you&apos;re looking for.</p>
+          <div className="text-center py-24 sm:py-32 px-4 bg-white rounded-2xl border border-gray-100 shadow-xs max-w-lg mx-auto">
+            <h3 className="text-xl font-bold text-brand-navy mb-2">No packages found</h3>
+            <p className="text-sm text-gray-500 mb-6">Try clearing your filters or search keywords to view all available tours.</p>
+            <button 
+              onClick={() => {
+                setSelectedFilters([]);
+                setPriceRange(null);
+                setSearchQuery('');
+              }}
+              className="bg-brand-coral hover:bg-brand-coral/90 text-white font-bold text-sm px-6 py-2.5 rounded-full transition-transform active:scale-95"
+            >
+              Clear All Filters
+            </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 md:gap-8">
             {filteredPackages.map((pkg) => (
               <div key={pkg.id} className="h-full">
                 <TourCard pkg={pkg} />
@@ -271,18 +349,18 @@ function PackagesContent() {
             animate={{ y: 0 }}
             exit={{ y: "100%" }}
             transition={{ type: "spring", damping: 25, stiffness: 200 }}
-            className="fixed inset-0 z-100 bg-white md:hidden flex flex-col"
+            className="fixed inset-0 z-[100] bg-white md:hidden flex flex-col"
           >
             <div className="flex items-center justify-between p-4 border-b border-gray-200">
               <h2 className="text-lg font-bold text-gray-900">Filters</h2>
-              <button onClick={() => setIsMobileFiltersOpen(false)} className="p-2 bg-gray-100 rounded-full">
+              <button onClick={() => setIsMobileFiltersOpen(false)} className="p-2 bg-gray-100 rounded-full active:scale-95">
                 <X size={20} className="text-gray-600" />
               </button>
             </div>
             
             <div className="flex-1 overflow-y-auto p-4 space-y-6">
               <div className="space-y-3">
-                <h3 className="font-semibold text-gray-900">Categories & Locations</h3>
+                <h3 className="font-semibold text-gray-900">Categories & Destinations</h3>
                 <div className="flex flex-wrap gap-2">
                   {filters.filter(f => f !== 'Price').map((filter, idx) => {
                     const isSelected = selectedFilters.includes(filter);
@@ -291,7 +369,7 @@ function PackagesContent() {
                         key={idx}
                         onClick={() => toggleFilter(filter)}
                         className={`border rounded-full px-4 py-2 transition-colors font-medium text-[14px] ${
-                          isSelected ? 'border-gray-900 bg-gray-100 text-gray-900' : 'border-gray-300 text-gray-700'
+                          isSelected ? 'border-brand-coral bg-brand-coral text-white font-bold' : 'border-gray-300 text-gray-700 bg-white'
                         }`}
                       >
                         {filter}
@@ -302,12 +380,15 @@ function PackagesContent() {
               </div>
 
               <div className="pt-6 border-t border-gray-100">
-                <h3 className="font-semibold text-gray-900 mb-3">Budget</h3>
+                <h3 className="font-semibold text-gray-900 mb-3">Price Budget</h3>
                 <button 
-                  onClick={() => setIsPricePopoverOpen(true)}
+                  onClick={() => {
+                    setIsMobileFiltersOpen(false);
+                    setIsPricePopoverOpen(true);
+                  }}
                   className="w-full flex items-center justify-between border border-gray-300 rounded-xl px-4 py-3 font-medium text-[14px] text-gray-700 active:bg-gray-50"
                 >
-                  <span>Select Price Range</span>
+                  <span>Set Budget Range</span>
                   <div className="flex items-center gap-2">
                     {priceRange ? <span className="text-brand-coral font-bold text-xs bg-brand-coral/10 px-2 py-1 rounded">₹{priceRange.min.toLocaleString('en-IN')} - ₹{priceRange.max.toLocaleString('en-IN')}</span> : null}
                     <ChevronDown size={16} />
@@ -316,8 +397,22 @@ function PackagesContent() {
               </div>
             </div>
 
-            <div className="p-4 border-t border-gray-200 pb-8">
-              <button onClick={() => setIsMobileFiltersOpen(false)} className="w-full bg-brand-coral text-white font-bold rounded-xl py-3.5 shadow-md active:scale-[0.98] transition-transform">
+            <div className="p-4 border-t border-gray-200 pb-8 flex items-center gap-3">
+              {(selectedFilters.length > 0 || priceRange !== null) && (
+                <button
+                  onClick={() => {
+                    setSelectedFilters([]);
+                    setPriceRange(null);
+                  }}
+                  className="py-3.5 px-4 text-sm font-semibold text-gray-600 hover:text-gray-900"
+                >
+                  Clear All
+                </button>
+              )}
+              <button 
+                onClick={() => setIsMobileFiltersOpen(false)} 
+                className="flex-1 bg-brand-coral text-white font-bold rounded-xl py-3.5 shadow-md active:scale-[0.98] transition-transform text-center"
+              >
                 Show {filteredPackages.length} Packages
               </button>
             </div>

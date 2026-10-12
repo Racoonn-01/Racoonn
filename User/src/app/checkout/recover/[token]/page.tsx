@@ -55,23 +55,44 @@ export default async function RecoverCheckoutPage({ params }: { params: Promise<
     );
   }
 
-  // Redirect to the original checkout URL
+  // Build the target checkout URL
+  let targetUrl = '/checkout';
+
   if (checkout.checkoutUrl) {
     try {
-      const url = new URL(checkout.checkoutUrl);
-      url.searchParams.set('recovered', 'true');
-      
-      await databases.updateDocument(DATABASE_ID, COLLECTION_ID, checkout.$id, {
-        status: 'CHECKOUT_STARTED',
-        emailSent: false 
-      });
-
-      redirect(url.toString());
+      // Support both relative (/checkout?...) and absolute (http://.../checkout?...)
+      const parsed = new URL(checkout.checkoutUrl, 'https://racoonn.com');
+      const pathname = parsed.pathname.startsWith('/checkout') ? parsed.pathname : '/checkout';
+      const sp = parsed.searchParams;
+      sp.set('recovered', 'true');
+      const search = sp.toString() ? `?${sp.toString()}` : '';
+      targetUrl = `${pathname}${search}`;
     } catch (e) {
-      console.error(e);
-      redirect('/');
+      console.error('Error parsing checkoutUrl:', e);
     }
+  } else if (checkout.hotelId) {
+    // Reconstruct checkout URL from saved document fields if checkoutUrl is absent
+    const sp = new URLSearchParams();
+    sp.set('hotelId', checkout.hotelId);
+    if (checkout.roomName) sp.set('roomName', checkout.roomName);
+    if (checkout.amount) sp.set('price', String(checkout.amount));
+    if (checkout.checkIn) sp.set('checkIn', checkout.checkIn);
+    if (checkout.checkOut) sp.set('checkOut', checkout.checkOut);
+    if (checkout.guests) sp.set('guests', checkout.guests);
+    sp.set('recovered', 'true');
+    targetUrl = `/checkout?${sp.toString()}`;
   }
 
-  redirect('/');
+  // Update abandoned checkout record status
+  try {
+    await databases.updateDocument(DATABASE_ID, COLLECTION_ID, checkout.$id, {
+      status: 'CHECKOUT_STARTED',
+      emailSent: false 
+    });
+  } catch (updateErr) {
+    console.error('Failed to update checkout document on recovery:', updateErr);
+  }
+
+  // Perform redirect outside of try/catch so Next.js NEXT_REDIRECT is not caught
+  redirect(targetUrl);
 }

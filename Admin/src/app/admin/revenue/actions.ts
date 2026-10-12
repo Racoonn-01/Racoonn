@@ -67,7 +67,7 @@ export async function getRevenueData() {
       ).catch(() => ({ documents: [] })),
       db.getDocument(
         DATABASE_ID,
-        'properties',
+        'cms_invoices',
         'cms_invoices_v1'
       ).catch(() => ({ details: "[]" }))
     ]);

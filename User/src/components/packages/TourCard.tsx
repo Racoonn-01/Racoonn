@@ -67,46 +67,50 @@ export default function TourCard({ pkg }: { pkg: TourCardPackage }) {
       </div>
 
       {/* Content Section */}
-      <div className="p-5 flex flex-col grow">
-        <h3 className="font-bold text-brand-navy text-[17px] mb-1.5">{pkg.title}</h3>
+      <div className="p-4 sm:p-5 flex flex-col grow">
+        <Link href={`/packages/${pkg.id}`} className="hover:text-brand-coral transition-colors">
+          <h3 className="font-bold text-brand-navy text-[16px] sm:text-[17px] leading-snug mb-1.5 line-clamp-2">{pkg.title}</h3>
+        </Link>
         
-        <div className="flex items-center gap-1 text-gray-500 mb-4">
-          <MapPin size={14} className="text-brand-coral" />
-          <span className="text-xs font-medium">{pkg.location}</span>
+        <div className="flex items-center gap-1.5 text-gray-500 mb-3.5 flex-wrap">
+          <div className="flex items-center gap-1">
+            <MapPin size={14} className="text-brand-coral shrink-0" />
+            <span className="text-xs font-medium truncate max-w-[140px] sm:max-w-none">{pkg.location}</span>
+          </div>
           {Boolean(pkg.departureCitiesCount && pkg.departureCitiesCount > 0) && (
-            <span className="text-[11px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full ml-auto">
+            <span className="text-[10px] sm:text-[11px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full ml-auto">
               {pkg.departureCitiesCount} Departure{(pkg.departureCitiesCount || 0) > 1 ? 's' : ''}
             </span>
           )}
         </div>
 
-        <div className="flex flex-col gap-2 mb-4">
+        <div className="flex flex-col gap-1.5 mb-3.5">
           <div className="flex items-center gap-2 text-gray-600">
-            <Clock size={14} />
+            <Clock size={14} className="shrink-0 text-gray-400" />
             <span className="text-xs font-medium">{pkg.duration}</span>
           </div>
           <div className="flex items-center gap-2 text-gray-600">
-            <Utensils size={14} />
-            <span className="text-xs font-medium">{pkg.features}</span>
+            <Utensils size={14} className="shrink-0 text-gray-400" />
+            <span className="text-xs font-medium truncate">{pkg.features}</span>
           </div>
         </div>
 
         {/* Divider */}
-        <div className="h-px w-full bg-gray-100 my-4" />
+        <div className="h-px w-full bg-gray-100 my-3" />
 
         {/* Bottom Row */}
-        <div className="flex items-end justify-between mt-auto">
-          <div>
-            <p className="text-[10px] text-gray-500 font-medium mb-0.5">
+        <div className="flex items-center justify-between gap-2 mt-auto pt-1">
+          <div className="min-w-0">
+            <p className="text-[10px] text-gray-500 font-medium truncate">
               {pkg.departureCityName ? `Ex-${pkg.departureCityName}` : 'Starting from'}
             </p>
-            <p className="font-bold text-brand-coral text-lg">{pkg.price}</p>
+            <p className="font-bold text-brand-coral text-base sm:text-lg whitespace-nowrap">{pkg.price}</p>
           </div>
           <Link 
             href={`/packages/${pkg.id}`}
-            className="bg-brand-coral hover:bg-brand-coral/90 text-white px-4 py-2 rounded-lg text-xs font-bold transition-colors flex items-center gap-1"
+            className="bg-brand-coral hover:bg-brand-coral/90 text-white px-3.5 py-2 sm:px-4 sm:py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-1 shrink-0 active:scale-95 shadow-sm"
           >
-            View Details <ArrowRight size={14} />
+            View Details <ArrowRight size={13} />
           </Link>
         </div>
       </div>

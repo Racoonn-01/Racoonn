@@ -157,7 +157,8 @@ export default function Footer() {
                 <li><Link href="/help" className="hover:text-brand-coral hover:translate-x-1 inline-block transition-transform">Help Center / FAQs</Link></li>
                 <li><Link href="/terms" className="hover:text-brand-coral hover:translate-x-1 inline-block transition-transform">Terms of Service</Link></li>
                 <li><Link href="/privacy" className="hover:text-brand-coral hover:translate-x-1 inline-block transition-transform">Privacy Policy</Link></li>
-                <li><a href={process.env.NODE_ENV === 'production' ? 'https://partner.racoonn.com/developers' : 'http://localhost:3000/developers'} className="hover:text-brand-coral hover:translate-x-1 inline-block transition-transform">API Documentation</a></li>
+                <li><Link href="/sitemap" className="hover:text-brand-coral hover:translate-x-1 inline-block transition-transform">Sitemap</Link></li>
+                <li><a href={process.env.NODE_ENV === 'production' ? 'https://partner.racoonn.com/developers' : (process.env.NEXT_PUBLIC_VENDOR_PORTAL_URL ? `${process.env.NEXT_PUBLIC_VENDOR_PORTAL_URL}/developers` : 'http://localhost:3002/developers')} target="_blank" rel="noopener noreferrer" className="hover:text-brand-coral hover:translate-x-1 inline-block transition-transform">API Documentation</a></li>
               </ul>
             </div>
             
@@ -170,6 +171,8 @@ export default function Footer() {
             <div className="flex flex-col items-center md:items-start gap-1 text-sm text-brand-sky/50 text-center md:text-left">
               <div className="flex flex-col md:flex-row items-center gap-2">
                 <span>&copy; {new Date().getFullYear()} Racoonn. All rights reserved.</span>
+                <span className="hidden md:inline text-brand-sky/30">•</span>
+                <Link href="/sitemap" className="hover:text-brand-coral transition-colors">Sitemap</Link>
               </div>
               <span>Design and Developed By <a href="https://preettech.com" target="_blank" rel="noopener noreferrer" className="hover:text-brand-coral transition-colors font-medium">Preet Tech</a></span>
             </div>

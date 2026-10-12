@@ -142,7 +142,7 @@ export function CheckoutSidebar({
 
   return (
     <div className="w-full lg:w-100 shrink-0">
-      <div className="sticky top-28 space-y-6 transition-all duration-300">
+      <div className="lg:sticky lg:top-28 space-y-6 transition-all duration-300">
         <BookingSummary 
           roomName={finalRoomName}
           pricePerNight={finalPrice}

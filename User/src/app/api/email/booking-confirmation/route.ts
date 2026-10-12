@@ -350,7 +350,8 @@ export async function POST(req: Request) {
           
           // --- INSTANT AUTO INVOICE GENERATION ---
           try {
-              const invoicesDoc = await db.getDocument(dbId, 'properties', 'cms_invoices_v1').catch(() => null);
+              const invoicesCol = process.env.NEXT_PUBLIC_APPWRITE_CMS_INVOICES_COLLECTION_ID || process.env.APPWRITE_CMS_INVOICES_COLLECTION_ID || 'cms_invoices';
+              const invoicesDoc = await db.getDocument(dbId, invoicesCol, 'cms_invoices_v1').catch(() => null);
               let allInvoices = invoicesDoc?.details ? JSON.parse(invoicesDoc.details) : [];
               
             const v = vendor || {};
@@ -447,20 +448,12 @@ export async function POST(req: Request) {
               };
 
               allInvoices.unshift(newInvoice);
-              await db.updateDocument(dbId, 'properties', 'cms_invoices_v1', {
+              await db.updateDocument(dbId, invoicesCol, 'cms_invoices_v1', {
                 details: JSON.stringify(allInvoices)
               }).catch(async (e) => {
                 if (e.code === 404) {
-                   await db.createDocument(dbId, 'properties', 'cms_invoices_v1', {
-                     vendorId: 'admin',
-                     propertyName: 'CMS Invoices Storage',
-                     propertyType: 'hotel',
-                     city: 'Delhi',
-                     state: 'Delhi',
-                     location: 'Admin Dashboard',
-                     status: 'active',
-                     title: 'CMS Invoices',
-                     price: 0,
+                   await db.createDocument(dbId, invoicesCol, 'cms_invoices_v1', {
+                     title: 'CMS Invoices Storage',
                      details: JSON.stringify(allInvoices)
                    });
                 }

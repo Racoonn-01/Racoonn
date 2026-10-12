@@ -35,7 +35,7 @@ export async function getPayoutsData() {
     // Fetch vendors, invoices, bookings, properties, and payments in parallel
     const [vendorsReq, invoicesDoc, bookingsReq, paymentsReq, propertiesReq] = await Promise.all([
       db.listDocuments(DATABASE_ID, VENDOR_COLLECTION, [Query.limit(500)]).catch(() => ({ documents: [] })),
-      db.getDocument(DATABASE_ID, 'properties', 'cms_invoices_v1').catch(() => null),
+      db.getDocument(DATABASE_ID, 'cms_invoices', 'cms_invoices_v1').catch(() => null),
       db.listDocuments(DATABASE_ID, 'bookings', [Query.limit(1000), Query.orderDesc('$createdAt')]).catch(() => ({ documents: [] })),
       db.listDocuments(DATABASE_ID, 'booking_payments', [Query.limit(1000), Query.orderDesc('$createdAt')]).catch(() => ({ documents: [] })),
       db.listDocuments(DATABASE_ID, 'properties', [Query.limit(500)]).catch(() => ({ documents: [] }))
@@ -163,7 +163,7 @@ export async function getPayoutsData() {
     // 4. Save back to Appwrite if we generated new invoices
     if (newlyGeneratedInvoices) {
       try {
-        await db.updateDocument(DATABASE_ID, 'properties', 'cms_invoices_v1', {
+        await db.updateDocument(DATABASE_ID, 'cms_invoices', 'cms_invoices_v1', {
           details: JSON.stringify(allInvoices)
         });
       } catch (err) {

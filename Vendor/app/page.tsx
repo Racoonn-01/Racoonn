@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Globe2, ShieldCheck, Star, Eye, EyeOff } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
@@ -24,13 +23,14 @@ export default function AuthPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-
-
-
-
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isForgotPassword && !acceptedTerms) {
+      toast.error("Please accept the Terms and Privacy Policy to continue.");
+      return;
+    }
     setIsLoading(true);
 
     try {
@@ -63,11 +63,7 @@ export default function AuthPage() {
     <div className="min-h-screen bg-slate-50 flex flex-row-reverse overflow-hidden selection:bg-brand-coral selection:text-white font-sans">
       {/* Right side form (was left) */}
       <div className="w-full lg:w-[45%] xl:w-[40%] flex flex-col justify-center relative z-10 px-8 sm:px-16 py-12 bg-white shadow-[-30px_0_60px_-15px_rgba(0,0,0,0.05)] overflow-y-auto">
-        <div className="absolute top-8 left-8 sm:left-12">
-          <Image src="/racoonn-logo-text.png" alt="Racoonn" width={140} height={40} className="h-8 w-auto" />
-        </div>
-
-        <div className="w-full max-w-sm mx-auto mt-16 lg:mt-0">
+        <div className="w-full max-w-sm mx-auto">
           <div className="mb-10">
             {isForgotPassword ? (
               <>
@@ -160,7 +156,41 @@ export default function AuthPage() {
                       </div>
                     </div>
                     
-                    <Button disabled={isLoading} type="submit" className={`w-full h-14 text-white rounded-2xl text-[1.05rem] font-bold shadow-lg hover:-translate-y-0.5 transition-all mt-6 ${isSignIn ? "bg-brand-navy hover:bg-brand-navy/90 shadow-brand-navy/20" : "bg-brand-coral hover:bg-brand-coral/90 shadow-brand-coral/25"}`}>
+                    <div className="pt-2">
+                      <label className="flex items-start gap-3 cursor-pointer text-left select-none group">
+                        <input 
+                          type="checkbox" 
+                          id="vendor-terms-accept"
+                          checked={acceptedTerms}
+                          onChange={(e) => setAcceptedTerms(e.target.checked)}
+                          className="mt-0.5 w-4 h-4 rounded border-slate-300 text-brand-coral focus:ring-brand-coral/20 shrink-0 cursor-pointer accent-brand-coral" 
+                        />
+                        <span className="text-[12.5px] text-slate-600 leading-snug">
+                          I accept Racoonn&apos;s{' '}
+                          <a 
+                            href="/terms" 
+                            target="_blank" 
+                            rel="noopener noreferrer" 
+                            onClick={(e) => e.stopPropagation()}
+                            className="text-slate-900 font-bold underline underline-offset-2 hover:text-brand-coral"
+                          >
+                            Partner Listing Terms
+                          </a>{' '}
+                          and{' '}
+                          <a 
+                            href="/privacy" 
+                            target="_blank" 
+                            rel="noopener noreferrer" 
+                            onClick={(e) => e.stopPropagation()}
+                            className="text-slate-900 font-bold underline underline-offset-2 hover:text-brand-coral"
+                          >
+                            Partner Privacy Policy
+                          </a>.
+                        </span>
+                      </label>
+                    </div>
+                    
+                    <Button disabled={isLoading} type="submit" className={`w-full h-14 text-white rounded-2xl text-[1.05rem] font-bold shadow-lg hover:-translate-y-0.5 transition-all mt-4 ${isSignIn ? "bg-brand-navy hover:bg-brand-navy/90 shadow-brand-navy/20" : "bg-brand-coral hover:bg-brand-coral/90 shadow-brand-coral/25"}`}>
                       {isLoading ? "Please wait..." : (isSignIn ? "Sign In to Dashboard" : "Create Account")}
                     </Button>
                   </>
@@ -170,7 +200,7 @@ export default function AuthPage() {
 
           {!isForgotPassword && (
             <>
-              <div className="relative my-10">
+              <div className="relative my-8">
                 <div className="absolute inset-0 flex items-center">
                   <div className="w-full border-t border-slate-200"></div>
                 </div>
@@ -180,7 +210,18 @@ export default function AuthPage() {
               </div>
 
               <div className="flex flex-col w-full">
-                <Button type="button" onClick={handleGoogleAuth} variant="outline" className="w-full h-14 rounded-2xl border-slate-200 hover:bg-slate-50 hover:border-slate-300 text-slate-700 font-bold shadow-sm transition-all">
+                <Button 
+                  type="button" 
+                  onClick={() => {
+                    if (!acceptedTerms) {
+                      toast.error("Please accept the Terms and Privacy Policy to continue with Google.");
+                      return;
+                    }
+                    handleGoogleAuth();
+                  }} 
+                  variant="outline" 
+                  className="w-full h-14 rounded-2xl border-slate-200 hover:bg-slate-50 hover:border-slate-300 text-slate-700 font-bold shadow-sm transition-all"
+                >
                   <svg className="w-5 h-5 mr-2.5" viewBox="0 0 24 24">
                     <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
                     <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
@@ -190,10 +231,6 @@ export default function AuthPage() {
                   Continue with Google
                 </Button>
               </div>
-              
-              <p className="mt-10 text-center text-[0.85rem] text-slate-500 font-medium px-4">
-                By continuing, you agree to Racoonn&apos;s <a href={process.env.NEXT_PUBLIC_USER_PORTAL_URL ? `${process.env.NEXT_PUBLIC_USER_PORTAL_URL}/terms` : "http://localhost:3000/terms"} target="_blank" rel="noopener noreferrer" className="text-slate-900 font-bold hover:underline">Terms of Service</a> and <a href={process.env.NEXT_PUBLIC_USER_PORTAL_URL ? `${process.env.NEXT_PUBLIC_USER_PORTAL_URL}/privacy` : "http://localhost:3000/privacy"} target="_blank" rel="noopener noreferrer" className="text-slate-900 font-bold hover:underline">Privacy Policy</a>.
-              </p>
             </>
           )}
         </div>

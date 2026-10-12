@@ -671,17 +671,17 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
               </div>
 
               {/* Booking Inputs */}
-              <div className="flex w-full flex-row border border-gray-300 rounded-xl overflow-hidden divide-x divide-gray-300">
+              <div className="flex w-full flex-col md:flex-row border border-gray-300 rounded-2xl overflow-hidden bg-white shadow-xs md:divide-x md:divide-gray-200">
                 {departureCitiesList.length > 0 && (
-                  <div className="relative flex-1 min-w-0 p-2.5 sm:p-3 hover:bg-gray-50 transition-colors flex flex-col justify-center group cursor-pointer">
-                    <div className="text-[10px] font-bold uppercase tracking-wider text-gray-900 group-hover:text-brand-coral transition-colors flex items-center justify-between">
-                      <span className="truncate">Departure City</span>
+                  <div className="relative w-full md:flex-1 p-3 sm:p-3.5 border-b md:border-b-0 border-gray-200 hover:bg-gray-50/70 transition-colors flex flex-col justify-center group cursor-pointer">
+                    <div className="text-[11px] font-bold uppercase tracking-wider text-gray-500 group-hover:text-brand-coral transition-colors">
+                      Departure City
                     </div>
-                    <div className="relative mt-0.5 flex items-center justify-between gap-1">
-                      <span className="text-[12px] sm:text-[13px] font-semibold text-gray-800 truncate">
+                    <div className="relative mt-1 flex items-center justify-between gap-2">
+                      <span className="text-[14px] sm:text-[15px] font-bold text-gray-900 truncate">
                         {selectedCity?.cityName || departureCitiesList[0]?.cityName || 'Select city'}
                       </span>
-                      <ChevronDown size={14} className="text-gray-400 group-hover:text-gray-600 transition-colors shrink-0" />
+                      <ChevronDown size={16} className="text-gray-400 group-hover:text-gray-700 transition-colors shrink-0" />
                     </div>
                     <select
                       value={selectedCityId || selectedCity?.id || ''}
@@ -704,55 +704,70 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
                   </div>
                 )}
 
-                <div className="flex flex-1 min-w-0">
-                  {/* Start Date Popover */}
-                  <Popover open={isStartOpen} onOpenChange={setIsStartOpen}>
-                    <PopoverTrigger className="w-full p-2.5 sm:p-3 cursor-pointer hover:bg-gray-50 transition-colors text-left outline-none group">
-                      <div className="text-[10px] font-bold uppercase tracking-wider text-gray-900 group-hover:text-brand-coral transition-colors">Start Date</div>
-                      <div className="text-[12px] sm:text-[13px] font-semibold text-gray-800 mt-0.5 whitespace-nowrap overflow-hidden text-ellipsis">
-                        {startDate ? format(startDate, 'dd/MM/yyyy') : 'Add date'}
-                      </div>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-4 rounded-3xl shadow-[0_12px_40px_rgba(0,0,0,0.12)] border border-gray-100 bg-white z-50" align="start" sideOffset={8}>
-                      <div className="flex items-center justify-between px-2 pb-3 mb-2 border-b border-gray-100">
-                        <div className="flex items-center gap-2">
-                          <span className="w-2.5 h-2.5 rounded-full bg-brand-coral animate-pulse" />
-                          <span className="text-xs font-bold uppercase tracking-wider text-brand-navy">
-                            Select Start Date
-                          </span>
+                {/* Bottom Row on Mobile, Completing Single Line on Desktop */}
+                <div className="flex w-full md:flex-[2] flex-row divide-x divide-gray-200">
+                  {/* Left: Start Date Popover */}
+                  <div className="flex-1 min-w-0">
+                    <Popover open={isStartOpen} onOpenChange={setIsStartOpen}>
+                      <PopoverTrigger className="w-full p-3 sm:p-3.5 cursor-pointer hover:bg-gray-50/70 transition-colors text-left outline-none group flex flex-col justify-center h-full">
+                        <div className="text-[11px] font-bold uppercase tracking-wider text-gray-500 group-hover:text-brand-coral transition-colors">
+                          Start Date
                         </div>
-                      </div>
-                      <Calendar
-                        mode="single"
-                        selected={startDate}
-                        onSelect={handleStartDateSelect}
-                        disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
-                        className="p-1"
-                      />
-                    </PopoverContent>
-                  </Popover>
-                </div>
-                <div className="flex-1 min-w-0 p-2.5 sm:p-3 transition-colors flex flex-col justify-center">
-                  <div className="text-[10px] font-bold uppercase tracking-wider text-gray-900 mb-0.5">Travelers</div>
-                  <div className="flex items-center gap-1 sm:gap-2">
-                    <button 
-                      onClick={() => setAdultsCount(Math.max(1, adultsCount - 1))} 
-                      className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 hover:bg-gray-300 hover:text-gray-900 transition-colors shrink-0"
-                    >
-                      -
-                    </button>
-                    <span className="text-[12px] sm:text-[14px] text-gray-900 font-medium min-w-9 text-center truncate">{adultsCount} {adultsCount === 1 ? 'adult' : 'adults'}</span>
-                    <button 
-                      onClick={() => setAdultsCount(Math.min(maxTravelersLimit, adultsCount + 1))} 
-                      disabled={adultsCount >= maxTravelersLimit}
-                      className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center transition-colors shrink-0 ${
-                        adultsCount >= maxTravelersLimit 
-                          ? 'bg-gray-100 text-gray-300 cursor-not-allowed' 
-                          : 'bg-gray-200 text-gray-600 hover:bg-gray-300 hover:text-gray-900'
-                      }`}
-                    >
-                      +
-                    </button>
+                        <div className="text-[13px] sm:text-[14px] font-bold text-gray-900 mt-1 whitespace-nowrap overflow-hidden text-ellipsis">
+                          {startDate ? format(startDate, 'dd/MM/yyyy') : 'Add date'}
+                        </div>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-4 rounded-3xl shadow-[0_12px_40px_rgba(0,0,0,0.12)] border border-gray-100 bg-white z-50" align="start" sideOffset={8}>
+                        <div className="flex items-center justify-between px-2 pb-3 mb-2 border-b border-gray-100">
+                          <div className="flex items-center gap-2">
+                            <span className="w-2.5 h-2.5 rounded-full bg-brand-coral animate-pulse" />
+                            <span className="text-xs font-bold uppercase tracking-wider text-brand-navy">
+                              Select Start Date
+                            </span>
+                          </div>
+                        </div>
+                        <Calendar
+                          mode="single"
+                          selected={startDate}
+                          onSelect={handleStartDateSelect}
+                          disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                          className="p-1"
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+
+                  {/* Right: Travelers Counter */}
+                  <div className="flex-1 min-w-0 p-3 sm:p-3.5 transition-colors flex flex-col justify-center">
+                    <div className="text-[11px] font-bold uppercase tracking-wider text-gray-500 mb-1">
+                      Travelers
+                    </div>
+                    <div className="flex items-center justify-between sm:justify-start gap-2">
+                      <button 
+                        type="button"
+                        onClick={() => setAdultsCount(Math.max(1, adultsCount - 1))} 
+                        className="w-7 h-7 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-700 active:scale-95 transition-all shrink-0 font-bold text-sm"
+                        aria-label="Decrease travelers"
+                      >
+                        -
+                      </button>
+                      <span className="text-[13px] sm:text-[14px] text-gray-900 font-bold min-w-14 text-center truncate">
+                        {adultsCount} {adultsCount === 1 ? 'adult' : 'adults'}
+                      </span>
+                      <button 
+                        type="button"
+                        onClick={() => setAdultsCount(Math.min(maxTravelersLimit, adultsCount + 1))} 
+                        disabled={adultsCount >= maxTravelersLimit}
+                        className={`w-7 h-7 rounded-full flex items-center justify-center transition-all shrink-0 font-bold text-sm active:scale-95 ${
+                          adultsCount >= maxTravelersLimit 
+                            ? 'bg-gray-100 text-gray-300 cursor-not-allowed' 
+                            : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                        }`}
+                        aria-label="Increase travelers"
+                      >
+                        +
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -773,7 +788,6 @@ export default function PackageDetails({ params }: { params: Promise<{ id: strin
                 Book Now
               </button>
             </div>
-            <p className="text-center text-gray-500 text-[11px] mt-2 font-medium md:hidden">You won&apos;t be charged yet</p>
           </div>
 
           <div className="pb-6 border-b border-gray-200">

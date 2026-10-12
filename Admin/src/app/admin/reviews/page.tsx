@@ -180,7 +180,7 @@ export default function ReviewsPage() {
                 </TableRow>
               ) : (
                 filteredReviews.map((review) => (
-                  <TableRow key={review.id}>
+                  <TableRow key={review.realId}>
                     <TableCell className="font-medium">{review.id}</TableCell>
                     <TableCell>{review.property}</TableCell>
                     <TableCell>{review.author}</TableCell>

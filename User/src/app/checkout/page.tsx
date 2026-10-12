@@ -68,8 +68,8 @@ export default async function CheckoutPage({ searchParams }: { searchParams: Pro
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex flex-col lg:flex-row gap-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-8">
+        <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
           {/* Left Section (70%) */}
           <Suspense fallback={<div className="flex-1 animate-pulse bg-gray-100 rounded-xl h-96"></div>}>
             <CheckoutFlow />

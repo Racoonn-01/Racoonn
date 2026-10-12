@@ -101,19 +101,43 @@ export default async function PackageDetailLayout({
 
   let schemaData = null;
   if (pkg) {
+    const rawPrice = pkg.price ? Number(String(pkg.price).replace(/[^\d.]/g, '')) : undefined;
     schemaData = {
       "@context": "https://schema.org",
       "@type": "TouristTrip",
       name: pkg.title,
       description: pkg.overview || pkg.description || pkg.title,
       touristType: "Traveler",
-      image: pkg.images && pkg.images.length > 0 ? pkg.images : undefined,
+      image: (pkg.images && pkg.images.length > 0) ? pkg.images : undefined,
+      provider: {
+        "@type": "TravelAgency",
+        name: "Racoonn",
+        url: siteUrl,
+        logo: `${siteUrl}/icon.jpg`,
+      },
       offers: {
         "@type": "Offer",
         priceCurrency: "INR",
+        ...(rawPrice && !isNaN(rawPrice) ? { price: rawPrice } : {}),
         availability: "https://schema.org/InStock",
         url: `${siteUrl}/packages/${resolvedParams.id}`,
       },
+      ...(pkg.rating ? {
+        aggregateRating: {
+          "@type": "AggregateRating",
+          ratingValue: pkg.rating,
+          reviewCount: pkg.reviews || 1,
+          bestRating: "5",
+          worstRating: "1",
+        }
+      } : {}),
+      ...(Array.isArray(pkg.itinerary) && pkg.itinerary.length > 0 ? {
+        itinerary: pkg.itinerary.map((day: any, idx: number) => ({
+          "@type": "Day",
+          name: day.title || `Day ${idx + 1}`,
+          description: day.description || day.activities || `Day ${idx + 1} of ${pkg.title}`,
+        }))
+      } : {})
     };
   }
 

@@ -43,6 +43,28 @@ export const metadata: Metadata = {
   },
 };
 
+const catalogSchema = {
+  "@context": "https://schema.org",
+  "@type": "CollectionPage",
+  name: "Holiday Tour Packages",
+  description: "Discover all-inclusive holiday packages with flexible departure cities across India.",
+  url: `${siteUrl}/packages`,
+  publisher: {
+    "@type": "Organization",
+    name: "Racoonn",
+    url: siteUrl,
+    logo: `${siteUrl}/icon.jpg`,
+  },
+};
+
 export default function PackagesLayout({ children }: { children: React.ReactNode }) {
-  return <>{children}</>;
+  return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(catalogSchema) }}
+      />
+      {children}
+    </>
+  );
 }

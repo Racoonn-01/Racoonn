@@ -116,11 +116,10 @@ export function LandingFooter() {
         </div>
 
         <div className="flex flex-col md:flex-row items-center justify-between pt-8 border-t border-white/10 text-slate-500 text-sm">
-          <p>© 2026 Racoonn Inc. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} CIELLE TRAVELS PRIVATE LIMITED. All rights reserved.</p>
           <div className="flex gap-6 mt-4 md:mt-0">
-            <Link href="#" className="hover:text-white transition-colors">Privacy Policy</Link>
-            <Link href="#" className="hover:text-white transition-colors">Terms of Service</Link>
-            <Link href="#" className="hover:text-white transition-colors">Cookie Policy</Link>
+            <Link href="/terms" className="hover:text-white transition-colors">Platform Listing Policy &amp; Terms</Link>
+            <Link href="/privacy" className="hover:text-white transition-colors">Partner Privacy Policy</Link>
           </div>
         </div>
       </div>

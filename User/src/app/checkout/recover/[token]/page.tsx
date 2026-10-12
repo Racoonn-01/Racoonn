@@ -83,11 +83,11 @@ export default async function RecoverCheckoutPage({ params }: { params: Promise<
     targetUrl = `/checkout?${sp.toString()}`;
   }
 
-  // Update abandoned checkout record status
+  // Update abandoned checkout record status (keep emailSent: true to prevent duplicate emails)
   try {
     await databases.updateDocument(DATABASE_ID, COLLECTION_ID, checkout.$id, {
-      status: 'CHECKOUT_STARTED',
-      emailSent: false 
+      status: 'RECOVERING',
+      emailSent: true 
     });
   } catch (updateErr) {
     console.error('Failed to update checkout document on recovery:', updateErr);

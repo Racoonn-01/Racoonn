@@ -4,10 +4,10 @@ async function main() {
   const recipientEmail = "blackrolex1144@gmail.com";
   console.log(`Preparing to send Vendor Payout Withdrawal Invoice to ${recipientEmail}...`);
 
-  const host = process.env.SMTP_HOST || "smtp.gmail.com";
+  const host = process.env.SMTP_HOST || "smtp.hostinger.com";
   const port = Number(process.env.SMTP_PORT) || 587;
-  const user = process.env.SMTP_USER || "work.vivekkumar0666@gmail.com";
-  const pass = process.env.SMTP_PASS || "rgar quzx szdi fvzo";
+  const user = process.env.SMTP_USER || "info@racoonn.com";
+  const pass = process.env.SMTP_PASS || "Info@321-Preet";
 
   const transporter = nodemailer.createTransport({
     host,

@@ -4,10 +4,7 @@ import path from "path";
 import nodemailer from "nodemailer";
 import { Client, Databases, ID } from "node-appwrite";
 
-const IS_VERCEL = process.env.VERCEL === '1';
-const SHARED_FILE_PATH = IS_VERCEL 
-  ? "/tmp/custom_package_leads.json" 
-  : "/Users/haldwani/Documents/Working/Working/Racoonn/custom_package_leads.json";
+const SHARED_FILE_PATH = path.join(process.cwd(), "custom_package_leads.json");
 
 export async function POST(request: Request) {
   try {

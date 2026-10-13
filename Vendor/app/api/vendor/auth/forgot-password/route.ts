@@ -39,7 +39,7 @@ export async function POST(req: Request) {
     const signature = crypto.createHmac('sha256', process.env.APPWRITE_API_KEY || '').update(payload).digest('hex');
     const secret = Buffer.from(`${payload}|${signature}`).toString('base64');
 
-    const appUrl = req.headers.get('origin') || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    const appUrl = req.headers.get('origin') || process.env.NEXT_PUBLIC_APP_URL || (process.env.NODE_ENV === 'production' ? 'https://partner.racoonn.com' : 'http://localhost:3001');
     const resetUrl = `${appUrl}/vendor/reset-password?userId=${targetUser.$id}&secret=${encodeURIComponent(secret)}`;
 
     // Send Email

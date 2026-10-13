@@ -1,443 +1,357 @@
 import React from 'react';
+import Link from 'next/link';
+
+export const metadata = {
+  title: 'Platform Listing Policy & Partner Agreement | Racoonn',
+  description: 'Operating requirements, listing terms, commission, standards, and inventory policies for accommodation partners on Racoonn.',
+};
+
+const sections = [
+  { id: "definitions", num: "1", title: "Definitions" },
+  { id: "scope", num: "2", title: "Scope and Applicability" },
+  { id: "eligibility", num: "3", title: "Eligibility and Onboarding Requirements" },
+  { id: "approval", num: "4", title: "Listing Approval and Platform Access" },
+  { id: "accuracy", num: "5", title: "Accuracy of Listing Information" },
+  { id: "inventory", num: "6", title: "Inventory, Rates and Availability" },
+  { id: "fulfilment", num: "7", title: "Booking Acceptance and Fulfilment" },
+  { id: "commercials", num: "8", title: "Commission, Listing Fee and Settlements" },
+  { id: "taxes", num: "9", title: "Taxes and Regulatory Compliance" },
+  { id: "standards", num: "10", title: "Guest Experience, Safety and Service Standards" },
+  { id: "complaints", num: "11", title: "Guest Complaints and Dispute Resolution" },
+  { id: "content-ip", num: "12", title: "Content, Photographs and Intellectual Property" },
+  { id: "promotions", num: "13", title: "Promotions and Marketing" },
+  { id: "prohibited", num: "14", title: "Fraud, Misrepresentation and Prohibited Conduct" },
+  { id: "privacy", num: "15", title: "Data Protection and Confidentiality" },
+  { id: "force-majeure", num: "16", title: "Force Majeure" },
+  { id: "suspension", num: "17", title: "Suspension and Delisting" },
+  { id: "audit", num: "18", title: "Audit, Verification and Records" },
+  { id: "notices", num: "19", title: "Notices and Grievance Redressal" },
+  { id: "governing-law", num: "20", title: "Governing Law and Jurisdiction" },
+  { id: "conflict", num: "21", title: "Conflict with Applicable Law" },
+  { id: "amendments", num: "22", title: "Amendments and Severability" },
+];
 
 export default function TermsPage() {
   return (
-    <div className="max-w-4xl mx-auto py-12 px-6 lg:px-8 bg-white min-h-screen text-slate-700">
-      <h1 className="text-3xl font-black text-brand-navy mb-4 uppercase">RACOONN PARTNER AGREEMENT</h1>
-      <h2 className="text-xl font-bold text-slate-800 mb-2">Hotel Listing, Booking & Commission Agreement</h2>
-      <p className="font-semibold text-slate-500 mb-8">Effective Date: 21 September 2026</p>
-
-      <div className="space-y-6 text-sm leading-relaxed">
-        <p>
-          This Hotel Partner Agreement (“Agreement”) is entered into between Racoonn (“Racoonn”, “Platform”, “we”, “us”, or “our”) and the hotel, resort, property, accommodation provider, or authorized representative (“Partner”, “Hotel”, “you”, or “your”) registering a property on the Racoonn Partner Platform.
-        </p>
-        <p>
-          By completing the Partner onboarding process and submitting the property profile, the Partner confirms that it has read, understood, and agreed to the terms of this Agreement.
-        </p>
-
-        <section>
-          <h3 className="font-bold text-lg text-slate-800 mt-6 mb-3">1. Purpose of the Agreement</h3>
-          <p className="mb-2">Racoonn operates a hotel discovery, booking, and lead-generation platform that enables users to discover accommodation properties and make enquiries or bookings.</p>
-          <p className="mb-2">Under this Agreement, the Partner authorizes Racoonn to:</p>
-          <ul className="list-disc pl-5 space-y-1">
-            <li>List the Partner's property on the Racoonn platform</li>
-            <li>Display property, room, amenity, and pricing information</li>
-            <li>Promote the property through Racoonn's marketing channels</li>
-            <li>Generate booking enquiries and leads</li>
-            <li>Facilitate customer bookings where supported</li>
-            <li>Communicate booking-related information between the customer and Partner</li>
-            <li>Provide digital tools for managing the Partner's property and bookings</li>
-          </ul>
-        </section>
-
-        <section>
-          <h3 className="font-bold text-lg text-slate-800 mt-6 mb-3">2. Partner Information</h3>
-          <p className="mb-2">The Partner agrees to provide accurate and complete information during onboarding. The Partner may be required to provide:</p>
-          <ul className="list-disc pl-5 space-y-1">
-            <li>Legal/business name</li>
-            <li>Property name</li>
-            <li>Property address</li>
-            <li>Contact details</li>
-            <li>Authorized representative details</li>
-            <li>PAN details</li>
-            <li>GST details, where applicable</li>
-            <li>Government identification or business documents</li>
-            <li>Bank account/payment details</li>
-            <li>Property photographs</li>
-            <li>Room information</li>
-            <li>Amenities</li>
-            <li>Pricing</li>
-            <li>Availability</li>
-            <li>Check-in and check-out information</li>
-            <li>Cancellation policies</li>
-            <li>Other information reasonably required by Racoonn</li>
-          </ul>
-          <p className="mt-2">The Partner confirms that it has the authority to provide the submitted information and enter into this Agreement.</p>
-        </section>
-
-        <section>
-          <h3 className="font-bold text-lg text-slate-800 mt-6 mb-3">3. Property Listing</h3>
-          <p className="mb-2">After successful verification, Racoonn may publish the Partner's property on its platform. The listing may include:</p>
-          <ul className="list-disc pl-5 space-y-1">
-            <li>Property name</li>
-            <li>Property description</li>
-            <li>Property photographs</li>
-            <li>Room types</li>
-            <li>Room photographs</li>
-            <li>Room prices</li>
-            <li>Available amenities</li>
-            <li>Property facilities</li>
-            <li>Location</li>
-            <li>Policies</li>
-            <li>Check-in/check-out timings</li>
-            <li>Availability</li>
-            <li>Offers</li>
-            <li>Ratings and reviews</li>
-            <li>Other information relevant to customers</li>
-          </ul>
-          <p className="mt-2">The Partner is responsible for ensuring that all information provided to Racoonn is accurate and up to date.</p>
-        </section>
-
-        <section>
-          <h3 className="font-bold text-lg text-slate-800 mt-6 mb-3">4. Racoonn Commission / Platform Fee</h3>
-          <p className="mb-2">The Partner agrees to pay Racoonn a percentage-based fee on eligible bookings generated through the Racoonn platform.</p>
-          <p className="mb-2">Racoonn currently operates under the following two fee slabs:</p>
-          <div className="bg-slate-50 p-4 rounded-lg my-4 max-w-md border border-slate-200">
-            <div className="flex justify-between font-bold border-b pb-2 mb-2">
-              <span>Property Category</span>
-              <span>Racoonn Fee</span>
-            </div>
-            <div className="flex justify-between py-1">
-              <span>Standard / Non-Luxury Hotels</span>
-              <span>18%</span>
-            </div>
-            <div className="flex justify-between py-1">
-              <span>Luxury Hotels</span>
-              <span>24%</span>
-            </div>
+    <div className="min-h-screen bg-white text-slate-800">
+      
+      {/* Document-style Clean Header */}
+      <div className="border-b border-slate-200 bg-slate-50/70 pt-16 pb-10">
+        <div className="max-w-4xl mx-auto px-6">
+          <p className="text-xs font-semibold text-rose-600 uppercase tracking-widest mb-2">Partner &amp; Supplier Legal Framework</p>
+          <h1 className="text-3xl md:text-4xl font-bold text-slate-900 tracking-tight mb-3">
+            Platform Listing Policy &amp; Partner Agreement
+          </h1>
+          <p className="text-sm md:text-base text-slate-600 leading-relaxed mb-4">
+            Operating terms, listing conditions, commission rules, and quality standards for properties hosted on Racoonn.
+          </p>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500">
+            <span>Operated by: <strong>CIELLE TRAVELS PRIVATE LIMITED</strong></span>
+            <span>&bull;</span>
+            <span>Effective Date: October 12, 2026</span>
+            <span>&bull;</span>
+            <span>Version: v1.0</span>
           </div>
-          <p className="mb-2">The applicable fee slab will be determined based on the property's category and classification as recorded during Partner onboarding and/or verified by Racoonn.</p>
-          <p className="mb-2 font-bold">Standard Hotel Fee</p>
-          <p className="mb-2">For properties classified as Standard / Non-Luxury Hotels, Racoonn will charge: 18% of the applicable booking value.</p>
-          <p className="mb-2 font-bold">Luxury Hotel Fee</p>
-          <p className="mb-2">For properties classified as Luxury Hotels, Racoonn will charge: 24% of the applicable booking value.</p>
-          <p>The applicable percentage will be displayed to the Partner during onboarding before the Partner submits the profile.</p>
-        </section>
+        </div>
+      </div>
 
-        <section>
-          <h3 className="font-bold text-lg text-slate-800 mt-6 mb-3">5. Meaning of Booking Value</h3>
-          <p className="mb-2">For the purpose of calculating the Racoonn fee, the “Booking Value” means the amount attributable to the eligible hotel accommodation booking processed or generated through Racoonn, subject to the applicable commercial arrangement between Racoonn and the Partner.</p>
-          <p className="mb-2">Unless otherwise agreed in writing, the fee may be calculated on the accommodation amount applicable to the confirmed booking.</p>
-          <p className="mb-2">Taxes, government charges, and other statutory amounts may be treated separately where applicable.</p>
-          <p>Racoonn may provide the Partner with a booking statement or transaction statement showing the calculation.</p>
-        </section>
-
-        <section>
-          <h3 className="font-bold text-lg text-slate-800 mt-6 mb-3">6. Example of Fee Calculation</h3>
-          <div className="space-y-4">
-            <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
-              <p className="font-bold mb-2">Standard Hotel — 18%</p>
-              <p>If the eligible booking value is: <strong>₹10,000</strong></p>
-              <p>Racoonn Fee: 18% = <strong>₹1,800</strong></p>
-              <p>Partner amount before applicable taxes/adjustments: <strong>₹8,200</strong></p>
-            </div>
-            <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
-              <p className="font-bold mb-2">Luxury Hotel — 24%</p>
-              <p>If the eligible booking value is: <strong>₹10,000</strong></p>
-              <p>Racoonn Fee: 24% = <strong>₹2,400</strong></p>
-              <p>Partner amount before applicable taxes/adjustments: <strong>₹7,600</strong></p>
-            </div>
+      {/* Main Content */}
+      <div className="max-w-4xl mx-auto px-6 py-12">
+        
+        {/* Table of Contents Index */}
+        <div className="mb-12 p-6 rounded-xl bg-slate-50 border border-slate-200">
+          <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">
+            Table of Contents
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5 text-xs text-slate-600">
+            {sections.map((s) => (
+              <a 
+                key={s.id} 
+                href={`#${s.id}`} 
+                className="hover:text-rose-600 hover:underline py-0.5 truncate"
+              >
+                {s.num}. {s.title}
+              </a>
+            ))}
           </div>
-          <p className="mt-4 italic">These examples are illustrative. Actual settlement amounts may vary based on cancellations, refunds, taxes, discounts, adjustments, or other applicable commercial terms.</p>
-        </section>
+        </div>
 
-        <section>
-          <h3 className="font-bold text-lg text-slate-800 mt-6 mb-3">7. GST and Applicable Taxes</h3>
-          <p className="mb-2">Any GST or other applicable taxes on Racoonn's platform/service fee will be charged additionally where required under applicable law, unless expressly stated otherwise in a separate commercial agreement.</p>
-          <p className="mb-2">The Partner is responsible for providing accurate tax information, including GST details where applicable.</p>
-          <p>The Partner remains responsible for its own applicable taxes, statutory filings, and regulatory obligations relating to its hotel business.</p>
-        </section>
+        {/* Content Clauses */}
+        <div className="space-y-12 text-sm md:text-base leading-relaxed text-slate-700">
 
-        <section>
-          <h3 className="font-bold text-lg text-slate-800 mt-6 mb-3">8. Booking and Reservation Responsibility</h3>
-          <p className="mb-2">The Partner is responsible for fulfilling confirmed bookings received through Racoonn. The Partner agrees to:</p>
-          <ul className="list-disc pl-5 space-y-1 mb-2">
-            <li>Honour confirmed reservations</li>
-            <li>Provide the booked room category or an appropriate alternative where commercially agreed</li>
-            <li>Maintain accurate room availability</li>
-            <li>Maintain accurate pricing</li>
-            <li>Honour applicable booking terms</li>
-            <li>Provide the services represented in the listing</li>
-            <li>Maintain reasonable standards of hospitality</li>
-            <li>Inform Racoonn promptly of operational issues affecting confirmed bookings</li>
-          </ul>
-          <p>The Partner must not knowingly accept a Racoonn booking and subsequently refuse accommodation without a legitimate reason.</p>
-        </section>
+          {/* 1 */}
+          <section id="definitions" className="scroll-mt-20 border-b border-slate-100 pb-10">
+            <h2 className="text-xl font-bold text-slate-900 mb-4">1. Definitions</h2>
+            <ul className="space-y-3">
+              <li><strong>&quot;Property&quot;:</strong> Any hotel, resort, homestay, guest house, hostel, serviced apartment, villa, lodge, or other accommodation establishment listed or proposed to be listed on the Racoonn Platform.</li>
+              <li><strong>&quot;Racoonn&quot;:</strong> <strong>CIELLE TRAVELS PRIVATE LIMITED</strong>, the operator of the Racoonn accommodation marketplace, together with its permitted successors and assigns.</li>
+              <li><strong>&quot;Platform&quot;:</strong> The Racoonn website (racoonn.com), mobile application, partner extranet portal, administrative dashboards, APIs, or any other digital channel through which inventory is displayed, managed, promoted, or booked.</li>
+              <li><strong>&quot;Listing Agreement&quot;:</strong> The agreement, onboarding terms, commercial terms, or electronic acceptance governing the relationship between Racoonn and a Property.</li>
+              <li><strong>&quot;Partner&quot;:</strong> The owner, operator, management company, authorized representative, or other duly authorized person responsible for a Property listed on the Platform.</li>
+              <li><strong>&quot;Guest&quot;:</strong> An end customer who searches for, reserves, books, or stays at a Property through the Platform.</li>
+              <li><strong>&quot;Booking&quot;:</strong> A reservation for accommodation or any related service made through the Platform.</li>
+            </ul>
+          </section>
 
-        <section>
-          <h3 className="font-bold text-lg text-slate-800 mt-6 mb-3">9. Availability and Inventory</h3>
-          <p className="mb-2">The Partner is responsible for maintaining accurate availability on the Racoonn Partner Platform. The Partner should promptly update:</p>
-          <ul className="list-disc pl-5 space-y-1 mb-2">
-            <li>Available rooms</li>
-            <li>Sold-out dates</li>
-            <li>Room inventory</li>
-            <li>Room prices</li>
-            <li>Minimum stay requirements</li>
-            <li>Blackout dates</li>
-            <li>Seasonal pricing</li>
-            <li>Other applicable restrictions</li>
-          </ul>
-          <p>Racoonn may restrict or suspend bookings where inventory information appears inaccurate or creates a material risk of customer complaints.</p>
-        </section>
+          {/* 2 */}
+          <section id="scope" className="scroll-mt-20 border-b border-slate-100 pb-10">
+            <h2 className="text-xl font-bold text-slate-900 mb-4">2. Scope and Applicability</h2>
+            <p className="mb-3">
+              This Policy sets out the principal terms and operating requirements under which a Property may be listed, marketed, and made available for booking through Racoonn.
+            </p>
+            <p className="mb-3">
+              This Policy forms part of the Listing Agreement and any applicable commercial terms agreed between Racoonn and the Partner. By submitting a Property for onboarding or continuing to use the Platform, the Partner agrees to comply with this Policy.
+            </p>
+            <p className="mb-3">
+              Racoonn may revise this Policy from time to time to reflect operational requirements, changes in law, Platform functionality, customer-safety standards, or commercial practices. Updated terms shall become effective from the date communicated or made available to the Partner, unless a different effective date is specified.
+            </p>
+            <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-600">
+              <strong>Order of Precedence:</strong> Where there is a conflict between this Policy, the Listing Agreement, and a separately negotiated commercial agreement, the order of precedence shall be: (1) applicable law or binding governmental order; (2) separately executed commercial agreement, to the extent expressly applicable; (3) Listing Agreement; and (4) this Policy.
+            </div>
+          </section>
 
-        <section>
-          <h3 className="font-bold text-lg text-slate-800 mt-6 mb-3">10. Pricing</h3>
-          <p className="mb-2">The Partner is responsible for providing Racoonn with accurate and competitive room pricing. The Partner must ensure that the prices and conditions provided to Racoonn are genuine and available for the applicable booking conditions.</p>
-          <p className="mb-2">The Partner should notify Racoonn promptly of:</p>
-          <ul className="list-disc pl-5 space-y-1">
-            <li>Price changes</li>
-            <li>New room categories</li>
-            <li>Room closures</li>
-            <li>Seasonal pricing</li>
-            <li>Promotional rates</li>
-            <li>Additional charges</li>
-            <li>Changes in taxes or mandatory fees</li>
-          </ul>
-        </section>
+          {/* 3 */}
+          <section id="eligibility" className="scroll-mt-20 border-b border-slate-100 pb-10">
+            <h2 className="text-xl font-bold text-slate-900 mb-4">3. Eligibility and Onboarding Requirements</h2>
+            <p className="mb-3">
+              A Property must satisfy Racoonn’s onboarding and verification requirements before it can be made live on the Platform. Racoonn may request information or documents reasonably necessary to verify the identity, authority, legality, quality, and operational status of the Property.
+            </p>
+            <p className="mb-2">The Partner may be required to submit, as applicable:</p>
+            <ul className="list-disc pl-6 space-y-1.5 mb-3">
+              <li>Property or business registration documents, where applicable;</li>
+              <li>PAN and applicable tax registration details, including GSTIN information;</li>
+              <li>Bank account details and cancelled cheque / bank statement proving ownership;</li>
+              <li>Government-issued identity and address proof of the owner or authorized representative;</li>
+              <li>Property physical address, geo-coordinates, and active contact details;</li>
+              <li>Applicable hotel, tourism, municipal, fire safety, health, trade, or local statutory licences;</li>
+              <li>High-resolution property photographs, room photos, amenity descriptions, and house policies;</li>
+              <li>Proof of authorization where the Partner acts on behalf of the registered property owner.</li>
+            </ul>
+            <p>
+              Racoonn may verify submitted documents through reasonable verification procedures and request refreshed filings when documents expire or require confirmation.
+            </p>
+          </section>
 
-        <section>
-          <h3 className="font-bold text-lg text-slate-800 mt-6 mb-3">11. Customer Cancellation and Refunds</h3>
-          <p className="mb-2">Cancellation and refund conditions may be determined according to the cancellation policy submitted by the Partner and displayed to the customer.</p>
-          <p className="mb-2">The Partner agrees to honour the applicable cancellation policy associated with the confirmed booking.</p>
-          <p className="mb-2">Where a refund is required, the Partner and Racoonn will cooperate to process the refund according to the applicable booking terms.</p>
-          <p>Any Racoonn fee associated with a cancelled or refunded booking may be adjusted according to the applicable commercial arrangement.</p>
-        </section>
+          {/* 4 */}
+          <section id="approval" className="scroll-mt-20 border-b border-slate-100 pb-10">
+            <h2 className="text-xl font-bold text-slate-900 mb-4">4. Listing Approval and Platform Access</h2>
+            <p className="mb-3">
+              Submission of a Property does not guarantee automatic publication. Racoonn reserves the right to approve, reject, suspend, or defer a listing based on onboarding criteria, guest safety records, hygiene standards, legal considerations, or legitimate business requirements.
+            </p>
+            <p>
+              A Partner shall not represent a Property as being officially listed on Racoonn until Racoonn has issued formal written confirmation or published the live property listing.
+            </p>
+          </section>
 
-        <section>
-          <h3 className="font-bold text-lg text-slate-800 mt-6 mb-3">12. No-Show</h3>
-          <p className="mb-2">If a customer does not arrive for a confirmed reservation, the applicable no-show policy provided by the Partner may apply.</p>
-          <p className="mb-2">The Partner must accurately report no-shows to Racoonn where required.</p>
-          <p>Any applicable fee, payment, or refund will be handled according to the booking's applicable terms.</p>
-        </section>
+          {/* 5 */}
+          <section id="accuracy" className="scroll-mt-20 border-b border-slate-100 pb-10">
+            <h2 className="text-xl font-bold text-slate-900 mb-4">5. Accuracy of Listing Information</h2>
+            <p className="mb-3">
+              The Partner is responsible for ensuring that all information supplied to Racoonn is complete, accurate, current, and not misleading. This includes room categories, bed configurations, maximum occupancy limits, base tariffs, taxes, complimentary inclusions (e.g., breakfast), amenities, authentic photographs, cancellation rules, and check-in (standard 14:00) / check-out (standard 11:00) times.
+            </p>
+            <p>
+              The Partner must promptly update Racoonn regarding any material changes (such as ongoing property renovations, pool closures, or changes in access roads). Racoonn reserves the right to correct or temporarily unpublish inaccurate listing content to protect guests.
+            </p>
+          </section>
 
-        <section>
-          <h3 className="font-bold text-lg text-slate-800 mt-6 mb-3">13. Overbooking</h3>
-          <p className="mb-2">The Partner must make reasonable efforts to prevent overbooking.</p>
-          <p className="mb-2">If a confirmed Racoonn booking cannot be honoured due to Partner-side overbooking, the Partner must immediately notify Racoonn.</p>
-          <p className="mb-2">Racoonn may require the Partner to:</p>
-          <ul className="list-disc pl-5 space-y-1 mb-2">
-            <li>Provide an equivalent or upgraded room</li>
-            <li>Arrange an alternative suitable property</li>
-            <li>Assist with relocation</li>
-            <li>Cover applicable additional costs where agreed</li>
-            <li>Provide an appropriate refund where applicable</li>
-          </ul>
-          <p>Repeated overbooking may result in temporary suspension or removal of the property from Racoonn.</p>
-        </section>
+          {/* 6 */}
+          <section id="inventory" className="scroll-mt-20 border-b border-slate-100 pb-10">
+            <h2 className="text-xl font-bold text-slate-900 mb-4">6. Inventory, Rates and Availability</h2>
+            <p className="mb-3">
+              The Partner shall maintain accurate room inventory and real-time availability via the Racoonn Partner Extranet. The Partner must strictly honor all confirmed bookings.
+            </p>
+            <p>
+              Rates submitted to Racoonn must clearly identify or include all mandatory taxes, service charges, extra bed tariffs, and restrictions. Where rate parity has been commercially agreed, the Partner shall not undercut Racoonn’s platform tariffs on walk-in or offline bookings.
+            </p>
+          </section>
 
-        <section>
-          <h3 className="font-bold text-lg text-slate-800 mt-6 mb-3">14. Partner Responsibilities</h3>
-          <p className="mb-2">The Partner agrees to:</p>
-          <ul className="list-disc pl-5 space-y-1">
-            <li>Provide truthful information</li>
-            <li>Maintain valid business documentation</li>
-            <li>Maintain required licenses and approvals</li>
-            <li>Maintain property standards</li>
-            <li>Honour confirmed bookings</li>
-            <li>Keep availability accurate</li>
-            <li>Keep pricing accurate</li>
-            <li>Respond to booking requests promptly</li>
-            <li>Cooperate with customer support</li>
-            <li>Resolve property-related complaints</li>
-            <li>Follow applicable laws and regulations</li>
-            <li>Maintain appropriate guest safety and security standards</li>
-          </ul>
-        </section>
+          {/* 7 */}
+          <section id="fulfilment" className="scroll-mt-20 border-b border-slate-100 pb-10">
+            <h2 className="text-xl font-bold text-slate-900 mb-4">7. Booking Acceptance and Fulfilment</h2>
+            <p className="mb-3">
+              Once a Booking is confirmed through Racoonn, the Partner is legally obligated to provide the reserved accommodation and agreed inclusions to the Guest.
+            </p>
+            <p className="mb-3">
+              <strong>Zero Walk-in Rejection:</strong> The Partner shall not cancel, deny check-in, relocate, or downgrade a confirmed guest under any circumstances.
+            </p>
+            <p className="p-4 bg-rose-50/70 border border-rose-200 rounded-lg text-sm text-slate-700">
+              <strong>Overbooking &amp; Relocation Duty:</strong> If the Partner fails to honor a confirmed Booking due to overbooking or internal error, the Partner shall immediately notify Racoonn support and arrange alternative accommodation of equal or higher standard at the Partner&apos;s sole expense, including any difference in room tariff and local transfer costs.
+            </p>
+          </section>
 
-        <section>
-          <h3 className="font-bold text-lg text-slate-800 mt-6 mb-3">15. Property Classification</h3>
-          <p className="mb-2">Racoonn may classify properties for commercial purposes based on factors including:</p>
-          <ul className="list-disc pl-5 space-y-1 mb-2">
-            <li>Property category</li>
-            <li>Luxury classification</li>
-            <li>Facilities</li>
-            <li>Services</li>
-            <li>Property standards</li>
-            <li>Room types</li>
-            <li>Market positioning</li>
-            <li>Information provided during onboarding</li>
-            <li>Applicable official classification or documentation</li>
-          </ul>
-          <p className="mb-2">The applicable commercial slab may be reviewed by Racoonn from time to time.</p>
-          <p>If Racoonn determines that a property has been incorrectly classified, Racoonn may update the applicable fee slab after notifying the Partner.</p>
-        </section>
+          {/* 8 */}
+          <section id="commercials" className="scroll-mt-20 border-b border-slate-100 pb-10">
+            <h2 className="text-xl font-bold text-slate-900 mb-4">8. Commission, Listing Fee and Settlements</h2>
+            <p className="mb-3">
+              Racoonn charges a platform facilitation commission based on two tiered commercial slabs of <strong>18% and 24%</strong> (as designated in the Partner&apos;s commercial terms and onboarding tier) plus applicable statutory GST (18% on platform commission under SAC 996311) on gross bookings generated through the platform.
+            </p>
+            <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg text-sm space-y-2 mb-3">
+              <p><strong>Commission Slabs:</strong> The applicable slab (18% standard tier or 24% premium/promoted placement tier) is determined based on the partner category and agreed commercial structure.</p>
+              <p><strong>Payout Settlement Cycle:</strong> Payouts to the Partner’s verified Indian bank account or UPI are initiated within <strong>72 hours following guest check-out</strong>, allowing for standard guest verification and dispute clearance.</p>
+              <p><strong>Statutory Deductions:</strong> Settlements are subject to Section 194-O (1% TDS on e-commerce operators under the Indian Income Tax Act) and Section 52 (1% TCS under the CGST/SGST Acts), where applicable.</p>
+            </div>
+            <p>
+              The Partner remains fully responsible for commission on bookings completed prior to any termination or listing pause.
+            </p>
+          </section>
 
-        <section>
-          <h3 className="font-bold text-lg text-slate-800 mt-6 mb-3">16. Marketing and Promotion</h3>
-          <p className="mb-2">The Partner authorizes Racoonn to promote the Partner's property through:</p>
-          <ul className="list-disc pl-5 space-y-1 mb-2">
-            <li>Racoonn website</li>
-            <li>Racoonn mobile applications</li>
-            <li>Search results</li>
-            <li>Social media</li>
-            <li>Digital advertisements</li>
-            <li>Promotional campaigns</li>
-            <li>Email marketing</li>
-            <li>WhatsApp communication</li>
-            <li>Other Racoonn marketing channels</li>
-          </ul>
-          <p className="mb-2">Racoonn may use the Partner's property name, approved photographs, descriptions, logos, amenities, pricing, and other listing information for these purposes.</p>
-          <p>The Partner confirms that it has the necessary rights to provide photographs, logos, trademarks, and other materials submitted to Racoonn.</p>
-        </section>
+          {/* 9 */}
+          <section id="taxes" className="scroll-mt-20 border-b border-slate-100 pb-10">
+            <h2 className="text-xl font-bold text-slate-900 mb-4">9. Taxes and Regulatory Compliance</h2>
+            <p className="mb-3">
+              The Partner is solely responsible for obtaining and maintaining all municipal, police, tourism, fire, and health licences required to operate the Property legally.
+            </p>
+            <p>
+              The Partner remains responsible for filing its statutory GST returns and collecting applicable room tariffs in compliance with Indian taxation laws.
+            </p>
+          </section>
 
-        <section>
-          <h3 className="font-bold text-lg text-slate-800 mt-6 mb-3">17. Customer Reviews and Ratings</h3>
-          <p className="mb-2">Customers may provide reviews and ratings based on their experience.</p>
-          <p className="mb-2">Racoonn may display genuine customer reviews and ratings on the platform.</p>
-          <p className="mb-2">The Partner must not:</p>
-          <ul className="list-disc pl-5 space-y-1 mb-2">
-            <li>Create fake reviews</li>
-            <li>Manipulate ratings</li>
-            <li>Incentivize fraudulent reviews</li>
-            <li>Threaten or pressure customers regarding reviews</li>
-            <li>Submit reviews pretending to be customers</li>
-          </ul>
-          <p>Racoonn may moderate or remove content that violates its policies or applicable law.</p>
-        </section>
+          {/* 10 */}
+          <section id="standards" className="scroll-mt-20 border-b border-slate-100 pb-10">
+            <h2 className="text-xl font-bold text-slate-900 mb-4">10. Guest Experience, Safety and Service Standards</h2>
+            <p className="mb-2">The Partner covenants to uphold the following baseline hospitality standards:</p>
+            <ul className="list-disc pl-6 space-y-1.5 mb-3">
+              <li>Maintain high standards of room cleanliness, sanitization, fresh linen, and functional plumbing/electrical fixtures;</li>
+              <li>Ensure 24/7 emergency contact availability and functioning fire extinguishers / emergency exits;</li>
+              <li>Treat all guests with dignity and without unlawful discrimination based on race, religion, region, or marital status (subject to lawful property rules);</li>
+              <li>Promptly address in-stay guest complaints and cooperate with Racoonn customer escalation officers.</li>
+            </ul>
+          </section>
 
-        <section>
-          <h3 className="font-bold text-lg text-slate-800 mt-6 mb-3">18. Payment and Settlement</h3>
-          <p className="mb-2">Settlement to the Partner may be processed according to Racoonn's applicable settlement cycle and commercial arrangement.</p>
-          <p className="mb-2">Before settlement, Racoonn may deduct applicable:</p>
-          <ul className="list-disc pl-5 space-y-1 mb-2">
-            <li>Racoonn platform fees</li>
-            <li>Taxes on Racoonn fees</li>
-            <li>Refund adjustments</li>
-            <li>Cancellation adjustments</li>
-            <li>Chargebacks</li>
-            <li>Other agreed adjustments</li>
-          </ul>
-          <p className="mb-2">The Partner is responsible for maintaining accurate bank account details.</p>
-          <p>Racoonn will not be responsible for delays resulting from incorrect bank details provided by the Partner.</p>
-        </section>
+          {/* 11 */}
+          <section id="complaints" className="scroll-mt-20 border-b border-slate-100 pb-10">
+            <h2 className="text-xl font-bold text-slate-900 mb-4">11. Guest Complaints and Dispute Resolution</h2>
+            <p className="mb-3">
+              The Partner agrees to cooperate in good faith with Racoonn in investigating guest complaints. Where substandard conditions, missing amenities, or double-charging are substantiated, the Partner shall facilitate appropriate adjustments or refunds.
+            </p>
+          </section>
 
-        <section>
-          <h3 className="font-bold text-lg text-slate-800 mt-6 mb-3">19. Invoices and Statements</h3>
-          <p className="mb-2">Racoonn may provide transaction statements, invoices, settlement reports, or other financial records through the Partner Portal or other communication channels.</p>
-          <p>The Partner should review these records and notify Racoonn of any discrepancy within a reasonable period.</p>
-        </section>
+          {/* 12 */}
+          <section id="content-ip" className="scroll-mt-20 border-b border-slate-100 pb-10">
+            <h2 className="text-xl font-bold text-slate-900 mb-4">12. Content, Photographs and Intellectual Property</h2>
+            <p className="mb-3">
+              The Partner grants Racoonn a non-exclusive, royalty-free, worldwide licence during the listing term to display, format, and market property photos, names, amenities, and branding across Racoonn&apos;s digital platforms.
+            </p>
+            <p>
+              The Partner guarantees that all submitted media and text are authentic, owned by the Partner or properly licensed, and do not infringe on any third-party copyright. Racoonn retains all proprietary rights in its code, brand assets, and platform design.
+            </p>
+          </section>
 
-        <section>
-          <h3 className="font-bold text-lg text-slate-800 mt-6 mb-3">20. Customer Data</h3>
-          <p className="mb-2">Customer information provided to the Partner through Racoonn must be used only for legitimate booking, accommodation, customer service, security, and legally permitted purposes.</p>
-          <p className="mb-2">The Partner must not:</p>
-          <ul className="list-disc pl-5 space-y-1 mb-2">
-            <li>Sell customer information</li>
-            <li>Use customer information for unauthorized marketing</li>
-            <li>Share customer information with unauthorized third parties</li>
-            <li>Use customer information for unrelated purposes</li>
-            <li>Attempt to obtain unnecessary personal information</li>
-          </ul>
-          <p>The Partner must handle customer information in accordance with applicable privacy and data protection laws.</p>
-        </section>
+          {/* 13 */}
+          <section id="promotions" className="scroll-mt-20 border-b border-slate-100 pb-10">
+            <h2 className="text-xl font-bold text-slate-900 mb-4">13. Promotions and Marketing</h2>
+            <p>
+              Racoonn may introduce seasonal promotional discounts, visibility boosts, or campaign packages. Participation shall be governed by specific commercial notices communicated to the Partner.
+            </p>
+          </section>
 
-        <section>
-          <h3 className="font-bold text-lg text-slate-800 mt-6 mb-3">21. Confidentiality</h3>
-          <p className="mb-2">The Partner agrees to keep confidential any non-public commercial, technical, customer, financial, or operational information received from Racoonn.</p>
-          <p>Confidential information must not be disclosed to third parties except where required by law or necessary for legitimate business operations.</p>
-        </section>
+          {/* 14 */}
+          <section id="prohibited" className="scroll-mt-20 border-b border-slate-100 pb-10">
+            <h2 className="text-xl font-bold text-slate-900 mb-4">14. Fraud, Misrepresentation and Prohibited Conduct</h2>
+            <p className="mb-2">The Partner shall not engage in:</p>
+            <ul className="list-disc pl-6 space-y-1.5">
+              <li>Submitting false property addresses or fraudulent photographs;</li>
+              <li>Creating artificial reservations or manipulating guest ratings and reviews;</li>
+              <li>Harvesting guest contact data for unauthorized offline solicitations;</li>
+              <li>Attempting to bypass platform commission or encourage offline cash conversions for platform leads.</li>
+            </ul>
+          </section>
 
-        <section>
-          <h3 className="font-bold text-lg text-slate-800 mt-6 mb-3">22. Intellectual Property</h3>
-          <p className="mb-2">Racoonn retains all rights relating to its:</p>
-          <ul className="list-disc pl-5 space-y-1 mb-2">
-            <li>Brand</li>
-            <li>Logo</li>
-            <li>Website</li>
-            <li>Partner Portal</li>
-            <li>Software</li>
-            <li>Technology</li>
-            <li>Platform design</li>
-            <li>Content</li>
-            <li>Systems</li>
-            <li>Database</li>
-            <li>Marketing materials</li>
-          </ul>
-          <p>The Partner receives only a limited right to use Racoonn's platform for the purpose of participating as a hotel partner.</p>
-        </section>
+          {/* 15 */}
+          <section id="privacy" className="scroll-mt-20 border-b border-slate-100 pb-10">
+            <h2 className="text-xl font-bold text-slate-900 mb-4">15. Data Protection and Confidentiality</h2>
+            <p>
+              Guest personal data shared with the Partner must be handled strictly in compliance with the Digital Personal Data Protection Act, 2023 (DPDP Act). The Partner shall not disclose guest details to unauthorized third parties or use guest contacts for marketing without express consent.
+            </p>
+          </section>
 
-        <section>
-          <h3 className="font-bold text-lg text-slate-800 mt-6 mb-3">23. Suspension or Removal of Property</h3>
-          <p className="mb-2">Racoonn may temporarily suspend or remove a property where there is:</p>
-          <ul className="list-disc pl-5 space-y-1 mb-2">
-            <li>Fraudulent activity</li>
-            <li>Repeated customer complaints</li>
-            <li>Repeated booking failures</li>
-            <li>Repeated overbooking</li>
-            <li>Misleading information</li>
-            <li>Payment disputes</li>
-            <li>Regulatory concerns</li>
-            <li>Safety concerns</li>
-            <li>Violation of this Agreement</li>
-            <li>Misuse of the Racoonn platform</li>
-          </ul>
-          <p>Where reasonably possible, Racoonn may notify the Partner before suspension or removal.</p>
-        </section>
+          {/* 16 */}
+          <section id="force-majeure" className="scroll-mt-20 border-b border-slate-100 pb-10">
+            <h2 className="text-xl font-bold text-slate-900 mb-4">16. Force Majeure</h2>
+            <p>
+              Neither party shall be held liable for failure to perform duties due to natural catastrophes, floods, landslides, earthquakes, curfews, pandemics, or government-mandated travel shutdowns. Both parties agree to cooperate on reasonable guest rescheduling or refund waivers during force majeure events.
+            </p>
+          </section>
 
-        <section>
-          <h3 className="font-bold text-lg text-slate-800 mt-6 mb-3">24. Termination</h3>
-          <p className="mb-2">Either party may request termination of the partnership subject to any pending bookings, financial settlements, refunds, disputes, or other outstanding obligations.</p>
-          <p className="mb-2">Termination of the partnership does not automatically cancel confirmed bookings unless otherwise agreed.</p>
-          <p>The Partner remains responsible for fulfilling confirmed reservations and resolving outstanding customer matters arising before termination.</p>
-        </section>
+          {/* 17 */}
+          <section id="suspension" className="scroll-mt-20 border-b border-slate-100 pb-10">
+            <h2 className="text-xl font-bold text-slate-900 mb-4">17. Suspension and Delisting</h2>
+            <p className="mb-3">
+              Racoonn may suspend or delist a Property immediately upon:
+            </p>
+            <ul className="list-disc pl-6 space-y-1.5 mb-3">
+              <li>Material breach of this Listing Policy or commercial agreement;</li>
+              <li>Persistent safety, hygiene, or unresolved guest complaints;</li>
+              <li>Commission payment default or fraudulent booking activity;</li>
+              <li>Lapse or revocation of mandatory operating licences.</li>
+            </ul>
+            <p className="text-sm text-slate-500">
+              Partners may request voluntary delisting with thirty (30) days’ written notice, provided all existing confirmed bookings are honored.
+            </p>
+          </section>
 
-        <section>
-          <h3 className="font-bold text-lg text-slate-800 mt-6 mb-3">25. Limitation of Liability</h3>
-          <p className="mb-2">Racoonn operates as a technology and booking platform. Racoonn is not directly responsible for the day-to-day operation of the Partner's property.</p>
-          <p className="mb-2">The Partner remains responsible for:</p>
-          <ul className="list-disc pl-5 space-y-1 mb-2">
-            <li>Hotel operations</li>
-            <li>Guest safety</li>
-            <li>Property services</li>
-            <li>Staff</li>
-            <li>Rooms</li>
-            <li>Amenities</li>
-            <li>Food and beverage services</li>
-            <li>Property compliance</li>
-            <li>Licenses and permits</li>
-            <li>Guest experience</li>
-          </ul>
-          <p>Nothing in this Agreement limits liability where such limitation is prohibited by applicable law.</p>
-        </section>
+          {/* 18 */}
+          <section id="audit" className="scroll-mt-20 border-b border-slate-100 pb-10">
+            <h2 className="text-xl font-bold text-slate-900 mb-4">18. Audit, Verification and Records</h2>
+            <p>
+              Racoonn reserves the right to conduct routine document audits, property inspections, or guest verification checks to ensure platform standards and taxation compliance.
+            </p>
+          </section>
 
-        <section>
-          <h3 className="font-bold text-lg text-slate-800 mt-6 mb-3">26. Compliance With Law</h3>
-          <p className="mb-2">The Partner agrees to comply with all applicable laws, regulations, licenses, permits, tax requirements, safety requirements, consumer protection requirements, and hospitality-related obligations applicable to its property.</p>
-          <p>The Partner is solely responsible for maintaining all legally required approvals for operating the property.</p>
-        </section>
+          {/* 19 */}
+          <section id="notices" className="scroll-mt-20 border-b border-slate-100 pb-10">
+            <h2 className="text-xl font-bold text-slate-900 mb-4">19. Notices and Grievance Redressal</h2>
+            <div className="p-6 bg-slate-50 border border-slate-200 rounded-xl space-y-4 text-sm">
+              <div>
+                <p className="font-bold text-slate-900">Partner Support &amp; Extranet Operations</p>
+                <p className="text-slate-600 mt-1">
+                  <strong>Partner Helpdesk:</strong> <a href="mailto:info@racoonn.com" className="text-rose-600 underline">info@racoonn.com</a> | +91 8954442144
+                </p>
+                <p className="text-slate-600">
+                  <strong>Operating Entity:</strong> CIELLE TRAVELS PRIVATE LIMITED
+                </p>
+                <p className="text-slate-600">
+                  <strong>Corporate Office:</strong> Corp. Off.-205 PSA Plaza 2nd Floor 19 Kalyani View, Nainital Road Rudrapur 263153 U.S. Nagar (UK)
+                </p>
+              </div>
 
-        <section>
-          <h3 className="font-bold text-lg text-slate-800 mt-6 mb-3">27. Changes to Commercial Terms</h3>
-          <p className="mb-2">Racoonn may introduce or modify commercial terms, fee structures, promotional programs, or settlement procedures from time to time.</p>
-          <p className="mb-2">Any material change to the applicable commission/fee slab should be communicated to the Partner through appropriate channels and will become effective according to the notice provided.</p>
-          <p>The Partner may contact Racoonn regarding any commercial change before continuing participation where applicable.</p>
-        </section>
+              <div className="border-t border-slate-200 pt-3">
+                <p className="font-bold text-slate-900">Partner Grievance Redressal Officer</p>
+                <p className="text-slate-600 mt-1">
+                  <strong>Email:</strong> <a href="mailto:info@racoonn.com" className="text-rose-600 underline">info@racoonn.com</a>
+                </p>
+                <p className="text-slate-500 text-xs mt-1">
+                  * Partner grievances are acknowledged within 48 hours and resolved within 30 days.
+                </p>
+              </div>
+            </div>
+          </section>
 
-        <section>
-          <h3 className="font-bold text-lg text-slate-800 mt-6 mb-3">28. Governing Law</h3>
-          <p className="mb-2">This Agreement shall be governed by the applicable laws of India.</p>
-          <p>Any dispute arising between Racoonn and the Partner shall be subject to the jurisdiction of the courts having appropriate jurisdiction under applicable law.</p>
-        </section>
+          {/* 20 */}
+          <section id="governing-law" className="scroll-mt-20 border-b border-slate-100 pb-10">
+            <h2 className="text-xl font-bold text-slate-900 mb-4">20. Governing Law and Jurisdiction</h2>
+            <p>
+              This Policy and all partner commercial relationships shall be governed by the laws of India. Any disputes arising hereunder shall be subject to the exclusive jurisdiction of the competent courts in <strong>Udham Singh Nagar / Nainital, Uttarakhand, India</strong>.
+            </p>
+          </section>
 
-        <section>
-          <h3 className="font-bold text-lg text-slate-800 mt-6 mb-3">29. Partner Declaration</h3>
-          <p className="mb-2">By submitting the Partner Profile, the Partner confirms that:</p>
-          <ul className="list-disc pl-5 space-y-1">
-            <li>The information submitted is accurate and complete.</li>
-            <li>The Partner is authorized to represent the property.</li>
-            <li>The Partner has read and understood this Agreement.</li>
-            <li>The Partner agrees to the applicable Racoonn fee slab.</li>
-            <li>The Partner agrees to pay the applicable Racoonn fee on eligible bookings.</li>
-            <li>The Partner agrees to comply with Racoonn's platform policies.</li>
-            <li>The Partner agrees to honour confirmed bookings.</li>
-            <li>The Partner agrees to comply with applicable laws.</li>
-            <li>The Partner has authority to enter into this Agreement.</li>
-            <li>The Partner agrees that Racoonn may use submitted property information for listing and promotional purposes.</li>
-          </ul>
-        </section>
+          {/* 21 */}
+          <section id="conflict" className="scroll-mt-20 border-b border-slate-100 pb-10">
+            <h2 className="text-xl font-bold text-slate-900 mb-4">21. Conflict with Applicable Law</h2>
+            <p>
+              If any provision conflicts with mandatory statutory laws or government directives, the statutory requirement shall prevail to the extent of such conflict, while remaining provisions continue in full force.
+            </p>
+          </section>
 
-        <section className="bg-slate-50 p-6 rounded-xl border border-slate-200 mt-8">
-          <h3 className="font-bold text-lg text-slate-800 mb-4">30. Applicable Fee Slab Confirmation</h3>
-          <p className="mb-2">The Partner acknowledges the following applicable commercial slab:</p>
-          <ul className="space-y-2 mb-4">
-            <li><strong>Property Category:</strong> [ STANDARD / NON-LUXURY / LUXURY ]</li>
-            <li><strong>Applicable Racoonn Fee:</strong> [ 18% / 24% ]</li>
-            <li><strong>Fee Applicable To:</strong> Eligible bookings generated through Racoonn.</li>
-          </ul>
-          <p>The Partner confirms that the selected fee slab has been reviewed before submitting the Partner Profile.</p>
-        </section>
+          {/* 22 */}
+          <section id="amendments" className="scroll-mt-20">
+            <h2 className="text-xl font-bold text-slate-900 mb-4">22. Amendments and Severability</h2>
+            <p>
+              Racoonn may update this Policy periodically. If any clause is deemed invalid or unenforceable, it shall be modified to the minimum extent necessary to ensure legality, and all other clauses shall remain intact.
+            </p>
+          </section>
 
-
+        </div>
       </div>
     </div>
   );

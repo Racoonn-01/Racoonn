@@ -276,40 +276,40 @@ export function GuestDetailsForm() {
   }, [profile, guestDetails.firstName, guestDetails.lastName, guestDetails.email, guestDetails.phone, updateGuestDetails]);
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-brand-sky p-6 md:p-8">
-      <h2 className="text-xl md:text-2xl font-poppins font-bold text-brand-navy mb-6 flex items-center gap-2">
-        <User className="w-6 h-6 text-brand-coral" /> Guest Details
+    <div id="guest-details-section" className="bg-white rounded-xl shadow-xs border border-brand-sky p-4 sm:p-6 md:p-8">
+      <h2 className="text-lg sm:text-xl md:text-2xl font-poppins font-bold text-brand-navy mb-4 sm:mb-6 flex items-center gap-2">
+        <User className="w-5 h-5 sm:w-6 sm:h-6 text-brand-coral" /> Guest Details
       </h2>
       
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700">First Name</label>
-            <input suppressHydrationWarning value={guestDetails.firstName} onChange={e => updateGuestDetails({ firstName: e.target.value })} type="text" placeholder="John" className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-brand-coral focus:border-brand-coral outline-none transition-all" />
+          <div className="space-y-1.5 sm:space-y-2">
+            <label className="text-xs sm:text-sm font-medium text-gray-700">First Name *</label>
+            <input suppressHydrationWarning value={guestDetails.firstName} onChange={e => updateGuestDetails({ firstName: e.target.value })} type="text" placeholder="John" className="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-brand-coral focus:border-brand-coral outline-none transition-all text-base md:text-sm" />
           </div>
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700">Last Name</label>
-            <input suppressHydrationWarning value={guestDetails.lastName} onChange={e => updateGuestDetails({ lastName: e.target.value })} type="text" placeholder="Doe" className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-brand-coral focus:border-brand-coral outline-none transition-all" />
+          <div className="space-y-1.5 sm:space-y-2">
+            <label className="text-xs sm:text-sm font-medium text-gray-700">Last Name *</label>
+            <input suppressHydrationWarning value={guestDetails.lastName} onChange={e => updateGuestDetails({ lastName: e.target.value })} type="text" placeholder="Doe" className="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-brand-coral focus:border-brand-coral outline-none transition-all text-base md:text-sm" />
           </div>
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700 flex items-center gap-1"><Mail className="w-4 h-4 text-gray-400" /> Email Address</label>
-            <input suppressHydrationWarning value={guestDetails.email} onChange={e => updateGuestDetails({ email: e.target.value })} type="email" placeholder="john.doe@example.com" className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-brand-coral focus:border-brand-coral outline-none transition-all" />
+          <div className="space-y-1.5 sm:space-y-2">
+            <label className="text-xs sm:text-sm font-medium text-gray-700 flex items-center gap-1"><Mail className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400" /> Email Address *</label>
+            <input suppressHydrationWarning value={guestDetails.email} onChange={e => updateGuestDetails({ email: e.target.value })} type="email" placeholder="john.doe@example.com" className="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-brand-coral focus:border-brand-coral outline-none transition-all text-base md:text-sm" />
           </div>
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700 flex items-center gap-1"><Phone className="w-4 h-4 text-gray-400" /> Phone Number</label>
+          <div className="space-y-1.5 sm:space-y-2">
+            <label className="text-xs sm:text-sm font-medium text-gray-700 flex items-center gap-1"><Phone className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400" /> Phone Number *</label>
             <div className="flex gap-2 relative" ref={phoneDropdownRef}>
               <button 
                 type="button" 
                 onClick={() => setIsPhoneDropdownOpen(!isPhoneDropdownOpen)}
-                className="px-3 py-2.5 rounded-lg border border-gray-300 bg-gray-50 hover:bg-gray-100 flex items-center gap-1.5 shrink-0 transition-colors"
+                className="px-2.5 sm:px-3 py-2.5 rounded-lg border border-gray-300 bg-gray-50 hover:bg-gray-100 flex items-center gap-1.5 shrink-0 transition-colors"
               >
-                <span className="text-lg">{phoneCountry ? phoneCountry.flag : '🇮🇳'}</span>
-                <span className="text-sm font-medium text-gray-700">{phoneCountry ? phoneCountry.dialCode : '+91'}</span>
-                <ChevronDown className="w-3.5 h-3.5 text-gray-500" />
+                <span className="text-base sm:text-lg">{phoneCountry ? phoneCountry.flag : '🇮🇳'}</span>
+                <span className="text-xs sm:text-sm font-medium text-gray-700">{phoneCountry ? phoneCountry.dialCode : '+91'}</span>
+                <ChevronDown className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-gray-500" />
               </button>
               
               {isPhoneDropdownOpen && (
-                <div className="absolute top-full left-0 mt-2 w-72 bg-white border border-gray-200 rounded-xl shadow-xl z-50 overflow-hidden">
+                <div className="absolute top-full left-0 mt-2 w-[calc(100vw-3rem)] max-w-xs sm:w-72 bg-white border border-gray-200 rounded-xl shadow-xl z-50 overflow-hidden">
                   <div className="p-2 border-b border-gray-100">
                     <div className="relative">
                       <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -354,19 +354,19 @@ export function GuestDetailsForm() {
                 onChange={e => updateGuestDetails({ phone: formatPhoneNumber(e.target.value, phoneCountry?.dialCode || '+91') })} 
                 type="tel" 
                 placeholder={phoneCountry?.dialCode === '+1' ? "(555) 000-0000" : phoneCountry?.dialCode === '+91' ? "98765 43210" : "555 000 0000"}
-                className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-brand-coral focus:border-brand-coral outline-none transition-all" 
+                className="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-brand-coral focus:border-brand-coral outline-none transition-all text-base md:text-sm" 
               />
             </div>
           </div>
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700">State / Province</label>
+          <div className="space-y-1.5 sm:space-y-2">
+            <label className="text-xs sm:text-sm font-medium text-gray-700">State / Province</label>
             <input 
               suppressHydrationWarning 
               value={guestDetails.state || ''} 
               onChange={e => updateGuestDetails({ state: e.target.value })} 
               type="text" 
               placeholder="e.g. Maharashtra" 
-              className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-brand-coral focus:border-brand-coral outline-none transition-all" 
+              className="w-full px-3.5 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-brand-coral focus:border-brand-coral outline-none transition-all text-base md:text-sm" 
             />
           </div>
           <div className="space-y-2 relative" ref={dropdownRef}>

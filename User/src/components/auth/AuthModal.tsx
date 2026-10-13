@@ -259,6 +259,38 @@ export default function AuthModal({ isOpen, onClose, initialView = 'signin', onS
                     </div>
                   )}
 
+                  {view === 'signup' && (
+                    <div className="pt-1">
+                      <label className="flex items-start gap-2.5 cursor-pointer text-left select-none group">
+                        <input 
+                          type="checkbox" 
+                          required
+                          className="mt-0.5 w-4 h-4 rounded border-gray-300 text-brand-coral focus:ring-brand-coral/20 shrink-0 cursor-pointer accent-slate-900" 
+                        />
+                        <span className="text-[12px] text-gray-500 leading-snug">
+                          I agree to Racoonn&apos;s{' '}
+                          <a 
+                            href="/terms" 
+                            target="_blank" 
+                            rel="noopener noreferrer" 
+                            className="text-slate-900 font-semibold underline underline-offset-2 hover:text-brand-coral"
+                          >
+                            Terms of Use
+                          </a>{' '}
+                          and{' '}
+                          <a 
+                            href="/privacy" 
+                            target="_blank" 
+                            rel="noopener noreferrer" 
+                            className="text-slate-900 font-semibold underline underline-offset-2 hover:text-brand-coral"
+                          >
+                            Privacy Policy
+                          </a>.
+                        </span>
+                      </label>
+                    </div>
+                  )}
+
                   <button 
                     type="submit" 
                     disabled={isSubmitting}

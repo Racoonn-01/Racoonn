@@ -2,7 +2,7 @@ const http = require('http');
 
 const options = {
   hostname: 'localhost',
-  port: 3000,
+  port: process.env.PORT || 3001,
   path: '/api/cron/abandoned-checkout',
   method: 'GET',
   headers: {
@@ -11,7 +11,7 @@ const options = {
 };
 
 console.log('Simulating Vercel Cron Job...');
-console.log('Hitting http://localhost:3000/api/cron/abandoned-checkout');
+console.log(`Hitting http://localhost:${options.port}/api/cron/abandoned-checkout`);
 
 const req = http.request(options, (res) => {
   let data = '';

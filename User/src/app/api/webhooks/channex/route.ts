@@ -5,8 +5,14 @@ export async function POST(req: Request) {
   try {
     const payload = await req.json();
 
-    // Verify webhook source (in production, verify Channex signature/token)
-    // if (req.headers.get('x-channex-signature') !== 'expected_sig') ...
+    // Verify webhook source if secret is configured
+    const webhookSecret = process.env.CHANNEX_WEBHOOK_SECRET;
+    if (webhookSecret) {
+      const incomingSignature = req.headers.get('x-channex-signature') || req.headers.get('x-webhook-secret');
+      if (incomingSignature !== webhookSecret) {
+        return NextResponse.json({ error: "Invalid webhook signature" }, { status: 401 });
+      }
+    }
 
     console.log("Received Channel Manager Webhook:", JSON.stringify(payload, null, 2));
 

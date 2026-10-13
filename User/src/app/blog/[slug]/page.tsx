@@ -5,12 +5,10 @@ import { ChevronRight, Calendar, Clock, ArrowLeft, Share2, Eye } from 'lucide-re
 import { notFound } from 'next/navigation';
 import { databases } from '@/lib/appwrite/config';
 import { Query } from 'appwrite';
+import { Metadata } from 'next';
 import ViewTracker from './ViewTracker';
 
-export const metadata = {
-  title: 'Blog Post | Racoonn',
-};
-
+const siteUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://racoonn.com';
 const DATABASE_ID = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID || "6a3cec630035d63ea963";
 const COLLECTION_ID = "blogs";
 
@@ -32,6 +30,73 @@ async function getBlogPostBySlug(slug: string) {
   }
 }
 
+export async function generateMetadata({ 
+  params 
+}: { 
+  params: Promise<{ slug: string }> 
+}): Promise<Metadata> {
+  const resolvedParams = await params;
+  const slug = decodeURIComponent(resolvedParams.slug);
+  const post = await getBlogPostBySlug(slug);
+
+  if (!post) {
+    return {
+      title: 'Blog Post | Racoonn',
+      description: 'Travel articles and insights from Racoonn.',
+    };
+  }
+
+  const title = `${post.title} | Racoonn Travel Blog`;
+  const rawDesc = post.content ? post.content.replace(/<[^>]*>?/gm, '').substring(0, 160) : `Read ${post.title} on Racoonn travel blog.`;
+  const canonicalUrl = `${siteUrl}/blog/${slug}`;
+  const imageUrl = (post.images && post.images.length > 0) 
+    ? post.images[0] 
+    : (post.imageId || `${siteUrl}/icon.jpg`);
+
+  return {
+    title,
+    description: rawDesc,
+    keywords: [
+      post.title,
+      post.category || 'Travel',
+      'Racoonn blog',
+      'travel guide',
+      'destination article',
+    ],
+    alternates: {
+      canonical: canonicalUrl,
+    },
+    openGraph: {
+      title,
+      description: rawDesc,
+      url: canonicalUrl,
+      siteName: 'Racoonn',
+      locale: 'en_IN',
+      type: 'article',
+      publishedTime: post.$createdAt,
+      authors: [post.author || 'Racoonn Editorial'],
+      images: [
+        {
+          url: imageUrl,
+          width: 1200,
+          height: 630,
+          alt: post.title,
+        },
+      ],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description: rawDesc,
+      images: [imageUrl],
+    },
+    robots: {
+      index: true,
+      follow: true,
+    },
+  };
+}
+
 export default async function BlogPostPage({ params }: { params: Promise<{ slug: string }> }) {
   const resolvedParams = await params;
   const slug = decodeURIComponent(resolvedParams.slug);
@@ -42,8 +107,38 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
     notFound();
   }
 
+  const articleSchema = {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    headline: post.title,
+    description: post.content ? post.content.replace(/<[^>]*>?/gm, '').substring(0, 200) : post.title,
+    image: (post.images && post.images.length > 0) ? post.images[0] : (post.imageId || `${siteUrl}/icon.jpg`),
+    datePublished: post.$createdAt,
+    dateModified: post.$updatedAt || post.$createdAt,
+    author: {
+      "@type": "Person",
+      name: post.author || "Racoonn Team",
+    },
+    publisher: {
+      "@type": "Organization",
+      name: "Racoonn",
+      logo: {
+        "@type": "ImageObject",
+        url: `${siteUrl}/icon.jpg`,
+      },
+    },
+    mainEntityOfPage: {
+      "@type": "WebPage",
+      "@id": `${siteUrl}/blog/${slug}`,
+    },
+  };
+
   return (
     <div className="min-h-screen bg-white font-inter text-slate-800 pb-20">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }}
+      />
       <ViewTracker documentId={post.$id} currentViews={post.views || 0} />
       
       {/* Hero Section */}

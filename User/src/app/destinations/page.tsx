@@ -11,6 +11,9 @@ export interface DestinationItem {
   description: string;
   price: string;
   image: string;
+  metaTitle?: string;
+  metaDescription?: string;
+  metaKeywords?: string;
 }
 
 export default function DestinationsPage() {

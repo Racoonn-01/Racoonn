@@ -124,6 +124,10 @@ export function CheckoutSidebar({
     } else if (appliedCoupon.type === 'percentage') {
       dynamicDiscount = Math.floor(roomTotal * (appliedCoupon.value / 100));
     }
+    if (appliedCoupon.maxDiscountCap && dynamicDiscount > appliedCoupon.maxDiscountCap) {
+      dynamicDiscount = appliedCoupon.maxDiscountCap;
+    }
+    dynamicDiscount = Math.min(dynamicDiscount, roomTotal);
   }
 
   const calcNights = isPackage ? 1 : nights;
@@ -132,11 +136,13 @@ export function CheckoutSidebar({
   const finalTaxes = gstResult.gstAmount;
   const currentGstRate = gstResult.gstRate;
 
+  const departureCity = searchParams.get('departureCity') || undefined;
+
   if (currentStep === 4) return null;
 
   return (
     <div className="w-full lg:w-100 shrink-0">
-      <div className="sticky top-28 space-y-6 transition-all duration-300">
+      <div className="lg:sticky lg:top-28 space-y-6 transition-all duration-300">
         <BookingSummary 
           roomName={finalRoomName}
           pricePerNight={finalPrice}
@@ -155,6 +161,7 @@ export function CheckoutSidebar({
           discount={dynamicDiscount}
           baseRoomAmount={totalBaseRoomAmount}
           extraGuestAmount={totalExtraGuestAmount}
+          departureCity={departureCity}
         />
         <CancellationPolicy isPackage={hotelId.startsWith('pkg-')} />
       </div>

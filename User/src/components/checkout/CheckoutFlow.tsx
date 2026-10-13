@@ -167,6 +167,10 @@ export function CheckoutFlow() {
     } else if (appliedCoupon.type === 'percentage') {
       dynamicDiscount = Math.floor(roomTotal * (appliedCoupon.value / 100));
     }
+    if (appliedCoupon.maxDiscountCap && dynamicDiscount > appliedCoupon.maxDiscountCap) {
+      dynamicDiscount = appliedCoupon.maxDiscountCap;
+    }
+    dynamicDiscount = Math.min(dynamicDiscount, roomTotal);
   }
 
   const effectivePerNightPrice = roomTotal / (nights * rooms);
@@ -340,6 +344,26 @@ export function CheckoutFlow() {
         adults
       });
     }
+  };
+
+  const handlePayClick = () => {
+    if (!isFormValid) {
+      if (
+        !guestDetails.firstName.trim() || 
+        !guestDetails.lastName.trim() || 
+        !guestDetails.email.trim() || 
+        !guestDetails.phone.trim() ||
+        !guestDetails.country.trim()
+      ) {
+        const el = document.getElementById('guest-details-section');
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } else if (isPackage) {
+        const el = document.getElementById('travelers-section');
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+      return;
+    }
+    handleCompleteBooking();
   };
 
   return (
@@ -579,18 +603,30 @@ export function CheckoutFlow() {
 
       {/* Mobile Sticky Bottom Bar */}
       {currentStep === 3 && (
-        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-brand-sky p-3 sm:p-4 lg:hidden z-50 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-brand-sky p-3 sm:p-4 lg:hidden z-50 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] pb-[max(12px,env(safe-area-inset-bottom))]">
           <div className="flex justify-between items-center gap-3 max-w-7xl mx-auto">
             <div className="shrink-0">
               <p className="text-[11px] sm:text-xs text-gray-500 mb-0.5 whitespace-nowrap">Total Amount</p>
               <p className="text-lg sm:text-xl font-poppins font-bold text-brand-coral">₹{finalTotalAmount.toLocaleString('en-IN')}</p>
             </div>
             <button 
-              onClick={handleCompleteBooking}
-              disabled={isSubmitting || !isFormValid}
-              className="bg-brand-coral hover:bg-[#d65f64] disabled:opacity-50 text-white font-bold px-4 py-2.5 sm:px-6 sm:py-3 rounded-xl transition-all shadow-lg shadow-brand-coral/30 flex items-center justify-center gap-2 text-sm sm:text-base flex-1 max-w-[200px]"
+              onClick={handlePayClick}
+              disabled={isSubmitting}
+              className={`font-bold px-4 py-2.5 sm:px-6 sm:py-3 rounded-xl transition-all shadow-lg flex items-center justify-center gap-2 text-sm sm:text-base flex-1 max-w-[200px] ${
+                isFormValid 
+                  ? 'bg-brand-coral hover:bg-[#d65f64] text-white shadow-brand-coral/30' 
+                  : 'bg-brand-coral/80 text-white cursor-pointer'
+              }`}
             >
-              {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : (highlightAddonSection ? "Skip Addons" : "Pay Now")}
+              {isSubmitting ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : highlightAddonSection ? (
+                "Skip Addons"
+              ) : isFormValid ? (
+                "Pay Now"
+              ) : (
+                "Complete Info"
+              )}
             </button>
           </div>
         </div>

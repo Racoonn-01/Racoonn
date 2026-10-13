@@ -10,11 +10,15 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: "Recipient email is required" }, { status: 400 });
     }
 
-    const host = process.env.SMTP_HOST || "smtp.gmail.com";
+    const host = process.env.SMTP_HOST || "smtp.hostinger.com";
     const port = Number(process.env.SMTP_PORT || 587);
-    const user = (process.env.SMTP_USER || process.env.SMTP_USERNAME || "work.vivekkumar0666@gmail.com").trim();
-    const rawPass = (process.env.SMTP_PASS || process.env.SMTP_PASSWORD || "rgar quzx szdi fvzo").trim();
+    const user = (process.env.SMTP_USER || process.env.SMTP_USERNAME || "").trim();
+    const rawPass = (process.env.SMTP_PASS || process.env.SMTP_PASSWORD || "").trim();
     const pass = rawPass.replace(/\s+/g, '');
+
+    if (!user || !pass) {
+      return NextResponse.json({ success: false, error: "SMTP credentials not configured" }, { status: 500 });
+    }
 
     const transporter = nodemailer.createTransport({
       host,

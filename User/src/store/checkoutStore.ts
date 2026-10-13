@@ -27,6 +27,8 @@ export interface Coupon {
   code: string;
   type: 'fixed' | 'percentage';
   value: number;
+  maxDiscountCap?: number;
+  issuer?: string;
 }
 
 export interface PropertyAddon {
@@ -82,7 +84,7 @@ interface CheckoutState {
   nextStep: () => void;
   prevStep: () => void;
   toggleAddon: (id: string) => void;
-  applyCoupon: (code: string) => Promise<{ success: boolean; message: string }>;
+  applyCoupon: (code: string, bookingAmount?: number) => Promise<{ success: boolean; message: string }>;
   removeCoupon: () => void;
   updateGuestDetails: (details: Partial<GuestDetails>) => void;
   initTravelers: (count: number) => void;
@@ -130,7 +132,7 @@ export const useCheckoutStore = create<CheckoutState>((set, get) => ({
       ? state.selectedAddons.filter(addonId => addonId !== id)
       : [...state.selectedAddons, id]
   })),
-  applyCoupon: async (code) => {
+  applyCoupon: async (code, bookingAmount) => {
     const searchCode = code.trim().toUpperCase();
     if (!searchCode) {
       return { success: false, message: 'Please enter a coupon code.' };
@@ -302,14 +304,86 @@ export const useCheckoutStore = create<CheckoutState>((set, get) => ({
         if (promo.validUntil && String(promo.validUntil) < todayStr) {
           return { success: false, message: 'This coupon code has expired.' };
         }
+
+        // Room vs Package applicability check
+        const { selectedHotelId, selectedRoomName } = get();
+        let isPackageCheckout = Boolean(
+          (selectedRoomName || '').startsWith('Package:') ||
+          (selectedRoomName || '').toLowerCase().includes('package') ||
+          (selectedHotelId || '').toLowerCase().startsWith('pkg-') ||
+          (selectedHotelId || '').toLowerCase().includes('pkg')
+        );
+
+        if (!isPackageCheckout && typeof window !== 'undefined') {
+          const params = new URLSearchParams(window.location.search);
+          const paramRoom = params.get('roomName') || '';
+          const paramHotel = params.get('hotelId') || '';
+          if (
+            paramRoom.startsWith('Package:') ||
+            paramRoom.toLowerCase().includes('package') ||
+            paramHotel.toLowerCase().startsWith('pkg-') ||
+            paramHotel.toLowerCase().includes('pkg') ||
+            params.has('packageId') ||
+            params.get('type') === 'package'
+          ) {
+            isPackageCheckout = true;
+          }
+        }
+
+        const isPackageOnlyPromo = promo.applicableTo === 'packages' || promo.applicableTo === 'package';
+        const isRoomOnlyPromo = promo.applicableTo === 'rooms' || promo.applicableTo === 'room';
+
+        if (isPackageCheckout && isRoomOnlyPromo) {
+          return { success: false, message: 'This coupon is valid exclusively on Hotel Room stays, not for Holiday Packages.' };
+        }
+
+        if (!isPackageCheckout && isPackageOnlyPromo) {
+          return { success: false, message: 'This coupon is valid exclusively on Holiday Packages, not for room bookings.' };
+        }
+
+        // Target customer check
+        if (promo.assignedUserEmail) {
+          const userEmail = useAuthStore.getState().user?.email || useAuthStore.getState().profile?.email;
+          if (!userEmail || userEmail.trim().toLowerCase() !== String(promo.assignedUserEmail).trim().toLowerCase()) {
+            return { success: false, message: 'This coupon code is valid only for a specific customer.' };
+          }
+        }
+
+        // First-time guest check
+        if (promo.firstBookingOnly && !get().isFirstBooking) {
+          return { success: false, message: 'This offer is valid only for first-time guests.' };
+        }
+
+        // Minimum order value check
+        let currentPrice = bookingAmount || get().selectedPrice || 0;
+        if (!currentPrice && typeof window !== 'undefined') {
+          const params = new URLSearchParams(window.location.search);
+          const paramPrice = Number(params.get('price')) || 0;
+          if (paramPrice > 0) {
+            currentPrice = paramPrice;
+          }
+        }
+
+        // Initialize selectedPrice in state if currently missing
+        if (!get().selectedPrice && currentPrice > 0) {
+          set({ selectedPrice: currentPrice });
+        }
+
+        const minOrder = Number(promo.minOrderValue) || 0;
+        if (minOrder > 0 && currentPrice > 0 && currentPrice < minOrder) {
+          return { success: false, message: `Minimum booking value of ₹${minOrder} is required to use this coupon.` };
+        }
         
         const isPercentage = promo.discountType === 'percentage' || promo.type === 'percentage';
         const discountVal = Number(promo.discountValue || promo.discount || 0);
+        const maxCap = promo.maxDiscountCap ? Number(promo.maxDiscountCap) : undefined;
 
         const couponObj: Coupon = {
           code: searchCode,
           type: isPercentage ? 'percentage' : 'fixed',
-          value: discountVal
+          value: discountVal,
+          maxDiscountCap: maxCap,
+          issuer: 'racoonn'
         };
 
         set({ appliedCoupon: couponObj });
@@ -463,6 +537,9 @@ export const useCheckoutStore = create<CheckoutState>((set, get) => ({
           discount = appliedCoupon.value;
         } else if (appliedCoupon.type === 'percentage') {
           discount = Math.floor(initialRoomAmount * (appliedCoupon.value / 100));
+          if (appliedCoupon.maxDiscountCap && appliedCoupon.maxDiscountCap > 0 && discount > appliedCoupon.maxDiscountCap) {
+            discount = appliedCoupon.maxDiscountCap;
+          }
         }
       }
 

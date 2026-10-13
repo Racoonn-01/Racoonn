@@ -8,14 +8,14 @@ const db = new Databases(client);
 
 (async () => {
   try {
-    const invoicesDoc = await db.getDocument('6a3cec630035d63ea963', 'properties', 'cms_invoices_v1').catch(() => null);
+    const invoicesDoc = await db.getDocument('6a3cec630035d63ea963', 'cms_invoices', 'cms_invoices_v1').catch(() => null);
     let allInvoices = invoicesDoc ? JSON.parse(invoicesDoc.details) : [];
     
     // push a dummy invoice
     allInvoices.unshift({ id: 'dummy-123', status: 'test' });
     
     console.log('Attempting to update with length', allInvoices.length);
-    await db.updateDocument('6a3cec630035d63ea963', 'properties', 'cms_invoices_v1', {
+    await db.updateDocument('6a3cec630035d63ea963', 'cms_invoices', 'cms_invoices_v1', {
       details: JSON.stringify(allInvoices)
     }).then(() => console.log('Update Success'))
       .catch((e) => console.error('Update Failed:', e));

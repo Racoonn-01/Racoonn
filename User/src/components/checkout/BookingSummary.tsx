@@ -22,7 +22,8 @@ export function BookingSummary({
   discount = 0,
   roomImage,
   baseRoomAmount = 0,
-  extraGuestAmount = 0
+  extraGuestAmount = 0,
+  departureCity
 }: {
   roomName?: string;
   pricePerNight?: number;
@@ -41,6 +42,7 @@ export function BookingSummary({
   roomImage?: string;
   baseRoomAmount?: number;
   extraGuestAmount?: number;
+  departureCity?: string;
 }) {
   const isPackage = roomName.startsWith('Package:') || roomName.toLowerCase().includes('package');
   const roomPrice = isPackage ? pricePerNight : baseRoomAmount + extraGuestAmount;
@@ -56,7 +58,7 @@ export function BookingSummary({
   const handleApplyCoupon = async () => {
     if (!couponInput.trim() || isApplying) return;
     setIsApplying(true);
-    const res = await applyCoupon(couponInput.trim());
+    const res = await applyCoupon(couponInput.trim(), roomPrice);
     if (!res.success) {
       setErrorMsg(res.message);
     } else {
@@ -68,10 +70,10 @@ export function BookingSummary({
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-brand-sky overflow-hidden">
-      <div className="p-6 pb-4 border-b border-brand-sky">
-        <h2 className="text-xl font-poppins font-bold text-brand-navy mb-4">Booking Summary</h2>
-        <div className="flex gap-4 items-center">
-          <div className="w-24 h-24 rounded-lg overflow-hidden relative shrink-0 bg-gray-100 shadow-sm border border-gray-200">
+      <div className="p-4 sm:p-6 pb-3 sm:pb-4 border-b border-brand-sky">
+        <h2 className="text-lg sm:text-xl font-poppins font-bold text-brand-navy mb-3 sm:mb-4">Booking Summary</h2>
+        <div className="flex gap-3 sm:gap-4 items-center">
+          <div className="w-18 h-18 sm:w-24 sm:h-24 rounded-lg overflow-hidden relative shrink-0 bg-gray-100 shadow-sm border border-gray-200">
             <Image 
               src={optimizeAppwriteImage(roomImage || hotelImage)} 
               alt={roomName}
@@ -79,55 +81,61 @@ export function BookingSummary({
               className="object-cover"
             />
           </div>
-          <div className="flex-1">
-            <h3 className="font-bold text-brand-navy text-lg leading-tight mb-1.5">{roomName}</h3>
-            <div className="flex items-start text-sm text-gray-500 gap-1.5">
+          <div className="flex-1 min-w-0">
+            <h3 className="font-bold text-brand-navy text-base sm:text-lg leading-tight mb-1 truncate">{roomName}</h3>
+            <div className="flex items-start text-xs sm:text-sm text-gray-500 gap-1.5 truncate">
               <MapPin className="w-4 h-4 shrink-0 text-brand-coral" />
-              <span className="font-medium">{hotelName}</span>
+              <span className="font-medium truncate">{hotelName}</span>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="p-6 py-4 space-y-4 border-b border-brand-sky text-sm">
+      <div className="p-4 sm:p-6 py-3 sm:py-4 space-y-3 sm:space-y-4 border-b border-brand-sky text-sm">
         {isPackage ? (
-          <div className="grid grid-cols-1 gap-4">
+          <div className="grid grid-cols-1 gap-3 sm:gap-4">
             <div className="space-y-1">
-              <p className="text-gray-500 flex items-center gap-2"><Calendar className="w-4 h-4 text-brand-coral" /> Start Date</p>
-              <p className="font-medium text-brand-navy">{checkIn}</p>
+              <p className="text-gray-500 flex items-center gap-2 text-xs sm:text-sm"><Calendar className="w-4 h-4 text-brand-coral" /> Start Date</p>
+              <p className="font-medium text-brand-navy text-sm sm:text-base">{checkIn}</p>
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-3 sm:gap-4">
             <div className="space-y-1">
-              <p className="text-gray-500 flex items-center gap-2"><Calendar className="w-4 h-4 text-brand-coral" /> Check-In</p>
-              <p className="font-medium text-brand-navy">{checkIn}</p>
-              <p className="text-xs text-gray-500">From 14:00</p>
+              <p className="text-gray-500 flex items-center gap-1.5 text-xs sm:text-sm"><Calendar className="w-4 h-4 text-brand-coral" /> Check-In</p>
+              <p className="font-medium text-brand-navy text-xs sm:text-sm">{checkIn}</p>
+              <p className="text-[11px] sm:text-xs text-gray-500">From 14:00</p>
             </div>
             <div className="space-y-1">
-              <p className="text-gray-500 flex items-center gap-2"><Calendar className="w-4 h-4 text-brand-coral" /> Check-Out</p>
-              <p className="font-medium text-brand-navy">{checkOut}</p>
-              <p className="text-xs text-gray-500">Until 12:00</p>
+              <p className="text-gray-500 flex items-center gap-1.5 text-xs sm:text-sm"><Calendar className="w-4 h-4 text-brand-coral" /> Check-Out</p>
+              <p className="font-medium text-brand-navy text-xs sm:text-sm">{checkOut}</p>
+              <p className="text-[11px] sm:text-xs text-gray-500">Until 12:00</p>
             </div>
           </div>
         )}
       </div>
 
-      <div className="p-6 py-4 space-y-3 text-sm border-b border-brand-sky">
+      <div className="p-4 sm:p-6 py-3 sm:py-4 space-y-2.5 sm:space-y-3 text-xs sm:text-sm border-b border-brand-sky">
         <div className="flex justify-between items-center">
           <span className="text-gray-500 flex items-center gap-2"><Users className="w-4 h-4 text-brand-coral" /> Guests</span>
           <span className="font-medium text-brand-navy">{guests}</span>
         </div>
+        {isPackage && departureCity && (
+          <div className="flex justify-between items-center">
+            <span className="text-gray-500 flex items-center gap-2"><MapPin className="w-4 h-4 text-brand-coral" /> Origin City</span>
+            <span className="font-semibold text-brand-navy bg-brand-coral/10 text-brand-coral px-2.5 py-0.5 rounded-full text-xs">Ex-{departureCity}</span>
+          </div>
+        )}
         {!isPackage && (
           <div className="flex justify-between items-center">
             <span className="text-gray-500 flex items-center gap-2"><BedDouble className="w-4 h-4 text-brand-coral" /> Room</span>
-            <span className="font-medium text-brand-navy text-right">{rooms} × {roomName}</span>
+            <span className="font-medium text-brand-navy text-right truncate max-w-[200px]">{rooms} × {roomName}</span>
           </div>
         )}
       </div>
 
       {/* Coupon Field */}
-      <div className="p-6 pb-4 bg-brand-sand border-b border-brand-sky/50">
+      <div className="p-4 sm:p-6 pb-3 sm:pb-4 bg-brand-sand border-b border-brand-sky/50">
         {appliedCoupon ? (
           <div className="flex items-center justify-between bg-green-50 border border-green-200 rounded-xl px-4 py-3">
             <div className="flex items-center gap-2 text-green-700">
@@ -168,7 +176,7 @@ export function BookingSummary({
       </div>
 
       {/* Price Summary */}
-      <div className="p-6 py-4 bg-brand-sand">
+      <div className="p-4 sm:p-6 py-3.5 sm:py-4 bg-brand-sand">
         <div className="space-y-2 mb-4 text-sm">
           <div className="flex justify-between">
             <span className="text-gray-600">

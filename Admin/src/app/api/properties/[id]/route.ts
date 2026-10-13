@@ -71,23 +71,28 @@ export async function PATCH(
             }
 
             if (htmlContent) {
-              const transporter = nodemailer.createTransport({
-                host: process.env.SMTP_HOST || "smtp.gmail.com",
-                port: Number(process.env.SMTP_PORT || 587),
-                secure: false,
-                auth: {
-                  user: (process.env.SMTP_USER || process.env.SMTP_USERNAME || "work.vivekkumar0666@gmail.com").trim(),
-                  pass: (process.env.SMTP_PASS || process.env.SMTP_PASSWORD || "rgar quzx szdi fvzo").trim().replace(/\s+/g, '')
-                }
-              });
+              const smtpUser = (process.env.SMTP_USER || process.env.SMTP_USERNAME || "").trim();
+              const smtpPass = (process.env.SMTP_PASS || process.env.SMTP_PASSWORD || "").trim().replace(/\s+/g, '');
 
-              await transporter.sendMail({
-                from: '"Racoonn Notification System" <' + (process.env.SMTP_USER || "work.vivekkumar0666@gmail.com") + '>',
-                to: vendor.email,
-                subject: subject,
-                html: htmlContent
-              });
-              console.log("Property status email sent to", vendor.email);
+              if (smtpUser && smtpPass) {
+                const transporter = nodemailer.createTransport({
+                  host: process.env.SMTP_HOST || "smtp.hostinger.com",
+                  port: Number(process.env.SMTP_PORT || 587),
+                  secure: false,
+                  auth: {
+                    user: smtpUser,
+                    pass: smtpPass
+                  }
+                });
+
+                await transporter.sendMail({
+                  from: '"Racoonn Notification System" <' + smtpUser + '>',
+                  to: vendor.email,
+                  subject: subject,
+                  html: htmlContent
+                });
+                console.log("Property status email sent to", vendor.email);
+              }
             }
           }
         }

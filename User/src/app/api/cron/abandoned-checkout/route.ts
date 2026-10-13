@@ -37,13 +37,13 @@ export async function GET(request: Request) {
       },
     });
 
-    const tenMinsAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+    const fifteenMinsAgo = new Date(Date.now() - 15 * 60 * 1000).toISOString();
     const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
 
     const response = await databases.listDocuments(DB_ID, COLLECTION_ID, [
       Query.equal('status', 'CHECKOUT_STARTED'),
       Query.equal('emailSent', false),
-      Query.lessThan('$createdAt', tenMinsAgo),
+      Query.lessThan('$createdAt', fifteenMinsAgo),
       Query.greaterThan('$createdAt', oneDayAgo)
     ]);
 
@@ -69,10 +69,24 @@ export async function GET(request: Request) {
           status: 'BOOKED'
         });
       } else {
-        // Build base URL dynamically from the request to allow testing locally
-        const host = request.headers.get('host') || 'www.racoonn.com';
-        const protocol = host.includes('localhost') ? 'http' : 'https';
-        const recoveryLink = `${protocol}://${host}/checkout/recover/${checkout.recoveryToken}`;
+        // Build base URL dynamically from environment or request headers
+        let baseUrl = process.env.NEXT_PUBLIC_APP_URL;
+        if (!baseUrl) {
+          const host = request.headers.get('x-forwarded-host') || request.headers.get('host');
+          if (host) {
+            const isLocal = host.includes('localhost') || host.includes('127.0.0.1');
+            const protocol = request.headers.get('x-forwarded-proto') || (isLocal ? 'http' : 'https');
+            // User portal runs on port 3001 locally; fix if mistakenly triggered via port 3000
+            const normalizedHost = isLocal && (host === 'localhost:3000' || host === '127.0.0.1:3000')
+              ? 'localhost:3001'
+              : host;
+            baseUrl = `${protocol}://${normalizedHost}`;
+          } else {
+            baseUrl = 'https://racoonn.com';
+          }
+        }
+        baseUrl = baseUrl.replace(/\/$/, '');
+        const recoveryLink = `${baseUrl}/checkout/recover/${checkout.recoveryToken}`;
         
         const mailOptions = {
           from: `"Racoonn" <${process.env.SMTP_USER}>`,

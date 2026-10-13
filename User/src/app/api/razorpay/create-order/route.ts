@@ -28,21 +28,27 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Fallback mock order response if credentials missing or API fails
-    const mockOrder = {
-      id: `mock_${Date.now()}`,
-      entity: "order",
-      amount: Math.round(amount * 100),
-      amount_paid: 0,
-      amount_due: Math.round(amount * 100),
-      currency,
-      receipt: `receipt_${Date.now()}`,
-      status: "created",
-      attempts: 0,
-      created_at: Math.floor(Date.now() / 1000)
-    };
+    // Only permit fallback mock order response in development/local environments
+    if (process.env.NODE_ENV !== "production") {
+      const mockOrder = {
+        id: `mock_${Date.now()}`,
+        entity: "order",
+        amount: Math.round(amount * 100),
+        amount_paid: 0,
+        amount_due: Math.round(amount * 100),
+        currency,
+        receipt: `receipt_${Date.now()}`,
+        status: "created",
+        attempts: 0,
+        created_at: Math.floor(Date.now() / 1000)
+      };
+      return NextResponse.json(mockOrder);
+    }
 
-    return NextResponse.json(mockOrder);
+    return NextResponse.json(
+      { error: "Payment gateway is not properly configured. Please contact support." },
+      { status: 503 }
+    );
   } catch (error: any) {
     console.error("Error creating Razorpay order:", error);
     return NextResponse.json(

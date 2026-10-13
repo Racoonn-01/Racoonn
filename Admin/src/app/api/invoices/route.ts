@@ -3,9 +3,9 @@ import fs from "fs";
 import path from "path";
 import { appwriteServer } from "@/lib/appwrite/server";
 
-const SHARED_INVOICE_FILE = "/Users/haldwani/Documents/Working/Working/Racoonn/invoices.json";
+const SHARED_INVOICE_FILE = path.join(process.cwd(), "invoices.json");
 const DATABASE_ID = process.env.APPWRITE_DATABASE_ID || process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID || "6a3cec630035d63ea963";
-const COLLECTION_ID = process.env.NEXT_PUBLIC_APPWRITE_PROPERTY_COLLECTION_ID || "properties";
+const COLLECTION_ID = process.env.APPWRITE_CMS_INVOICES_COLLECTION_ID || process.env.NEXT_PUBLIC_APPWRITE_CMS_INVOICES_COLLECTION_ID || "cms_invoices";
 const DOC_ID = "cms_invoices_v1";
 
 export async function GET() {
@@ -91,15 +91,7 @@ export async function POST(request: Request) {
             COLLECTION_ID,
             DOC_ID,
             {
-              vendorId: 'admin',
-              propertyName: 'CMS Invoices Storage',
-              propertyType: 'hotel',
-              city: 'Delhi',
-              state: 'Delhi',
-              location: 'Admin Dashboard',
-              status: 'active',
               title: 'CMS Invoices Storage',
-              price: 0,
               details: jsonStr,
             }
           );

@@ -3,27 +3,23 @@
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
 import {
-  Megaphone,
-  Target,
-  Percent,
-  TrendingUp,
   Plus,
   Loader2,
-  Tag,
   Copy,
   Check,
   Trash2,
-  Zap
+  Search,
+  Eye,
+  EyeOff
 } from "lucide-react";
 import {
   getCampaignsData,
-  createCampaign,
   updateCampaignStatus,
+  toggleCampaignPublicVisibility,
   deleteCampaign,
   CampaignItem
 } from "./actions";
@@ -45,6 +41,8 @@ export default function MarketingPage() {
 
   const [isLoading, setIsLoading] = useState(true);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<"all" | "rooms" | "packages" | "public" | "secret">("all");
+  const [searchQuery, setSearchQuery] = useState("");
 
   const loadData = async () => {
     try {
@@ -62,8 +60,6 @@ export default function MarketingPage() {
     loadData();
   }, []);
 
-
-
   const handleToggleStatus = async (id: string, realId: string | undefined, currentStatus: string) => {
     const nextStatus = currentStatus === "Active" ? "Paused" : "Active";
     setData(prev => ({
@@ -73,7 +69,17 @@ export default function MarketingPage() {
     await updateCampaignStatus(realId || id, nextStatus);
   };
 
+  const handleToggleVisibility = async (id: string, realId: string | undefined, currentIsPublic: boolean) => {
+    const nextVisibility = !currentIsPublic;
+    setData(prev => ({
+      ...prev,
+      campaigns: prev.campaigns.map(c => c.id === id ? { ...c, isPublic: nextVisibility } : c)
+    }));
+    await toggleCampaignPublicVisibility(realId || id, nextVisibility);
+  };
+
   const handleDelete = async (id: string, realId: string | undefined) => {
+    if (!confirm("Are you sure you want to delete this promotional offer?")) return;
     setData(prev => ({
       ...prev,
       campaigns: prev.campaigns.filter(c => c.id !== id)
@@ -95,153 +101,264 @@ export default function MarketingPage() {
     return validDate < today;
   };
 
+  const filteredCampaigns = data.campaigns.filter((c) => {
+    const matchesSearch = 
+      c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      c.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      c.id.toLowerCase().includes(searchQuery.toLowerCase());
+
+    if (!matchesSearch) return false;
+
+    if (activeTab === "rooms") return c.applicableTo === "rooms";
+    if (activeTab === "packages") return c.applicableTo === "packages";
+    if (activeTab === "public") return c.isPublic === true;
+    if (activeTab === "secret") return c.isPublic === false;
+    return true;
+  });
+
+  const roomOffersCount = data.campaigns.filter(c => c.applicableTo === "rooms").length;
+  const packageOffersCount = data.campaigns.filter(c => c.applicableTo === "packages").length;
+  const publicOffersCount = data.campaigns.filter(c => c.isPublic === true).length;
+  const secretOffersCount = data.campaigns.filter(c => c.isPublic === false).length;
+
   return (
-    <div className="space-y-6 pb-8">
+    <div className="space-y-6 pb-10">
       {/* Header Section */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">Marketing & Promotions</h2>
-          <p className="text-muted-foreground mt-1">Create offers, manage promotional campaigns, and discount codes.</p>
+          <h2 className="text-2xl font-semibold text-slate-900 tracking-tight">Marketing & Promotions</h2>
+          <p className="text-sm text-slate-500 mt-0.5">
+            Manage Room & Package discounts, public /offers page visibility, and usage rules.
+          </p>
         </div>
         <Link href="/admin/marketing/new">
           <Button 
-            className="rounded-full px-6 h-11 bg-[#E86A70] hover:bg-[#d5585e] text-white font-bold shadow-md transition-all flex items-center gap-2"
+            className="rounded-full px-5 h-9 bg-slate-900 hover:bg-slate-800 text-white text-xs font-medium shadow-none transition-all flex items-center gap-1.5 cursor-pointer"
           >
-            <Plus className="w-5 h-5" /> Make Offer / New Campaign
+            <Plus className="w-4 h-4" /> Create Offer
           </Button>
         </Link>
       </div>
 
-      {/* KPI Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card className="rounded-2xl border border-border shadow-xs">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Campaigns</CardTitle>
-            <Megaphone className="h-4 w-4 text-[#E86A70]" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{data.activeCount}</div>
-            <p className="text-xs text-emerald-500 font-medium flex items-center gap-1 mt-1">
-              <Zap className="w-3 h-3" /> Running currently
-            </p>
-          </CardContent>
-        </Card>
+      {/* Clean Minimal KPI Row */}
+      <div className="grid gap-3 grid-cols-2 md:grid-cols-4">
+        <div className="p-4 rounded-xl border border-slate-200/70 bg-white">
+          <p className="text-xs text-slate-500 font-medium">Active Offers</p>
+          <div className="text-xl font-semibold text-slate-850 mt-1">{data.activeCount}</div>
+          <p className="text-[11px] text-emerald-600 mt-0.5 font-normal">Running currently</p>
+        </div>
 
-        <Card className="rounded-2xl border border-border shadow-xs">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Reach</CardTitle>
-            <Target className="h-4 w-4 text-blue-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{data.totalReach}</div>
-            <p className="text-xs text-muted-foreground mt-1">Live audience engagement</p>
-          </CardContent>
-        </Card>
+        <div className="p-4 rounded-xl border border-slate-200/70 bg-white">
+          <p className="text-xs text-slate-500 font-medium">Rooms vs Packages</p>
+          <div className="text-xl font-semibold text-slate-850 mt-1">
+            {roomOffersCount} <span className="text-xs text-slate-400 font-normal">rooms</span> • {packageOffersCount} <span className="text-xs text-slate-400 font-normal">packages</span>
+          </div>
+          <p className="text-[11px] text-slate-500 mt-0.5 font-normal">Category breakdown</p>
+        </div>
 
-        <Card className="rounded-2xl border border-border shadow-xs">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Avg Conversion Rate</CardTitle>
-            <Percent className="h-4 w-4 text-emerald-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{data.avgConversionRate}</div>
-            <p className="text-xs text-emerald-500 font-medium flex items-center gap-1 mt-1">
-              <TrendingUp className="h-3 w-3" /> Based on booking claims
-            </p>
-          </CardContent>
-        </Card>
+        <div className="p-4 rounded-xl border border-slate-200/70 bg-white">
+          <p className="text-xs text-slate-500 font-medium">Public on Web</p>
+          <div className="text-xl font-semibold text-slate-850 mt-1">{publicOffersCount}</div>
+          <p className="text-[11px] text-slate-500 mt-0.5 font-normal">Visible on /offers page</p>
+        </div>
 
-        <Card className="rounded-2xl border border-border shadow-xs">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Marketing ROI</CardTitle>
-            <TrendingUp className="h-4 w-4 text-purple-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{data.marketingRoi}</div>
-            <p className="text-xs text-muted-foreground mt-1">Estimated returns</p>
-          </CardContent>
-        </Card>
+        <div className="p-4 rounded-xl border border-slate-200/70 bg-white">
+          <p className="text-xs text-slate-500 font-medium">Secret Promo Codes</p>
+          <div className="text-xl font-semibold text-slate-850 mt-1">{secretOffersCount}</div>
+          <p className="text-[11px] text-slate-500 mt-0.5 font-normal">Direct distribution only</p>
+        </div>
       </div>
 
       {/* Offer Campaigns Table */}
-      <Card className="rounded-2xl border border-border shadow-xs overflow-hidden">
-        <CardHeader className="border-b border-border/60 bg-muted/20 flex flex-row items-center justify-between">
-          <CardTitle className="text-lg font-bold">Active Promotional Campaigns & Discount Codes</CardTitle>
-        </CardHeader>
-        <CardContent className="p-0">
+      <div className="rounded-xl border border-slate-200/80 bg-white shadow-none overflow-hidden">
+        {/* Clean Filter Bar */}
+        <div className="px-4 py-3 border-b border-slate-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-slate-50/40">
+          <div className="flex items-center gap-1 overflow-x-auto pb-1 sm:pb-0 w-full sm:w-auto">
+            {[
+              { id: "all", label: `All (${data.campaigns.length})` },
+              { id: "rooms", label: `Rooms (${roomOffersCount})` },
+              { id: "packages", label: `Packages (${packageOffersCount})` },
+              { id: "public", label: `Public on Web (${publicOffersCount})` },
+              { id: "secret", label: `Secret (${secretOffersCount})` },
+            ].map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as any)}
+                className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors cursor-pointer whitespace-nowrap ${
+                  activeTab === tab.id 
+                    ? "bg-white text-slate-900 shadow-xs border border-slate-200/60" 
+                    : "text-slate-500 hover:text-slate-900"
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="relative w-full sm:w-64">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+            <Input 
+              placeholder="Filter by code or name..." 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-8.5 bg-white border-slate-200 rounded-lg h-8 text-xs focus-visible:ring-1" 
+            />
+          </div>
+        </div>
+
+        <div className="p-0 overflow-x-auto">
           {isLoading ? (
-            <div className="py-16 text-center">
-              <Loader2 className="w-8 h-8 animate-spin mx-auto text-muted-foreground" />
-              <p className="mt-2 text-sm text-muted-foreground">Loading active campaigns...</p>
+            <div className="py-14 text-center">
+              <Loader2 className="w-6 h-6 animate-spin mx-auto text-slate-400" />
+              <p className="mt-2 text-xs text-slate-500">Loading campaigns...</p>
             </div>
-          ) : data.campaigns.length === 0 ? (
-            <div className="py-12 text-center text-muted-foreground text-sm">
-              No promotional offer campaigns found. Click &quot;Make Offer / New Campaign&quot; to create one.
+          ) : filteredCampaigns.length === 0 ? (
+            <div className="py-14 text-center text-slate-500 text-xs">
+              No promotional campaigns found matching the filter.
             </div>
           ) : (
             <Table>
-              <TableHeader className="bg-muted/30">
-                <TableRow>
-                  <TableHead className="font-semibold h-12">Campaign ID</TableHead>
-                  <TableHead className="font-semibold h-12">Campaign Name</TableHead>
-                  <TableHead className="font-semibold h-12">Promo Code</TableHead>
-                  <TableHead className="font-semibold h-12">Offer Discount</TableHead>
-                  <TableHead className="font-semibold h-12">Min Order</TableHead>
-                  <TableHead className="font-semibold h-12">Status</TableHead>
-                  <TableHead className="font-semibold h-12">Conversions</TableHead>
-                  <TableHead className="text-right font-semibold h-12">Actions</TableHead>
+              <TableHeader className="bg-slate-50/50">
+                <TableRow className="border-b border-slate-100">
+                  <TableHead className="font-medium text-slate-500 text-xs h-10">Campaign</TableHead>
+                  <TableHead className="font-medium text-slate-500 text-xs h-10">Applicable To</TableHead>
+                  <TableHead className="font-medium text-slate-500 text-xs h-10">Promo Code</TableHead>
+                  <TableHead className="font-medium text-slate-500 text-xs h-10">Discount</TableHead>
+                  <TableHead className="font-medium text-slate-500 text-xs h-10">Offers Page</TableHead>
+                  <TableHead className="font-medium text-slate-500 text-xs h-10">Rules</TableHead>
+                  <TableHead className="font-medium text-slate-500 text-xs h-10">Status</TableHead>
+                  <TableHead className="text-right font-medium text-slate-500 text-xs h-10">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {data.campaigns.map((camp) => (
-                  <TableRow key={camp.id} className="hover:bg-muted/30 transition-colors">
-                    <TableCell className="font-bold font-mono text-xs text-foreground">{camp.id}</TableCell>
-                    <TableCell className="font-bold text-foreground">{camp.name}</TableCell>
-                    <TableCell>
+                {filteredCampaigns.map((camp) => (
+                  <TableRow key={camp.id} className="border-b border-slate-100 hover:bg-slate-50/60 transition-colors">
+                    
+                    {/* Campaign Name */}
+                    <TableCell className="py-3">
+                      <div>
+                        <p className="font-medium text-slate-800 text-sm leading-snug">{camp.name}</p>
+                        <p className="text-[11px] text-slate-400 font-mono mt-0.5">{camp.id}</p>
+                      </div>
+                    </TableCell>
+
+                    {/* Scope */}
+                    <TableCell className="py-3">
+                      <div className="flex items-center gap-1.5 text-xs text-slate-600 font-normal">
+                        {camp.applicableTo === "rooms" ? (
+                          <>
+                            <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                            <span>Rooms Only</span>
+                          </>
+                        ) : camp.applicableTo === "packages" ? (
+                          <>
+                            <span className="w-1.5 h-1.5 rounded-full bg-purple-500"></span>
+                            <span>Packages Only</span>
+                          </>
+                        ) : (
+                          <>
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                            <span>Sitewide</span>
+                          </>
+                        )}
+                      </div>
+                    </TableCell>
+
+                    {/* Promo Code */}
+                    <TableCell className="py-3">
                       <button 
                         onClick={() => copyToClipboard(camp.code)}
-                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 font-mono font-bold text-xs hover:bg-rose-100 transition-colors"
-                        title="Click to copy promo code"
+                        className="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 font-mono text-xs transition-colors cursor-pointer"
+                        title="Click to copy code"
                       >
-                        <Tag className="w-3 h-3" />
                         {camp.code}
-                        {copiedCode === camp.code ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3 text-rose-400" />}
+                        {copiedCode === camp.code ? (
+                          <Check className="w-3 h-3 text-emerald-600" />
+                        ) : (
+                          <Copy className="w-3 h-3 text-slate-400" />
+                        )}
                       </button>
                     </TableCell>
-                    <TableCell className="font-bold text-emerald-600">
-                      {camp.discountType === "percentage" ? `${camp.discountValue}% OFF` : `₹${camp.discountValue} FLAT OFF`}
+
+                    {/* Discount */}
+                    <TableCell className="py-3">
+                      <div className="text-xs text-slate-700">
+                        <span className="font-medium">
+                          {camp.discountType === "percentage" ? `${camp.discountValue}% off` : `₹${camp.discountValue} off`}
+                        </span>
+                        {camp.maxDiscountCap ? (
+                          <span className="text-slate-400 block text-[11px]">Cap: ₹{camp.maxDiscountCap}</span>
+                        ) : (
+                          <span className="text-slate-400 block text-[11px]">Min: ₹{camp.minOrderValue}</span>
+                        )}
+                      </div>
                     </TableCell>
-                    <TableCell className="text-xs text-muted-foreground font-semibold">
-                      ₹{camp.minOrderValue}
+
+                    {/* Offers Page Visibility */}
+                    <TableCell className="py-3">
+                      <button
+                        onClick={() => handleToggleVisibility(camp.id, camp.realId, camp.isPublic)}
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-normal transition-colors cursor-pointer ${
+                          camp.isPublic 
+                            ? "bg-emerald-50 text-emerald-700 hover:bg-emerald-100" 
+                            : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                        }`}
+                        title="Click to toggle visibility on user /offers page"
+                      >
+                        {camp.isPublic ? (
+                          <>
+                            <Eye className="w-3 h-3 text-emerald-600" /> Public
+                          </>
+                        ) : (
+                          <>
+                            <EyeOff className="w-3 h-3 text-slate-400" /> Secret
+                          </>
+                        )}
+                      </button>
                     </TableCell>
-                    <TableCell>
+
+                    {/* Usage Rules */}
+                    <TableCell className="py-3">
+                      <div className="text-xs text-slate-600 space-y-0.5">
+                        {camp.usageLimitType === "one_time_per_user" ? (
+                          <span>1-time per guest</span>
+                        ) : camp.usageLimitType === "total_limit" ? (
+                          <span>Cap: {camp.totalLimit || 100} uses</span>
+                        ) : (
+                          <span className="text-slate-400">Unlimited</span>
+                        )}
+                        {camp.firstBookingOnly && (
+                          <span className="block text-[11px] text-purple-600 font-medium">New guests only</span>
+                        )}
+                      </div>
+                    </TableCell>
+
+                    {/* Status */}
+                    <TableCell className="py-3">
                       <button 
                         onClick={() => !isExpired(camp.validUntil) && handleToggleStatus(camp.id, camp.realId, camp.status)}
-                        className={`cursor-pointer ${isExpired(camp.validUntil) ? 'opacity-70 cursor-not-allowed' : ''}`}
+                        className={`inline-flex items-center gap-1.5 text-xs cursor-pointer ${isExpired(camp.validUntil) ? 'opacity-50 cursor-not-allowed' : ''}`}
                         disabled={isExpired(camp.validUntil)}
                       >
-                        <Badge 
-                          className={`
-                            px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider transition-all
-                            ${isExpired(camp.validUntil) ? "bg-red-500/10 text-red-600 border-red-500/20" : 
-                              camp.status === "Active" ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20 hover:bg-emerald-500/20" :
-                              camp.status === "Paused" ? "bg-amber-500/10 text-amber-600 border-amber-500/20 hover:bg-amber-500/20" :
-                              "bg-slate-500/10 text-slate-600 border-slate-500/20 hover:bg-slate-500/20"}
-                          `}
-                        >
+                        <span className={`w-1.5 h-1.5 rounded-full ${
+                          isExpired(camp.validUntil) ? "bg-red-400" :
+                          camp.status === "Active" ? "bg-emerald-500" : "bg-amber-400"
+                        }`}></span>
+                        <span className="text-slate-600 text-xs">
                           {isExpired(camp.validUntil) ? "Expired" : camp.status}
-                        </Badge>
+                        </span>
                       </button>
                     </TableCell>
-                    <TableCell className="text-xs font-semibold text-foreground">{camp.conversions}</TableCell>
-                    <TableCell className="text-right">
+
+                    {/* Actions */}
+                    <TableCell className="text-right py-3">
                       <div className="flex items-center justify-end gap-1">
                         {!isExpired(camp.validUntil) && (
                           <Button 
                             onClick={() => handleToggleStatus(camp.id, camp.realId, camp.status)}
                             variant="ghost" 
                             size="sm"
-                            className="h-8 rounded-full px-3 text-xs font-semibold text-muted-foreground hover:text-foreground"
+                            className="h-7 px-2 text-xs text-slate-500 hover:text-slate-900 cursor-pointer font-normal"
                           >
                             {camp.status === "Active" ? "Pause" : "Activate"}
                           </Button>
@@ -250,10 +367,10 @@ export default function MarketingPage() {
                           onClick={() => handleDelete(camp.id, camp.realId)}
                           variant="ghost" 
                           size="sm"
-                          className="h-8 w-8 p-0 rounded-full text-rose-500 hover:bg-rose-50 hover:text-rose-700"
+                          className="h-7 w-7 p-0 text-slate-400 hover:text-rose-600 cursor-pointer"
                           title="Delete Campaign"
                         >
-                          <Trash2 className="w-4 h-4" />
+                          <Trash2 className="w-3.5 h-3.5" />
                         </Button>
                       </div>
                     </TableCell>
@@ -262,9 +379,10 @@ export default function MarketingPage() {
               </TableBody>
             </Table>
           )}
-        </CardContent>
-      </Card>
-
+        </div>
+      </div>
     </div>
   );
 }
+
+

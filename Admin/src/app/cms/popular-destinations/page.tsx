@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus, Trash2, Loader2 } from "lucide-react";
+import { Plus, Trash2, Loader2, Edit2, Globe, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -24,21 +24,28 @@ export interface PopularDestination {
   description: string;
   price: string;
   image: string;
+  metaTitle?: string;
+  metaDescription?: string;
+  metaKeywords?: string;
 }
 
 const STORAGE_KEY = "racoonn_cms_popular_destinations_v1";
 
 export default function PopularDestinationsPage() {
   const [destinations, setDestinations] = useState<PopularDestination[]>([]);
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingDestination, setEditingDestination] = useState<PopularDestination | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | number | null>(null);
 
   // Form state
-  const [newCity, setNewCity] = useState("");
-  const [newDesc, setNewDesc] = useState("");
-  const [newPrice, setNewPrice] = useState("");
-  const [newImage, setNewImage] = useState("");
+  const [city, setCity] = useState("");
+  const [desc, setDesc] = useState("");
+  const [price, setPrice] = useState("");
+  const [image, setImage] = useState("");
+  const [metaTitle, setMetaTitle] = useState("");
+  const [metaDescription, setMetaDescription] = useState("");
+  const [metaKeywords, setMetaKeywords] = useState("");
   const [isUploading, setIsUploading] = useState(false);
 
   // Load destinations from DB / API
@@ -60,6 +67,30 @@ export default function PopularDestinationsPage() {
     }
     loadDestinations();
   }, []);
+
+  const openAddDialog = () => {
+    setEditingDestination(null);
+    setCity("");
+    setDesc("");
+    setPrice("");
+    setImage("");
+    setMetaTitle("");
+    setMetaDescription("");
+    setMetaKeywords("");
+    setIsDialogOpen(true);
+  };
+
+  const openEditDialog = (dest: PopularDestination) => {
+    setEditingDestination(dest);
+    setCity(dest.city);
+    setDesc(dest.description);
+    setPrice(dest.price);
+    setImage(dest.image);
+    setMetaTitle(dest.metaTitle || "");
+    setMetaDescription(dest.metaDescription || "");
+    setMetaKeywords(dest.metaKeywords || "");
+    setIsDialogOpen(true);
+  };
 
   // Save destinations to DB & Broadcast
   const saveDestinations = async (newDestinations: PopularDestination[]) => {
@@ -114,7 +145,7 @@ export default function PopularDestinationsPage() {
       const PROJECT_ID = "6a3bce6900381359c3ce";
       const uploadedFile = await storage.createFile(BUCKET_ID, ID.unique(), file);
       const url = `https://sgp.cloud.appwrite.io/v1/storage/buckets/${BUCKET_ID}/files/${uploadedFile.$id}/preview?project=${PROJECT_ID}&output=webp`;
-      setNewImage(url);
+      setImage(url);
     } catch (error) {
       console.error("Image upload failed", error);
       alert("Failed to upload image. Please try again.");
@@ -123,26 +154,41 @@ export default function PopularDestinationsPage() {
     }
   };
 
-  const handleAddDestination = (e: React.FormEvent) => {
+  const handleSaveDestination = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newCity.trim() || !newDesc.trim() || !newPrice.trim() || !newImage.trim()) return;
+    if (!city.trim() || !desc.trim() || !price.trim() || !image.trim()) return;
 
-    const newDest: PopularDestination = {
-      id: `dest-${Date.now()}`,
-      city: newCity.trim(),
-      description: newDesc.trim(),
-      price: newPrice.trim(),
-      image: getValidImageSrc(newImage),
-    };
+    if (editingDestination) {
+      const updated = destinations.map((d) =>
+        d.id === editingDestination.id
+          ? {
+              ...d,
+              city: city.trim(),
+              description: desc.trim(),
+              price: price.trim(),
+              image: getValidImageSrc(image),
+              metaTitle: metaTitle.trim(),
+              metaDescription: metaDescription.trim(),
+              metaKeywords: metaKeywords.trim(),
+            }
+          : d
+      );
+      saveDestinations(updated);
+    } else {
+      const newDest: PopularDestination = {
+        id: `dest-${Date.now()}`,
+        city: city.trim(),
+        description: desc.trim(),
+        price: price.trim(),
+        image: getValidImageSrc(image),
+        metaTitle: metaTitle.trim(),
+        metaDescription: metaDescription.trim(),
+        metaKeywords: metaKeywords.trim(),
+      };
+      saveDestinations([newDest, ...destinations]);
+    }
 
-    const updated = [newDest, ...destinations];
-    saveDestinations(updated);
-
-    setNewCity("");
-    setNewDesc("");
-    setNewPrice("");
-    setNewImage("");
-    setIsAddDialogOpen(false);
+    setIsDialogOpen(false);
   };
 
   const handleRemove = (id: string | number) => {
@@ -162,125 +208,138 @@ export default function PopularDestinationsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-3xl font-bold tracking-tight text-gray-900">Popular Destinations</h2>
-          <p className="text-muted-foreground mt-1">Manage the popular destinations displayed on the frontend.</p>
+          <p className="text-muted-foreground mt-1">Manage popular destinations and configure custom SEO tags (Meta Title, Description, Keywords) for each.</p>
         </div>
 
-        <Button className="gap-2 rounded-full px-6 bg-rose-600 hover:bg-rose-700 text-white font-semibold" onClick={() => setIsAddDialogOpen(true)}>
+        <Button className="gap-2 rounded-full px-6 bg-rose-600 hover:bg-rose-700 text-white font-semibold" onClick={openAddDialog}>
           <Plus className="h-4 w-4" />
           Add Destination
         </Button>
       </div>
 
-      {/* Add Destination Modal */}
-      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-        <DialogContent className="sm:max-w-3xl p-0 overflow-hidden border-0 shadow-2xl rounded-3xl">
-          <form onSubmit={handleAddDestination}>
-            <div className="flex flex-col md:flex-row">
-              {/* Left Column: Text Inputs */}
-              <div className="flex-1 p-6 md:p-8 flex flex-col justify-center bg-white">
-                <DialogHeader className="mb-6">
-                  <DialogTitle className="text-2xl font-bold text-[#1F2E4A]">Add Destination</DialogTitle>
-                  <DialogDescription>
-                    Fill in the details to add a new popular destination to the frontend.
-                  </DialogDescription>
-                </DialogHeader>
-
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="city" className="text-xs font-semibold uppercase text-gray-500">Destination Name / City *</Label>
-                    <Input 
-                      id="city" 
-                      placeholder="e.g. Kedarnath or Nainital" 
-                      value={newCity} 
-                      onChange={(e) => setNewCity(e.target.value)} 
-                      required 
-                      className="rounded-xl border-gray-200"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="desc" className="text-xs font-semibold uppercase text-gray-500">Description *</Label>
-                    <Input 
-                      id="desc" 
-                      placeholder="e.g. A sacred journey to the Himalayas." 
-                      value={newDesc} 
-                      onChange={(e) => setNewDesc(e.target.value)} 
-                      required 
-                      className="rounded-xl border-gray-200"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="price" className="text-xs font-semibold uppercase text-gray-500">Starting Price (₹) *</Label>
-                    <Input 
-                      id="price" 
-                      placeholder="e.g. 3,999" 
-                      value={newPrice} 
-                      onChange={(e) => setNewPrice(e.target.value)} 
-                      required 
-                      className="rounded-xl border-gray-200"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="image" className="text-xs font-semibold uppercase text-gray-500">Destination Image *</Label>
-                    <div className="flex items-center gap-3">
-                      <Input 
-                        id="image" 
-                        type="file"
-                        accept="image/*"
-                        onChange={handleImageUpload}
-                        disabled={isUploading}
-                        required={!newImage}
-                        className="rounded-xl border-gray-200 file:bg-rose-50 file:text-rose-600 file:border-0 file:mr-4 file:py-1 file:px-3 file:rounded-full file:text-xs file:font-semibold hover:file:bg-rose-100 transition-all cursor-pointer h-10"
-                      />
-                      {isUploading && <Loader2 className="w-5 h-5 animate-spin text-rose-600 shrink-0" />}
-                    </div>
-                    {newImage && !isUploading && (
-                      <p className="text-xs text-emerald-600 font-medium mt-1">Image uploaded successfully!</p>
-                    )}
-                  </div>
-                </div>
-
-                <DialogFooter className="mt-8 flex items-center justify-end gap-3">
-                  <Button type="button" variant="ghost" onClick={() => setIsAddDialogOpen(false)} className="rounded-xl">
-                    Cancel
-                  </Button>
-                  <Button type="submit" disabled={isUploading} className="bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-semibold px-6">
-                    Add Destination
-                  </Button>
-                </DialogFooter>
-              </div>
-
-              {/* Right Column: Live Card Preview */}
-              <div className="w-full md:w-80 bg-slate-900 p-6 md:p-8 flex flex-col justify-center items-center text-white border-t md:border-t-0 md:border-l border-slate-800">
-                <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-4">Live Preview</p>
-                <div className="relative w-full h-80 rounded-3xl overflow-hidden shadow-xl border border-slate-700/50 group">
-                  <Image 
-                    src={getValidImageSrc(newImage)} 
-                    alt="Preview" 
-                    fill 
-                   
-                    className="object-cover"
-                  />
-                  <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/20 to-black/30" />
-                  
-                  <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-md px-3.5 py-1.5 rounded-full flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
-                    <span className="text-xs font-bold text-slate-900">{newCity || "Destination"}</span>
-                  </div>
-
-                  <div className="absolute bottom-5 left-5 right-5 space-y-3">
-                    <p className="text-white text-base font-semibold leading-tight line-clamp-2">
-                      {newDesc || "Destination description will appear here..."}
-                    </p>
-                    <div className="inline-block bg-white/90 backdrop-blur-md px-3 py-1.5 rounded-xl text-slate-900 text-xs font-bold shadow">
-                      Stays from ₹{newPrice || "3,999"}
-                    </div>
-                  </div>
-                </div>
-              </div>
+      {/* Add / Edit Destination Modal */}
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="sm:max-w-xl p-6 sm:p-8 border-0 shadow-2xl rounded-3xl max-h-[90vh] overflow-y-auto">
+          <form onSubmit={handleSaveDestination} className="space-y-6">
+            <div>
+              <DialogHeader>
+                <DialogTitle className="text-xl font-bold text-gray-900">
+                  {editingDestination ? "Edit Destination" : "Add Destination"}
+                </DialogTitle>
+                <DialogDescription className="text-xs text-gray-500 mt-1">
+                  Enter destination information and optional SEO meta tags.
+                </DialogDescription>
+              </DialogHeader>
             </div>
+
+              {/* Basic Details */}
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="city" className="text-xs font-semibold uppercase text-gray-500">Destination Name / City *</Label>
+                  <Input 
+                    id="city" 
+                    placeholder="e.g. Nainital or Kedarnath" 
+                    value={city} 
+                    onChange={(e) => setCity(e.target.value)} 
+                    required 
+                    className="rounded-xl border-gray-200"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="desc" className="text-xs font-semibold uppercase text-gray-500">Short Description / Subtitle *</Label>
+                  <Input 
+                    id="desc" 
+                    placeholder="e.g. City of lakes surrounded by lush green hills." 
+                    value={desc} 
+                    onChange={(e) => setDesc(e.target.value)} 
+                    required 
+                    className="rounded-xl border-gray-200"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="price" className="text-xs font-semibold uppercase text-gray-500">Starting Price (₹) *</Label>
+                  <Input 
+                    id="price" 
+                    placeholder="e.g. 3,999" 
+                    value={price} 
+                    onChange={(e) => setPrice(e.target.value)} 
+                    required 
+                    className="rounded-xl border-gray-200"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="image" className="text-xs font-semibold uppercase text-gray-500">Destination Cover Image *</Label>
+                  <div className="flex items-center gap-3">
+                    <Input 
+                      id="image" 
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      disabled={isUploading}
+                      required={!image}
+                      className="rounded-xl border-gray-200 file:bg-rose-50 file:text-rose-600 file:border-0 file:mr-4 file:py-1 file:px-3 file:rounded-full file:text-xs file:font-semibold hover:file:bg-rose-100 transition-all cursor-pointer h-10"
+                    />
+                    {isUploading && <Loader2 className="w-5 h-5 animate-spin text-rose-600 shrink-0" />}
+                  </div>
+                  {image && !isUploading && (
+                    <p className="text-xs text-emerald-600 font-medium mt-1">Image selected successfully!</p>
+                  )}
+                </div>
+              </div>
+
+              {/* SEO Custom Fields Section */}
+              <div className="pt-2 border-t border-gray-100 space-y-4">
+                <div className="text-xs font-semibold text-gray-700">
+                  SEO & Meta Tags <span className="text-gray-400 font-normal">(Optional)</span>
+                </div>
+
+                <div className="space-y-3">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="metaTitle" className="text-xs font-medium text-gray-600">Meta Title</Label>
+                    <Input 
+                      id="metaTitle" 
+                      placeholder={`e.g. Hotels & Resorts in ${city || 'Nainital'}`}
+                      value={metaTitle} 
+                      onChange={(e) => setMetaTitle(e.target.value)} 
+                      className="rounded-xl border-gray-200"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="metaDescription" className="text-xs font-medium text-gray-600">Meta Description</Label>
+                    <Input 
+                      id="metaDescription" 
+                      placeholder={`e.g. Discover hotels and packages in ${city || 'Nainital'}`}
+                      value={metaDescription} 
+                      onChange={(e) => setMetaDescription(e.target.value)} 
+                      className="rounded-xl border-gray-200"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="metaKeywords" className="text-xs font-medium text-gray-600">Meta Keywords</Label>
+                    <Input 
+                      id="metaKeywords" 
+                      placeholder="e.g. hotels, resorts, travel packages"
+                      value={metaKeywords} 
+                      onChange={(e) => setMetaKeywords(e.target.value)} 
+                      className="rounded-xl border-gray-200"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <DialogFooter className="pt-2 flex items-center justify-end gap-3">
+                <Button type="button" variant="ghost" onClick={() => setIsDialogOpen(false)} className="rounded-xl">
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={isUploading} className="bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-semibold px-6">
+                  {editingDestination ? "Update Destination" : "Save Destination"}
+                </Button>
+              </DialogFooter>
           </form>
         </DialogContent>
       </Dialog>
@@ -293,24 +352,39 @@ export default function PopularDestinationsPage() {
               src={getValidImageSrc(dest.image)} 
               alt={dest.city} 
               fill 
-             
               className="object-cover group-hover:scale-105 transition-transform duration-500"
             />
             <div className="absolute inset-0 bg-linear-to-t from-black/85 via-black/25 to-black/30" />
 
-            {/* Remove Button Overlay */}
-            <button 
-              onClick={() => handleRemove(dest.id)}
-              className="absolute top-4 right-4 p-2 rounded-full bg-black/40 hover:bg-rose-600 text-white backdrop-blur-md transition-colors opacity-90 group-hover:opacity-100 z-10"
-              title="Remove Destination"
-            >
-              <Trash2 className="h-4 w-4" />
-            </button>
+            {/* Action Buttons Overlay */}
+            <div className="absolute top-4 right-4 flex items-center gap-2 z-10">
+              <button 
+                onClick={() => openEditDialog(dest)}
+                className="p-2 rounded-full bg-black/40 hover:bg-slate-800 text-white backdrop-blur-md transition-colors opacity-90 group-hover:opacity-100"
+                title="Edit Destination & SEO"
+              >
+                <Edit2 className="h-4 w-4" />
+              </button>
+              <button 
+                onClick={() => handleRemove(dest.id)}
+                className="p-2 rounded-full bg-black/40 hover:bg-rose-600 text-white backdrop-blur-md transition-colors opacity-90 group-hover:opacity-100"
+                title="Remove Destination"
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
+            </div>
 
-            {/* City Badge */}
-            <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-md px-4 py-1.5 rounded-full flex items-center gap-1.5 shadow">
-              <span className="w-2 h-2 rounded-full bg-rose-500" />
-              <span className="text-xs font-bold text-gray-900">{dest.city}</span>
+            {/* City Badge & SEO Status */}
+            <div className="absolute top-4 left-4 flex flex-col gap-1.5 items-start">
+              <div className="bg-white/90 backdrop-blur-md px-4 py-1.5 rounded-full flex items-center gap-1.5 shadow">
+                <span className="w-2 h-2 rounded-full bg-rose-500" />
+                <span className="text-xs font-bold text-gray-900">{dest.city}</span>
+              </div>
+              {Boolean(dest.metaTitle || dest.metaDescription) && (
+                <span className="bg-slate-900/80 text-white text-[10px] font-semibold px-2 py-0.5 rounded-full backdrop-blur-md border border-white/20">
+                  Custom SEO
+                </span>
+              )}
             </div>
 
             {/* Content */}
@@ -330,9 +404,9 @@ export default function PopularDestinationsPage() {
         <div className="border-2 border-dashed border-gray-200 rounded-3xl p-12 text-center bg-gray-50">
           <h3 className="text-lg font-bold text-gray-700">No Popular Destinations Uploaded</h3>
           <p className="text-sm text-gray-500 mt-1 mb-4">
-            Click &quot;Add Destination&quot; above to upload custom destinations for your website frontend.
+            Click &quot;Add Destination&quot; above to upload custom destinations and configure their SEO for your website.
           </p>
-          <Button onClick={() => setIsAddDialogOpen(true)} className="bg-rose-600 hover:bg-rose-700 text-white rounded-xl shadow">
+          <Button onClick={openAddDialog} className="bg-rose-600 hover:bg-rose-700 text-white rounded-xl shadow">
             Add Destination
           </Button>
         </div>

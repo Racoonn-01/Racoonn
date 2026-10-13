@@ -631,12 +631,13 @@ export const useCheckoutStore = create<CheckoutState>((set, get) => ({
         })
       ]);
 
-      // 4. Send Confirmation Email (Fire and forget, do not await!)
+      // 4. Send Confirmation Email & Generate Invoice (keepalive ensures network completion during page navigation)
       fetch('/api/email/booking-confirmation', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
+        keepalive: true,
         body: JSON.stringify({
           hotelName: bookingData.hotelName,
           hotelLocation: bookingData.hotelLocation || get().hotelLocation,

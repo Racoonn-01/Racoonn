@@ -581,7 +581,10 @@ app.post('/api/email/booking-confirmation', async (req, res) => {
 
         // --- INSTANT AUTO INVOICE GENERATION FOR VENDOR DASHBOARD ---
         try {
-          const invoicesDoc = await db.getDocument(dbId, 'properties', 'cms_invoices_v1').catch(() => null);
+          let invoicesDoc = await db.getDocument(dbId, 'cms_invoices', 'cms_invoices_v1').catch(() => null);
+          if (!invoicesDoc) {
+            invoicesDoc = await db.getDocument(dbId, 'properties', 'cms_invoices_v1').catch(() => null);
+          }
           let allInvoices = invoicesDoc?.details ? JSON.parse(invoicesDoc.details) : [];
 
           const v = vendor || {};
@@ -672,33 +675,48 @@ app.post('/api/email/booking-confirmation', async (req, res) => {
           };
 
           allInvoices.unshift(newInvoice);
+          const detailsStr = JSON.stringify(allInvoices);
 
-          // 🌟 Sync to shared invoices.json file for Admin Dashboard instant display
-          const SHARED_INVOICE_FILE = "/Users/haldwani/Documents/Working/Working/Racoonn/invoices.json";
+          // 1. Primary cms_invoices
           try {
-            fs.writeFileSync(SHARED_INVOICE_FILE, JSON.stringify(allInvoices, null, 2), "utf-8");
-          } catch (fileErr) {
-            console.warn("Shared invoice file write warning:", fileErr);
+            await db.updateDocument(dbId, 'cms_invoices', 'cms_invoices_v1', {
+              details: detailsStr,
+              title: 'CMS Invoices Storage'
+            });
+          } catch (updateErr: any) {
+            if (updateErr.code === 404) {
+              try {
+                await db.createDocument(dbId, 'cms_invoices', 'cms_invoices_v1', {
+                  title: 'CMS Invoices Storage',
+                  details: detailsStr
+                });
+              } catch (createErr) {}
+            }
           }
 
-          await db.updateDocument(dbId, 'properties', 'cms_invoices_v1', {
-            details: JSON.stringify(allInvoices),
-          }).catch(async (e) => {
-            if (e.code === 404) {
-              await db.createDocument(dbId, 'properties', 'cms_invoices_v1', {
-                vendorId: 'admin',
-                propertyName: 'CMS Invoices Storage',
-                propertyType: 'hotel',
-                city: 'Delhi',
-                state: 'Delhi',
-                location: 'Admin Dashboard',
-                status: 'active',
-                title: 'CMS Invoices',
-                price: 0,
-                details: JSON.stringify(allInvoices),
-              });
+          // 2. Mirror to properties
+          try {
+            await db.updateDocument(dbId, 'properties', 'cms_invoices_v1', {
+              details: detailsStr,
+            });
+          } catch (propErr: any) {
+            if (propErr.code === 404) {
+              try {
+                await db.createDocument(dbId, 'properties', 'cms_invoices_v1', {
+                  vendorId: 'admin',
+                  propertyName: 'CMS Invoices Storage',
+                  propertyType: 'hotel',
+                  city: 'Delhi',
+                  state: 'Delhi',
+                  location: 'Admin Dashboard',
+                  status: 'active',
+                  title: 'CMS Invoices',
+                  price: 0,
+                  details: detailsStr,
+                });
+              } catch (e) {}
             }
-          });
+          }
           console.log("Instant vendor invoice generated for Vendor Dashboard:", newInvoiceId);
         } catch (invoiceErr) {
           console.error("Failed to generate instant vendor invoice:", invoiceErr);

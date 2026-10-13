@@ -160,6 +160,7 @@ export function PropertyWizard({ propertyId }: PropertyWizardProps) {
   const [saving, setSaving] = useState(false);
   const [uploadingPhotos, setUploadingPhotos] = useState(false);
   const [internalPropId, setInternalPropId] = useState<string | null>(propertyId || null);
+  const [existingStatus, setExistingStatus] = useState<string | null>(null);
   const [pinCoords, setPinCoords] = useState<[number, number] | null>(null); // [lng, lat]
 
   const [formData, setFormData] = useState({
@@ -186,6 +187,9 @@ export function PropertyWizard({ propertyId }: PropertyWizardProps) {
           appwriteConfig.propertyCollectionId,
           propertyId
         );
+        if (prop.status) {
+          setExistingStatus(prop.status);
+        }
         
         const rawLocation = prop.location || "";
         const geoMatch = rawLocation.match(/\[GEO:\s*(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)\]/i);
@@ -270,7 +274,7 @@ export function PropertyWizard({ propertyId }: PropertyWizardProps) {
         ? `${cleanAddress} [GEO: ${lat.toFixed(6)}, ${lng.toFixed(6)}]`
         : cleanAddress;
 
-      const data = {
+      const data: Record<string, any> = {
         vendorId: user.$id,
         propertyName: formData.name,
         title: formData.name,
@@ -279,9 +283,14 @@ export function PropertyWizard({ propertyId }: PropertyWizardProps) {
         city: formData.city,
         state: formData.state,
         location: finalLocation,
-        status: "Draft",
         price: 0
       };
+
+      if (!internalPropId) {
+        data.status = "Draft";
+      } else if (existingStatus) {
+        data.status = existingStatus;
+      }
 
       if (internalPropId) {
         await databases.updateDocument(

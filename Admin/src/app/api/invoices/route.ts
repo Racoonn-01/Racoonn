@@ -1,3 +1,6 @@
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 import { NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
@@ -5,26 +8,116 @@ import { appwriteServer } from "@/lib/appwrite/server";
 
 const SHARED_INVOICE_FILE = path.join(process.cwd(), "invoices.json");
 const DATABASE_ID = process.env.APPWRITE_DATABASE_ID || process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID || "6a3cec630035d63ea963";
-const COLLECTION_ID = process.env.APPWRITE_CMS_INVOICES_COLLECTION_ID || process.env.NEXT_PUBLIC_APPWRITE_CMS_INVOICES_COLLECTION_ID || "cms_invoices";
+const PRIMARY_COLLECTION = "cms_invoices";
+const FALLBACK_COLLECTION = "properties";
 const DOC_ID = "cms_invoices_v1";
 
-export async function GET() {
+async function getInvoicesFromAppwrite(): Promise<any[]> {
+  // 1. Try primary collection cms_invoices
   try {
-    // 1. Appwrite DB is the primary source of truth across all platforms (AppUser, Web, Vendor, Admin)
     const doc = await appwriteServer.databases.getDocument(
       DATABASE_ID,
-      COLLECTION_ID,
+      PRIMARY_COLLECTION,
       DOC_ID
     );
     if (doc?.details) {
-      const invoices = JSON.parse(doc.details);
+      return JSON.parse(doc.details);
+    }
+  } catch (err: any) {
+    if (err.code !== 404) {
+      console.warn("Primary cms_invoices read warning:", err.message);
+    }
+  }
+
+  // 2. Fallback to properties collection
+  try {
+    const doc = await appwriteServer.databases.getDocument(
+      DATABASE_ID,
+      FALLBACK_COLLECTION,
+      DOC_ID
+    );
+    if (doc?.details) {
+      return JSON.parse(doc.details);
+    }
+  } catch (err: any) {
+    if (err.code !== 404) {
+      console.warn("Fallback properties read warning:", err.message);
+    }
+  }
+
+  return [];
+}
+
+async function saveInvoicesToAppwrite(invoices: any[]): Promise<void> {
+  const jsonStr = JSON.stringify(invoices);
+  
+  // Save to primary collection cms_invoices
+  try {
+    await appwriteServer.databases.updateDocument(
+      DATABASE_ID,
+      PRIMARY_COLLECTION,
+      DOC_ID,
+      { details: jsonStr, title: 'CMS Invoices Storage' }
+    );
+  } catch (err: any) {
+    if (err.code === 404) {
+      try {
+        await appwriteServer.databases.createDocument(
+          DATABASE_ID,
+          PRIMARY_COLLECTION,
+          DOC_ID,
+          { title: 'CMS Invoices Storage', details: jsonStr }
+        );
+      } catch (createErr) {
+        console.warn("Error creating in primary cms_invoices:", createErr);
+      }
+    }
+  }
+
+  // Mirror to properties collection for backward compatibility with Vendor & legacy endpoints
+  try {
+    await appwriteServer.databases.updateDocument(
+      DATABASE_ID,
+      FALLBACK_COLLECTION,
+      DOC_ID,
+      { details: jsonStr }
+    );
+  } catch (err: any) {
+    if (err.code === 404) {
+      try {
+        await appwriteServer.databases.createDocument(
+          DATABASE_ID,
+          FALLBACK_COLLECTION,
+          DOC_ID,
+          {
+            vendorId: 'admin',
+            propertyName: 'CMS Invoices Storage',
+            propertyType: 'hotel',
+            city: 'Delhi',
+            state: 'Delhi',
+            location: 'Admin Dashboard',
+            status: 'active',
+            title: 'CMS Invoices',
+            price: 0,
+            details: jsonStr
+          }
+        );
+      } catch {}
+    }
+  }
+}
+
+export async function GET() {
+  try {
+    const invoices = await getInvoicesFromAppwrite();
+    if (invoices.length > 0) {
       try {
         fs.writeFileSync(SHARED_INVOICE_FILE, JSON.stringify(invoices, null, 2), "utf-8");
       } catch {}
       return NextResponse.json({ success: true, invoices });
     }
   } catch (err) {
-    console.warn("Appwrite DB read failed, falling back to local file:", err);
+    console.warn("Appwrite DB read failed, checking local file fallback:", err);
   }
 
   try {
@@ -34,7 +127,7 @@ export async function GET() {
       return NextResponse.json({ success: true, invoices });
     }
   } catch (err) {
-    console.warn("File read failed:", err);
+    console.warn("Local file fallback read failed:", err);
   }
 
   return NextResponse.json({ success: true, invoices: [] });
@@ -43,22 +136,7 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const newInvoice = await request.json();
-    let currentInvoices: any[] = [];
-    try {
-      const doc = await appwriteServer.databases.getDocument(
-        DATABASE_ID,
-        COLLECTION_ID,
-        DOC_ID
-      );
-      if (doc.details) {
-        currentInvoices = JSON.parse(doc.details);
-      }
-    } catch (dbErr: any) {
-      if (dbErr.code !== 404) {
-        console.error("Failed to read from Appwrite", dbErr);
-      }
-      // If 404, we start with empty array
-    }
+    let currentInvoices = await getInvoicesFromAppwrite();
 
     // Add or update invoice
     const existingIndex = currentInvoices.findIndex((inv) => inv.id === newInvoice.id);
@@ -68,38 +146,13 @@ export async function POST(request: Request) {
       currentInvoices.unshift(newInvoice);
     }
 
-    const jsonStr = JSON.stringify(currentInvoices, null, 2);
-
     try {
-      fs.writeFileSync(SHARED_INVOICE_FILE, jsonStr, "utf-8");
+      fs.writeFileSync(SHARED_INVOICE_FILE, JSON.stringify(currentInvoices, null, 2), "utf-8");
     } catch (fileErr) {
       console.warn("Invoice file write warning:", fileErr);
     }
 
-    try {
-      await appwriteServer.databases.updateDocument(
-        DATABASE_ID,
-        COLLECTION_ID,
-        DOC_ID,
-        { details: jsonStr }
-      );
-    } catch (err: any) {
-      if (err.code === 404) {
-        try {
-          await appwriteServer.databases.createDocument(
-            DATABASE_ID,
-            COLLECTION_ID,
-            DOC_ID,
-            {
-              title: 'CMS Invoices Storage',
-              details: jsonStr,
-            }
-          );
-        } catch (createErr) {
-          console.warn("Appwrite DB doc create warning:", createErr);
-        }
-      }
-    }
+    await saveInvoicesToAppwrite(currentInvoices);
 
     return NextResponse.json({ success: true, invoice: newInvoice, invoices: currentInvoices });
   } catch (err: any) {
@@ -111,23 +164,7 @@ export async function POST(request: Request) {
 export async function PATCH(request: Request) {
   try {
     const { id, status, adminRemarks } = await request.json();
-    let currentInvoices: any[] = [];
-
-    try {
-      const doc = await appwriteServer.databases.getDocument(
-        DATABASE_ID,
-        COLLECTION_ID,
-        DOC_ID
-      );
-      if (doc.details) {
-        currentInvoices = JSON.parse(doc.details);
-      }
-    } catch (dbErr: any) {
-      if (dbErr.code !== 404) {
-        console.error("Failed to read from Appwrite", dbErr);
-      }
-      // If 404, we start with empty array
-    }
+    let currentInvoices = await getInvoicesFromAppwrite();
 
     currentInvoices = currentInvoices.map((inv) =>
       inv.id === id || inv.invoiceNumber === id
@@ -140,23 +177,13 @@ export async function PATCH(request: Request) {
         : inv
     );
 
-    const jsonStr = JSON.stringify(currentInvoices, null, 2);
     try {
-      fs.writeFileSync(SHARED_INVOICE_FILE, jsonStr, "utf-8");
+      fs.writeFileSync(SHARED_INVOICE_FILE, JSON.stringify(currentInvoices, null, 2), "utf-8");
     } catch (fileErr) {
       console.warn("Invoice file write warning:", fileErr);
     }
 
-    try {
-      await appwriteServer.databases.updateDocument(
-        DATABASE_ID,
-        COLLECTION_ID,
-        DOC_ID,
-        { details: jsonStr }
-      );
-    } catch (e) {
-      // ignore appwrite sync error
-    }
+    await saveInvoicesToAppwrite(currentInvoices);
 
     return NextResponse.json({ success: true, invoices: currentInvoices });
   } catch (err: any) {

@@ -1,3 +1,6 @@
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 import { NextResponse } from "next/server";
 import { Client, Databases, Query } from "node-appwrite";
 
@@ -8,34 +11,78 @@ const client = new Client()
 
 const db = new Databases(client);
 const DATABASE_ID = process.env.APPWRITE_DATABASE_ID || "6a3cec630035d63ea963";
-const COLLECTION_ID = process.env.APPWRITE_CMS_INVOICES_COLLECTION_ID || process.env.NEXT_PUBLIC_APPWRITE_CMS_INVOICES_COLLECTION_ID || "cms_invoices";
+const PRIMARY_COLLECTION = "cms_invoices";
+const FALLBACK_COLLECTION = "properties";
+const DOC_ID = "cms_invoices_v1";
+
+async function getInvoices() {
+  try {
+    const doc = await db.getDocument(DATABASE_ID, PRIMARY_COLLECTION, DOC_ID);
+    if (doc?.details) return JSON.parse(doc.details);
+  } catch (err: any) {
+    if (err.code !== 404) console.warn("Vendor primary cms_invoices read error:", err.message);
+  }
+
+  try {
+    const doc = await db.getDocument(DATABASE_ID, FALLBACK_COLLECTION, DOC_ID);
+    if (doc?.details) return JSON.parse(doc.details);
+  } catch (err: any) {
+    if (err.code !== 404) console.warn("Vendor fallback properties read error:", err.message);
+  }
+
+  return [];
+}
 
 export async function GET() {
   try {
-    const doc = await db.getDocument(DATABASE_ID, COLLECTION_ID, "cms_invoices_v1");
-    const invoices = doc.details ? JSON.parse(doc.details) : [];
+    const invoices = await getInvoices();
     return NextResponse.json({ success: true, invoices });
   } catch (err: any) {
-    if (err.code === 404) {
-      return NextResponse.json({ success: true, invoices: [] });
-    }
     return NextResponse.json({ success: false, error: err.message, invoices: [] }, { status: 500 });
+  }
+}
+
+async function saveInvoices(invoices: any[]) {
+  const jsonStr = JSON.stringify(invoices);
+  
+  // 1. Primary cms_invoices
+  try {
+    await db.updateDocument(DATABASE_ID, PRIMARY_COLLECTION, DOC_ID, { details: jsonStr, title: "CMS Invoices Storage" });
+  } catch (err: any) {
+    if (err.code === 404) {
+      try {
+        await db.createDocument(DATABASE_ID, PRIMARY_COLLECTION, DOC_ID, { title: "CMS Invoices Storage", details: jsonStr });
+      } catch (e) {}
+    }
+  }
+
+  // 2. Mirror to properties
+  try {
+    await db.updateDocument(DATABASE_ID, FALLBACK_COLLECTION, DOC_ID, { details: jsonStr });
+  } catch (err: any) {
+    if (err.code === 404) {
+      try {
+        await db.createDocument(DATABASE_ID, FALLBACK_COLLECTION, DOC_ID, {
+          vendorId: 'admin',
+          propertyName: 'CMS Invoices Storage',
+          propertyType: 'hotel',
+          city: 'Delhi',
+          state: 'Delhi',
+          location: 'Admin Dashboard',
+          status: 'active',
+          title: 'CMS Invoices',
+          price: 0,
+          details: jsonStr
+        });
+      } catch (e) {}
+    }
   }
 }
 
 export async function POST(request: Request) {
   try {
     const newInvoice = await request.json();
-    let currentInvoices: any[] = [];
-
-    try {
-      const doc = await db.getDocument(DATABASE_ID, COLLECTION_ID, "cms_invoices_v1");
-      if (doc.details) {
-        currentInvoices = JSON.parse(doc.details);
-      }
-    } catch (e: any) {
-      if (e.code !== 404) throw e;
-    }
+    let currentInvoices = await getInvoices();
 
     // Add or update invoice
     const existingIndex = currentInvoices.findIndex((inv) => inv.id === newInvoice.id);
@@ -45,25 +92,11 @@ export async function POST(request: Request) {
       currentInvoices.unshift(newInvoice);
     }
 
-    try {
-      await db.getDocument(DATABASE_ID, COLLECTION_ID, "cms_invoices_v1");
-      await db.updateDocument(DATABASE_ID, COLLECTION_ID, "cms_invoices_v1", {
-        details: JSON.stringify(currentInvoices)
-      });
-    } catch (e: any) {
-      if (e.code === 404) {
-        await db.createDocument(DATABASE_ID, COLLECTION_ID, "cms_invoices_v1", {
-          title: "CMS Invoices Storage",
-          details: JSON.stringify(currentInvoices)
-        });
-      } else {
-        throw e;
-      }
-    }
+    await saveInvoices(currentInvoices);
 
     return NextResponse.json({ success: true, invoice: newInvoice, invoices: currentInvoices });
   } catch (err: any) {
-    console.error("Error saving invoice:", err);
+    console.error("Error saving invoice in Vendor:", err);
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });
   }
 }
@@ -71,16 +104,7 @@ export async function POST(request: Request) {
 export async function PATCH(request: Request) {
   try {
     const { id, status } = await request.json();
-    let currentInvoices: any[] = [];
-
-    try {
-      const doc = await db.getDocument(DATABASE_ID, COLLECTION_ID, "cms_invoices_v1");
-      if (doc.details) {
-        currentInvoices = JSON.parse(doc.details);
-      }
-    } catch (e: any) {
-      if (e.code !== 404) throw e;
-    }
+    let currentInvoices = await getInvoices();
 
     let updated = false;
     currentInvoices = currentInvoices.map((inv) => {
@@ -92,9 +116,7 @@ export async function PATCH(request: Request) {
     });
 
     if (updated) {
-      await db.updateDocument(DATABASE_ID, COLLECTION_ID, "cms_invoices_v1", {
-        details: JSON.stringify(currentInvoices)
-      });
+      await saveInvoices(currentInvoices);
     }
 
     return NextResponse.json({ success: true, updated });

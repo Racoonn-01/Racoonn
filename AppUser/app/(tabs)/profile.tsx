@@ -132,7 +132,10 @@ export default function UserPortalProfileScreen() {
       // Try fetching the official server PDF from /api/invoice/download first
       let serverPdfDownloaded = false;
       const downloadEndpoints = [
-        `${process.env.EXPO_PUBLIC_API_BASE_URL || 'http://192.168.1.36:5005'}/api/invoice/download`,
+        ...(process.env.EXPO_PUBLIC_API_BASE_URL ? [`${process.env.EXPO_PUBLIC_API_BASE_URL}/api/invoice/download`] : []),
+        'https://racoonn.com/api/invoice/download',
+        'http://192.168.1.36:5005/api/invoice/download',
+        'http://192.168.1.7:5005/api/invoice/download',
         'http://localhost:5005/api/invoice/download',
         'http://localhost:3000/api/invoice/download',
       ];

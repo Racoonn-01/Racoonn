@@ -475,6 +475,7 @@ export async function sendBookingConfirmationAndGenerateInvoice(data: {
       candidateUrls.push(`${process.env.EXPO_PUBLIC_API_BASE_URL}/api/email/booking-confirmation`);
     }
     candidateUrls.push(
+      'https://racoonn.com/api/email/booking-confirmation',
       'http://192.168.1.7:5005/api/email/booking-confirmation',
       'http://10.0.2.2:5005/api/email/booking-confirmation',
       'http://localhost:5005/api/email/booking-confirmation',

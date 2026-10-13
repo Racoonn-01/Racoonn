@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   StyleSheet,
   Text,
@@ -21,6 +21,9 @@ import {
   ChevronDown,
   ArrowRight,
   Bell,
+  BellOff,
+  CheckCheck,
+  Trash2,
   X,
   ChevronLeft,
   ChevronRight,
@@ -30,6 +33,10 @@ import {
 import { useRouter } from 'expo-router';
 import Colors from '@/constants/Colors';
 import { useAuthStore } from '../../store/authStore';
+import { usePropertyFilterStore } from '../../store/propertyFilterStore';
+import { useNotificationStore, AppNotification } from '../../store/notificationStore';
+import { parseFlexibleDate, formatDisplayDate } from '../../utils/dateUtils';
+import CustomCalendarModal from '../shared/CustomCalendarModal';
 
 const tabs = [
   { id: 'stays', label: 'Stays', icon: Home },
@@ -37,83 +44,40 @@ const tabs = [
   { id: 'activities', label: 'Activities', icon: Ticket },
 ];
 
-const CALENDAR_DAYS = [
-  { day: 26, isCurrent: false },
-  { day: 27, isCurrent: false },
-  { day: 28, isCurrent: false },
-  { day: 29, isCurrent: false },
-  { day: 30, isCurrent: false },
-  { day: 31, isCurrent: false },
-  { day: 1, isCurrent: true },
-  { day: 2, isCurrent: true },
-  { day: 3, isCurrent: true },
-  { day: 4, isCurrent: true },
-  { day: 5, isCurrent: true },
-  { day: 6, isCurrent: true },
-  { day: 7, isCurrent: true },
-  { day: 8, isCurrent: true },
-  { day: 9, isCurrent: true },
-  { day: 10, isCurrent: true },
-  { day: 11, isCurrent: true },
-  { day: 12, isCurrent: true },
-  { day: 13, isCurrent: true },
-  { day: 14, isCurrent: true },
-  { day: 15, isCurrent: true },
-  { day: 16, isCurrent: true },
-  { day: 17, isCurrent: true },
-  { day: 18, isCurrent: true },
-  { day: 19, isCurrent: true },
-  { day: 20, isCurrent: true },
-  { day: 21, isCurrent: true },
-  { day: 22, isCurrent: true },
-  { day: 23, isCurrent: true },
-  { day: 24, isCurrent: true },
-  { day: 25, isCurrent: true },
-  { day: 26, isCurrent: true },
-  { day: 27, isCurrent: true },
-  { day: 28, isCurrent: true },
-  { day: 29, isCurrent: true },
-  { day: 30, isCurrent: true },
-  { day: 31, isCurrent: true },
-];
-
-
-
 export default function HeroSection() {
   const router = useRouter();
   const { user, profile, isAuthenticated, logout } = useAuthStore();
 
   const [activeTab, setActiveTab] = useState('stays');
 
-  // Real-time notifications state
-  const [notifications, setNotifications] = useState(() => [
-    {
-      id: '1',
-      title: 'Welcome to Racoonn! 👋',
-      message: 'Discover hand-picked luxury resorts, cozy homestays, and tour packages.',
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      unread: true,
-    },
-    {
-      id: '2',
-      title: 'Special Offer Unlocked 🏷️',
-      message: 'Get up to 20% off on special packages this week. Use code RACOON20.',
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      unread: true,
-    },
-    {
-      id: '3',
-      title: 'Ask AI Concierge Ready 🤖',
-      message: 'Try our AI travel assistant to plan your custom day-by-day itinerary.',
-      time: new Date(Date.now() - 3600000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      unread: false,
-    },
-  ]);
+  // Real-time notifications from persistent store (no fake notifications)
+  const {
+    notifications,
+    markAllAsRead,
+    markAsRead,
+    removeNotification,
+    clearAll,
+    syncUserNotifications,
+  } = useNotificationStore();
 
   const unreadCount = notifications.filter((n) => n.unread).length;
 
-  const handleMarkAllAsRead = () => {
-    setNotifications((prev) => prev.map((n) => ({ ...n, unread: false })));
+  useEffect(() => {
+    useNotificationStore.getState().loadNotifications();
+    const currentUserId = user?.$id || profile?.userId;
+    if (currentUserId) {
+      syncUserNotifications(currentUserId);
+    }
+  }, [user?.$id, profile?.userId, syncUserNotifications]);
+
+  const handleNotificationPress = async (item: AppNotification) => {
+    if (item.unread) {
+      await markAsRead(item.id);
+    }
+    closeNotifSidebar();
+    if (item.data?.url) {
+      router.push(item.data.url as any);
+    }
   };
   
   // Search Inputs
@@ -121,12 +85,20 @@ export default function HeroSection() {
   const [packageDestination, setPackageDestination] = useState('');
   const [activitySearch, setActivitySearch] = useState('');
 
-  // Dates
-  const [checkIn, setCheckIn] = useState('Aug 1, 2026');
-  const [checkOut, setCheckOut] = useState('Add dates');
-  const [startDate, setStartDate] = useState('Add dates');
-  const [endDate, setEndDate] = useState('Add dates');
-  const [activityDate, setActivityDate] = useState('Add dates');
+  // Dates (Live Realtime, strictly current & future dates)
+  const [checkIn, setCheckIn] = useState(() => formatDisplayDate(new Date()));
+  const [checkOut, setCheckOut] = useState(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    return formatDisplayDate(d);
+  });
+  const [startDate, setStartDate] = useState(() => formatDisplayDate(new Date()));
+  const [endDate, setEndDate] = useState(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 3);
+    return formatDisplayDate(d);
+  });
+  const [activityDate, setActivityDate] = useState(() => formatDisplayDate(new Date()));
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
@@ -192,43 +164,51 @@ export default function HeroSection() {
     return `${totalGuestsOrParticipants} Guest${totalGuestsOrParticipants > 1 ? 's' : ''}`;
   };
 
-  const handleSelectDate = (dayItem: any) => {
-    if (dayItem.isCurrent) {
-      const formatted = `Aug ${dayItem.day}, 2026`;
-      if (datePickerTarget === 'checkIn') {
-        setCheckIn(formatted);
-        const nextDayNum = dayItem.day + 1;
-        setCheckOut(`Aug ${nextDayNum}, 2026`);
-        // Automatically switch target to checkOut and keep picker open
-        setDatePickerTarget('checkOut');
-        setIsDatePickerOpen(true);
-      } else if (datePickerTarget === 'checkOut') {
-        setCheckOut(formatted);
-        setIsDatePickerOpen(false);
-      } else if (datePickerTarget === 'startDate') {
-        setStartDate(formatted);
-        const nextDayNum = dayItem.day + 1;
-        setEndDate(`Aug ${nextDayNum}, 2026`);
-        // Automatically switch target to endDate and keep picker open
-        setDatePickerTarget('endDate');
-        setIsDatePickerOpen(true);
-      } else if (datePickerTarget === 'endDate') {
-        setEndDate(formatted);
-        setIsDatePickerOpen(false);
-      } else if (datePickerTarget === 'activityDate') {
-        setActivityDate(formatted);
-        setIsDatePickerOpen(false);
-      }
-    }
-  };
-
   const handleSearchSubmit = () => {
     if (activeTab === 'packages') {
       router.push({ pathname: '/packages' as any, params: { q: packageDestination } });
     } else if (activeTab === 'activities') {
       router.push({ pathname: '/activities' as any, params: { q: activitySearch } });
     } else {
-      router.push({ pathname: '/stays' as any, params: { q: destination } });
+      const parsedIn = parseFlexibleDate(checkIn && checkIn !== 'Add dates' ? checkIn : new Date());
+      const formattedIn = formatDisplayDate(parsedIn);
+
+      let formattedOut = '';
+      if (checkOut && checkOut !== 'Add dates') {
+        formattedOut = formatDisplayDate(parseFlexibleDate(checkOut));
+      } else {
+        const nextDay = new Date(parsedIn);
+        nextDay.setDate(nextDay.getDate() + 1);
+        formattedOut = formatDisplayDate(nextDay);
+      }
+
+      const totalGuests = Math.max(1, adultsCount + childrenCount);
+      const calculatedRooms = Math.max(1, Math.ceil(totalGuests / 4));
+
+      // Persist in global propertyFilterStore so all sections have auto-selected criteria
+      usePropertyFilterStore.getState().setFilters({
+        checkIn: formattedIn,
+        checkOut: formattedOut,
+        adults: adultsCount,
+        children: childrenCount,
+        infants: infantsCount,
+        rooms: calculatedRooms,
+        destination: destination,
+      });
+
+      router.push({
+        pathname: '/(tabs)/search' as any,
+        params: {
+          q: destination,
+          checkIn: formattedIn,
+          checkOut: formattedOut,
+          adults: String(adultsCount),
+          children: String(childrenCount),
+          infants: String(infantsCount),
+          guests: String(totalGuests),
+          rooms: String(calculatedRooms),
+        },
+      });
     }
   };
 
@@ -626,13 +606,27 @@ export default function HeroSection() {
                   setAdultsCount(1);
                   setChildrenCount(0);
                   setInfantsCount(0);
+                  usePropertyFilterStore.getState().setFilters({
+                    adults: 1,
+                    children: 0,
+                    infants: 0,
+                    rooms: 1,
+                  });
                 }}
               >
                 <Text style={styles.resetText}>Reset</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.applyBtn}
-                onPress={() => setIsGuestsModalOpen(false)}
+                onPress={() => {
+                  usePropertyFilterStore.getState().setFilters({
+                    adults: adultsCount,
+                    children: childrenCount,
+                    infants: infantsCount,
+                    rooms: Math.max(1, Math.ceil((adultsCount + childrenCount) / 4)),
+                  });
+                  setIsGuestsModalOpen(false);
+                }}
               >
                 <Text style={styles.applyBtnText}>Apply</Text>
               </TouchableOpacity>
@@ -641,108 +635,47 @@ export default function HeroSection() {
         </TouchableOpacity>
       </Modal>
 
-      {/* Interactive Calendar Date Picker Modal */}
-      <Modal
+      {/* Dynamic Real-time Calendar Modal with exact live dates and strict backdate prevention */}
+      <CustomCalendarModal
         visible={isDatePickerOpen}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={() => setIsDatePickerOpen(false)}
-      >
-        <TouchableOpacity
-          style={styles.modalOverlay}
-          activeOpacity={1}
-          onPress={() => setIsDatePickerOpen(false)}
-        >
-          <TouchableOpacity activeOpacity={1} style={styles.calendarCard}>
-            <View style={styles.calendarHeaderRow}>
-              <TouchableOpacity style={styles.monthNavBtn}>
-                <ChevronLeft color={Colors.brand.navy} size={18} />
-              </TouchableOpacity>
-              <View style={{ alignItems: 'center' }}>
-                <Text style={styles.monthTitle}>August 2026</Text>
-                <Text style={{ fontSize: 11, color: Colors.brand.coral, fontWeight: '700', textTransform: 'uppercase', marginTop: 2 }}>
-                  {datePickerTarget === 'checkIn' ? '1. Select Check-In Date' : datePickerTarget === 'checkOut' ? '2. Select Check-Out Date' : datePickerTarget === 'startDate' ? '1. Select Start Date' : datePickerTarget === 'endDate' ? '2. Select End Date' : 'Select Date'}
-                </Text>
-              </View>
-              <TouchableOpacity style={styles.monthNavBtn}>
-                <ChevronRight color={Colors.brand.navy} size={18} />
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.dayNamesRow}>
-              {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((name, i) => (
-                <Text key={i} style={styles.dayNameText}>
-                  {name}
-                </Text>
-              ))}
-            </View>
-
-            <View style={styles.daysGrid}>
-              {CALENDAR_DAYS.map((item, idx) => {
-                // Don't show back dates from previous month
-                if (!item.isCurrent) {
-                  return <View key={idx} style={[styles.dayCell, { opacity: 0 }]} />;
-                }
-
-                const parseDayFromStr = (str: string) => {
-                  const match = str.match(/Aug (\d+)/i);
-                  return match ? parseInt(match[1], 10) : 0;
-                };
-
-                const TODAY_DAY = 6; // Current day (Aug 6)
-                const checkInDay = parseDayFromStr(checkIn);
-                const checkOutDay = parseDayFromStr(checkOut);
-                const startDay = parseDayFromStr(startDate);
-                const endDay = parseDayFromStr(endDate);
-                const activityDay = parseDayFromStr(activityDate);
-
-                let isDisabled = item.day < TODAY_DAY;
-                let isSelected = false;
-
-                if (datePickerTarget === 'checkIn') {
-                  isDisabled = item.day < TODAY_DAY;
-                  isSelected = item.day === checkInDay;
-                } else if (datePickerTarget === 'checkOut') {
-                  isDisabled = item.day <= (checkInDay || TODAY_DAY);
-                  isSelected = item.day === checkOutDay;
-                } else if (datePickerTarget === 'startDate') {
-                  isDisabled = item.day < TODAY_DAY;
-                  isSelected = item.day === startDay;
-                } else if (datePickerTarget === 'endDate') {
-                  isDisabled = item.day <= (startDay || TODAY_DAY);
-                  isSelected = item.day === endDay;
-                } else if (datePickerTarget === 'activityDate') {
-                  isDisabled = item.day < TODAY_DAY;
-                  isSelected = item.day === activityDay;
-                }
-
-                return (
-                  <TouchableOpacity
-                    key={idx}
-                    disabled={isDisabled}
-                    onPress={() => handleSelectDate(item)}
-                    style={[
-                      styles.dayCell,
-                      isDisabled && styles.dayCellDisabled,
-                      isSelected && styles.dayCellSelected,
-                    ]}
-                  >
-                    <Text
-                      style={[
-                        styles.dayCellText,
-                        isDisabled && styles.dayCellTextDisabled,
-                        isSelected && styles.dayCellTextSelected,
-                      ]}
-                    >
-                      {item.day}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-          </TouchableOpacity>
-        </TouchableOpacity>
-      </Modal>
+        onClose={() => setIsDatePickerOpen(false)}
+        checkInDate={
+          activeTab === 'packages'
+            ? (startDate !== 'Add dates' ? startDate : checkIn)
+            : activeTab === 'activities'
+            ? (activityDate !== 'Add dates' ? activityDate : checkIn)
+            : checkIn
+        }
+        checkOutDate={
+          activeTab === 'packages'
+            ? (endDate !== 'Add dates' ? endDate : checkOut)
+            : activeTab === 'activities'
+            ? (activityDate !== 'Add dates' ? activityDate : checkIn)
+            : checkOut
+        }
+        initialStep={
+          datePickerTarget === 'checkOut' || datePickerTarget === 'endDate'
+            ? 'checkout'
+            : 'checkin'
+        }
+        mode={activeTab === 'activities' ? 'single' : 'range'}
+        onSelectDates={(newIn, newOut) => {
+          if (activeTab === 'packages') {
+            setStartDate(newIn);
+            setEndDate(newOut);
+          } else if (activeTab === 'activities') {
+            setActivityDate(newIn);
+          } else {
+            setCheckIn(newIn);
+            setCheckOut(newOut);
+            usePropertyFilterStore.getState().setFilters({
+              checkIn: newIn,
+              checkOut: newOut,
+            });
+          }
+          setIsDatePickerOpen(false);
+        }}
+      />
 
       {/* 🔔 Smooth Right Notification Sidebar Drawer (Opens & Closes from Right) */}
       <Modal
@@ -791,27 +724,74 @@ export default function HeroSection() {
             </View>
 
             {/* Sidebar Body List */}
-            <ScrollView style={styles.notifSidebarBodyScroll} showsVerticalScrollIndicator={false}>
-              {notifications.map((item) => (
-                <View key={item.id} style={[styles.notifSidebarItem, item.unread && styles.notifSidebarItemUnread]}>
-                  <View style={styles.notifItemHeader}>
-                    <Text style={styles.notifItemTitle}>{item.title}</Text>
-                    <Text style={styles.notifItemTime}>{item.time}</Text>
-                  </View>
-                  <Text style={styles.notifItemMessage}>{item.message}</Text>
+            {notifications.length === 0 ? (
+              <View style={styles.notifEmptyContainer}>
+                <View style={styles.notifEmptyIconCircle}>
+                  <BellOff color="#94A3B8" size={32} />
                 </View>
-              ))}
-            </ScrollView>
+                <Text style={styles.notifEmptyTitle}>No Notifications</Text>
+                <Text style={styles.notifEmptySubtitle}>
+                  You're all caught up! Real-time booking confirmations, payment receipts, and travel alerts will appear here.
+                </Text>
+              </View>
+            ) : (
+              <ScrollView style={styles.notifSidebarBodyScroll} showsVerticalScrollIndicator={false}>
+                {notifications.map((item) => (
+                  <TouchableOpacity
+                    key={item.id}
+                    activeOpacity={0.82}
+                    onPress={() => handleNotificationPress(item)}
+                    style={[
+                      styles.notifSidebarItem,
+                      item.unread && styles.notifSidebarItemUnread,
+                    ]}
+                  >
+                    <View style={styles.notifItemHeader}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, marginRight: 8 }}>
+                        {item.unread && <View style={styles.notifUnreadDot} />}
+                        <Text style={styles.notifItemTitle} numberOfLines={1}>
+                          {item.title}
+                        </Text>
+                      </View>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                        <Text style={styles.notifItemTime}>{item.time}</Text>
+                        <TouchableOpacity
+                          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                          onPress={() => removeNotification(item.id)}
+                        >
+                          <Trash2 color="#94A3B8" size={14} />
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+                    <Text style={styles.notifItemMessage}>{item.message}</Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            )}
 
             {/* Sidebar Footer */}
-            <View style={styles.notifSidebarFooter}>
-              <TouchableOpacity
-                style={styles.clearNotifBtn}
-                onPress={handleMarkAllAsRead}
-              >
-                <Text style={styles.clearNotifText}>Mark all as read</Text>
-              </TouchableOpacity>
-            </View>
+            {notifications.length > 0 && (
+              <View style={styles.notifSidebarFooter}>
+                {unreadCount > 0 && (
+                  <TouchableOpacity
+                    style={styles.clearNotifBtn}
+                    onPress={markAllAsRead}
+                    activeOpacity={0.7}
+                  >
+                    <CheckCheck color={Colors.brand.navy} size={15} style={{ marginRight: 5 }} />
+                    <Text style={styles.clearNotifText}>Mark all read</Text>
+                  </TouchableOpacity>
+                )}
+                <TouchableOpacity
+                  style={[styles.clearNotifBtn, { backgroundColor: '#FEE2E2' }]}
+                  onPress={clearAll}
+                  activeOpacity={0.7}
+                >
+                  <Trash2 color="#EF4444" size={15} style={{ marginRight: 5 }} />
+                  <Text style={[styles.clearNotifText, { color: '#EF4444' }]}>Clear all</Text>
+                </TouchableOpacity>
+              </View>
+            )}
           </Animated.View>
         </Animated.View>
       </Modal>
@@ -1536,20 +1516,61 @@ const styles = StyleSheet.create({
   notifSidebarFooter: {
     paddingHorizontal: 20,
     paddingTop: 14,
+    paddingBottom: 16,
     borderTopWidth: 1,
     borderTopColor: '#F1F5F9',
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'flex-end',
+    gap: 10,
   },
   clearNotifBtn: {
-    paddingVertical: 10,
-    paddingHorizontal: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 9,
+    paddingHorizontal: 14,
     borderRadius: 20,
     backgroundColor: '#F1F5F9',
   },
   clearNotifText: {
-    fontSize: 12.5,
+    fontSize: 12,
     fontWeight: '700',
     color: Colors.brand.navy,
+  },
+  notifEmptyContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 32,
+    paddingVertical: 60,
+  },
+  notifEmptyIconCircle: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: '#F1F5F9',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
+  notifEmptyTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#0F172A',
+    marginBottom: 6,
+  },
+  notifEmptySubtitle: {
+    fontSize: 12.5,
+    color: '#64748B',
+    textAlign: 'center',
+    lineHeight: 18,
+  },
+  notifUnreadDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 3.5,
+    backgroundColor: Colors.brand.coral,
+    marginRight: 6,
   },
   closeCircleBtn: {
     width: 32,

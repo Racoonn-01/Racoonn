@@ -122,7 +122,7 @@ export default function WishlistScreen() {
           const map: Record<string, any> = {};
           docs.forEach((d: any) => {
             const rawPrice = Number(
-              d.price || d.startingPrice || d.minPrice || d.basePrice || d.pricePerNight || 3500
+              d.price || d.startingPrice || d.minPrice || d.basePrice || d.pricePerNight || 0
             );
             const photos = Array.isArray(d.photos) ? d.photos : [];
             const photoUrl = photos[0]
@@ -135,8 +135,8 @@ export default function WishlistScreen() {
               location: String(
                 d.location || `${d.city || ''}, ${d.state || ''}`.trim() || 'Uttarakhand'
               ),
-              rating: d.rating ? Number(d.rating) : 4.88,
-              reviewsCount: d.reviews || 142,
+              rating: d.rating ? Number(d.rating) : 0,
+              reviewsCount: Number(d.reviewsCount || 0),
               price: rawPrice,
               category: d.category || 'Resort',
               image: photoUrl,
@@ -159,8 +159,8 @@ export default function WishlistScreen() {
         id: String(id),
         title: 'Saved Luxury Stay',
         location: 'Uttarakhand, India',
-        rating: 4.9,
-        reviewsCount: 110,
+        rating: 0,
+        reviewsCount: 0,
         price: 3500,
         category: 'Resort',
         image:
@@ -501,7 +501,7 @@ const styles = StyleSheet.create({
   },
   listScrollContent: {
     padding: 16,
-    paddingBottom: 90,
+    paddingBottom: 140,
     gap: 14,
   },
   savedItemCard: {

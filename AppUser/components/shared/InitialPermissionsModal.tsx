@@ -11,10 +11,9 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants, { ExecutionEnvironment } from 'expo-constants';
 import * as Location from 'expo-location';
-import * as ImagePicker from 'expo-image-picker';
-import { MapPin, Bell, Camera, ShieldCheck, ArrowRight } from 'lucide-react-native';
+import { MapPin, Bell, ShieldCheck, ArrowRight } from 'lucide-react-native';
 
-const STORAGE_KEY = '@appuser_initial_permissions_requested_v2';
+const STORAGE_KEY = '@appuser_initial_permissions_requested_v3';
 const { width } = Dimensions.get('window');
 
 interface InitialPermissionsModalProps {
@@ -66,15 +65,7 @@ export default function InitialPermissionsModal({ onComplete }: InitialPermissio
         console.warn('Notification permission error:', notifErr);
       }
 
-      // 3. Request Camera & Media Library Permission
-      try {
-        await ImagePicker.requestCameraPermissionsAsync();
-        await ImagePicker.requestMediaLibraryPermissionsAsync();
-      } catch (camErr) {
-        console.warn('Camera/Media permission error:', camErr);
-      }
-
-      // 4. Save key to AsyncStorage so it won't prompt again
+      // 3. Save key to AsyncStorage so it won't prompt again
       await AsyncStorage.setItem(STORAGE_KEY, 'true');
     } catch (err) {
       console.error('Error requesting initial permissions:', err);
@@ -140,19 +131,6 @@ export default function InitialPermissionsModal({ onComplete }: InitialPermissio
                 <Text style={styles.featureTitle}>Push Notifications</Text>
                 <Text style={styles.featureDescription}>
                   Get instant updates on booking status, check-in reminders & discounts.
-                </Text>
-              </View>
-            </View>
-
-            {/* Feature 3: Camera & Photos */}
-            <View style={styles.featureItem}>
-              <View style={[styles.featureIconBox, { backgroundColor: '#ECFDF5' }]}>
-                <Camera size={22} color="#059669" />
-              </View>
-              <View style={styles.featureTextContent}>
-                <Text style={styles.featureTitle}>Camera & Media Library</Text>
-                <Text style={styles.featureDescription}>
-                  Upload profile avatars, booking document verifications & review photos.
                 </Text>
               </View>
             </View>
@@ -252,12 +230,12 @@ const styles = StyleSheet.create({
     borderColor: '#F1F5F9',
   },
   featureIconBox: {
-    width: 42,
-    height: 42,
+    width: 44,
+    height: 44,
     borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
+    marginRight: 14,
   },
   featureTextContent: {
     flex: 1,
@@ -266,26 +244,24 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '700',
     color: '#0F172A',
-    marginBottom: 2,
+    marginBottom: 4,
   },
   featureDescription: {
-    fontSize: 12,
-    fontWeight: '400',
+    fontSize: 12.5,
     color: '#64748B',
-    lineHeight: 16,
+    lineHeight: 17,
   },
   actionContainer: {
     width: '100%',
     gap: 10,
   },
   primaryButton: {
-    width: '100%',
-    height: 50,
     backgroundColor: '#0F172A',
-    borderRadius: 14,
     flexDirection: 'row',
-    justifyContent: 'center',
     alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    borderRadius: 14,
   },
   primaryButtonText: {
     color: '#FFFFFF',
@@ -293,13 +269,12 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   secondaryButton: {
-    width: '100%',
-    height: 44,
-    justifyContent: 'center',
+    paddingVertical: 10,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   secondaryButtonText: {
-    color: '#64748B',
+    color: '#94A3B8',
     fontSize: 14,
     fontWeight: '600',
   },

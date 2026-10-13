@@ -432,7 +432,7 @@ export default function VendorFullPageReviewScreen({ params }: { params: Promise
                 <div className="flex flex-wrap items-center gap-3 md:gap-5 mt-2 text-xs text-slate-600 font-medium">
                   <div className="flex items-center gap-1.5 bg-slate-100/80 px-2 py-1 rounded-md"><Building className="w-3.5 h-3.5 text-blue-500"/>{vendorInfo.owner}</div>
                   <div className="flex items-center gap-1.5 bg-slate-100/80 px-2 py-1 rounded-md"><Phone className="w-3.5 h-3.5 text-emerald-500"/>{vendorInfo.phone}</div>
-                  <div className="flex items-center gap-1.5 bg-slate-100/80 px-2 py-1 rounded-md max-w-[250px] truncate"><MapPin className="w-3.5 h-3.5 text-amber-500"/><span className="truncate">{vendorInfo.address}</span></div>
+                  <div className="flex items-center gap-1.5 bg-slate-100/80 px-2 py-1 rounded-md max-w-62.5 truncate"><MapPin className="w-3.5 h-3.5 text-amber-500"/><span className="truncate">{vendorInfo.address}</span></div>
                 </div>
               </div>
             </div>

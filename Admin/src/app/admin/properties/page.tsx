@@ -1,3 +1,6 @@
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 import { appwriteServer } from "@/lib/appwrite/server";
 import { Query } from "node-appwrite";
 import PropertiesClient, { PropertyData, PropertiesKPI } from "./PropertiesClient";
@@ -68,7 +71,21 @@ export default async function PropertiesPage() {
     const now = new Date();
     const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
 
-    properties = propertiesReq.documents.map(p => {
+    const realProperties = propertiesReq.documents.filter(p => {
+      const id = String(p.$id || '').toLowerCase().trim();
+      const name = String(p.propertyName || p.title || '').toLowerCase().trim();
+      return !(
+        id.startsWith('cms_') ||
+        id.includes('invoices') ||
+        id.includes('popular_stays') ||
+        id.includes('packages') ||
+        name.startsWith('cms') ||
+        name.includes('cms invoices') ||
+        name.includes('invoices storage')
+      );
+    });
+
+    properties = realProperties.map(p => {
       const status = p.status || 'Pending';
       const isApprovedOrActive = status.toLowerCase() === 'approved' || status.toLowerCase() === 'active';
       
@@ -121,7 +138,7 @@ export default async function PropertiesPage() {
     };
     
     // Quick calculate total reviews if reviewsCount exists
-    kpi.totalReviews = propertiesReq.documents.reduce((acc, p) => acc + (p.reviewsCount || 0), 0);
+    kpi.totalReviews = realProperties.reduce((acc, p) => acc + (p.reviewsCount || 0), 0);
 
   } catch (error) {
     console.error("Error fetching properties data:", error);

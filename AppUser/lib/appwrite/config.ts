@@ -20,6 +20,7 @@ export const appwriteConfig = {
   reviewCollectionId: process.env.EXPO_PUBLIC_APPWRITE_REVIEW_COLLECTION_ID || '6a59c6f526bfcf71ddbf',
   ticketsCollectionId: process.env.EXPO_PUBLIC_APPWRITE_TICKETS_COLLECTION_ID || 'support_tickets',
   activitiesCollectionId: process.env.EXPO_PUBLIC_APPWRITE_ACTIVITIES_COLLECTION_ID || 'activities',
+  packagesCollectionId: process.env.EXPO_PUBLIC_APPWRITE_PACKAGES_COLLECTION_ID || '6a4372ef7ff33f643071',
 
   propertyBucketId: process.env.EXPO_PUBLIC_APPWRITE_PROPERTY_IMAGES_BUCKET_ID || '6a3e398000280b2b3d20',
   roomBucketId: process.env.EXPO_PUBLIC_APPWRITE_ROOM_IMAGES_BUCKET_ID || '6a3e398000280b2b3d20',

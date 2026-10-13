@@ -4,7 +4,9 @@ import {
   View,
   ScrollView,
   StatusBar,
+  Platform,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuthStore } from '../../store/authStore';
 import Colors from '@/constants/Colors';
 import HeroSection from '../../components/home/HeroSection';
@@ -12,16 +14,18 @@ import ExplorePopularStaysSection from '../../components/home/ExplorePopularStay
 import PopularDestinationsSection from '../../components/home/PopularDestinationsSection';
 import BestTourPackagesSection from '../../components/home/BestTourPackagesSection';
 
-import PopularStaysHaldwani from '../../components/home/PopularStaysHaldwani';
-import PopularStaysDehradun from '../../components/home/PopularStaysDehradun';
-import PopularStaysNainital from '../../components/home/PopularStaysNainital';
+import DynamicPopularStaysSection from '../../components/home/DynamicPopularStaysSection';
 
 export default function HomeScreen() {
+  const insets = useSafeAreaInsets();
   const { checkAuth } = useAuthStore();
 
   useEffect(() => {
     checkAuth();
   }, [checkAuth]);
+
+  // Balanced clearance: leaves ~16-20px between bottom cards and the curved top of the navigation bar
+  const bottomNavPadding = 96 + Math.max(insets.bottom, Platform.OS === 'ios' ? 16 : 10);
 
   return (
     <View style={styles.container}>
@@ -29,7 +33,7 @@ export default function HomeScreen() {
 
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: bottomNavPadding }]}
         bounces={true}
       >
         {/* Hero Section — background image + floating search card */}
@@ -44,12 +48,8 @@ export default function HomeScreen() {
         {/* Best Tour Packages */}
         <BestTourPackagesSection />
 
-        {/* Popular Stays by City */}
-        <PopularStaysHaldwani />
-        <PopularStaysDehradun />
-        <PopularStaysNainital />
-
-        {/* Special Offers */}
+        {/* Dynamic Popular Stays from CMS (matching User Portal DynamicPopularStays) */}
+        <DynamicPopularStaysSection />
       </ScrollView>
     </View>
   );
@@ -58,10 +58,10 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.brand.navy,
+    backgroundColor: '#F8FAFC',
   },
   scrollContent: {
     backgroundColor: '#F8FAFC',
-    paddingBottom: 110,
+    paddingBottom: 115,
   },
 });

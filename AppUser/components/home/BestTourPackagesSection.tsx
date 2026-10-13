@@ -54,20 +54,22 @@ export default function BestTourPackagesSection() {
           
           const mapped = publishedOnly.map((cmsPkg: any) => {
             const firstPricing = Array.isArray(cmsPkg.pricing) && cmsPkg.pricing.length > 0 ? cmsPkg.pricing[0] : null;
-            const minPrice = firstPricing ? Number(firstPricing.pricePerPerson) : 0;
-            const safePrice = isNaN(minPrice) ? 0 : minPrice;
+            const minPrice = firstPricing ? Number(firstPricing.pricePerPerson) : Number(cmsPkg.price || 0);
+            const safePrice = isNaN(minPrice) || minPrice === 0 ? Number(cmsPkg.price || 0) : minPrice;
 
             return {
-              id: String(cmsPkg.id || Math.random()),
+              id: String(cmsPkg.id),
               title: cmsPkg.title || 'Tour Package',
-              location: cmsPkg.metaTitle || 'Uttarakhand',
-              duration:
-                Array.isArray(cmsPkg.itinerary) && cmsPkg.itinerary.length > 0
+              location: cmsPkg.location || cmsPkg.metaTitle || 'Uttarakhand',
+              duration: cmsPkg.duration ||
+                (Array.isArray(cmsPkg.itinerary) && cmsPkg.itinerary.length > 0
                   ? `${cmsPkg.itinerary.length + 1} Days / ${cmsPkg.itinerary.length} Nights`
-                  : '5 Days / 4 Nights',
-              features: 'Meals | Stay | Transfer',
+                  : '5 Days / 4 Nights'),
+              features: typeof cmsPkg.features === 'string' && cmsPkg.features.length > 0
+                ? cmsPkg.features
+                : (Array.isArray(cmsPkg.features) ? cmsPkg.features.join(' | ') : 'Meals | Stay | Transfer'),
               price: `₹${safePrice.toLocaleString('en-IN')}`,
-              badge: 'Featured',
+              badge: cmsPkg.badge || 'Featured',
               images:
                 Array.isArray(cmsPkg.images) && cmsPkg.images.length > 0
                   ? cmsPkg.images

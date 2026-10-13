@@ -51,7 +51,7 @@ export async function collectRazorpayPayment(input: RazorpayPaymentInput) {
   }
 
   if (!NativeModules.RNRazorpayCheckout) {
-    throw new Error('Razorpay requires a native development build. Expo Go does not include the Razorpay SDK. Run "npx expo run:android" from AppUser, then open the rebuilt app.');
+    throw new Error('Razorpay native module is not available in Expo Go. Use the Razorpay WebView gateway modal.');
   }
 
   const orderResponse = await requestPaymentApi('/api/payments/razorpay/order', {

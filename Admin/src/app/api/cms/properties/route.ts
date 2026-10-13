@@ -15,13 +15,32 @@ export async function GET() {
       [Query.limit(1000), Query.orderDesc("$createdAt")]
     );
 
+    const ROOM_COLLECTION_ID = process.env.NEXT_PUBLIC_APPWRITE_ROOM_COLLECTION_ID || "rooms";
+    const roomsMap: Record<string, number> = {};
+    try {
+      const roomsRes = await appwriteServer.databases.listDocuments(DATABASE_ID, ROOM_COLLECTION_ID, [Query.limit(500)]);
+      roomsRes.documents.forEach((r: any) => {
+        const pId = String(r.propertyId || '');
+        const raw = Number(r.price || r.roomPrice || r.basePrice || r.pricePerNight || 0);
+        const disc = Number(r.discountPrice || 0);
+        const effective = (disc > 0 && disc < raw) ? disc : (raw > 0 ? raw : disc);
+        if (pId && effective > 0) {
+          if (!roomsMap[pId] || effective < roomsMap[pId]) {
+            roomsMap[pId] = effective;
+          }
+        }
+      });
+    } catch (e) {
+      console.warn("Could not fetch rooms for price mapping in Admin CMS API:", e);
+    }
+
     const properties = response.documents.map((doc) => ({
       id: doc.$id,
       title: doc.propertyName || doc.title || "Property",
       location: [doc.location, doc.city, doc.state].filter(Boolean).join(", ") || doc.city || "",
       city: doc.city || "",
       image: doc.photos && doc.photos[0] ? doc.photos[0] : "https://images.unsplash.com/photo-1542718610-a1d656d1884c?w=800&q=80",
-      price: Number(doc.price || doc.startingPrice || doc.minPrice || doc.basePrice || doc.pricePerNight || 3500)
+      price: Number(roomsMap[doc.$id] || doc.price || doc.startingPrice || doc.minPrice || doc.basePrice || doc.pricePerNight || 0)
     }));
 
     return NextResponse.json({ success: true, properties });

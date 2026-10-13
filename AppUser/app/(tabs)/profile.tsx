@@ -40,6 +40,7 @@ import {
   CreditCard,
   Download,
   FileText,
+  AlertTriangle,
 } from 'lucide-react-native';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
@@ -49,9 +50,11 @@ import Colors from '@/constants/Colors';
 import { calculateHotelGST } from '../../utils/gst';
 import { useAuthStore } from '../../store/authStore';
 import { authService } from '../../lib/appwrite/auth';
+import { cancelBooking } from '../../lib/appwrite/api';
 import { databases } from '../../lib/appwrite/config';
 import { Query } from 'react-native-appwrite';
 import { useRouter } from 'expo-router';
+import { sendLocalNotification } from '../../services/notificationService';
 
 const DATABASE_ID =
   process.env.EXPO_PUBLIC_APPWRITE_DATABASE_ID ||
@@ -97,224 +100,306 @@ export default function UserPortalProfileScreen() {
   const [generatingPdfId, setGeneratingPdfId] = useState<string | null>(null);
   const [activeFaqIndex, setActiveFaqIndex] = useState<number | null>(null);
 
-  // 🌟 Generate & Download PDF Invoice
+  // 🌟 Generate & Download PDF Invoice (Identical to User Portal)
   const handleDownloadInvoice = async (item: any) => {
     try {
       setGeneratingPdfId(item.$id || item.bookingId || 'temp');
       const bookingRef = item.bookingId || item.$id?.substring(0, 8)?.toUpperCase() || 'RAC-893420';
-      const titleName = item.hotelName || item.itemTitle || item.title || 'Luxury Resort & Stay';
+      const invoiceNo = `INV-${bookingRef}`;
+      const titleName = item.hotelName || item.itemTitle || item.title || 'Racoonn Verified Stay';
+      const hotelLoc = item.hotelLocation || item.location || '';
       const guestFullName = `${firstName} ${lastName}`.trim() || user?.name || 'Valued Guest';
       const guestEmailAddr = email || user?.email || 'guest@racoonn.com';
-      const guestPhoneNum = phone || '+91 9876543210';
+      const isPackage =
+        (item.roomId || '').startsWith('Package:') ||
+        (item.roomName || '').toLowerCase().includes('package') ||
+        (item.hotelId || '').startsWith('pkg-') ||
+        (item.hotelName || '').toLowerCase().includes('package');
 
-      // Load racoon-favicon.jpg as base64 for embedding in PDF
-      let logoBase64 = '';
-      try {
-        const logoAsset = Asset.fromModule(require('../../assets/images/racoon-favicon.jpg'));
-        if (!logoAsset.downloaded) {
-          await logoAsset.downloadAsync();
-        }
-        if (logoAsset.localUri) {
-          logoBase64 = await FileSystem.readAsStringAsync(logoAsset.localUri, {
-            encoding: FileSystem.EncodingType.Base64,
-          });
-        }
-      } catch (e) {
-        console.log('Favicon base64 load error:', e);
-      }
-
-      // 🌟 Precise Mathematical GST Calculation (Grand Total ALWAYS equals Room Charges + GST Amount)
-      const totalPaid = Number(item.payment?.totalAmount || item.priceAfterTax || item.totalAmount || item.amount || 0);
+      const totalPaid = Number(
+        item.payment?.totalAmount || item.priceAfterTax || item.totalAmount || item.amount || 0
+      );
       const nights = Math.max(1, Number(item.nights) || 1);
-      const rooms = Math.max(1, Number(item.rooms) || 1);
+      const adults = Math.max(1, Number(item.adults) || 1);
+      const gstAmount = Number(item.payment?.taxes || item.gstAmount || 0);
+      const gstRate = Number(item.gstPercentage || (gstAmount > 0 ? (isPackage ? 18 : 5) : 0));
+      const addonsTotal = Number(item.payment?.serviceFees || 0);
+      const basePrice = Math.max(0, totalPaid - addonsTotal - gstAmount);
+      const checkIn = item.checkIn || item.checkInDate || item.startDate || 'N/A';
+      const checkOut = item.checkOut || item.checkOutDate || item.endDate || 'N/A';
+      const invoiceDateStr = (item.$createdAt ? new Date(item.$createdAt) : new Date()).toLocaleDateString('en-GB');
 
-      let roomChargesVal: number;
-      let gstRateVal: number;
-      let gstTypeVal: string;
-      let gstAmountVal: number;
-      let grandTotalVal: number;
-      let perNightTariff: number;
+      // Try fetching the official server PDF from /api/invoice/download first
+      let serverPdfDownloaded = false;
+      const downloadEndpoints = [
+        `${process.env.EXPO_PUBLIC_API_BASE_URL || 'http://192.168.1.36:5005'}/api/invoice/download`,
+        'http://localhost:5005/api/invoice/download',
+        'http://localhost:3000/api/invoice/download',
+      ];
 
-      if (item.priceBeforeTax && item.gstAmount && item.priceAfterTax) {
-        roomChargesVal = Math.round(Number(item.priceBeforeTax));
-        gstRateVal = Number(item.gstPercentage ?? 5);
-        gstAmountVal = Math.round(Number(item.gstAmount));
-        grandTotalVal = roomChargesVal + gstAmountVal; // GUARANTEED MATHEMATICAL SUM
-        gstTypeVal = item.gstType || (gstRateVal === 18 ? 'With ITC' : gstRateVal === 5 ? 'Without ITC' : 'Exempt');
-        perNightTariff = Math.round(roomChargesVal / (nights * rooms));
-      } else {
-        const approxPerNight = totalPaid / (nights * rooms);
-        if (approxPerNight <= 1000) {
-          gstRateVal = 0;
-          gstTypeVal = 'Exempt';
-        } else if (approxPerNight <= 7875) {
-          gstRateVal = 5;
-          gstTypeVal = 'Without ITC';
-        } else {
-          gstRateVal = 18;
-          gstTypeVal = 'With ITC';
+      for (const endpoint of downloadEndpoints) {
+        try {
+          const res = await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              hotelName: titleName,
+              hotelLocation: hotelLoc,
+              price: totalPaid,
+              nights,
+              checkIn,
+              checkOut,
+              adults,
+              email: guestEmailAddr,
+              firstName: guestFullName.split(' ')[0] || 'Guest',
+              lastName: guestFullName.split(' ').slice(1).join(' ') || '',
+              bookingId: item.$id || item.bookingId,
+              displayBookingId: bookingRef,
+              invoiceNumber: invoiceNo,
+              addonsList: addonsTotal > 0 ? [{ name: 'Additional Services', price: addonsTotal }] : [],
+              gstRate,
+              gstAmount,
+              isPackage,
+            }),
+          });
+
+          if (res.ok) {
+            const blob = await res.blob();
+            const reader = new FileReader();
+            const base64Promise = new Promise<string>((resolve, reject) => {
+              reader.onloadend = () => {
+                const base64data = reader.result as string;
+                resolve(base64data.split(',')[1]);
+              };
+              reader.onerror = reject;
+            });
+            reader.readAsDataURL(blob);
+            const base64Content = await base64Promise;
+
+            const fileUri = `${FileSystem.cacheDirectory}Invoice-${bookingRef}.pdf`;
+            await FileSystem.writeAsStringAsync(fileUri, base64Content, {
+              encoding: FileSystem.EncodingType.Base64,
+            });
+
+            if (await Sharing.isAvailableAsync()) {
+              await Sharing.shareAsync(fileUri, {
+                UTI: '.pdf',
+                mimeType: 'application/pdf',
+                dialogTitle: `Download Racoonn Invoice ${invoiceNo}`,
+              });
+            }
+            serverPdfDownloaded = true;
+            break;
+          }
+        } catch {
+          // fallback to next endpoint or HTML generation
         }
-
-        roomChargesVal = Math.round(totalPaid / (1 + gstRateVal / 100));
-        gstAmountVal = Math.round((roomChargesVal * gstRateVal) / 100);
-        grandTotalVal = roomChargesVal + gstAmountVal; // GUARANTEED MATHEMATICAL SUM
-        perNightTariff = Math.round(roomChargesVal / (nights * rooms));
       }
 
-      const cgstVal = Math.round(gstAmountVal / 2);
-      const sgstVal = gstAmountVal - cgstVal;
-
-      const paidDateStr = (item.$createdAt ? new Date(item.$createdAt) : new Date()).toLocaleDateString('en-IN', {
-        day: '2-digit',
-        month: 'short',
-        year: 'numeric',
-      });
-
-      const htmlContent = `
-        <!DOCTYPE html>
-        <html>
-          <head>
-            <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-            <style>
-              body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #0F172A; padding: 32px; background: #FFFFFF; }
-              .invoice-box { max-width: 720px; margin: auto; border: 1px solid #E2E8F0; padding: 36px; border-radius: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.03); }
-              .top-row { display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 24px; border-bottom: 2px solid #F1F5F9; }
-              .brand { font-size: 26px; font-weight: 900; color: #0F172A; letter-spacing: 2px; line-height: 1.1; }
-              .brand-tag { font-size: 9.5px; font-weight: 800; color: #E86A70; letter-spacing: 2px; margin-top: 2px; text-transform: uppercase; }
-              .inv-head { text-align: right; }
-              .inv-title { font-size: 20px; font-weight: 900; color: #E86A70; letter-spacing: 1px; }
-              .inv-sub { font-size: 11.5px; color: #64748B; margin-top: 3px; }
-              .paid-badge { display: inline-block; background: #DCFCE7; color: #16A34A; font-weight: 800; font-size: 11px; padding: 4px 12px; border-radius: 20px; margin-top: 6px; }
-              .details-grid { display: flex; justify-content: space-between; margin-top: 28px; margin-bottom: 28px; }
-              .col { width: 48%; }
-              .col-lbl { font-size: 10px; font-weight: 800; color: #94A3B8; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 6px; }
-              .col-val-title { font-size: 15px; font-weight: 800; color: #0F172A; }
-              .col-val-sub { font-size: 12px; color: #475569; margin-top: 3px; }
-              .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #F1F5F9; font-size: 11px; color: #94A3B8; text-align: center; line-height: 1.6; }
-            </style>
-          </head>
-          <body>
-            <div class="invoice-box">
-              <div class="top-row">
-                <div style="display: flex; align-items: center;">
-                  ${
-                    logoBase64
-                      ? `<img src="data:image/jpeg;base64,${logoBase64}" style="width: 44px; height: 44px; border-radius: 10px; margin-right: 14px; object-fit: cover; border: 1px solid #E2E8F0;" />`
-                      : ''
-                  }
+      // If server download wasn't available, generate the identical User Portal HTML invoice using expo-print
+      if (!serverPdfDownloaded) {
+        const htmlContent = `
+          <!DOCTYPE html>
+          <html>
+            <head>
+              <meta charset="utf-8" />
+              <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+              <style>
+                body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1F2937; margin: 0; padding: 40px; background: #FFFFFF; }
+                .inv-box { max-width: 680px; margin: auto; }
+                .top-row { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; }
+                .brand-title { font-size: 26px; font-weight: 900; color: #E11D48; letter-spacing: 1px; margin: 0 0 4px 0; }
+                .company-name { font-size: 11px; font-weight: 800; color: #1F2937; margin-bottom: 3px; }
+                .company-meta { font-size: 9.5px; color: #6B7280; line-height: 1.5; }
+                .inv-header-meta { text-align: right; }
+                .inv-word { font-size: 28px; font-weight: 900; color: #1F2937; margin: 0 0 4px 0; }
+                .meta-line { font-size: 10px; color: #6B7280; line-height: 1.6; }
+                .divider { border: none; border-top: 1px solid #E5E7EB; margin: 20px 0; }
+                .info-grid { display: flex; justify-content: space-between; margin-bottom: 28px; }
+                .info-col { width: 48%; }
+                .info-title { font-size: 12px; font-weight: 800; color: #1F2937; margin-bottom: 6px; }
+                .info-sub { font-size: 10.5px; color: #6B7280; line-height: 1.5; }
+                .stay-table { width: 100%; border-collapse: collapse; margin-bottom: 26px; }
+                .stay-table th { background: #F9FAFB; padding: 10px 14px; font-size: 10px; font-weight: 800; color: #1F2937; text-align: left; }
+                .stay-table td { padding: 10px 14px; font-size: 10px; color: #1F2937; border-bottom: 1px solid #F3F4F6; }
+                .breakdown-box { width: 60%; margin-left: auto; margin-top: 16px; }
+                .breakdown-title { font-size: 11px; font-weight: 800; color: #1F2937; margin-bottom: 12px; text-align: right; }
+                .bd-row { display: flex; justify-content: space-between; font-size: 10px; margin-bottom: 8px; }
+                .bd-lbl { color: #6B7280; }
+                .bd-val { font-weight: 700; color: #1F2937; }
+                .total-line { display: flex; justify-content: space-between; border-top: 1px solid #E5E7EB; padding-top: 10px; margin-top: 10px; font-size: 14px; font-weight: 900; }
+                .total-lbl { color: #E11D48; }
+                .total-val { color: #1F2937; }
+                .footer { margin-top: 50px; padding-top: 20px; border-top: 1px solid #E5E7EB; text-align: center; }
+                .footer-thanks { font-size: 11px; font-weight: 800; color: #1F2937; margin-bottom: 4px; }
+                .footer-sub { font-size: 9px; color: #6B7280; }
+              </style>
+            </head>
+            <body>
+              <div class="inv-box">
+                <div class="top-row">
                   <div>
-                    <div class="brand">RACOONN</div>
-                    <div class="brand-tag">Luxury Stays & Experiences</div>
-                    <div style="font-size: 10.5px; color: #64748B; margin-top: 4px;">
-                      GSTIN: <strong>05AACCR9841B1Z2</strong> | SAC Code: <strong>996311</strong>
+                    <h1 class="brand-title">RACOONN</h1>
+                    <div class="company-name">CIELLE TRAVELS PRIVATE LIMITED</div>
+                    <div class="company-meta">
+                      GSTIN - 05AAOCC0859Q1Z0<br/>
+                      B-81, Rose Villa, Samiah Lake City, Rudrapur,<br/>
+                      Kichha, Udham Singh Nagar - 263153, Uttarakhand<br/>
+                      Phone: +91 8954442144 | Email: support@racoonn.com
+                    </div>
+                  </div>
+                  <div class="inv-header-meta">
+                    <div class="inv-word">INVOICE</div>
+                    <div class="meta-line">Date: ${invoiceDateStr}</div>
+                    <div class="meta-line">Booking Ref: <strong>${bookingRef}</strong></div>
+                    <div class="meta-line">Invoice No: <strong>${invoiceNo}</strong></div>
+                  </div>
+                </div>
+
+                <hr class="divider" />
+
+                <div class="info-grid">
+                  <div class="info-col">
+                    <div class="info-title">Billed To</div>
+                    <div class="info-sub">
+                      <strong style="color: #1F2937;">${guestFullName}</strong><br/>
+                      ${guestEmailAddr}
+                    </div>
+                  </div>
+                  <div class="info-col">
+                    <div class="info-title">${isPackage ? 'Package Details' : 'Hotel Details'}</div>
+                    <div class="info-sub">
+                      <strong style="color: #1F2937;">${titleName}</strong><br/>
+                      ${hotelLoc}
                     </div>
                   </div>
                 </div>
-                <div class="inv-head">
-                  <div class="inv-title">TAX INVOICE</div>
-                  <div class="inv-sub">Invoice #: <strong>INV-${bookingRef}</strong></div>
-                  <div class="inv-sub">Issued: <strong>${paidDateStr}</strong></div>
-                  <div class="inv-sub">HSN / SAC: <strong>996311</strong></div>
-                  <div><span class="paid-badge">✓ FULLY PAID</span></div>
-                </div>
-              </div>
 
-              <div class="details-grid">
-                <div class="col">
-                  <div class="col-lbl">BILL TO (GUEST)</div>
-                  <div class="col-val-title">${guestFullName}</div>
-                  <div class="col-val-sub">Email: ${guestEmailAddr}</div>
-                  <div class="col-val-sub">Phone: ${guestPhoneNum}</div>
-                </div>
-                <div class="col">
-                  <div class="col-lbl">RESERVATION & TAX DETAILS</div>
-                  <div class="col-val-title">${titleName}</div>
-                  <div class="col-val-sub">Check-In: ${item.checkIn || 'N/A'} | Check-Out: ${item.checkOut || 'N/A'}</div>
-                  <div class="col-val-sub">Per Night Tariff: ₹${perNightTariff.toLocaleString('en-IN')}</div>
-                </div>
-              </div>
-
-              <div style="margin-top: 24px; margin-bottom: 24px; background: #F8FAFC; border: 1px solid #E2E8F0; padding: 22px; border-radius: 18px;">
-                <div style="font-size: 14px; font-weight: 900; color: #0F172A; margin-bottom: 14px; border-bottom: 2px solid #CBD5E1; padding-bottom: 8px; letter-spacing: 0.5px;">
-                  TAX SUMMARY
-                </div>
-                <table style="width: 100%; font-size: 13px; border-collapse: collapse;">
-                  <tr>
-                    <td style="padding: 6px 0; color: #475569;">Room Charges (Subtotal)</td>
-                    <td style="text-align: right; font-weight: 800; color: #0F172A;">₹${roomChargesVal.toLocaleString('en-IN')}</td>
-                  </tr>
-                  ${
-                    gstRateVal > 0
-                      ? `
-                  <tr>
-                    <td style="padding: 6px 0; color: #475569;">Central GST (CGST @ ${(gstRateVal / 2).toFixed(1)}%)</td>
-                    <td style="text-align: right; font-weight: 700; color: #334155;">₹${cgstVal.toLocaleString('en-IN')}</td>
-                  </tr>
-                  <tr>
-                    <td style="padding: 6px 0; color: #475569;">State GST (SGST @ ${(gstRateVal / 2).toFixed(1)}%)</td>
-                    <td style="text-align: right; font-weight: 700; color: #334155;">₹${sgstVal.toLocaleString('en-IN')}</td>
-                  </tr>
-                  `
-                      : ''
-                  }
-                  <tr>
-                    <td style="padding: 6px 0; color: #475569;">Total GST Rate</td>
-                    <td style="text-align: right; font-weight: 800; color: #0F172A;">${gstRateVal}%</td>
-                  </tr>
-                  <tr>
-                    <td style="padding: 6px 0; color: #475569;">Total GST Amount</td>
-                    <td style="text-align: right; font-weight: 800; color: #0F172A;">₹${gstAmountVal.toLocaleString('en-IN')}</td>
-                  </tr>
-                  <tr>
-                    <td style="padding: 6px 0; color: #475569;">GST Type / Category</td>
-                    <td style="text-align: right; font-weight: 800; color: #059669;">${gstTypeVal}</td>
-                  </tr>
-                  <tr style="border-top: 2px solid #CBD5E1; font-weight: 900; font-size: 16px;">
-                    <td style="padding-top: 12px; color: #0F172A;">Grand Total</td>
-                    <td style="text-align: right; padding-top: 12px; color: #E86A70;">₹${grandTotalVal.toLocaleString('en-IN')}</td>
-                  </tr>
+                <table class="stay-table">
+                  <thead>
+                    <tr>
+                      <th style="width: 50%;">Description</th>
+                      <th style="width: 50%;">Details</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${isPackage ? `
+                      <tr>
+                        <td>Starting Date</td>
+                        <td>${checkIn}</td>
+                      </tr>
+                      <tr>
+                        <td>Duration</td>
+                        <td>${nights} Night(s)</td>
+                      </tr>
+                      <tr>
+                        <td>Guests</td>
+                        <td>${adults} Adult(s)</td>
+                      </tr>
+                    ` : `
+                      <tr>
+                        <td>Check-In Date</td>
+                        <td>${checkIn}</td>
+                      </tr>
+                      <tr>
+                        <td>Check-Out Date</td>
+                        <td>${checkOut}</td>
+                      </tr>
+                      <tr>
+                        <td>Duration</td>
+                        <td>${nights} Night(s)</td>
+                      </tr>
+                      <tr>
+                        <td>Guests</td>
+                        <td>${adults} Adult(s)</td>
+                      </tr>
+                    `}
+                  </tbody>
                 </table>
-                <div style="font-size: 10.5px; color: #64748B; margin-top: 14px; font-style: italic;">
-                  GST applied as per Government of India hotel accommodation GST slab based on room tariff.
+
+                <div class="breakdown-box">
+                  <div class="breakdown-title">Financial Breakdown</div>
+                  <div class="bd-row">
+                    <span class="bd-lbl">Base Price (Excl. GST):</span>
+                    <span class="bd-val">INR ${basePrice.toLocaleString('en-IN')}</span>
+                  </div>
+                  ${addonsTotal > 0 ? `
+                  <div class="bd-row">
+                    <span class="bd-lbl">Add-ons / Services:</span>
+                    <span class="bd-val">INR ${addonsTotal.toLocaleString('en-IN')}</span>
+                  </div>
+                  ` : ''}
+                  <div class="bd-row">
+                    <span class="bd-lbl">GST (${gstRate}%):</span>
+                    <span class="bd-val">INR ${gstAmount.toLocaleString('en-IN')}</span>
+                  </div>
+                  <div class="total-line">
+                    <span class="total-lbl">Total Paid:</span>
+                    <span class="total-val">INR ${totalPaid.toLocaleString('en-IN')}</span>
+                  </div>
+                </div>
+
+                <div class="footer">
+                  <div class="footer-thanks">Thank you for booking with Racoonn!</div>
+                  <div class="footer-sub">This is a computer-generated invoice and does not require a physical signature.</div>
                 </div>
               </div>
+            </body>
+          </html>
+        `;
 
-              <div class="footer">
-                Thank you for choosing Racoonn! This digital receipt is valid proof of payment.<br/>
-                Racoonn Corporate Desk • GSTIN: 05AACCR9841B1Z2 • SAC Code: 996311 • support@racoonn.com
-              </div>
-            </div>
-          </body>
-        </html>
-      `;
-
-      // 🌟 Failsafe PDF Download & Print Engine for Android & iOS
-      try {
         if (Platform.OS === 'android') {
-          // On Android, printAsync opens native Android Save as PDF / Download sheet cleanly without file permission errors
           await Print.printAsync({ html: htmlContent });
         } else {
-          // On iOS, generate file and open native Share / Save to Files sheet
           const { uri } = await Print.printToFileAsync({ html: htmlContent });
           if (await Sharing.isAvailableAsync()) {
             await Sharing.shareAsync(uri, {
               UTI: '.pdf',
               mimeType: 'application/pdf',
-              dialogTitle: `Download Racoonn Invoice INV-${bookingRef}`,
+              dialogTitle: `Download Racoonn Invoice ${invoiceNo}`,
             });
           } else {
             await Print.printAsync({ html: htmlContent });
           }
         }
-      } catch (fileErr) {
-        console.warn('PDF file share fallback to Print.printAsync:', fileErr);
-        await Print.printAsync({ html: htmlContent });
       }
       setGeneratingPdfId(null);
     } catch (err) {
       setGeneratingPdfId(null);
       console.error('Invoice PDF error:', err);
       Alert.alert('Download Error', 'Could not generate or download PDF invoice. Please try again.');
+    }
+  };
+
+  // Custom Cancellation State (No native Alert warning popup)
+  const [cancelModalBooking, setCancelModalBooking] = useState<any | null>(null);
+  const [isCancelling, setIsCancelling] = useState<boolean>(false);
+
+  const handleCancelBooking = (booking: any) => {
+    setCancelModalBooking(booking);
+  };
+
+  const handleConfirmCancelBooking = async () => {
+    if (!cancelModalBooking) return;
+    try {
+      setIsCancelling(true);
+      const bTitle = cancelModalBooking.hotelName || cancelModalBooking.propertyName || 'Stay';
+      const bRef = (cancelModalBooking.$id || '').substring(0, 8).toUpperCase();
+      await cancelBooking(cancelModalBooking.$id);
+      await fetchBookings();
+
+      sendLocalNotification({
+        title: '❌ Booking Cancelled',
+        body: `Your reservation #${bRef} for ${bTitle} has been cancelled.`,
+        data: { url: '/(tabs)/profile', type: 'cancellation' },
+      });
+
+      setCancelModalBooking(null);
+    } catch (err: any) {
+      console.error('Error cancelling booking:', err);
+      Alert.alert('Cancellation Error', err?.message || 'Failed to cancel reservation');
+    } finally {
+      setIsCancelling(false);
     }
   };
 
@@ -1102,11 +1187,123 @@ export default function UserPortalProfileScreen() {
                           <Text style={{ fontSize: 11, fontWeight: '700', color: '#059669' }}>{itcStatus}</Text>
                         </View>
                       </View>
+
+                      {/* Booking Actions Row: Download Invoice & Cancel Booking */}
+                      <View style={styles.bookingActionButtonsRow}>
+                        <TouchableOpacity
+                          style={styles.cardInvoiceBtn}
+                          activeOpacity={0.8}
+                          disabled={generatingPdfId === (b.$id || b.bookingId)}
+                          onPress={() => handleDownloadInvoice(b)}
+                        >
+                          {generatingPdfId === (b.$id || b.bookingId) ? (
+                            <ActivityIndicator size="small" color="#0F172A" />
+                          ) : (
+                            <>
+                              <Download size={14} color="#0F172A" style={{ marginRight: 6 }} />
+                              <Text style={styles.cardInvoiceBtnText}>Download Invoice</Text>
+                            </>
+                          )}
+                        </TouchableOpacity>
+
+                        {(b.status === 'Confirmed' || b.status === 'Upcoming') && (
+                          <TouchableOpacity
+                            style={styles.cancelBookingBtn}
+                            activeOpacity={0.8}
+                            disabled={isCancelling && cancelModalBooking?.$id === b.$id}
+                            onPress={() => handleCancelBooking(b)}
+                          >
+                            {isCancelling && cancelModalBooking?.$id === b.$id ? (
+                              <ActivityIndicator size="small" color="#EF4444" />
+                            ) : (
+                              <Text style={styles.cancelBookingBtnText}>Cancel Booking</Text>
+                            )}
+                          </TouchableOpacity>
+                        )}
+                      </View>
                     </View>
                   );
                 })
               )}
             </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
+      {/* 🛑 Custom Cancel Reservation Modal */}
+      <Modal
+        visible={!!cancelModalBooking}
+        animationType="fade"
+        transparent={true}
+        onRequestClose={() => {
+          if (!isCancelling) setCancelModalBooking(null);
+        }}
+      >
+        <View style={styles.cancelModalOverlay}>
+          <View style={styles.cancelDialogBox}>
+            <View style={styles.cancelIconBadge}>
+              <AlertTriangle color="#EF4444" size={26} />
+            </View>
+            <Text style={styles.cancelDialogTitle}>Cancel Reservation?</Text>
+            <Text style={styles.cancelDialogSub}>
+              Are you sure you want to cancel your reservation for{' '}
+              <Text style={{ fontWeight: '800', color: '#0F172A' }}>
+                {cancelModalBooking?.hotelName || cancelModalBooking?.packageName || 'this stay'}
+              </Text>
+              ?
+            </Text>
+
+            {cancelModalBooking && (
+              <View style={styles.cancelBookingSummaryCard}>
+                <View style={styles.cancelBookingSummaryRow}>
+                  <Text style={styles.cancelBookingSummaryLabel}>Booking ID</Text>
+                  <Text style={styles.cancelBookingSummaryValue}>
+                    {cancelModalBooking?.bookingId || cancelModalBooking?.$id?.slice(-8).toUpperCase()}
+                  </Text>
+                </View>
+                <View style={styles.cancelBookingSummaryRow}>
+                  <Text style={styles.cancelBookingSummaryLabel}>Dates</Text>
+                  <Text style={styles.cancelBookingSummaryValue}>
+                    {cancelModalBooking?.checkIn || cancelModalBooking?.startDate || 'N/A'} → {cancelModalBooking?.checkOut || cancelModalBooking?.endDate || 'N/A'}
+                  </Text>
+                </View>
+                <View style={styles.cancelBookingSummaryRow}>
+                  <Text style={styles.cancelBookingSummaryLabel}>Total Amount</Text>
+                  <Text style={[styles.cancelBookingSummaryValue, { color: '#0F172A', fontWeight: '900' }]}>
+                    ₹{Number(cancelModalBooking?.totalAmount || cancelModalBooking?.totalPrice || cancelModalBooking?.price || 0).toLocaleString('en-IN')}
+                  </Text>
+                </View>
+              </View>
+            )}
+
+            <View style={styles.cancelPolicyNoticeBox}>
+              <Text style={styles.cancelPolicyNoticeTitle}>Cancellation & Refund Policy</Text>
+              <Text style={styles.cancelPolicyNoticeText}>
+                As per property policy, cancellations may be subject to cancellation charges or non-refundable terms. Any eligible refund will be processed back to your original payment method.
+              </Text>
+            </View>
+
+            <View style={styles.cancelDialogBtnRow}>
+              <TouchableOpacity
+                style={styles.keepBookingBtn}
+                disabled={isCancelling}
+                onPress={() => setCancelModalBooking(null)}
+              >
+                <Text style={styles.keepBookingText}>Keep Booking</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.confirmCancelBookingBtn}
+                disabled={isCancelling}
+                onPress={handleConfirmCancelBooking}
+              >
+                {isCancelling ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <Text style={styles.confirmCancelBookingText}>Yes, Cancel</Text>
+                )}
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Modal>
@@ -2090,6 +2287,47 @@ const styles = StyleSheet.create({
     color: Colors.brand.coral,
     marginTop: 6,
   },
+  bookingActionButtonsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginTop: 12,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: '#E2E8F0',
+  },
+  cardInvoiceBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 9,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+  },
+  cardInvoiceBtnText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#0F172A',
+  },
+  cancelBookingBtn: {
+    paddingVertical: 9,
+    paddingHorizontal: 14,
+    borderRadius: 10,
+    backgroundColor: '#FEF2F2',
+    borderWidth: 1,
+    borderColor: '#FEE2E2',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cancelBookingBtnText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#EF4444',
+  },
   /* Logout Dialog */
   logoutModalOverlay: {
     flex: 1,
@@ -2330,4 +2568,129 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: Colors.brand.coral,
   },
+  /* Custom Cancel Reservation Modal Styles */
+  cancelModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(15, 23, 42, 0.65)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 20,
+  },
+  cancelDialogBox: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    padding: 22,
+    width: '100%',
+    maxWidth: 400,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  cancelIconBadge: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#FEE2E2',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 14,
+  },
+  cancelDialogTitle: {
+    fontSize: 19,
+    fontWeight: '900',
+    color: '#0F172A',
+    marginBottom: 6,
+    textAlign: 'center',
+  },
+  cancelDialogSub: {
+    fontSize: 13,
+    color: '#64748B',
+    textAlign: 'center',
+    marginBottom: 14,
+    lineHeight: 18,
+  },
+  cancelBookingSummaryCard: {
+    width: '100%',
+    backgroundColor: '#F8FAFC',
+    borderRadius: 14,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    marginBottom: 12,
+  },
+  cancelBookingSummaryRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginVertical: 2.5,
+  },
+  cancelBookingSummaryLabel: {
+    fontSize: 11.5,
+    fontWeight: '700',
+    color: '#64748B',
+  },
+  cancelBookingSummaryValue: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#1E293B',
+  },
+  cancelPolicyNoticeBox: {
+    width: '100%',
+    backgroundColor: '#FEF2F2',
+    borderRadius: 12,
+    padding: 11,
+    borderWidth: 1,
+    borderColor: '#FECDD3',
+    marginBottom: 18,
+  },
+  cancelPolicyNoticeTitle: {
+    fontSize: 10.5,
+    fontWeight: '800',
+    color: '#DC2626',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 3,
+  },
+  cancelPolicyNoticeText: {
+    fontSize: 11,
+    color: '#991B1B',
+    lineHeight: 15,
+  },
+  cancelDialogBtnRow: {
+    flexDirection: 'row',
+    gap: 10,
+    width: '100%',
+  },
+  keepBookingBtn: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  keepBookingText: {
+    fontSize: 13.5,
+    fontWeight: '700',
+    color: '#475569',
+  },
+  confirmCancelBookingBtn: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 14,
+    backgroundColor: '#EF4444',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  confirmCancelBookingText: {
+    fontSize: 13.5,
+    fontWeight: '800',
+    color: '#FFFFFF',
+  },
 });
+

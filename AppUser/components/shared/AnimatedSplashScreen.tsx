@@ -1,15 +1,13 @@
 import React, { useEffect } from 'react';
-import { StyleSheet, View, Text, StatusBar, Image } from 'react-native';
+import { StyleSheet, View, StatusBar, Image } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
   withSpring,
-  withDelay,
   Easing,
   runOnJS,
 } from 'react-native-reanimated';
-import Colors from '@/constants/Colors';
 
 interface AnimatedSplashScreenProps {
   onAnimationFinish: () => void;
@@ -19,10 +17,6 @@ export default function AnimatedSplashScreen({ onAnimationFinish }: AnimatedSpla
   // Shared Values for Animation
   const logoScale = useSharedValue(0.3);
   const logoOpacity = useSharedValue(0);
-
-  const textOpacity = useSharedValue(0);
-  const textTranslateY = useSharedValue(20);
-  
   const screenOpacity = useSharedValue(1);
 
   useEffect(() => {
@@ -30,16 +24,12 @@ export default function AnimatedSplashScreen({ onAnimationFinish }: AnimatedSpla
     logoOpacity.value = withTiming(1, { duration: 600, easing: Easing.out(Easing.cubic) });
     logoScale.value = withSpring(1, { damping: 14, stiffness: 100 });
 
-    // 2. Brand Text slides up cleanly after a short delay
-    textOpacity.value = withDelay(400, withTiming(1, { duration: 600, easing: Easing.out(Easing.cubic) }));
-    textTranslateY.value = withDelay(400, withSpring(0, { damping: 14, stiffness: 100 }));
-
-    // 3. Smooth Screen Fade Out Exit
+    // 2. Smooth Screen Fade Out Exit
     const timer = setTimeout(() => {
       screenOpacity.value = withTiming(0, { duration: 500, easing: Easing.inOut(Easing.quad) }, () => {
         runOnJS(onAnimationFinish)();
       });
-    }, 2400);
+    }, 2000);
 
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -49,11 +39,6 @@ export default function AnimatedSplashScreen({ onAnimationFinish }: AnimatedSpla
   const logoStyle = useAnimatedStyle(() => ({
     opacity: logoOpacity.value,
     transform: [{ scale: logoScale.value }],
-  }));
-
-  const textStyle = useAnimatedStyle(() => ({
-    opacity: textOpacity.value,
-    transform: [{ translateY: textTranslateY.value }],
   }));
 
   const screenStyle = useAnimatedStyle(() => ({
@@ -70,15 +55,8 @@ export default function AnimatedSplashScreen({ onAnimationFinish }: AnimatedSpla
           <Image
             source={require('@/assets/images/icon.png')}
             style={styles.logoImage}
-            resizeMode="cover"
+            resizeMode="contain"
           />
-        </Animated.View>
-
-        {/* Minimal Animated Brand Text */}
-        <Animated.View style={[styles.brandTextWrapper, textStyle]}>
-          <Text style={styles.brandTitle}>RACOONN</Text>
-          <View style={styles.accentLine} />
-          <Text style={styles.taglineText}>HOTEL BOOKING</Text>
         </Animated.View>
       </View>
     </Animated.View>
@@ -102,39 +80,16 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   logoContainer: {
-    width: 120,
-    height: 120,
-    borderRadius: 24, // Slight rounding for a clean modern app icon look
+    width: 140,
+    height: 140,
     overflow: 'hidden',
     backgroundColor: '#FFFFFF',
-    marginBottom: 32,
-    // Removed all shadows/glows for a flat, clean aesthetic
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   logoImage: {
     width: '100%',
     height: '100%',
   },
-  brandTextWrapper: {
-    alignItems: 'center',
-  },
-  brandTitle: {
-    fontSize: 28,
-    fontFamily: 'Inter-Black',
-    color: '#0F172A',
-    letterSpacing: 6,
-    marginBottom: 10,
-  },
-  accentLine: {
-    height: 2,
-    width: 60,
-    backgroundColor: Colors.brand.coral,
-    borderRadius: 1,
-    marginBottom: 10,
-  },
-  taglineText: {
-    fontSize: 11,
-    fontFamily: 'Inter-Bold',
-    color: '#64748B',
-    letterSpacing: 3,
-  },
 });
+

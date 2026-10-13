@@ -2,7 +2,7 @@ import React from 'react';
 import { StyleSheet, View, Platform, Text, Pressable, useWindowDimensions, Image } from 'react-native';
 import { Tabs } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Home, Heart, Ticket, User } from 'lucide-react-native';
+import { Home, Heart, Ticket, User, Search } from 'lucide-react-native';
 import Colors from '@/constants/Colors';
 
 export default function TabLayout() {
@@ -64,6 +64,7 @@ export default function TabLayout() {
         headerShown: false,
       }}
     >
+      {/* 1. Home */}
       <Tabs.Screen
         name="index"
         options={{
@@ -84,6 +85,27 @@ export default function TabLayout() {
         }}
       />
 
+      {/* 2. Search (After Home) */}
+      <Tabs.Screen
+        name="search"
+        options={{
+          title: 'Search',
+          tabBarIcon: ({ focused }) => (
+            <View style={[styles.iconContainer, focused && styles.iconContainerActive]}>
+              <Search
+                color={focused ? '#FFFFFF' : '#94A3B8'}
+                strokeWidth={2.4}
+                size={isTablet ? 22 : 19}
+              />
+            </View>
+          ),
+          tabBarLabel: ({ focused }) => (
+            <Text style={[styles.label, focused && styles.labelActive]}>Search</Text>
+          ),
+        }}
+      />
+
+      {/* 3. Packages */}
       <Tabs.Screen
         name="packages"
         options={{
@@ -104,25 +126,7 @@ export default function TabLayout() {
         }}
       />
 
-      <Tabs.Screen
-        name="ai"
-        options={{
-          title: 'Ask AI',
-          tabBarIcon: ({ focused }) => (
-            <View style={[styles.askAiIconContainer, focused && styles.askAiIconContainerActive]}>
-              <Image
-                source={require('@/assets/images/racoon-favicon.jpg')}
-                style={styles.mascotImg}
-                resizeMode="cover"
-              />
-            </View>
-          ),
-          tabBarLabel: ({ focused }) => (
-            <Text style={[styles.label, focused && styles.labelActive]}>Ask AI</Text>
-          ),
-        }}
-      />
-
+      {/* 4. Favorite */}
       <Tabs.Screen
         name="two"
         options={{
@@ -143,6 +147,7 @@ export default function TabLayout() {
         }}
       />
 
+      {/* 5. Profile */}
       <Tabs.Screen
         name="profile"
         options={{
@@ -160,6 +165,14 @@ export default function TabLayout() {
           tabBarLabel: ({ focused }) => (
             <Text style={[styles.label, focused && styles.labelActive]}>Profile</Text>
           ),
+        }}
+      />
+
+      {/* Hidden Ask AI screen (removed from navigation) */}
+      <Tabs.Screen
+        name="ai"
+        options={{
+          href: null,
         }}
       />
     </Tabs>

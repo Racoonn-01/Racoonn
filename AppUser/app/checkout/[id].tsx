@@ -6,13 +6,13 @@ import {
   ScrollView,
   TextInput,
   TouchableOpacity,
-  SafeAreaView,
   StatusBar,
   Image,
   Alert,
   Modal,
   ActivityIndicator,
   TouchableWithoutFeedback,
+  Platform,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -21,7 +21,6 @@ import {
   ArrowLeft,
   User,
   Mail,
-  Phone,
   MapPin,
   Clock,
   ShieldCheck,
@@ -32,62 +31,74 @@ import {
   Users,
   BedDouble,
   Plus,
-  Minus,
   CheckCircle2,
   ArrowRight,
   Check,
   Star,
   Lock,
-  Zap,
   Gift,
   X,
   QrCode,
   Wallet,
   Building2,
   FileText,
-  Info,
+  AlertCircle,
+  ChevronDown,
+  Search,
+  MessageSquare,
+  Car,
+  Plane,
+  Coffee,
+  Sparkles,
+  Wine,
 } from 'lucide-react-native';
 import Colors from '@/constants/Colors';
+import { COUNTRIES, CountryItem, formatPhoneNumber } from '@/constants/countries';
 import { useAuthStore } from '../../store/authStore';
-import { createBooking, getProperties } from '../../lib/appwrite/api';
-import { collectRazorpayPayment } from '../../lib/razorpay';
+import { createBooking, getProperties, checkRoomAvailability } from '../../lib/appwrite/api';
 import { calculateHotelGST } from '../../utils/gst';
+import { RazorpayCheckoutModal, RazorpaySuccessData } from '../../components/booking/RazorpayCheckoutModal';
 
-const CURATED_ADDONS = [
-  {
-    id: 'add-1',
-    title: 'Private SUV Airport Transfer',
-    subtitle: 'Chauffeur pickup in luxury Innova Crysta / Fortuner',
-    price: 1500,
-    tag: 'Popular',
-  },
-  {
-    id: 'add-2',
-    title: 'Candlelight Gourmet Dinner',
-    subtitle: '3-Course romantic dinner with complimentary wine & flowers',
-    price: 2500,
-    tag: 'Romantic',
-  },
-  {
-    id: 'add-3',
-    title: 'Himalayan Spa & Aromatherapy',
-    subtitle: '60-min herbal body massage & deep thermal sauna session',
-    price: 1800,
-    tag: 'Relaxing',
-  },
-  {
-    id: 'add-4',
-    title: 'Drone & HD Photography Session',
-    subtitle: '2-hour guided mountain photo shoot with 50 edited photos',
-    price: 2200,
-    tag: 'Trending',
-  },
+export interface AddonType {
+  id?: string;
+  $id?: string;
+  title?: string;
+  name?: string;
+  price?: number;
+  description?: string;
+  subtitle?: string;
+  tag?: string;
+}
+
+
+
+function getIconForTitle(title: string) {
+  const t = (title || '').toLowerCase();
+  if (t.includes('cab') || t.includes('car') || t.includes('taxi') || t.includes('ride') || t.includes('transport')) return Car;
+  if (t.includes('airport') || t.includes('flight') || t.includes('plane') || t.includes('transfer')) return Plane;
+  if (t.includes('food') || t.includes('breakfast') || t.includes('lunch') || t.includes('dinner') || t.includes('meal')) return Coffee;
+  if (t.includes('spa') || t.includes('massage') || t.includes('wellness') || t.includes('relax')) return Sparkles;
+  if (t.includes('insur') || t.includes('protect') || t.includes('shield')) return ShieldCheck;
+  if (t.includes('early') || t.includes('late') || t.includes('time') || t.includes('check') || t.includes('hour')) return Clock;
+  if (t.includes('wine') || t.includes('drink') || t.includes('champagne') || t.includes('bottle')) return Wine;
+  return Zap;
+}
+
+const ARRIVAL_TIME_OPTIONS = [
+  "I don't know yet",
+  '12:00 PM - 02:00 PM',
+  '02:00 PM - 04:00 PM',
+  '04:00 PM - 06:00 PM',
+  'After 06:00 PM',
 ];
 
 const QUICK_REQUEST_CHIPS = ['High Floor', 'Quiet Room', 'Early Check-in', 'Honeymoon Decor'];
 
 export default function CheckoutScreen() {
   const insets = useSafeAreaInsets();
+  const bottomBarPadding = insets.bottom > 0
+    ? insets.bottom + 14
+    : (Platform.OS === 'android' ? 48 : 20);
   const params = useLocalSearchParams();
   const router = useRouter();
   const { user, profile } = useAuthStore();
@@ -120,17 +131,28 @@ export default function CheckoutScreen() {
   const image = (params.image as string) || realProperty?.photos?.[0] || 'https://images.unsplash.com/photo-1626621341517-bbf3d9990a23?q=80&w=800&auto=format&fit=crop';
   const roomName = (params.roomName as string) || 'Standard Room';
   const bookingType = (params.bookingType as string) || 'hotel';
+  const isPackageCheckout = bookingType === 'package';
+  const departureCity = (params.departureCity as string) || 'Haldwani';
 
   const initialGuests = Number(params.guests || 2);
   const nightsCount = Math.max(1, Number(params.nights || 1));
   const roomsCount = Math.max(1, Number(params.rooms || 1));
 
-  const checkIn = (params.checkIn as string) || (new Date()).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
-  const checkOut = (params.checkOut as string) || (new Date(Date.now() + 86400000)).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+  const [defaultDates] = useState(() => {
+    const now = new Date();
+    const tomorrow = new Date(now.getTime() + 86400000);
+    return {
+      in: now.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
+      out: tomorrow.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
+    };
+  });
+
+  const checkIn = (params.checkIn as string) || defaultDates.in;
+  const checkOut = (params.checkOut as string) || defaultDates.out;
 
   const baseRate = Number(params.totalPrice) > 0
     ? Number(params.totalPrice)
-    : Number(realProperty?.price || 3500) * nightsCount * roomsCount;
+    : Number(realProperty?.price || realProperty?.startingPrice || 0) * nightsCount * roomsCount;
 
   // Active Checkout Step & Scroll References
   const [activeStep, setActiveStep] = useState<1 | 2 | 3>(1);
@@ -151,30 +173,92 @@ export default function CheckoutScreen() {
   };
 
   // Real Guest Details State (Default to logged-in user, no dummy names)
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
+  const initialFullName = (profile?.name || user?.name || '').trim();
+  const initialParts = initialFullName ? initialFullName.split(' ') : [];
+  const [firstName, setFirstName] = useState(initialParts[0] || '');
+  const [lastName, setLastName] = useState(initialParts.slice(1).join(' ') || '');
+  const [email, setEmail] = useState(profile?.email || user?.email || '');
+  const [phone, setPhone] = useState(profile?.phone || user?.phone || '');
+
+  // Country, State and Phone Dial Code
+  const defaultCountry = COUNTRIES.find((c) => c.name === 'India') || COUNTRIES[0];
+  const [selectedCountry, setSelectedCountry] = useState<CountryItem>(defaultCountry);
+  const [phoneCountry, setPhoneCountry] = useState<CountryItem>(defaultCountry);
+  const [stateProvince, setStateProvince] = useState('');
+  const [isCountryModalOpen, setIsCountryModalOpen] = useState(false);
+  const [isPhoneCountryModalOpen, setIsPhoneCountryModalOpen] = useState(false);
+  const [countrySearchQuery, setCountrySearchQuery] = useState('');
+  const [phoneCountrySearchQuery, setPhoneCountrySearchQuery] = useState('');
+
+  // Additional Requests
+  const [isAdditionalRequestsExpanded, setIsAdditionalRequestsExpanded] = useState(false);
   const [arrivalTime, setArrivalTime] = useState('02:00 PM - 04:00 PM');
+  const [isArrivalTimePickerOpen, setIsArrivalTimePickerOpen] = useState(false);
+  const [smokingPreference, setSmokingPreference] = useState<'Non-smoking' | 'Smoking'>('Non-smoking');
+  const [airportPickupRequired, setAirportPickupRequired] = useState(false);
   const [specialRequests, setSpecialRequests] = useState('');
 
-  useEffect(() => {
-    if (profile || user) {
-      const fullName = profile?.name || user?.name || '';
-      const parts = fullName.trim().split(' ');
-      setFirstName(parts[0] || '');
-      setLastName(parts.slice(1).join(' ') || '');
-      setEmail(profile?.email || user?.email || '');
-      setPhone(profile?.phone || user?.phone || '');
-    }
-  }, [profile, user]);
+  // Additional Travelers (for multiple guests)
+  interface TravelerData {
+    fullName: string;
+    gender: string;
+    dateOfBirth: string;
+  }
+  const extraGuestsCount = Math.max(0, initialGuests - 1);
+  const [isTravelersExpanded, setIsTravelersExpanded] = useState(false);
+  const [travelersData, setTravelersData] = useState<TravelerData[]>([]);
 
-  // Extra Companions (Clean start)
-  const [companions, setCompanions] = useState<string[]>([]);
-  const [companionInput, setCompanionInput] = useState('');
+  const additionalTravelers: TravelerData[] = Array.from(
+    { length: extraGuestsCount },
+    (_, i) => travelersData[i] || { fullName: '', gender: '', dateOfBirth: '' }
+  );
+
+  const updateTraveler = (index: number, field: 'fullName' | 'gender' | 'dateOfBirth', value: string) => {
+    setTravelersData((prev) => {
+      const updated = Array.from(
+        { length: extraGuestsCount },
+        (_, i) => prev[i] || { fullName: '', gender: '', dateOfBirth: '' }
+      );
+      if (updated[index]) {
+        updated[index] = { ...updated[index], [field]: value };
+      }
+      return updated;
+    });
+  };
+
+  const userIdentifier = user?.$id || profile?.$id || '';
+  const [syncedUserId, setSyncedUserId] = useState(userIdentifier);
+
+  if (userIdentifier && userIdentifier !== syncedUserId) {
+    setSyncedUserId(userIdentifier);
+    const fullName = (profile?.name || user?.name || '').trim();
+    const parts = fullName ? fullName.split(' ') : [];
+    setFirstName(parts[0] || '');
+    setLastName(parts.slice(1).join(' ') || '');
+    setEmail(profile?.email || user?.email || '');
+    setPhone(profile?.phone || user?.phone || '');
+  }
 
   // Selected Add-ons (Clean start)
   const [selectedAddons, setSelectedAddons] = useState<string[]>([]);
+
+  // Resolve dynamic property addons (only visible if venue owner added them in dashboard)
+  const propertyAddons: AddonType[] = realProperty?.addons
+    ? (Array.isArray(realProperty.addons)
+        ? realProperty.addons.map((a: any) => {
+            if (typeof a === 'string') {
+              try {
+                return JSON.parse(a);
+              } catch {
+                return null;
+              }
+            }
+            return a;
+          }).filter(Boolean)
+        : [])
+    : [];
+
+  const activeAddonsList: AddonType[] = propertyAddons;
 
   // Promo Code State (Clean start)
   const [couponInput, setCouponInput] = useState('');
@@ -185,20 +269,49 @@ export default function CheckoutScreen() {
   const [isRazorpayModalOpen, setIsRazorpayModalOpen] = useState(false);
   const [selectedRazorpayOption, setSelectedRazorpayOption] = useState<'upi' | 'card' | 'netbanking' | 'wallet'>('upi');
   const [isRazorpayProcessing, setIsRazorpayProcessing] = useState(false);
+  const [isRazorpayWebViewVisible, setIsRazorpayWebViewVisible] = useState(false);
 
-  // Calculations (Statutory Government of India Hotel Accommodation GST Slabs)
-  const addonsTotal = selectedAddons.reduce((sum, id) => {
-    const item = CURATED_ADDONS.find((a) => a.id === id);
-    return sum + (item ? item.price : 0);
-  }, 0);
+  // Custom Validation & Feedback Modal State
+  const [validationModal, setValidationModal] = useState<{
+    visible: boolean;
+    title: string;
+    message: string;
+    missingFields?: string[];
+    actionText?: string;
+    onAction?: () => void;
+  }>({
+    visible: false,
+    title: '',
+    message: '',
+  });
 
-  const perNightTariff = baseRate > 0 ? Math.round(baseRate / (roomsCount * nightsCount)) : 3500;
-  const gstCalc = calculateHotelGST(perNightTariff, nightsCount, roomsCount, addonsTotal);
+  // Calculations: Addons Total using User Portal per-person logic (Packages don't have add-ons)
+  const addonsTotal = isPackageCheckout
+    ? 0
+    : selectedAddons.reduce((sum, id) => {
+        const item = activeAddonsList.find((a) => (a.id || a.$id) === id);
+        if (!item) return sum;
+        const isPerPerson = typeof item.description === 'string' && item.description.toLowerCase().includes('per person');
+        const price = (Number(item.price) || 0) * (isPerPerson ? initialGuests : 1);
+        return sum + price;
+      }, 0);
 
+  const perNightTariff = isPackageCheckout
+    ? (baseRate > 0 ? baseRate : 3500)
+    : (baseRate > 0 ? Math.round(baseRate / (roomsCount * nightsCount)) : 3500);
   const discountAmount = appliedCoupon ? appliedCoupon.discount : 0;
-  const roomChargesSubtotal = gstCalc.subtotal;
+  const gstCalc = calculateHotelGST(
+    perNightTariff,
+    isPackageCheckout ? 1 : nightsCount,
+    isPackageCheckout ? 1 : roomsCount,
+    addonsTotal,
+    discountAmount,
+    isPackageCheckout
+  );
+
+  const roomChargesSubtotal = gstCalc.roomAmount;
   const gstTax = gstCalc.gstAmount;
-  const grandTotal = Math.max(0, roomChargesSubtotal + addonsTotal + gstTax - discountAmount);
+  const grandTotal = gstCalc.totalAmount;
 
   const toggleAddon = (id: string) => {
     setSelectedAddons((prev) =>
@@ -223,66 +336,136 @@ export default function CheckoutScreen() {
     }
   };
 
-  const addCompanion = () => {
-    if (!companionInput.trim()) return;
-    setCompanions([...companions, companionInput.trim()]);
-    setCompanionInput('');
-  };
 
-  const removeCompanion = (idx: number) => {
-    setCompanions(companions.filter((_, i) => i !== idx));
-  };
 
   const addQuickRequest = (chipText: string) => {
     if (specialRequests.includes(chipText)) return;
     setSpecialRequests((prev) => (prev ? `${prev}, ${chipText}` : chipText));
   };
 
-  const handleOpenRazorpay = () => {
+  const handleOpenRazorpay = async () => {
     if (!user?.$id) {
-      Alert.alert('Sign in required', 'Please sign in before confirming your booking.', [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Sign in', onPress: () => router.push('/auth/login' as any) },
-      ]);
+      setValidationModal({
+        visible: true,
+        title: 'Sign In Required',
+        message: 'Please sign in to your account before confirming your reservation.',
+        actionText: 'Sign In Now',
+        onAction: () => {
+          setValidationModal((prev) => ({ ...prev, visible: false }));
+          router.push('/auth/login' as any);
+        },
+      });
       return;
     }
-    if (!firstName.trim() || !lastName.trim() || !email.trim() || !phone.trim()) {
-      Alert.alert('Incomplete Details', 'Please complete primary guest contact information.');
+
+    const missing: string[] = [];
+    if (!firstName.trim()) missing.push('Primary First Name');
+    if (!lastName.trim()) missing.push('Primary Last Name');
+    if (!email.trim()) missing.push('Primary Email Address');
+    if (!phone.trim()) missing.push('Primary Mobile Phone Number');
+
+    // For tour packages, validate all additional travelers have name, gender & DOB (matching User portal)
+    if (isPackageCheckout && additionalTravelers.length > 0) {
+      additionalTravelers.forEach((t, idx) => {
+        if (!t.fullName.trim()) missing.push(`Traveler ${idx + 2} Full Name`);
+        if (!t.gender.trim()) missing.push(`Traveler ${idx + 2} Gender`);
+        if (!t.dateOfBirth.trim()) missing.push(`Traveler ${idx + 2} Date of Birth`);
+      });
+    }
+
+    if (missing.length > 0) {
+      setValidationModal({
+        visible: true,
+        title: 'Incomplete Details',
+        message: 'Please complete all required guest and traveler details.',
+        missingFields: missing,
+        actionText: 'Complete Details',
+        onAction: () => {
+          setValidationModal((prev) => ({ ...prev, visible: false }));
+          scrollToStep(1);
+        },
+      });
       return;
     }
+
+    // Pre-checkout room availability verification for hotel bookings
+    if (!isPackageCheckout) {
+      try {
+        const avail = await checkRoomAvailability(pkgId, checkIn, checkOut, roomsCount, roomName);
+        if (!avail.isAvailable) {
+          Alert.alert(
+            'Room Unavailable',
+            avail.message || `Sorry, the selected room is no longer available for these dates (${checkIn} - ${checkOut}). Please modify dates or room count.`
+          );
+          return;
+        }
+      } catch (err) {
+        console.warn('Room availability check warning:', err);
+      }
+    }
+
     setIsRazorpayModalOpen(true);
   };
 
-  const handleExecuteRazorpayPayment = async () => {
+  const handleExecuteRazorpayPayment = () => {
+    setIsRazorpayModalOpen(false);
+    setIsRazorpayWebViewVisible(true);
+  };
+
+  const handleRazorpaySuccess = async (data: RazorpaySuccessData) => {
+    setIsRazorpayWebViewVisible(false);
     setIsRazorpayProcessing(true);
     try {
-      const checkInDay = Number(checkIn.split(' ')[0]) || 1;
-      const checkOutDay = Number(checkOut.split(' ')[0]) || checkInDay + 1;
-      await collectRazorpayPayment({
-        amount: grandTotal,
-        name: `${firstName} ${lastName}`.trim(),
-        email: email.trim(),
-        contact: phone.trim(),
-        description: itemTitle,
-        bookingId: pkgId,
-        bookingType,
+      const selectedAddonsList = selectedAddons.map((id) => {
+        const item = activeAddonsList.find((a) => (a.id || a.$id) === id);
+        const isPerPerson = typeof item?.description === 'string' && item.description.toLowerCase().includes('per person');
+        const itemPrice = (Number(item?.price) || 0) * (isPerPerson ? initialGuests : 1);
+        return {
+          title: item?.title || item?.name || 'Add-on',
+          price: itemPrice,
+        };
       });
+
+      let finalSpecialRequests = specialRequests.trim();
+      if (isPackageCheckout && departureCity) {
+        finalSpecialRequests = `Departure City: ${departureCity}${finalSpecialRequests ? `\n${finalSpecialRequests}` : ''}`;
+      }
+      if (arrivalTime) finalSpecialRequests += `\nArrival Time: ${arrivalTime}`;
+      if (smokingPreference) finalSpecialRequests += `\nSmoking Preference: ${smokingPreference}`;
+      if (airportPickupRequired) finalSpecialRequests += `\nAirport Pickup: Requested (+ Additional charges apply)`;
+      if (selectedAddonsList.length > 0) {
+        finalSpecialRequests += `\nAdd-ons: ${selectedAddonsList.map((a) => `${a.title} (₹${a.price})`).join(', ')}`;
+      }
+      if (additionalTravelers.some((t) => t.fullName.trim())) {
+        finalSpecialRequests +=
+          `\n\n--- Additional Travelers ---` +
+          additionalTravelers
+            .filter((t) => t.fullName.trim())
+            .map((t, idx) => `\nGuest ${idx + 1}: ${t.fullName} (${t.gender || 'Not specified'}, DOB: ${t.dateOfBirth || 'N/A'})`)
+            .join('');
+      }
+
       const bookingId = await createBooking({
         userId: user!.$id,
         hotelId: pkgId,
+        roomId: (params.roomId as string) || (params.roomName as string) || roomName,
+        roomName: roomName,
         hotelName: itemTitle,
         hotelLocation: location,
         hotelImage: image,
         checkIn,
         checkOut,
-        nights: Math.max(1, checkOutDay - checkInDay),
+        nights: nightsCount,
+        rooms: roomsCount,
         adults: initialGuests,
         guest: {
           firstName: firstName.trim(),
           lastName: lastName.trim(),
           email: email.trim(),
-          phone: phone.trim(),
-          specialRequests: [specialRequests, arrivalTime ? `Arrival time: ${arrivalTime}` : '', companions.length ? `Additional guests: ${companions.join(', ')}` : ''].filter(Boolean).join('\n'),
+          phone: `${phoneCountry.dialCode} ${phone.trim()}`,
+          country: selectedCountry.name,
+          state: stateProvince.trim(),
+          specialRequests: finalSpecialRequests.trim(),
         },
         payment: {
           roomPrice: baseRate,
@@ -294,7 +477,6 @@ export default function CheckoutScreen() {
       });
 
       setIsRazorpayProcessing(false);
-      setIsRazorpayModalOpen(false);
 
       // Trigger local push notification for booking confirmation
       sendLocalNotification({
@@ -314,14 +496,27 @@ export default function CheckoutScreen() {
         },
       });
     } catch (error) {
-      console.error('Failed to create booking:', error);
+      console.error('Failed to create booking after payment:', error);
       setIsRazorpayProcessing(false);
-      Alert.alert('Booking failed', 'We could not confirm your booking. Please try again.');
+      Alert.alert(
+        'Booking Confirmation Alert',
+        `Payment was successful (Payment ID: ${data.razorpay_payment_id}), but saving your booking encountered an issue. Please contact support with this reference.`
+      );
     }
   };
 
+  const handleRazorpayFailure = (error?: { description?: string }) => {
+    setIsRazorpayWebViewVisible(false);
+    setIsRazorpayProcessing(false);
+  };
+
+  const handleRazorpayClose = () => {
+    setIsRazorpayWebViewVisible(false);
+    setIsRazorpayProcessing(false);
+  };
+
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor={Colors.brand.navy} />
 
       {/* Top Professional Header */}
@@ -343,44 +538,95 @@ export default function CheckoutScreen() {
         </View>
       </View>
 
-      <ScrollView ref={scrollRef} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        ref={scrollRef}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: 120 + bottomBarPadding }]}
+        showsVerticalScrollIndicator={false}
+      >
         
         {/* Step Indicator Tabs */}
-        <View style={styles.stepperCard}>
-          <TouchableOpacity
-            style={[styles.stepTab, activeStep === 1 && styles.stepTabActive]}
-            onPress={() => scrollToStep(1)}
-          >
-            <View style={[styles.stepBadge, activeStep === 1 && styles.stepBadgeActive]}>
-              <Text style={[styles.stepBadgeText, activeStep === 1 && styles.stepBadgeTextActive]}>1</Text>
+        {isPackageCheckout ? (
+          <View style={styles.roomStepperCard}>
+            <View style={styles.roomStepperWrapper}>
+              <View style={styles.roomStepperLinesLayer}>
+                <View style={[styles.roomConnectorSegment, { left: '16.6%', width: '33.3%', backgroundColor: Colors.brand.coral }]} />
+                <View style={[styles.roomConnectorSegment, { left: '50%', width: '33.3%', backgroundColor: '#E2E8F0' }]} />
+              </View>
+
+              <View style={styles.roomStepsRow}>
+                {/* Step 1: Package Selected */}
+                <View style={styles.roomStepItem}>
+                  <View style={styles.roomStepCircleCompleted}>
+                    <Check color="#FFFFFF" size={13} strokeWidth={2.8} />
+                  </View>
+                  <Text style={styles.roomStepLabelActive} numberOfLines={1}>Package Selected</Text>
+                </View>
+
+                {/* Step 2: Guest Details (Active) */}
+                <View style={styles.roomStepItem}>
+                  <View style={styles.roomStepCircleActive}>
+                    <View style={styles.roomStepInnerDot} />
+                  </View>
+                  <Text style={styles.roomStepLabelActive} numberOfLines={1}>Guest Details</Text>
+                </View>
+
+                {/* Step 3: Confirmation (Upcoming) */}
+                <View style={styles.roomStepItem}>
+                  <View style={styles.roomStepCircleInactive}>
+                    <Text style={styles.roomStepNumberText}>3</Text>
+                  </View>
+                  <Text style={styles.roomStepLabelInactive} numberOfLines={1}>Confirmation</Text>
+                </View>
+              </View>
             </View>
-            <Text style={[styles.stepLabel, activeStep === 1 && styles.stepLabelActive]}>Guest Info</Text>
-          </TouchableOpacity>
+          </View>
+        ) : (
+          <View style={styles.roomStepperCard}>
+            <View style={styles.roomStepperWrapper}>
+              {/* Connecting Lines Layer behind circles */}
+              <View style={styles.roomStepperLinesLayer}>
+                <View style={[styles.roomConnectorSegment, { left: '12.5%', width: '25%', backgroundColor: Colors.brand.coral }]} />
+                <View style={[styles.roomConnectorSegment, { left: '37.5%', width: '25%', backgroundColor: Colors.brand.coral }]} />
+                <View style={[styles.roomConnectorSegment, { left: '62.5%', width: '25%', backgroundColor: '#E2E8F0' }]} />
+              </View>
 
-          <View style={styles.stepConnector} />
+              {/* 4 Step Items */}
+              <View style={styles.roomStepsRow}>
+                {/* Step 1: Hotel Selected */}
+                <View style={styles.roomStepItem}>
+                  <View style={styles.roomStepCircleCompleted}>
+                    <Check color="#FFFFFF" size={13} strokeWidth={2.8} />
+                  </View>
+                  <Text style={styles.roomStepLabelActive} numberOfLines={1}>Hotel Selected</Text>
+                </View>
 
-          <TouchableOpacity
-            style={[styles.stepTab, activeStep === 2 && styles.stepTabActive]}
-            onPress={() => scrollToStep(2)}
-          >
-            <View style={[styles.stepBadge, activeStep === 2 && styles.stepBadgeActive]}>
-              <Text style={[styles.stepBadgeText, activeStep === 2 && styles.stepBadgeTextActive]}>2</Text>
+                {/* Step 2: Room Selected */}
+                <View style={styles.roomStepItem}>
+                  <View style={styles.roomStepCircleCompleted}>
+                    <Check color="#FFFFFF" size={13} strokeWidth={2.8} />
+                  </View>
+                  <Text style={styles.roomStepLabelActive} numberOfLines={1}>Room Selected</Text>
+                </View>
+
+                {/* Step 3: Guest Details (Active) */}
+                <View style={styles.roomStepItem}>
+                  <View style={styles.roomStepCircleActive}>
+                    <View style={styles.roomStepInnerDot} />
+                  </View>
+                  <Text style={styles.roomStepLabelActive} numberOfLines={1}>Guest Details</Text>
+                </View>
+
+                {/* Step 4: Confirmation (Upcoming) */}
+                <View style={styles.roomStepItem}>
+                  <View style={styles.roomStepCircleInactive}>
+                    <Text style={styles.roomStepNumberText}>4</Text>
+                  </View>
+                  <Text style={styles.roomStepLabelInactive} numberOfLines={1}>Confirmation</Text>
+                </View>
+              </View>
             </View>
-            <Text style={[styles.stepLabel, activeStep === 2 && styles.stepLabelActive]}>Add-ons</Text>
-          </TouchableOpacity>
-
-          <View style={styles.stepConnector} />
-
-          <TouchableOpacity
-            style={[styles.stepTab, activeStep === 3 && styles.stepTabActive]}
-            onPress={() => scrollToStep(3)}
-          >
-            <View style={[styles.stepBadge, activeStep === 3 && styles.stepBadgeActive]}>
-              <Text style={[styles.stepBadgeText, activeStep === 3 && styles.stepBadgeTextActive]}>3</Text>
-            </View>
-            <Text style={[styles.stepLabel, activeStep === 3 && styles.stepLabelActive]}>Payment</Text>
-          </TouchableOpacity>
-        </View>
+          </View>
+        )}
 
         {/* Reservation Hero Card */}
         <View style={styles.reservationCard}>
@@ -397,7 +643,11 @@ export default function CheckoutScreen() {
                 </View>
                 <View style={styles.starRatingPill}>
                   <Star color="#F59E0B" fill="#F59E0B" size={10} />
-                  <Text style={styles.starRatingText}>4.98</Text>
+                  <Text style={styles.starRatingText}>
+                    {Number(params.rating || realProperty?.rating || 0) > 0
+                      ? Number(params.rating || realProperty?.rating).toFixed(1)
+                      : 'New'}
+                  </Text>
                 </View>
               </View>
 
@@ -411,50 +661,80 @@ export default function CheckoutScreen() {
 
           <View style={styles.reservationDivider} />
 
-          {/* 2x2 Date & Traveler Info */}
-          <View style={styles.reservationGrid}>
-            <View style={styles.gridBox}>
-              <Calendar color={Colors.brand.coral} size={16} />
-              <View style={{ marginLeft: 8 }}>
-                <Text style={styles.gridLabel}>CHECK-IN</Text>
-                <Text style={styles.gridVal}>{checkIn}</Text>
+          {/* Date & Traveler Info */}
+          {isPackageCheckout ? (
+            <View style={styles.reservationGrid}>
+              <View style={styles.gridBox}>
+                <MapPin color={Colors.brand.coral} size={16} />
+                <View style={{ marginLeft: 8, flex: 1 }}>
+                  <Text style={styles.gridLabel}>DEPARTURE CITY</Text>
+                  <Text style={styles.gridVal} numberOfLines={1}>
+                    {typeof departureCity === 'string' ? departureCity : ((departureCity as any)?.cityName || 'Haldwani')}
+                  </Text>
+                </View>
               </View>
-            </View>
 
-            <View style={styles.gridBox}>
-              <Calendar color={Colors.brand.coral} size={16} />
-              <View style={{ marginLeft: 8 }}>
-                <Text style={styles.gridLabel}>CHECK-OUT</Text>
-                <Text style={styles.gridVal}>{checkOut}</Text>
+              <View style={styles.gridBox}>
+                <Calendar color={Colors.brand.coral} size={16} />
+                <View style={{ marginLeft: 8 }}>
+                  <Text style={styles.gridLabel}>START DATE</Text>
+                  <Text style={styles.gridVal}>{checkIn}</Text>
+                </View>
               </View>
-            </View>
 
-            <View style={styles.gridBox}>
-              <Users color={Colors.brand.coral} size={16} />
-              <View style={{ marginLeft: 8 }}>
-                <Text style={styles.gridLabel}>TRAVELERS</Text>
-                <Text style={styles.gridVal}>{initialGuests} Adult Guests</Text>
+              <View style={styles.gridBox}>
+                <Users color={Colors.brand.coral} size={16} />
+                <View style={{ marginLeft: 8 }}>
+                  <Text style={styles.gridLabel}>TRAVELERS</Text>
+                  <Text style={styles.gridVal}>{initialGuests} {initialGuests === 1 ? 'Guest' : 'Guests'}</Text>
+                </View>
               </View>
             </View>
+          ) : (
+            <View style={styles.reservationGrid}>
+              <View style={styles.gridBox}>
+                <Calendar color={Colors.brand.coral} size={16} />
+                <View style={{ marginLeft: 8 }}>
+                  <Text style={styles.gridLabel}>CHECK-IN</Text>
+                  <Text style={styles.gridVal}>{checkIn}</Text>
+                </View>
+              </View>
 
-            <View style={styles.gridBox}>
-              <BedDouble color={Colors.brand.coral} size={16} />
-              <View style={{ marginLeft: 8 }}>
-                <Text style={styles.gridLabel}>ROOM TYPE</Text>
-                <Text style={styles.gridVal}>{roomName}</Text>
+              <View style={styles.gridBox}>
+                <Calendar color={Colors.brand.coral} size={16} />
+                <View style={{ marginLeft: 8 }}>
+                  <Text style={styles.gridLabel}>CHECK-OUT</Text>
+                  <Text style={styles.gridVal}>{checkOut}</Text>
+                </View>
+              </View>
+
+              <View style={styles.gridBox}>
+                <Users color={Colors.brand.coral} size={16} />
+                <View style={{ marginLeft: 8 }}>
+                  <Text style={styles.gridLabel}>TRAVELERS</Text>
+                  <Text style={styles.gridVal}>{initialGuests} Adult Guests</Text>
+                </View>
+              </View>
+
+              <View style={styles.gridBox}>
+                <BedDouble color={Colors.brand.coral} size={16} />
+                <View style={{ marginLeft: 8 }}>
+                  <Text style={styles.gridLabel}>ROOM TYPE</Text>
+                  <Text style={styles.gridVal}>{roomName}</Text>
+                </View>
               </View>
             </View>
-          </View>
+          )}
         </View>
 
-        {/* Section 1: Guest Information */}
+        {/* Section 1: Guest Information (Matching User Portal GuestDetailsForm) */}
         <View style={styles.sectionCard} onLayout={(e) => { guestSectionY.current = e.nativeEvent.layout.y; }}>
           <View style={styles.sectionHeaderRow}>
             <View style={styles.sectionIconBg}>
               <User color={Colors.brand.coral} size={18} />
             </View>
             <View>
-              <Text style={styles.sectionTitle}>Primary Guest Details</Text>
+              <Text style={styles.sectionTitle}>Guest Details</Text>
               <Text style={styles.sectionSubTitle}>Used for instant confirmation voucher & check-in</Text>
             </View>
           </View>
@@ -465,7 +745,7 @@ export default function CheckoutScreen() {
               <View style={styles.inputWrapper}>
                 <TextInput
                   style={styles.textInput}
-                  placeholder="First name"
+                  placeholder="John"
                   placeholderTextColor="#94A3B8"
                   value={firstName}
                   onChangeText={setFirstName}
@@ -478,7 +758,7 @@ export default function CheckoutScreen() {
               <View style={styles.inputWrapper}>
                 <TextInput
                   style={styles.textInput}
-                  placeholder="Last name"
+                  placeholder="Doe"
                   placeholderTextColor="#94A3B8"
                   value={lastName}
                   onChangeText={setLastName}
@@ -493,153 +773,390 @@ export default function CheckoutScreen() {
               <Mail color="#64748B" size={16} style={{ marginRight: 8 }} />
               <TextInput
                 style={styles.textInput}
-                placeholder="name@domain.com"
+                placeholder="john.doe@example.com"
                 placeholderTextColor="#94A3B8"
                 keyboardType="email-address"
+                autoCapitalize="none"
                 value={email}
                 onChangeText={setEmail}
               />
             </View>
           </View>
 
+          {/* Phone Number with Country Flag & Dial Code Dropdown */}
           <View style={styles.fieldContainer}>
-            <Text style={styles.fieldLabel}>Mobile Phone Number *</Text>
-            <View style={styles.inputWrapper}>
-              <Phone color="#64748B" size={16} style={{ marginRight: 8 }} />
-              <TextInput
-                style={styles.textInput}
-                placeholder="+91 98765 43210"
-                placeholderTextColor="#94A3B8"
-                keyboardType="phone-pad"
-                value={phone}
-                onChangeText={setPhone}
-              />
-            </View>
-          </View>
+            <Text style={styles.fieldLabel}>Phone Number *</Text>
+            <View style={{ flexDirection: 'row', gap: 8 }}>
+              <TouchableOpacity
+                style={styles.phoneDialCodeBtn}
+                onPress={() => setIsPhoneCountryModalOpen(true)}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.phoneFlagText}>{phoneCountry.flag}</Text>
+                <Text style={styles.phoneDialCodeText}>{phoneCountry.dialCode}</Text>
+                <ChevronDown color="#64748B" size={14} />
+              </TouchableOpacity>
 
-          <View style={styles.fieldContainer}>
-            <Text style={styles.fieldLabel}>Estimated Arrival Time</Text>
-            <View style={styles.inputWrapper}>
-              <Clock color="#64748B" size={16} style={{ marginRight: 8 }} />
-              <TextInput
-                style={styles.textInput}
-                value={arrivalTime}
-                onChangeText={setArrivalTime}
-              />
-            </View>
-          </View>
-
-          <View style={styles.fieldContainer}>
-            <Text style={styles.fieldLabel}>Special Requests (Optional)</Text>
-            <TextInput
-              style={[styles.inputWrapper, { height: 75, textAlignVertical: 'top', paddingTop: 10 }]}
-              multiline
-              placeholder="Tell us any specific requests or instructions..."
-              placeholderTextColor="#94A3B8"
-              value={specialRequests}
-              onChangeText={setSpecialRequests}
-            />
-
-            {/* Quick Request Chips */}
-            <View style={styles.quickChipsRow}>
-              {QUICK_REQUEST_CHIPS.map((chip, idx) => (
-                <TouchableOpacity
-                  key={idx}
-                  style={styles.quickChipBtn}
-                  onPress={() => addQuickRequest(chip)}
-                >
-                  <Plus color={Colors.brand.navy} size={11} style={{ marginRight: 3 }} />
-                  <Text style={styles.quickChipText}>{chip}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-        </View>
-
-        {/* Section 2: Companion Travelers */}
-        <View style={styles.sectionCard}>
-          <View style={styles.sectionHeaderRow}>
-            <View style={styles.sectionIconBg}>
-              <Users color={Colors.brand.coral} size={18} />
-            </View>
-            <View>
-              <Text style={styles.sectionTitle}>Companions & Guest List</Text>
-              <Text style={styles.sectionSubTitle}>Add fellow travelers staying with you</Text>
-            </View>
-          </View>
-
-          <View style={styles.companionBadgesList}>
-            {companions.map((comp, idx) => (
-              <View key={idx} style={styles.companionPill}>
-                <CheckCircle2 color={Colors.brand.coral} size={14} style={{ marginRight: 6 }} />
-                <Text style={styles.companionPillText}>{comp}</Text>
-                {idx > 0 && (
-                  <TouchableOpacity onPress={() => removeCompanion(idx)} style={{ marginLeft: 6 }}>
-                    <Text style={styles.removeCompanionX}>✕</Text>
-                  </TouchableOpacity>
-                )}
+              <View style={[styles.inputWrapper, { flex: 1 }]}>
+                <TextInput
+                  style={styles.textInput}
+                  placeholder={phoneCountry.dialCode === '+1' ? '(555) 000-0000' : phoneCountry.dialCode === '+91' ? '98765 43210' : '555 000 0000'}
+                  placeholderTextColor="#94A3B8"
+                  keyboardType="phone-pad"
+                  value={phone}
+                  onChangeText={(val) => setPhone(formatPhoneNumber(val, phoneCountry.dialCode))}
+                />
               </View>
-            ))}
+            </View>
           </View>
 
-          <View style={styles.addCompanionBar}>
-            <TextInput
-              style={[styles.inputWrapper, { flex: 1, height: 42 }]}
-              placeholder="Companion Full Name"
-              placeholderTextColor="#94A3B8"
-              value={companionInput}
-              onChangeText={setCompanionInput}
-            />
-            <TouchableOpacity style={styles.addCompanionBtn} onPress={addCompanion}>
-              <Plus color="#FFFFFF" size={15} />
-              <Text style={styles.addCompanionBtnText}>Add</Text>
+          {/* State / Province */}
+          <View style={styles.fieldContainer}>
+            <Text style={styles.fieldLabel}>State / Province</Text>
+            <View style={styles.inputWrapper}>
+              <TextInput
+                style={styles.textInput}
+                placeholder="e.g. Maharashtra"
+                placeholderTextColor="#94A3B8"
+                value={stateProvince}
+                onChangeText={setStateProvince}
+              />
+            </View>
+          </View>
+
+          {/* Country / Region Picker Button */}
+          <View style={styles.fieldContainer}>
+            <Text style={styles.fieldLabel}>Country / Region</Text>
+            <TouchableOpacity
+              style={styles.countryPickerBtn}
+              onPress={() => setIsCountryModalOpen(true)}
+              activeOpacity={0.8}
+            >
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <MapPin color="#64748B" size={16} />
+                <Text style={styles.countryPickerFlag}>{selectedCountry.flag}</Text>
+                <Text style={styles.countryPickerName}>{selectedCountry.name}</Text>
+              </View>
+              <ChevronDown color="#64748B" size={16} />
             </TouchableOpacity>
           </View>
         </View>
 
-        {/* Section 3: Curated Add-ons & Experiences */}
-        <View style={styles.sectionCard} onLayout={(e) => { addonsSectionY.current = e.nativeEvent.layout.y; }}>
-          <View style={styles.sectionHeaderRow}>
-            <View style={styles.sectionIconBg}>
-              <Zap color={Colors.brand.coral} size={18} />
+        {/* Section: Additional Requests (Only for Hotel Stays, NOT for packages) */}
+        {!isPackageCheckout && (
+          <View style={styles.sectionCard}>
+          <TouchableOpacity
+            style={styles.accordionHeaderBtn}
+            activeOpacity={0.8}
+            onPress={() => setIsAdditionalRequestsExpanded((prev) => !prev)}
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+              <View style={styles.sectionIconBg}>
+                <MessageSquare color={Colors.brand.coral} size={18} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.sectionTitle}>Additional Requests</Text>
+                <Text style={styles.sectionSubTitle}>Arrival time, smoking preference, and special requests</Text>
+              </View>
             </View>
-            <View>
-              <Text style={styles.sectionTitle}>Curated Add-on Experiences</Text>
-              <Text style={styles.sectionSubTitle}>Personalize your upcoming journey with luxury perks</Text>
-            </View>
-          </View>
+            <ChevronDown
+              color="#64748B"
+              size={18}
+              style={{ transform: [{ rotate: isAdditionalRequestsExpanded ? '180deg' : '0deg' }] }}
+            />
+          </TouchableOpacity>
 
-          <View style={styles.addonsGridContainer}>
-            {CURATED_ADDONS.map((addon) => {
-              const isSelected = selectedAddons.includes(addon.id);
-              return (
+          {isAdditionalRequestsExpanded && (
+            <View style={styles.accordionContentContainer}>
+              {/* Estimated Arrival Time Picker */}
+              <View style={styles.fieldContainer}>
+                <Text style={styles.fieldLabel}>Arrival Time</Text>
                 <TouchableOpacity
-                  key={addon.id}
-                  style={[styles.addonBoxCard, isSelected && styles.addonBoxCardActive]}
-                  activeOpacity={0.88}
-                  onPress={() => toggleAddon(addon.id)}
+                  style={styles.arrivalTimeBtn}
+                  onPress={() => setIsArrivalTimePickerOpen(true)}
+                  activeOpacity={0.8}
                 >
-                  <View style={styles.addonTopHeader}>
-                    <View style={[styles.addonCheckCircle, isSelected && styles.addonCheckCircleActive]}>
-                      {isSelected && <Check color="#FFFFFF" size={12} />}
-                    </View>
-                    <View style={styles.addonTagPill}>
-                      <Text style={styles.addonTagText}>{addon.tag}</Text>
-                    </View>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                    <Clock color="#64748B" size={16} />
+                    <Text style={styles.arrivalSelectedText}>{arrivalTime || 'Select Arrival Time'}</Text>
                   </View>
-
-                  <Text style={styles.addonCardTitle}>{addon.title}</Text>
-                  <Text style={styles.addonCardSub}>{addon.subtitle}</Text>
-
-                  <View style={styles.addonFooterRow}>
-                    <Text style={styles.addonPriceTag}>+₹{addon.price.toLocaleString('en-IN')}</Text>
-                    <Text style={styles.addonSelectText}>{isSelected ? 'Added ✓' : '+ Add'}</Text>
-                  </View>
+                  <ChevronDown color="#64748B" size={16} />
                 </TouchableOpacity>
-              );
-            })}
-          </View>
+              </View>
+
+              {/* Smoking Preference */}
+              <View style={styles.fieldContainer}>
+                <Text style={styles.fieldLabel}>Smoking Preference</Text>
+                <View style={styles.smokingRadioGroup}>
+                  <TouchableOpacity
+                    style={[
+                      styles.smokingRadioOption,
+                      smokingPreference === 'Non-smoking' && styles.smokingRadioOptionActive,
+                    ]}
+                    onPress={() => setSmokingPreference('Non-smoking')}
+                    activeOpacity={0.8}
+                  >
+                    <View
+                      style={[
+                        styles.radioCircle,
+                        smokingPreference === 'Non-smoking' && styles.radioCircleActive,
+                      ]}
+                    >
+                      {smokingPreference === 'Non-smoking' && <View style={styles.radioInnerDot} />}
+                    </View>
+                    <Text
+                      style={[
+                        styles.smokingOptionText,
+                        smokingPreference === 'Non-smoking' && styles.smokingOptionTextActive,
+                      ]}
+                    >
+                      Non-smoking
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[
+                      styles.smokingRadioOption,
+                      smokingPreference === 'Smoking' && styles.smokingRadioOptionActive,
+                    ]}
+                    onPress={() => setSmokingPreference('Smoking')}
+                    activeOpacity={0.8}
+                  >
+                    <View
+                      style={[
+                        styles.radioCircle,
+                        smokingPreference === 'Smoking' && styles.radioCircleActive,
+                      ]}
+                    >
+                      {smokingPreference === 'Smoking' && <View style={styles.radioInnerDot} />}
+                    </View>
+                    <Text
+                      style={[
+                        styles.smokingOptionText,
+                        smokingPreference === 'Smoking' && styles.smokingOptionTextActive,
+                      ]}
+                    >
+                      Smoking
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              {/* Special Requests textarea */}
+              <View style={styles.fieldContainer}>
+                <Text style={styles.fieldLabel}>Special Requests (Optional)</Text>
+                <TextInput
+                  style={[styles.inputWrapper, { height: 85, textAlignVertical: 'top', paddingTop: 10 }]}
+                  multiline
+                  placeholder="e.g. Quiet room, high floor, anniversary celebration..."
+                  placeholderTextColor="#94A3B8"
+                  value={specialRequests}
+                  onChangeText={setSpecialRequests}
+                />
+
+                {/* Quick Request Chips */}
+                <View style={styles.quickChipsRow}>
+                  {QUICK_REQUEST_CHIPS.map((chip, idx) => (
+                    <TouchableOpacity
+                      key={idx}
+                      style={styles.quickChipBtn}
+                      onPress={() => addQuickRequest(chip)}
+                    >
+                      <Plus color={Colors.brand.navy} size={11} style={{ marginRight: 3 }} />
+                      <Text style={styles.quickChipText}>{chip}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+
+              {/* Airport Pickup Required Card */}
+              <TouchableOpacity
+                style={[
+                  styles.airportPickupCard,
+                  airportPickupRequired && styles.airportPickupCardActive,
+                ]}
+                activeOpacity={0.85}
+                onPress={() => setAirportPickupRequired((prev) => !prev)}
+              >
+                <View
+                  style={[
+                    styles.airportCheckbox,
+                    airportPickupRequired && styles.airportCheckboxActive,
+                  ]}
+                >
+                  {airportPickupRequired && <Check color="#FFFFFF" size={13} strokeWidth={3} />}
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.airportPickupTitle}>Airport Pickup Required</Text>
+                  <Text style={styles.airportPickupSubtitle}>
+                    We will contact you to arrange the details. Additional charges may apply.
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
+      )}
+
+        {/* Section: Traveler Information (Matching User Portal TravelersForm for extra guests) */}
+        {extraGuestsCount > 0 && (
+          <View style={styles.sectionCard}>
+            <TouchableOpacity
+              style={styles.accordionHeaderBtn}
+              activeOpacity={0.8}
+              onPress={() => setIsTravelersExpanded((prev) => !prev)}
+            >
+              <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                <View style={styles.sectionIconBg}>
+                  <Users color={Colors.brand.coral} size={18} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.sectionTitle}>Traveler Information</Text>
+                  <Text style={styles.sectionSubTitle}>
+                    Details for {extraGuestsCount} additional guest{extraGuestsCount > 1 ? 's' : ''}
+                  </Text>
+                </View>
+              </View>
+              <ChevronDown
+                color="#64748B"
+                size={18}
+                style={{ transform: [{ rotate: isTravelersExpanded ? '180deg' : '0deg' }] }}
+              />
+            </TouchableOpacity>
+
+            {isTravelersExpanded && (
+              <View style={styles.accordionContentContainer}>
+                {additionalTravelers.map((traveler, index) => (
+                  <View key={index} style={styles.travelerCard}>
+                    <View style={styles.travelerHeaderRow}>
+                      <View style={styles.travelerNumberBadge}>
+                        <Text style={styles.travelerNumberText}>{index + 1}</Text>
+                      </View>
+                      <Text style={styles.travelerHeaderTitle}>Guest {index + 1}</Text>
+                    </View>
+
+                    <View style={styles.fieldContainer}>
+                      <Text style={styles.fieldLabel}>Full Name</Text>
+                      <View style={styles.inputWrapper}>
+                        <TextInput
+                          style={styles.textInput}
+                          placeholder="Full Name"
+                          placeholderTextColor="#94A3B8"
+                          value={traveler.fullName}
+                          onChangeText={(val) => updateTraveler(index, 'fullName', val)}
+                        />
+                      </View>
+                    </View>
+
+                    <View style={styles.fieldContainer}>
+                      <Text style={styles.fieldLabel}>Gender</Text>
+                      <View style={styles.genderButtonGroup}>
+                        {['Male', 'Female', 'Other'].map((g) => {
+                          const isSelected = traveler.gender === g;
+                          return (
+                            <TouchableOpacity
+                              key={g}
+                              style={[styles.genderBtn, isSelected && styles.genderBtnActive]}
+                              onPress={() => updateTraveler(index, 'gender', g)}
+                              activeOpacity={0.8}
+                            >
+                              <Text style={[styles.genderBtnText, isSelected && styles.genderBtnTextActive]}>
+                                {g}
+                              </Text>
+                            </TouchableOpacity>
+                          );
+                        })}
+                      </View>
+                    </View>
+
+                    <View style={styles.fieldContainer}>
+                      <Text style={styles.fieldLabel}>Date of Birth</Text>
+                      <View style={styles.inputWrapper}>
+                        <TextInput
+                          style={styles.textInput}
+                          placeholder="DD/MM/YYYY"
+                          placeholderTextColor="#94A3B8"
+                          value={traveler.dateOfBirth}
+                          onChangeText={(val) => updateTraveler(index, 'dateOfBirth', val)}
+                        />
+                      </View>
+                    </View>
+                  </View>
+                ))}
+              </View>
+            )}
+          </View>
+        )}
+
+        {/* Section 3: Curated Add-ons & Experiences (Only for Hotel Stays when added by owner, NOT for packages) */}
+        {!isPackageCheckout && activeAddonsList.length > 0 && (
+          <View style={styles.sectionCard} onLayout={(e) => { addonsSectionY.current = e.nativeEvent.layout.y; }}>
+            <View style={styles.sectionHeaderRow}>
+              <View style={styles.sectionIconBg}>
+                <Zap color={Colors.brand.coral} size={18} />
+              </View>
+              <View>
+                <Text style={styles.sectionTitle}>Enhance Your Stay</Text>
+                <Text style={styles.sectionSubTitle}>Select premium add-ons for a better experience</Text>
+              </View>
+            </View>
+
+            <View style={styles.addonsGridContainer}>
+              {activeAddonsList.map((addon, index) => {
+                const addonId = addon.id || addon.$id || `addon-${index}`;
+                const addonTitle = addon.title || addon.name || 'Add-on Service';
+                const isSelected = selectedAddons.includes(addonId);
+                const Icon = getIconForTitle(addonTitle);
+                const isPerPerson = typeof addon.description === 'string' && addon.description.toLowerCase().includes('per person');
+                const displayBasePrice = Number(addon.price) || 0;
+                const totalAddonPrice = isPerPerson ? displayBasePrice * initialGuests : displayBasePrice;
+
+                return (
+                  <TouchableOpacity
+                    key={addonId}
+                    style={[styles.portalAddonCard, isSelected && styles.portalAddonCardActive]}
+                    activeOpacity={0.88}
+                    onPress={() => toggleAddon(addonId)}
+                  >
+                    <View style={[styles.portalAddonIconBox, isSelected && styles.portalAddonIconBoxActive]}>
+                      <Icon color={isSelected ? '#FFFFFF' : Colors.brand.navy} size={20} />
+                    </View>
+
+                    <View style={{ flex: 1, marginRight: 8 }}>
+                      <Text style={styles.portalAddonTitle}>{addonTitle}</Text>
+                      {addon.description ? (
+                        <Text style={styles.portalAddonDesc} numberOfLines={2}>{addon.description}</Text>
+                      ) : addon.subtitle ? (
+                        <Text style={styles.portalAddonDesc} numberOfLines={2}>{addon.subtitle}</Text>
+                      ) : null}
+                    </View>
+
+                    <View style={{ alignItems: 'flex-end', justifyContent: 'center', gap: 6 }}>
+                      <View style={{ alignItems: 'flex-end' }}>
+                        <Text style={styles.portalAddonPriceText}>
+                          ₹{totalAddonPrice.toLocaleString('en-IN')}
+                        </Text>
+                        {isPerPerson && initialGuests > 1 && (
+                          <Text style={styles.portalAddonPerPersonLabel}>
+                            (₹{displayBasePrice} × {initialGuests})
+                          </Text>
+                        )}
+                      </View>
+
+                      <View style={[styles.portalAddonCheckBadge, isSelected && styles.portalAddonCheckBadgeActive]}>
+                        {isSelected ? (
+                          <Check color="#FFFFFF" size={13} strokeWidth={2.8} />
+                        ) : (
+                          <Plus color="#94A3B8" size={13} strokeWidth={2.8} />
+                        )}
+                      </View>
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </View>
+        )}
 
         {/* Section 4: Promo Code & Discounts */}
         <View style={styles.sectionCard}>
@@ -683,19 +1200,6 @@ export default function CheckoutScreen() {
           )}
 
           {couponError ? <Text style={styles.errorAlertText}>{couponError}</Text> : null}
-
-          {/* Quick Apply Coupons */}
-          <View style={styles.quickCouponsGrid}>
-            <TouchableOpacity style={styles.quickCouponPill} onPress={() => handleApplyCoupon('RACOONN1000')}>
-              <Text style={styles.quickCouponCode}>RACOONN1000</Text>
-              <Text style={styles.quickCouponSavings}>Save ₹1,000</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.quickCouponPill} onPress={() => handleApplyCoupon('WELCOME500')}>
-              <Text style={styles.quickCouponCode}>WELCOME500</Text>
-              <Text style={styles.quickCouponSavings}>Save ₹500</Text>
-            </TouchableOpacity>
-          </View>
         </View>
 
         {/* Section 5: Itemized Price Summary */}
@@ -703,11 +1207,15 @@ export default function CheckoutScreen() {
           <Text style={styles.sectionTitle}>Price Summary</Text>
 
           <View style={styles.priceRowItem}>
-            <Text style={styles.priceRowLabel}>Room Charges ({roomsCount} Room × {nightsCount} Night)</Text>
+            <Text style={styles.priceRowLabel}>
+              {isPackageCheckout
+                ? 'Package Price (Stays + Food + Activities)'
+                : `Room Charges (${roomsCount} Room × ${nightsCount} Night)`}
+            </Text>
             <Text style={styles.priceRowVal}>₹{roomChargesSubtotal.toLocaleString('en-IN')}</Text>
           </View>
 
-          {addonsTotal > 0 && (
+          {!isPackageCheckout && addonsTotal > 0 && (
             <View style={styles.priceRowItem}>
               <Text style={styles.priceRowLabel}>Selected Add-ons ({selectedAddons.length})</Text>
               <Text style={styles.priceRowVal}>+₹{addonsTotal.toLocaleString('en-IN')}</Text>
@@ -715,11 +1223,19 @@ export default function CheckoutScreen() {
           )}
 
           <View style={styles.priceRowItem}>
-            <Text style={styles.priceRowLabel}>
-              GST ({gstCalc.gstPercentage}%) [{gstCalc.gstType}]
-            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <Text style={styles.priceRowLabel}>
+                GST ({gstCalc.gstRate}%)
+              </Text>
+              <View style={styles.gstBadgePill}>
+                <Text style={styles.gstBadgeText}>GST Extra</Text>
+              </View>
+            </View>
             <Text style={styles.priceRowVal}>+₹{gstTax.toLocaleString('en-IN')}</Text>
           </View>
+          <Text style={styles.gstItcNoteText}>
+            {gstCalc.itcNote}
+          </Text>
 
           {discountAmount > 0 && (
             <View style={styles.priceRowItem}>
@@ -738,64 +1254,81 @@ export default function CheckoutScreen() {
             <View style={{ flex: 1, paddingRight: 10 }}>
               <Text style={styles.finalTotalHeading}>Grand Total</Text>
               <Text style={[styles.finalTotalSub, { fontSize: 10.5, color: '#64748B', marginTop: 2 }]}>
-                GST calculated according to Government of India hotel accommodation tax rules.
+                {isPackageCheckout
+                  ? 'GST calculated according to Government of India tour package tax regulations (18% GST).'
+                  : 'GST calculated according to Government of India hotel accommodation tax rules.'}
               </Text>
             </View>
             <Text style={styles.finalTotalAmount}>₹{grandTotal.toLocaleString('en-IN')}</Text>
           </View>
         </View>
 
-        {/* Section 6: Cancellation Policy & GST Tax Details */}
+        {/* Section 6: Cancellation Policy */}
         <View style={styles.sectionCard}>
           <View style={styles.sectionHeaderRow}>
             <View style={styles.sectionIconBg}>
               <FileText color={Colors.brand.coral} size={18} />
             </View>
             <View>
-              <Text style={styles.sectionTitle}>Cancellation Policy & GST Tax Slabs</Text>
-              <Text style={styles.sectionSubTitle}>HSN/SAC Code: 996311 · Hotel Accommodation</Text>
+              <Text style={styles.sectionTitle}>Cancellation Policy</Text>
             </View>
           </View>
 
           <View style={{ gap: 10, marginTop: 4 }}>
-            <View style={styles.policyBulletRow}>
-              <CheckCircle2 color="#16A34A" size={14} style={{ marginTop: 2 }} />
-              <Text style={styles.policyBulletText}>
-                <Text style={{ fontWeight: '800', color: '#16A34A' }}>Free Cancellation:</Text> Cancel up to 48 hours before check-in date for a 100% full refund (including all statutory GST taxes).
-              </Text>
-            </View>
+            {isPackageCheckout ? (
+              <>
+                <View style={styles.policyBulletRow}>
+                  <CheckCircle2 color="#16A34A" size={14} style={{ marginTop: 2 }} />
+                  <Text style={styles.policyBulletText}>
+                    After booking, you can request a full refund if you cancel within 48 hours.
+                  </Text>
+                </View>
 
-            <View style={styles.policyBulletRow}>
-              <Clock color="#E86A70" size={14} style={{ marginTop: 2 }} />
-              <Text style={styles.policyBulletText}>
-                <Text style={{ fontWeight: '800', color: '#E86A70' }}>24 to 48 Hours:</Text> Cancellations made between 24 and 48 hours before check-in incur a 20% cancellation fee.
-              </Text>
-            </View>
+                <View style={styles.policyBulletRow}>
+                  <Clock color="#E86A70" size={14} style={{ marginTop: 2 }} />
+                  <Text style={styles.policyBulletText}>
+                    Cancellations made after 48 hours will be subject to the tour operator’s cancellation policy.
+                  </Text>
+                </View>
 
-            <View style={styles.policyBulletRow}>
-              <Tag color="#0F172A" size={14} style={{ marginTop: 2 }} />
-              <Text style={styles.policyBulletText}>
-                <Text style={{ fontWeight: '800', color: '#0F172A' }}>GST Tax Slabs & HSN Code 996311:</Text> Billed under Indian GST SAC Code 996311 (18% GST slab for tariffs above ₹7,500/night). CGST (9%) and SGST (9%) are itemized on your downloadable PDF tax invoice.
-              </Text>
-            </View>
-          </View>
-        </View>
+                <View style={styles.policyBulletRow}>
+                  <Mail color="#0F172A" size={14} style={{ marginTop: 2 }} />
+                  <Text style={styles.policyBulletText}>
+                    To request a cancellation, please contact us by email.
+                  </Text>
+                </View>
+              </>
+            ) : (
+              <>
+                <View style={styles.policyBulletRow}>
+                  <CheckCircle2 color="#16A34A" size={14} style={{ marginTop: 2 }} />
+                  <Text style={styles.policyBulletText}>
+                    Free cancellation within 48 hours of booking, if check-in is at least 24 hours away.
+                  </Text>
+                </View>
 
-        {/* Guarantee Banner Card */}
-        <View style={styles.trustBannerCard}>
-          <ShieldCheck color={Colors.brand.coral} size={30} />
-          <View style={{ flex: 1, marginLeft: 14 }}>
-            <Text style={styles.trustBannerTitle}>Racoonn 100% Assurance Guarantee</Text>
-            <Text style={styles.trustBannerSub}>
-              Free cancellation up to 48 hours before check-in. Instant refund processed directly to your account.
-            </Text>
+                <View style={styles.policyBulletRow}>
+                  <Clock color="#E86A70" size={14} style={{ marginTop: 2 }} />
+                  <Text style={styles.policyBulletText}>
+                    Later cancellations depend on the property’s cancellation policy.
+                  </Text>
+                </View>
+
+                <View style={styles.policyBulletRow}>
+                  <Mail color="#0F172A" size={14} style={{ marginTop: 2 }} />
+                  <Text style={styles.policyBulletText}>
+                    Contact us by email for cancellation requests.
+                  </Text>
+                </View>
+              </>
+            )}
           </View>
         </View>
 
       </ScrollView>
 
       {/* Floating Bottom Sticky CTA */}
-      <View style={styles.bottomStickyBar}>
+      <View style={[styles.bottomStickyBar, { paddingBottom: bottomBarPadding }]}>
         <View>
           <Text style={styles.bottomPriceSub}>Total Amount</Text>
           <Text style={styles.bottomPriceMain}>₹{grandTotal.toLocaleString('en-IN')}</Text>
@@ -823,7 +1356,7 @@ export default function CheckoutScreen() {
         <TouchableWithoutFeedback onPress={() => !isRazorpayProcessing && setIsRazorpayModalOpen(false)}>
           <View style={styles.razorpayOverlay}>
             <TouchableWithoutFeedback onPress={(e) => e.stopPropagation()}>
-              <View style={[styles.razorpayCardWindow, { paddingBottom: Math.max(insets.bottom + 20, 28) }]}>
+              <View style={[styles.razorpayCardWindow, { paddingBottom: Math.max(insets.bottom + 20, Platform.OS === 'android' ? 48 : 28) }]}>
                 {/* Razorpay Official Header */}
                 <View style={styles.razorpayHeader}>
                   <View style={{ flex: 1 }}>
@@ -934,7 +1467,294 @@ export default function CheckoutScreen() {
           </View>
         </TouchableWithoutFeedback>
       </Modal>
-    </SafeAreaView>
+
+      {/* Real Razorpay Web Gateway Modal */}
+      <RazorpayCheckoutModal
+        visible={isRazorpayWebViewVisible}
+        onClose={handleRazorpayClose}
+        onSuccess={handleRazorpaySuccess}
+        onFailure={handleRazorpayFailure}
+        amount={grandTotal}
+        itemTitle={`${itemTitle} (${roomName})`}
+        guestName={`${firstName} ${lastName}`.trim()}
+        guestEmail={email.trim()}
+        guestPhone={`${phoneCountry.dialCode}${phone.trim()}`}
+        bookingId={pkgId}
+        bookingType={bookingType}
+        preferredMethod={selectedRazorpayOption}
+      />
+
+      {/* Booking Confirmation Loading Overlay */}
+      <Modal visible={isRazorpayProcessing} transparent={true} animationType="fade">
+        <View style={styles.processingOverlay}>
+          <View style={styles.processingCard}>
+            <ActivityIndicator size="large" color={Colors.brand.coral} />
+            <Text style={styles.processingTitle}>Confirming Your Reservation...</Text>
+            <Text style={styles.processingSub}>Payment verified with Razorpay. Saving booking details securely.</Text>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Custom Validation & Incomplete Details Modal */}
+      <Modal
+        visible={validationModal.visible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setValidationModal((prev) => ({ ...prev, visible: false }))}
+      >
+        <TouchableWithoutFeedback onPress={() => setValidationModal((prev) => ({ ...prev, visible: false }))}>
+          <View style={styles.customAlertOverlay}>
+            <TouchableWithoutFeedback onPress={(e) => e.stopPropagation()}>
+              <View style={styles.customAlertCard}>
+                {/* Close Button top-right */}
+                <TouchableOpacity
+                  style={styles.customAlertCloseBtn}
+                  onPress={() => setValidationModal((prev) => ({ ...prev, visible: false }))}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                >
+                  <X color="#94A3B8" size={18} />
+                </TouchableOpacity>
+
+                {/* Top Glowing Icon Badge */}
+                <View style={styles.customAlertIconBg}>
+                  <AlertCircle color={Colors.brand.coral} size={30} strokeWidth={2.2} />
+                </View>
+
+                {/* Title */}
+                <Text style={styles.customAlertTitle}>{validationModal.title}</Text>
+
+                {/* Message */}
+                <Text style={styles.customAlertMessage}>{validationModal.message}</Text>
+
+                {/* Missing Fields List if any */}
+                {validationModal.missingFields && validationModal.missingFields.length > 0 && (
+                  <View style={styles.customAlertFieldsBox}>
+                    <Text style={styles.customAlertFieldsBoxHeader}>REQUIRED INFORMATION:</Text>
+                    {validationModal.missingFields.map((field, idx) => (
+                      <View key={idx} style={styles.customAlertFieldRow}>
+                        <View style={styles.customAlertFieldDot} />
+                        <Text style={styles.customAlertFieldText}>{field}</Text>
+                      </View>
+                    ))}
+                  </View>
+                )}
+
+                {/* Action CTA */}
+                <TouchableOpacity
+                  style={styles.customAlertActionBtn}
+                  activeOpacity={0.88}
+                  onPress={() => {
+                    if (validationModal.onAction) {
+                      validationModal.onAction();
+                    } else {
+                      setValidationModal((prev) => ({ ...prev, visible: false }));
+                    }
+                  }}
+                >
+                  <Text style={styles.customAlertActionText}>
+                    {validationModal.actionText || 'OK'}
+                  </Text>
+                  <ArrowRight color="#FFFFFF" size={16} />
+                </TouchableOpacity>
+
+                {/* Dismiss Link */}
+                <TouchableOpacity
+                  style={styles.customAlertDismissBtn}
+                  onPress={() => setValidationModal((prev) => ({ ...prev, visible: false }))}
+                >
+                  <Text style={styles.customAlertDismissText}>Dismiss</Text>
+                </TouchableOpacity>
+              </View>
+            </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
+
+      {/* Country Selection Modal */}
+      <Modal
+        visible={isCountryModalOpen}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setIsCountryModalOpen(false)}
+      >
+        <TouchableWithoutFeedback onPress={() => setIsCountryModalOpen(false)}>
+          <View style={styles.selectionModalOverlay}>
+            <TouchableWithoutFeedback onPress={(e) => e.stopPropagation()}>
+              <View style={[styles.selectionModalContainer, { paddingBottom: Math.max(insets.bottom, 24) }]}>
+                <View style={styles.selectionModalHeader}>
+                  <Text style={styles.selectionModalTitle}>Select Country / Region</Text>
+                  <TouchableOpacity
+                    style={styles.selectionModalCloseBtn}
+                    onPress={() => setIsCountryModalOpen(false)}
+                  >
+                    <X color="#94A3B8" size={18} />
+                  </TouchableOpacity>
+                </View>
+
+                <View style={styles.selectionSearchBox}>
+                  <Search color="#94A3B8" size={16} />
+                  <TextInput
+                    style={styles.selectionSearchInput}
+                    placeholder="Search country..."
+                    placeholderTextColor="#94A3B8"
+                    value={countrySearchQuery}
+                    onChangeText={setCountrySearchQuery}
+                  />
+                  {countrySearchQuery.length > 0 && (
+                    <TouchableOpacity onPress={() => setCountrySearchQuery('')}>
+                      <X color="#94A3B8" size={14} />
+                    </TouchableOpacity>
+                  )}
+                </View>
+
+                <ScrollView style={styles.selectionList} keyboardShouldPersistTaps="handled">
+                  {COUNTRIES.filter((c) =>
+                    c.name.toLowerCase().includes(countrySearchQuery.toLowerCase())
+                  ).map((c) => {
+                    const isSelected = selectedCountry.code === c.code;
+                    return (
+                      <TouchableOpacity
+                        key={c.code}
+                        style={[styles.selectionItemRow, isSelected && styles.selectionItemRowActive]}
+                        onPress={() => {
+                          setSelectedCountry(c);
+                          setIsCountryModalOpen(false);
+                          setCountrySearchQuery('');
+                        }}
+                      >
+                        <Text style={styles.selectionItemFlag}>{c.flag}</Text>
+                        <Text style={[styles.selectionItemText, isSelected && styles.selectionItemTextActive]}>
+                          {c.name}
+                        </Text>
+                        {isSelected && <Check color={Colors.brand.coral} size={16} />}
+                      </TouchableOpacity>
+                    );
+                  })}
+                </ScrollView>
+              </View>
+            </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
+
+      {/* Phone Country Code Modal */}
+      <Modal
+        visible={isPhoneCountryModalOpen}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setIsPhoneCountryModalOpen(false)}
+      >
+        <TouchableWithoutFeedback onPress={() => setIsPhoneCountryModalOpen(false)}>
+          <View style={styles.selectionModalOverlay}>
+            <TouchableWithoutFeedback onPress={(e) => e.stopPropagation()}>
+              <View style={[styles.selectionModalContainer, { paddingBottom: Math.max(insets.bottom, 24) }]}>
+                <View style={styles.selectionModalHeader}>
+                  <Text style={styles.selectionModalTitle}>Select Country Dial Code</Text>
+                  <TouchableOpacity
+                    style={styles.selectionModalCloseBtn}
+                    onPress={() => setIsPhoneCountryModalOpen(false)}
+                  >
+                    <X color="#94A3B8" size={18} />
+                  </TouchableOpacity>
+                </View>
+
+                <View style={styles.selectionSearchBox}>
+                  <Search color="#94A3B8" size={16} />
+                  <TextInput
+                    style={styles.selectionSearchInput}
+                    placeholder="Search country or code..."
+                    placeholderTextColor="#94A3B8"
+                    value={phoneCountrySearchQuery}
+                    onChangeText={setPhoneCountrySearchQuery}
+                  />
+                  {phoneCountrySearchQuery.length > 0 && (
+                    <TouchableOpacity onPress={() => setPhoneCountrySearchQuery('')}>
+                      <X color="#94A3B8" size={14} />
+                    </TouchableOpacity>
+                  )}
+                </View>
+
+                <ScrollView style={styles.selectionList} keyboardShouldPersistTaps="handled">
+                  {COUNTRIES.filter((c) =>
+                    c.name.toLowerCase().includes(phoneCountrySearchQuery.toLowerCase()) ||
+                    c.dialCode.includes(phoneCountrySearchQuery)
+                  ).map((c) => {
+                    const isSelected = phoneCountry.code === c.code;
+                    return (
+                      <TouchableOpacity
+                        key={c.code}
+                        style={[styles.selectionItemRow, isSelected && styles.selectionItemRowActive]}
+                        onPress={() => {
+                          setPhoneCountry(c);
+                          setIsPhoneCountryModalOpen(false);
+                          setPhoneCountrySearchQuery('');
+                          setPhone((prev) => formatPhoneNumber(prev, c.dialCode));
+                        }}
+                      >
+                        <Text style={styles.selectionItemFlag}>{c.flag}</Text>
+                        <Text style={styles.selectionItemDialCode}>{c.dialCode}</Text>
+                        <Text style={[styles.selectionItemText, isSelected && styles.selectionItemTextActive]} numberOfLines={1}>
+                          {c.name}
+                        </Text>
+                        {isSelected && <Check color={Colors.brand.coral} size={16} />}
+                      </TouchableOpacity>
+                    );
+                  })}
+                </ScrollView>
+              </View>
+            </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
+
+      {/* Arrival Time Selector Modal */}
+      <Modal
+        visible={isArrivalTimePickerOpen}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setIsArrivalTimePickerOpen(false)}
+      >
+        <TouchableWithoutFeedback onPress={() => setIsArrivalTimePickerOpen(false)}>
+          <View style={styles.selectionModalOverlay}>
+            <TouchableWithoutFeedback onPress={(e) => e.stopPropagation()}>
+              <View style={[styles.selectionModalContainer, { paddingBottom: Math.max(insets.bottom, 24) }]}>
+                <View style={styles.selectionModalHeader}>
+                  <Text style={styles.selectionModalTitle}>Estimated Arrival Time</Text>
+                  <TouchableOpacity
+                    style={styles.selectionModalCloseBtn}
+                    onPress={() => setIsArrivalTimePickerOpen(false)}
+                  >
+                    <X color="#94A3B8" size={18} />
+                  </TouchableOpacity>
+                </View>
+
+                <View style={{ paddingVertical: 8 }}>
+                  {ARRIVAL_TIME_OPTIONS.map((timeOption) => {
+                    const isSelected = arrivalTime === timeOption;
+                    return (
+                      <TouchableOpacity
+                        key={timeOption}
+                        style={[styles.selectionItemRow, isSelected && styles.selectionItemRowActive]}
+                        onPress={() => {
+                          setArrivalTime(timeOption);
+                          setIsArrivalTimePickerOpen(false);
+                        }}
+                      >
+                        <Clock color={isSelected ? Colors.brand.coral : '#64748B'} size={18} style={{ marginRight: 10 }} />
+                        <Text style={[styles.selectionItemText, isSelected && styles.selectionItemTextActive]}>
+                          {timeOption}
+                        </Text>
+                        {isSelected && <Check color={Colors.brand.coral} size={16} />}
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              </View>
+            </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
+    </View>
   );
 }
 
@@ -989,6 +1809,103 @@ const styles = StyleSheet.create({
     padding: 16,
     paddingBottom: 110,
     gap: 14,
+  },
+  roomStepperCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    paddingVertical: 14,
+    paddingHorizontal: 6,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    shadowColor: '#64748B',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  roomStepperWrapper: {
+    position: 'relative',
+    width: '100%',
+  },
+  roomStepperLinesLayer: {
+    position: 'absolute',
+    top: 13,
+    left: 0,
+    right: 0,
+    height: 2.5,
+  },
+  roomConnectorSegment: {
+    position: 'absolute',
+    height: 2.5,
+  },
+  roomStepsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  roomStepItem: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  roomStepCircleCompleted: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: Colors.brand.coral,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 6,
+    shadowColor: Colors.brand.coral,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  roomStepCircleActive: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: Colors.brand.coral,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 6,
+    shadowColor: Colors.brand.coral,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  roomStepInnerDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#FFFFFF',
+  },
+  roomStepCircleInactive: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#E2E8F0',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 6,
+  },
+  roomStepNumberText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#334155',
+  },
+  roomStepLabelActive: {
+    fontSize: 10.5,
+    fontWeight: '600',
+    color: Colors.brand.coral,
+    textAlign: 'center',
+  },
+  roomStepLabelInactive: {
+    fontSize: 10.5,
+    fontWeight: '600',
+    color: '#64748B',
+    textAlign: 'center',
   },
   stepperCard: {
     flexDirection: 'row',
@@ -1476,7 +2393,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingVertical: 14,
+    paddingTop: 12,
     borderTopWidth: 1,
     borderTopColor: '#E2E8F0',
     shadowColor: '#000',
@@ -1695,5 +2612,533 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#334155',
     lineHeight: 18,
+  },
+  processingOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(2, 4, 43, 0.75)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  processingCard: {
+    backgroundColor: '#0B1329',
+    borderRadius: 20,
+    padding: 28,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#1E293B',
+    width: '100%',
+    maxWidth: 320,
+  },
+  processingTitle: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '700',
+    marginTop: 16,
+  },
+  processingSub: {
+    color: '#94A3B8',
+    fontSize: 13,
+    textAlign: 'center',
+    marginTop: 8,
+    lineHeight: 18,
+  },
+  gstBadgePill: {
+    backgroundColor: '#D1FAE5',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  gstBadgeText: {
+    fontSize: 9.5,
+    fontWeight: '800',
+    color: '#065F46',
+  },
+  gstItcNoteText: {
+    fontSize: 10.5,
+    color: '#64748B',
+    marginTop: -4,
+    marginBottom: 8,
+    fontStyle: 'italic',
+  },
+  customAlertOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(2, 6, 23, 0.72)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+  },
+  customAlertCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    paddingHorizontal: 22,
+    paddingTop: 26,
+    paddingBottom: 20,
+    width: '100%',
+    maxWidth: 340,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.28,
+    shadowRadius: 24,
+    elevation: 12,
+    position: 'relative',
+  },
+  customAlertCloseBtn: {
+    position: 'absolute',
+    top: 14,
+    right: 14,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#F1F5F9',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  customAlertIconBg: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#FEE2E2',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
+  customAlertTitle: {
+    fontSize: 19,
+    fontWeight: '800',
+    color: '#0F172A',
+    textAlign: 'center',
+    marginBottom: 8,
+    letterSpacing: -0.2,
+  },
+  customAlertMessage: {
+    fontSize: 13.5,
+    color: '#64748B',
+    textAlign: 'center',
+    lineHeight: 19,
+    marginBottom: 16,
+    paddingHorizontal: 8,
+  },
+  customAlertFieldsBox: {
+    width: '100%',
+    backgroundColor: '#F8FAFC',
+    borderRadius: 14,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    marginBottom: 18,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  customAlertFieldsBoxHeader: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#94A3B8',
+    letterSpacing: 0.6,
+    marginBottom: 6,
+  },
+  customAlertFieldRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 3,
+  },
+  customAlertFieldDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: Colors.brand.coral,
+    marginRight: 8,
+  },
+  customAlertFieldText: {
+    fontSize: 12.5,
+    fontWeight: '700',
+    color: '#334155',
+  },
+  customAlertActionBtn: {
+    width: '100%',
+    backgroundColor: Colors.brand.coral,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 13,
+    borderRadius: 16,
+    gap: 8,
+    shadowColor: Colors.brand.coral,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  customAlertActionText: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '800',
+  },
+  customAlertDismissBtn: {
+    marginTop: 10,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+  },
+  customAlertDismissText: {
+    color: '#94A3B8',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  phoneDialCodeBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#F8FAFC',
+    borderRadius: 14,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    height: 46,
+  },
+  phoneFlagText: {
+    fontSize: 18,
+  },
+  phoneDialCodeText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: Colors.brand.navy,
+  },
+  countryPickerBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#F8FAFC',
+    borderRadius: 14,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    height: 46,
+  },
+  countryPickerFlag: {
+    fontSize: 18,
+  },
+  countryPickerName: {
+    fontSize: 13.5,
+    fontWeight: '700',
+    color: Colors.brand.navy,
+  },
+  accordionHeaderBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  accordionContentContainer: {
+    marginTop: 14,
+    paddingTop: 14,
+    borderTopWidth: 1,
+    borderTopColor: '#F1F5F9',
+  },
+  arrivalTimeBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#F8FAFC',
+    borderRadius: 14,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    height: 46,
+  },
+  arrivalSelectedText: {
+    fontSize: 13.5,
+    fontWeight: '700',
+    color: Colors.brand.navy,
+  },
+  smokingRadioGroup: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 2,
+  },
+  smokingRadioOption: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F8FAFC',
+    borderRadius: 12,
+    paddingVertical: 11,
+    paddingHorizontal: 14,
+    borderWidth: 1.5,
+    borderColor: '#E2E8F0',
+    gap: 10,
+  },
+  smokingRadioOptionActive: {
+    backgroundColor: 'rgba(232, 106, 112, 0.08)',
+    borderColor: Colors.brand.coral,
+  },
+  radioCircle: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    borderWidth: 2,
+    borderColor: '#CBD5E1',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  radioCircleActive: {
+    borderColor: Colors.brand.coral,
+  },
+  radioInnerDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: Colors.brand.coral,
+  },
+  smokingOptionText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#64748B',
+  },
+  smokingOptionTextActive: {
+    color: Colors.brand.navy,
+    fontWeight: '800',
+  },
+  airportPickupCard: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: '#F8FAFC',
+    borderRadius: 14,
+    padding: 14,
+    borderWidth: 1.5,
+    borderColor: '#E2E8F0',
+    gap: 12,
+    marginTop: 4,
+  },
+  airportPickupCardActive: {
+    backgroundColor: 'rgba(232, 106, 112, 0.08)',
+    borderColor: Colors.brand.coral,
+  },
+  airportCheckbox: {
+    width: 20,
+    height: 20,
+    borderRadius: 6,
+    borderWidth: 2,
+    borderColor: '#CBD5E1',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 2,
+  },
+  airportCheckboxActive: {
+    backgroundColor: Colors.brand.coral,
+    borderColor: Colors.brand.coral,
+  },
+  airportPickupTitle: {
+    fontSize: 13.5,
+    fontWeight: '800',
+    color: Colors.brand.navy,
+  },
+  airportPickupSubtitle: {
+    fontSize: 11.5,
+    color: '#64748B',
+    marginTop: 2,
+    lineHeight: 16,
+  },
+  travelerCard: {
+    backgroundColor: '#F8FAFC',
+    borderRadius: 16,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    marginBottom: 12,
+  },
+  travelerHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 12,
+  },
+  travelerNumberBadge: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: Colors.brand.sand,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  travelerNumberText: {
+    fontSize: 11,
+    fontWeight: '900',
+    color: Colors.brand.navy,
+  },
+  travelerHeaderTitle: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: Colors.brand.navy,
+  },
+  genderButtonGroup: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  genderBtn: {
+    flex: 1,
+    paddingVertical: 9,
+    borderRadius: 10,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    alignItems: 'center',
+  },
+  genderBtnActive: {
+    backgroundColor: Colors.brand.coral,
+    borderColor: Colors.brand.coral,
+  },
+  genderBtnText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#64748B',
+  },
+  genderBtnTextActive: {
+    color: '#FFFFFF',
+    fontWeight: '800',
+  },
+  portalAddonCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 14,
+    borderWidth: 1.5,
+    borderColor: '#E2E8F0',
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
+    elevation: 1,
+  },
+  portalAddonCardActive: {
+    backgroundColor: 'rgba(232, 106, 112, 0.05)',
+    borderColor: Colors.brand.coral,
+  },
+  portalAddonIconBox: {
+    width: 42,
+    height: 42,
+    borderRadius: 12,
+    backgroundColor: Colors.brand.sand,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  portalAddonIconBoxActive: {
+    backgroundColor: Colors.brand.coral,
+  },
+  portalAddonTitle: {
+    fontSize: 13.5,
+    fontWeight: '800',
+    color: Colors.brand.navy,
+    marginBottom: 2,
+  },
+  portalAddonDesc: {
+    fontSize: 11,
+    color: '#64748B',
+    lineHeight: 15,
+  },
+  portalAddonPriceText: {
+    fontSize: 14,
+    fontWeight: '900',
+    color: Colors.brand.coral,
+  },
+  portalAddonPerPersonLabel: {
+    fontSize: 9.5,
+    fontWeight: '700',
+    color: '#94A3B8',
+  },
+  portalAddonCheckBadge: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 1.5,
+    borderColor: '#CBD5E1',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  portalAddonCheckBadgeActive: {
+    backgroundColor: Colors.brand.coral,
+    borderColor: Colors.brand.coral,
+  },
+  selectionModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(15, 23, 42, 0.65)',
+    justifyContent: 'flex-end',
+  },
+  selectionModalContainer: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingTop: 18,
+    paddingHorizontal: 18,
+    maxHeight: '80%',
+  },
+  selectionModalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 14,
+  },
+  selectionModalTitle: {
+    fontSize: 16,
+    fontWeight: '900',
+    color: Colors.brand.navy,
+  },
+  selectionModalCloseBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#F1F5F9',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  selectionSearchBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F8FAFC',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    height: 42,
+    gap: 8,
+    marginBottom: 10,
+  },
+  selectionSearchInput: {
+    flex: 1,
+    fontSize: 13,
+    color: Colors.brand.navy,
+  },
+  selectionList: {
+    maxHeight: 340,
+  },
+  selectionItemRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 10,
+    borderRadius: 10,
+    gap: 10,
+  },
+  selectionItemRowActive: {
+    backgroundColor: 'rgba(232, 106, 112, 0.08)',
+  },
+  selectionItemFlag: {
+    fontSize: 20,
+  },
+  selectionItemDialCode: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: Colors.brand.navy,
+    width: 50,
+  },
+  selectionItemText: {
+    flex: 1,
+    fontSize: 13.5,
+    color: '#334155',
+    fontWeight: '600',
+  },
+  selectionItemTextActive: {
+    color: Colors.brand.coral,
+    fontWeight: '800',
   },
 });

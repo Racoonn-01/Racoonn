@@ -447,6 +447,15 @@ export async function POST(req: Request) {
               };
 
               allInvoices.unshift(newInvoice);
+
+              // 🌟 Sync to shared invoices.json file for Admin Dashboard instant display
+              const SHARED_INVOICE_FILE = "/Users/haldwani/Documents/Working/Working/Racoonn/invoices.json";
+              try {
+                fs.writeFileSync(SHARED_INVOICE_FILE, JSON.stringify(allInvoices, null, 2), "utf-8");
+              } catch (fileErr) {
+                console.warn("Shared invoice file write warning:", fileErr);
+              }
+
               await db.updateDocument(dbId, 'properties', 'cms_invoices_v1', {
                 details: JSON.stringify(allInvoices)
               }).catch(async (e) => {

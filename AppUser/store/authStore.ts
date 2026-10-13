@@ -59,11 +59,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         if (profile) {
           if (typeof profile.savedHotels === 'string') {
             try { profile.savedHotels = JSON.parse(profile.savedHotels); }
-            catch { profile.savedHotels = (profile.savedHotels as string).split(',').filter(Boolean); }
+            catch { profile.savedHotels = (profile.savedHotels as unknown as string).split(',').filter(Boolean); }
           }
           if (typeof profile.savedPackages === 'string') {
             try { profile.savedPackages = JSON.parse(profile.savedPackages); }
-            catch { profile.savedPackages = (profile.savedPackages as string).split(',').filter(Boolean); }
+            catch { profile.savedPackages = (profile.savedPackages as unknown as string).split(',').filter(Boolean); }
           }
         }
 

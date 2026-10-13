@@ -9,46 +9,33 @@ import {
   ActivityIndicator,
   Dimensions,
 } from 'react-native';
-import { Heart, ChevronRight, Star } from 'lucide-react-native';
+import { Heart, ChevronRight, Star, MapPin } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import Colors from '@/constants/Colors';
 import { useAuthStore } from '../../store/authStore';
-import { getProperties, getCMSPopularStays } from '../../lib/appwrite/api';
+import { getProperties } from '../../lib/appwrite/api';
 import { isActiveProperty } from '../../utils/isActiveProperty';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const CARD_WIDTH = SCREEN_WIDTH - 40; // Full width minus 20px left & right padding
-
-interface SectionData {
-  id: string;
-  title: string;
-  subtitle: string;
-  location?: string;
-  propertyIds?: string[];
-  isActive: boolean;
-  stays: any[];
-}
+const CARD_WIDTH = SCREEN_WIDTH - 40;
 
 export default function ExplorePopularStaysSection() {
   const router = useRouter();
   const { profile, toggleSavedHotel } = useAuthStore();
   const savedHotelIds = profile?.savedHotels || [];
-  const [cmsSections, setCmsSections] = useState<SectionData[]>([]);
+  const [stays, setStays] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function fetchPopularStaysData() {
       try {
         setLoading(true);
-        const [docs, cmsData] = await Promise.all([
-          getProperties().catch(() => []),
-          getCMSPopularStays().catch(() => []),
-        ]);
+        const docs = await getProperties().catch(() => []);
 
         const activeDocs = (docs || []).filter((d: any) => isActiveProperty(d));
         const allPropsMapped = activeDocs.map((d: any, index: number) => {
           const rawPrice = Number(
-            d.price || d.startingPrice || d.minPrice || d.basePrice || d.pricePerNight || d.amount || 3500
+            d.price || d.startingPrice || d.minPrice || d.basePrice || d.pricePerNight || d.amount || 0
           );
           const photos = Array.isArray(d.photos) && d.photos.length > 0
             ? d.photos
@@ -64,81 +51,24 @@ export default function ExplorePopularStaysSection() {
             d.location || d.address || [d.city, d.state].filter(Boolean).join(', ') || 'Uttarakhand'
           );
 
+          const hasReviews = Number(d.reviewsCount || 0) > 0 && Number(d.rating || 0) > 0;
+
           return {
             id: String(d.$id || d.id || `stay-${index}`),
             title: String(d.propertyName || d.title || d.name || 'Luxury Stay'),
             location: formattedLocation,
             city: String(d.city || ''),
-            ratingText: d.rating ? String(d.rating) : '4.8',
+            details: String(d.description || 'Premium scenic stay'),
+            ratingText: hasReviews ? Number(d.rating).toFixed(1) : 'New',
+            reviewsCount: Number(d.reviewsCount || 0),
             price: rawPrice,
             image: photoUrl,
           };
         });
 
-        // Match CMS sections configured by Admin (identical to User Portal DynamicPopularStays)
-        if (Array.isArray(cmsData) && cmsData.length > 0) {
-          const activeCMS = cmsData.filter((s: any) => s.isActive !== false);
-          const builtSections: SectionData[] = [];
-
-          activeCMS.forEach((sec: any) => {
-            let matched: any[] = [];
-            if (sec.propertyIds && Array.isArray(sec.propertyIds) && sec.propertyIds.length > 0) {
-              matched = allPropsMapped.filter((p) => sec.propertyIds.includes(p.id));
-            } else {
-              const targetLoc = (sec.location && sec.location.toLowerCase() !== 'all')
-                ? sec.location.trim().toLowerCase()
-                : sec.title.toLowerCase().includes(' in ')
-                ? sec.title.split(/ in /i)[1]?.trim().toLowerCase() || ''
-                : '';
-
-              if (targetLoc && targetLoc !== 'all') {
-                matched = allPropsMapped.filter(
-                  (p) =>
-                    p.location.toLowerCase().includes(targetLoc) ||
-                    p.city.toLowerCase().includes(targetLoc) ||
-                    p.title.toLowerCase().includes(targetLoc)
-                );
-              } else {
-                matched = allPropsMapped;
-              }
-            }
-
-            if (matched.length > 0) {
-              builtSections.push({
-                id: String(sec.id || `sec-${Math.random()}`),
-                title: String(sec.title || 'Popular Stays'),
-                subtitle: String(sec.subtitle || 'Handpicked luxury stays'),
-                location: sec.location,
-                propertyIds: sec.propertyIds,
-                isActive: true,
-                stays: matched.slice(0, 4),
-              });
-            }
-          });
-
-          if (builtSections.length > 0) {
-            setCmsSections(builtSections);
-            setLoading(false);
-            return;
-          }
-        }
-
-        // Fallback single section if no active CMS section matches
-        if (allPropsMapped.length > 0) {
-          setCmsSections([
-            {
-              id: 'default-sec',
-              title: 'Explore popular stays',
-              subtitle: 'Handpicked luxury resorts & gateway stays',
-              isActive: true,
-              stays: allPropsMapped,
-            },
-          ]);
-        } else {
-          setCmsSections([]);
-        }
+        setStays(allPropsMapped);
       } catch {
-        setCmsSections([]);
+        setStays([]);
       } finally {
         setLoading(false);
       }
@@ -154,88 +84,98 @@ export default function ExplorePopularStaysSection() {
     );
   }
 
-  if (cmsSections.length === 0) {
+  if (stays.length === 0) {
     return null;
   }
 
   return (
     <View style={styles.container}>
-      {cmsSections.map((sec) => (
-        <View key={sec.id} style={styles.sectionBlock}>
-          {/* Section Header */}
-          <View style={styles.headerRow}>
-            <View style={{ flex: 1, marginRight: 12 }}>
-              <Text style={styles.title}>{sec.title}</Text>
-              {sec.subtitle ? <Text style={styles.subtitle}>{sec.subtitle}</Text> : null}
-            </View>
-            <TouchableOpacity
-              style={styles.viewAllBtn}
-              onPress={() => router.push('/stays' as any)}
-            >
-              <Text style={styles.viewAllText}>View all</Text>
-              <ChevronRight color={Colors.brand.coral} size={16} />
-            </TouchableOpacity>
-          </View>
-
-          {/* Horizontal Carousel displaying cards with smooth snapping */}
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            snapToInterval={CARD_WIDTH + 16}
-            decelerationRate="fast"
-            snapToAlignment="start"
-            contentContainerStyle={styles.scrollContent}
-          >
-            {sec.stays.map((item) => {
-              const isSaved = savedHotelIds.includes(item.id);
-              return (
-                <TouchableOpacity
-                  key={item.id}
-                  style={styles.card}
-                  activeOpacity={0.9}
-                  onPress={() => router.push(`/hotel/${item.id}` as any)}
-                >
-                  {/* Image Container with Top-Right Heart Button */}
-                  <View style={styles.imageContainer}>
-                    <Image source={{ uri: item.image }} style={styles.cardImage} />
-                    <TouchableOpacity
-                      style={styles.heartBtn}
-                      onPress={() => toggleSavedHotel(item.id)}
-                      activeOpacity={0.8}
-                    >
-                      <Heart
-                        color={isSaved ? Colors.brand.coral : '#1F2E4A'}
-                        fill={isSaved ? Colors.brand.coral : 'transparent'}
-                        size={18}
-                      />
-                    </TouchableOpacity>
-                  </View>
-
-                  {/* Title & Location / Rating & Price Row */}
-                  <View style={styles.cardContent}>
-                    <Text style={styles.cardTitle} numberOfLines={1}>
-                      {item.title}
-                    </Text>
-
-                    <View style={styles.locationRatingRow}>
-                      <Text style={styles.locationText} numberOfLines={1}>
-                        {item.location}
-                      </Text>
-
-                      <View style={styles.ratingBadge}>
-                        <Star color={Colors.brand.coral} fill={Colors.brand.coral} size={13} />
-                        <Text style={styles.ratingText}>{item.ratingText}</Text>
-                      </View>
-                    </View>
-
-
-                  </View>
-                </TouchableOpacity>
-              );
-            })}
-          </ScrollView>
+      {/* Header matching User Portal */}
+      <View style={styles.headerRow}>
+        <View style={{ flex: 1, marginRight: 12 }}>
+          <Text style={styles.title}>Explore popular stays</Text>
+          <Text style={styles.subtitle}>Handpicked luxury resorts & gateway stays</Text>
         </View>
-      ))}
+        <TouchableOpacity
+          style={styles.viewAllBtn}
+          onPress={() => router.push('/stays' as any)}
+        >
+          <Text style={styles.viewAllText}>View all</Text>
+          <ChevronRight color={Colors.brand.coral} size={16} />
+        </TouchableOpacity>
+      </View>
+
+      {/* Horizontal Carousel */}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        snapToInterval={CARD_WIDTH + 16}
+        decelerationRate="fast"
+        snapToAlignment="start"
+        contentContainerStyle={styles.scrollContent}
+      >
+        {stays.map((item) => {
+          const isSaved = savedHotelIds.includes(item.id);
+          return (
+            <TouchableOpacity
+              key={item.id}
+              style={styles.card}
+              activeOpacity={0.9}
+              onPress={() => router.push(`/hotel/${item.id}` as any)}
+            >
+              {/* Image Container with Top-Right Heart Button */}
+              <View style={styles.imageContainer}>
+                <Image source={{ uri: item.image }} style={styles.cardImage} />
+                <TouchableOpacity
+                  style={styles.heartBtn}
+                  onPress={() => toggleSavedHotel(item.id)}
+                  activeOpacity={0.8}
+                >
+                  <Heart
+                    color={isSaved ? Colors.brand.coral : '#FFFFFF'}
+                    fill={isSaved ? Colors.brand.coral : 'transparent'}
+                    size={18}
+                  />
+                </TouchableOpacity>
+              </View>
+
+              {/* Title & Location / Rating & Price Row */}
+              <View style={styles.cardContent}>
+                <Text style={styles.cardTitle} numberOfLines={1}>
+                  {item.title}
+                </Text>
+
+                <View style={styles.locationRatingRow}>
+                  <View style={styles.locationWrap}>
+                    <MapPin color="#64748B" size={12} style={{ marginRight: 3 }} />
+                    <Text style={styles.locationText} numberOfLines={1}>
+                      {item.location}
+                    </Text>
+                  </View>
+
+                  <View style={styles.ratingBadge}>
+                    <Star
+                      color={item.ratingText === 'New' ? Colors.brand.coral : '#F59E0B'}
+                      fill={item.ratingText === 'New' ? Colors.brand.coral : '#F59E0B'}
+                      size={12}
+                    />
+                    <Text style={[styles.ratingText, item.ratingText === 'New' && { color: Colors.brand.coral }]}>
+                      {item.ratingText}
+                    </Text>
+                  </View>
+                </View>
+
+                <View style={styles.priceRow}>
+                  <Text style={styles.priceText}>
+                    {item.price > 0 ? `₹${item.price.toLocaleString('en-IN')}` : 'Check Rates'}{' '}
+                    <Text style={styles.perNight}>/ night</Text>
+                  </Text>
+                </View>
+              </View>
+            </TouchableOpacity>
+          );
+        })}
+      </ScrollView>
     </View>
   );
 }
@@ -245,38 +185,38 @@ const styles = StyleSheet.create({
     marginTop: 24,
     marginBottom: 8,
   },
-  sectionBlock: {
-    marginBottom: 28,
-  },
-  subtitle: {
-    fontSize: 13,
-    color: '#64748B',
-    marginTop: 2,
-    fontWeight: '500',
-  },
   loadingContainer: {
-    paddingVertical: 20,
+    paddingVertical: 32,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   headerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-end',
     paddingHorizontal: 20,
     marginBottom: 16,
   },
   title: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: '900',
     color: Colors.brand.navy,
     letterSpacing: -0.3,
   },
+  subtitle: {
+    fontSize: 12.5,
+    color: '#64748B',
+    marginTop: 2,
+    lineHeight: 17,
+  },
   viewAllBtn: {
     flexDirection: 'row',
     alignItems: 'center',
+    paddingVertical: 4,
+    paddingLeft: 8,
   },
   viewAllText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '700',
     color: Colors.brand.coral,
     marginRight: 2,
@@ -288,22 +228,21 @@ const styles = StyleSheet.create({
   card: {
     width: CARD_WIDTH,
     backgroundColor: '#FFFFFF',
-    borderRadius: 24,
-    padding: 12,
+    borderRadius: 20,
+    overflow: 'hidden',
     shadowColor: '#0F172A',
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 3,
+    shadowRadius: 14,
+    elevation: 4,
     borderWidth: 1,
     borderColor: '#F1F5F9',
   },
   imageContainer: {
     width: '100%',
     height: 190,
-    borderRadius: 20,
-    overflow: 'hidden',
     position: 'relative',
+    backgroundColor: '#E2E8F0',
   },
   cardImage: {
     width: '100%',
@@ -313,64 +252,65 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 12,
     right: 12,
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: 'rgba(15, 23, 42, 0.4)',
+    borderRadius: 20,
+    width: 34,
+    height: 34,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.12,
-    shadowRadius: 4,
-    elevation: 3,
   },
   cardContent: {
-    paddingTop: 12,
-    paddingHorizontal: 4,
-    paddingBottom: 4,
+    padding: 14,
   },
   cardTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '800',
     color: Colors.brand.navy,
     marginBottom: 6,
   },
   locationRatingRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  locationWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    marginRight: 8,
   },
   locationText: {
-    flex: 1,
-    fontSize: 13,
+    fontSize: 12,
     color: '#64748B',
-    fontWeight: '500',
-    marginRight: 8,
+    flex: 1,
   },
   ratingBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 3,
+    backgroundColor: '#FEF3C7',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
   },
   ratingText: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: Colors.brand.coral,
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#D97706',
+    marginLeft: 3,
   },
   priceRow: {
-    marginTop: 8,
-    paddingTop: 8,
-    borderTopWidth: 1,
-    borderTopColor: '#F1F5F9',
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    marginTop: 2,
   },
   priceText: {
-    fontSize: 16,
-    fontWeight: '800',
+    fontSize: 15,
+    fontWeight: '900',
     color: Colors.brand.navy,
   },
   perNight: {
-    fontSize: 12,
+    fontSize: 11.5,
     fontWeight: '500',
     color: '#64748B',
   },

@@ -18,6 +18,8 @@ if (Notifications && typeof Notifications.setNotificationHandler === 'function')
       shouldShowAlert: true,
       shouldPlaySound: true,
       shouldSetBadge: true,
+      shouldShowBanner: true,
+      shouldShowList: true,
     }),
   });
 }
@@ -88,8 +90,11 @@ export async function registerForPushNotificationsAsync(): Promise<string | null
   }
 }
 
+import { useNotificationStore } from '../store/notificationStore';
+
 /**
  * Triggers a local push notification immediately or after a delay.
+ * Also synchronizes the real-time notification directly into the notification store.
  */
 export async function sendLocalNotification({
   title,
@@ -102,6 +107,20 @@ export async function sendLocalNotification({
   data?: Record<string, any>;
   seconds?: number;
 }): Promise<string | null> {
+  // Always register the real-time notification in the store
+  try {
+    const notifType = (data?.type as any) || (title.toLowerCase().includes('cancel') ? 'cancellation' : 'booking');
+    await useNotificationStore.getState().addNotification({
+      title,
+      message: body,
+      type: notifType,
+      data,
+      timestamp: Date.now(),
+    });
+  } catch (storeErr) {
+    console.warn('[NotificationService] Failed to record notification in store:', storeErr);
+  }
+
   if (!Notifications) return null;
 
   try {
@@ -128,17 +147,32 @@ export function useNotificationObserver() {
   const router = useRouter();
 
   useEffect(() => {
+    // Load initial stored notifications on app launch
+    useNotificationStore.getState().loadNotifications();
+
     if (!Notifications) return;
 
     // Listener for notifications received while app is in foreground
     const notificationListener = Notifications.addNotificationReceivedListener((notification) => {
       console.log('[NotificationService] Notification Received:', notification.request.content);
+      const content = notification.request.content;
+      useNotificationStore.getState().addNotification({
+        title: content.title || 'New Notification',
+        message: content.body || '',
+        type: (content.data?.type as any) || 'system',
+        data: content.data,
+        timestamp: Date.now(),
+      });
     });
 
     // Listener for when a user clicks/taps on a notification
     const responseListener = Notifications.addNotificationResponseReceivedListener((response) => {
       console.log('[NotificationService] Notification Clicked:', response.notification.request.content);
       const data = response.notification.request.content.data;
+
+      if (data?.notificationId) {
+        useNotificationStore.getState().markAsRead(String(data.notificationId));
+      }
 
       if (data && data.url) {
         try {
@@ -150,9 +184,16 @@ export function useNotificationObserver() {
     });
 
     return () => {
-      if (Notifications) {
-        Notifications.removeNotificationSubscription(notificationListener);
-        Notifications.removeNotificationSubscription(responseListener);
+      if (notificationListener && typeof notificationListener.remove === 'function') {
+        notificationListener.remove();
+      } else if (Notifications && typeof (Notifications as any).removeNotificationSubscription === 'function') {
+        (Notifications as any).removeNotificationSubscription(notificationListener);
+      }
+
+      if (responseListener && typeof responseListener.remove === 'function') {
+        responseListener.remove();
+      } else if (Notifications && typeof (Notifications as any).removeNotificationSubscription === 'function') {
+        (Notifications as any).removeNotificationSubscription(responseListener);
       }
     };
   }, [router]);

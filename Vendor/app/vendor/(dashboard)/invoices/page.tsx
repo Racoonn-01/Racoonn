@@ -39,7 +39,7 @@ const STATUSES = [
 ];
 
 export default function VendorInvoicesPage() {
-  const { user } = useAuthStore();
+  const { user, profile } = useAuthStore();
   
   const getBadgeStyles = (status: string) => {
     switch (status) {
@@ -67,14 +67,12 @@ export default function VendorInvoicesPage() {
   const [exportEndDate, setExportEndDate] = useState('');
   const [exportError, setExportError] = useState('');
 
-
-
   // PDF Loading
   const [isDownloading, setIsDownloading] = useState<string | null>(null);
 
   useEffect(() => {
     fetchInvoices();
-  }, []);
+  }, [user?.$id, profile?.$id]);
 
   const fetchInvoices = async () => {
     try {
@@ -83,7 +81,23 @@ export default function VendorInvoicesPage() {
       const data = await res.json();
       if (data.success && Array.isArray(data.invoices)) {
         let invs = data.invoices;
-        if (user?.$id) { invs = invs.filter((inv: any) => inv.vendorId === user.$id); }
+        const targetVendorId = profile?.$id || user?.$id;
+        const targetUserId = profile?.userId || user?.$id;
+        const targetEmail = (profile?.email || user?.email || '').toLowerCase().trim();
+
+        if (targetVendorId || targetEmail) {
+          invs = invs.filter((inv: any) => {
+            const vId = String(inv.vendorId || '').trim();
+            const vEmail = String(inv.vendorEmail || '').toLowerCase().trim();
+            const pId = String(inv.propertyId || '').trim();
+
+            return (
+              (targetVendorId && (vId === targetVendorId || vId === targetUserId)) ||
+              (targetEmail && vEmail && vEmail === targetEmail) ||
+              (profile?.currentPropertyId && pId && pId === profile.currentPropertyId)
+            );
+          });
+        }
         setInvoices(invs);
       }
     } catch (error) {

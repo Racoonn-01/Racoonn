@@ -88,7 +88,7 @@ export default function AskAIScreen() {
           .filter((d: any) => isActiveProperty(d))
           .map((d: any, index: number) => {
             const rawPrice = Number(
-              d.price || d.startingPrice || d.minPrice || d.basePrice || d.pricePerNight || 3500
+              d.price || d.startingPrice || d.minPrice || d.basePrice || d.pricePerNight || 0
             );
             const photos = Array.isArray(d.photos) && d.photos.length > 0
               ? d.photos
@@ -104,7 +104,7 @@ export default function AskAIScreen() {
               numericPrice: rawPrice,
               images: photos.length > 0 ? photos : ['https://images.unsplash.com/photo-1540541338287-41700207dee6?w=800&q=80'],
               type: 'hotel',
-              rating: d.rating ? String(d.rating) : '4.8',
+              rating: d.rating ? String(d.rating) : 'New',
               badge: 'Verified Stay',
               features: d.amenities && Array.isArray(d.amenities) && d.amenities.length > 0 
                 ? d.amenities.slice(0, 3).join(' | ') 
@@ -120,7 +120,7 @@ export default function AskAIScreen() {
           numericPrice: Number(String(p.price).replace(/[^0-9]/g, '')) || 12000,
           images: Array.isArray(p.images) && p.images.length > 0 ? p.images : ['https://images.unsplash.com/photo-1626621341517-bbf3d9990a23?w=800&q=80'],
           type: 'package',
-          rating: '4.9',
+          rating: p.rating ? String(p.rating) : 'New',
           badge: p.badge || 'Verified Package',
           duration: p.duration || '4 Days / 3 Nights',
           features: p.features || 'Meals | Stay | Sightseeing',
@@ -387,7 +387,7 @@ export default function AskAIScreen() {
                             {/* Rating Badge */}
                             <View style={styles.imageRatingBadge}>
                               <Star color="#F59E0B" size={11} fill="#F59E0B" />
-                              <Text style={styles.imageRatingText}>{item.rating || '4.9'}</Text>
+                              <Text style={styles.imageRatingText}>{item.rating || 'New'}</Text>
                             </View>
 
                             {/* Badge Label */}

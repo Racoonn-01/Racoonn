@@ -15,7 +15,11 @@
         "foregroundImage": "./assets/images/icon.png",
         "backgroundColor": "#FFFFFF"
       },
-      "package": "com.racoonn.appuser"
+      "package": "com.racoonn.appuser",
+      "permissions": [
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -40,13 +44,6 @@
         }
       ],
       "expo-notifications",
-      [
-        "expo-image-picker",
-        {
-          "photosPermission": "The app accesses your photos to let you upload profile pictures and review images.",
-          "cameraPermission": "The app accesses your camera to let you capture document photos and profile avatars."
-        }
-      ],
       "expo-sharing"
     ],
     "experiments": {
@@ -55,8 +52,9 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "75c1f1ca-7ffe-4abf-b78a-04af4931876c"
+        "projectId": "9d6632e1-19ba-48eb-8130-067d57299abd"
       }
-    }
+    },
+    "owner": "preettech08"
   }
 }

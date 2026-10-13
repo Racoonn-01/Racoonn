@@ -8,3 +8,4 @@ expo-env.d.ts
 .env
 .env.*
 # @end expo-cli
+dist/

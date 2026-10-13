@@ -2,3 +2,15 @@ User/src/assets/Clicky.dmg
 User/src/assets/Clicky.dmg
 
 compress-script/node_modules/
+
+# Agent & IDE tools
+.agent/
+.agents/
+.gemini/
+.gsd/
+GSD-STYLE.md
+PROJECT_RULES.md
+VERSION
+adapters/
+model_capabilities.yaml
+scripts/

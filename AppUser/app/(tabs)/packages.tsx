@@ -92,6 +92,7 @@ function DraggablePriceHistogram({
 
   const leftPanResponder = useMemo(
     () =>
+      // eslint-disable-next-line react-hooks/refs
       PanResponder.create({
         onStartShouldSetPanResponder: () => true,
         onMoveShouldSetPanResponder: () => true,
@@ -119,6 +120,7 @@ function DraggablePriceHistogram({
 
   const rightPanResponder = useMemo(
     () =>
+      // eslint-disable-next-line react-hooks/refs
       PanResponder.create({
         onStartShouldSetPanResponder: () => true,
         onMoveShouldSetPanResponder: () => true,
@@ -235,12 +237,14 @@ export default function PackagesScreen() {
   // Search Query State
   const params = useLocalSearchParams();
   const [searchQuery, setSearchQuery] = useState(typeof params.q === 'string' ? params.q : '');
+  const [prevParamQ, setPrevParamQ] = useState(params.q);
 
-  useEffect(() => {
+  if (params.q !== prevParamQ) {
+    setPrevParamQ(params.q);
     if (typeof params.q === 'string') {
       setSearchQuery(params.q);
     }
-  }, [params.q]);
+  }
 
   // Price Inputs State
   const [minPriceInput, setMinPriceInput] = useState('1000');
@@ -258,25 +262,31 @@ export default function PackagesScreen() {
       try {
         const cmsPkgs = await getCMSPackages();
         if (cmsPkgs && Array.isArray(cmsPkgs) && cmsPkgs.length > 0) {
-          const publishedOnly = cmsPkgs.filter((p: any) => p.status === 'published');
+          const publishedOnly = cmsPkgs.filter((p: any) => 
+            p.status === 'published' || p.status === 'active' || p.status === 'approved'
+          );
           if (publishedOnly.length > 0) {
             const mapped = publishedOnly.map((cmsPkg: any) => {
-              const minPrice =
-                cmsPkg.pricing && cmsPkg.pricing[0] ? cmsPkg.pricing[0].pricePerPerson : 0;
+              const firstPricing = Array.isArray(cmsPkg.pricing) && cmsPkg.pricing.length > 0 ? cmsPkg.pricing[0] : null;
+              const minPrice = firstPricing ? Number(firstPricing.pricePerPerson) : Number(cmsPkg.price || 0);
+              const safePrice = isNaN(minPrice) || minPrice === 0 ? Number(cmsPkg.price || 0) : minPrice;
+
               return {
-                id: cmsPkg.id,
-                title: cmsPkg.title,
-                location: cmsPkg.metaTitle || 'Uttarakhand',
-                duration:
-                  cmsPkg.itinerary && cmsPkg.itinerary.length > 0
+                id: String(cmsPkg.id),
+                title: cmsPkg.title || 'Tour Package',
+                location: cmsPkg.location || cmsPkg.metaTitle || 'Uttarakhand',
+                duration: cmsPkg.duration ||
+                  (Array.isArray(cmsPkg.itinerary) && cmsPkg.itinerary.length > 0
                     ? `${cmsPkg.itinerary.length + 1} Days / ${cmsPkg.itinerary.length} Nights`
-                    : '5 Days / 4 Nights',
-                features: 'Meals | Stay | Transfer',
-                price: `₹${minPrice.toLocaleString('en-IN')}`,
-                badge: 'Featured',
+                    : '5 Days / 4 Nights'),
+                features: typeof cmsPkg.features === 'string' && cmsPkg.features.length > 0
+                  ? cmsPkg.features
+                  : (Array.isArray(cmsPkg.features) ? cmsPkg.features.join(' | ') : 'Meals | Stay | Transfer'),
+                price: `₹${safePrice.toLocaleString('en-IN')}`,
+                badge: cmsPkg.badge || 'Featured',
                 badgeColor: Colors.brand.coral,
                 images:
-                  cmsPkg.images && cmsPkg.images.length > 0
+                  Array.isArray(cmsPkg.images) && cmsPkg.images.length > 0
                     ? cmsPkg.images
                     : ['https://images.unsplash.com/photo-1595815771614-ade9d652a65d?w=800&q=80'],
               };

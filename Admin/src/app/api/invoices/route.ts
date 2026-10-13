@@ -10,26 +10,34 @@ const DOC_ID = "cms_invoices_v1";
 
 export async function GET() {
   try {
+    // 1. Appwrite DB is the primary source of truth across all platforms (AppUser, Web, Vendor, Admin)
+    const doc = await appwriteServer.databases.getDocument(
+      DATABASE_ID,
+      COLLECTION_ID,
+      DOC_ID
+    );
+    if (doc?.details) {
+      const invoices = JSON.parse(doc.details);
+      try {
+        fs.writeFileSync(SHARED_INVOICE_FILE, JSON.stringify(invoices, null, 2), "utf-8");
+      } catch {}
+      return NextResponse.json({ success: true, invoices });
+    }
+  } catch (err) {
+    console.warn("Appwrite DB read failed, falling back to local file:", err);
+  }
+
+  try {
     if (fs.existsSync(SHARED_INVOICE_FILE)) {
       const fileData = fs.readFileSync(SHARED_INVOICE_FILE, "utf-8");
       const invoices = JSON.parse(fileData);
       return NextResponse.json({ success: true, invoices });
     }
   } catch (err) {
-    console.warn("File read failed, trying Appwrite DB:", err);
+    console.warn("File read failed:", err);
   }
 
-  try {
-    const doc = await appwriteServer.databases.getDocument(
-      DATABASE_ID,
-      COLLECTION_ID,
-      DOC_ID
-    );
-    const invoices = doc.details ? JSON.parse(doc.details) : [];
-    return NextResponse.json({ success: true, invoices });
-  } catch (err) {
-    return NextResponse.json({ success: true, invoices: [] });
-  }
+  return NextResponse.json({ success: true, invoices: [] });
 }
 
 export async function POST(request: Request) {

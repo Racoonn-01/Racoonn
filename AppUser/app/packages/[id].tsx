@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import {
   StyleSheet,
   Text,
@@ -15,6 +15,8 @@ import {
   LayoutAnimation,
   TouchableWithoutFeedback,
   Linking,
+  Platform,
+  Alert,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -31,7 +33,6 @@ import {
   CheckCircle2,
   PhoneCall,
   ChevronDown,
-  ChevronUp,
   X,
   MessageCircle,
   ArrowRight,
@@ -39,14 +40,15 @@ import {
   Plus,
   Minus,
   Mail,
-  Calendar,
-  Users,
+  Check,
+  Sparkles,
 } from 'lucide-react-native';
 import Colors from '@/constants/Colors';
 import { useAuthStore } from '../../store/authStore';
 import AuthBottomSheet from '../../components/shared/AuthBottomSheet';
+import CustomCalendarModal from '../../components/shared/CustomCalendarModal';
 import { packages as MOCK_PACKAGES } from '../../data/packages';
-import { getCMSPackages } from '../../lib/appwrite/api';
+import { getCMSPackages, getReviews, createReview, createPackageLead } from '../../lib/appwrite/api';
 
 const { width } = Dimensions.get('window');
 
@@ -124,39 +126,60 @@ const MOCK_ACTIVITY_OPTIONS = [
   },
 ];
 
-const MOCK_REVIEWS = [
-  {
-    id: 'rev-1',
-    userName: 'Vikram Malhotra',
-    date: 'July 2026',
-    rating: 5,
-    text: 'Flawless tour package! Smooth vehicle transfers, luxurious hotel rooms, and our driver was super helpful throughout the mountain trip.',
-  },
-  {
-    id: 'rev-2',
-    userName: 'Neha Kapoor',
-    date: 'June 2026',
-    rating: 5,
-    text: 'Booked this for our family trip to Uttarakhand. The itinerary flow was relaxed and the resort stay in Dhanaulti was unforgettable.',
-  },
-];
-
 export default function PackageDetailScreen() {
   const insets = useSafeAreaInsets();
+  const bottomNavPadding = insets.bottom > 0
+    ? (insets.bottom + 10)
+    : (Platform.OS === 'android' ? 44 : 16);
   const { id } = useLocalSearchParams();
   const router = useRouter();
   const { profile, isAuthenticated, toggleSavedPackage } = useAuthStore();
   const [isAuthSheetVisible, setIsAuthSheetVisible] = useState(false);
   const pkgId = (id as string) || 'pkg-1';
+  const [realPackage, setRealPackage] = useState<any>(null);
+  const [reviewsList, setReviewsList] = useState<any[]>([]);
+
+  useEffect(() => {
+    async function fetchRealPkgAndReviews() {
+      try {
+        const pkgs = await getCMSPackages();
+        if (pkgs && pkgs.length > 0) {
+          const match = pkgs.find((p: any) => String(p.id) === String(pkgId));
+          if (match) {
+            setRealPackage(match);
+          }
+        }
+      } catch (e) {
+        console.warn('Error loading real package in detail:', e);
+      }
+
+      try {
+        const rawReviews = await getReviews(pkgId);
+        if (rawReviews && rawReviews.length > 0) {
+          const mapped = rawReviews.map((r: any) => ({
+            id: r.$id || r.id,
+            userName: r.userName || 'Verified Traveler',
+            date: r.$createdAt ? new Date(r.$createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : 'Recent',
+            rating: Number(r.rating) || 5,
+            text: r.text || '',
+          }));
+          setReviewsList(mapped);
+        } else {
+          setReviewsList([]);
+        }
+      } catch (err) {
+        console.warn('Error loading reviews for package:', err);
+      }
+    }
+    fetchRealPkgAndReviews();
+  }, [pkgId]);
 
   // Find package or fallback
-  const pkgData: any = (MOCK_PACKAGES as any[]).find((p) => String(p.id) === String(pkgId)) || {
+  const pkgData: any = realPackage || (MOCK_PACKAGES as any[]).find((p) => String(p.id) === String(pkgId)) || {
     id: pkgId,
     title: 'Exotic Uttarakhand Mountain Escape',
     location: 'Dehradun · Mussoorie · Dhanaulti',
     duration: '5 Nights / 6 Days',
-    rating: 4.92,
-    reviews: 142,
     price: 18499,
     originalPrice: 24999,
     image: 'https://images.unsplash.com/photo-1626621341517-bbf3d9990a23?auto=format&fit=crop&w=1200&q=80',
@@ -194,25 +217,93 @@ export default function PackageDetailScreen() {
   const [selectedActivities, setSelectedActivities] = useState<number[]>([]);
 
   // Booking Dates & Guests Detailed State
+  const [roomsCount, setRoomsCount] = useState<number>(1);
   const [adultsCount, setAdultsCount] = useState<number>(1);
   const [childrenCount, setChildrenCount] = useState<number>(0);
   const [infantsCount, setInfantsCount] = useState<number>(0);
   const [petsCount, setPetsCount] = useState<number>(0);
-  const [roomsCount, setRoomsCount] = useState<number>(1);
-  const [checkInDate, setCheckInDate] = useState<string>('07 Aug, 2026');
-  const [checkOutDate, setCheckOutDate] = useState<string>('11 Aug, 2026');
+  const [checkInDate, setCheckInDate] = useState<string>(() => {
+    const d = new Date();
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return `${String(d.getDate()).padStart(2, '0')} ${months[d.getMonth()]}, ${d.getFullYear()}`;
+  });
+  const [checkOutDate, setCheckOutDate] = useState<string>(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 4);
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return `${String(d.getDate()).padStart(2, '0')} ${months[d.getMonth()]}, ${d.getFullYear()}`;
+  });
 
-  // Date & Guest Modal States
+  // Date, Departure City & Guest Modal States
+  const [departureCity, setDepartureCity] = useState<string>('Haldwani');
+  const [isDeparturePickerOpen, setIsDeparturePickerOpen] = useState(false);
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const [dateSelectionStep, setDateSelectionStep] = useState<'checkin' | 'checkout'>('checkin');
   const [isGuestPickerOpen, setIsGuestPickerOpen] = useState(false);
 
+  // Realtime departure cities loaded directly from CMS
+  const availableDepartureCityObjects = useMemo<{
+    id: string;
+    cityName: string;
+    pricePerPerson: number;
+    isDefault: boolean;
+  }[]>(() => {
+    const raw = pkgData?.departureCities;
+    if (!Array.isArray(raw) || raw.length === 0) {
+      return [];
+    }
+    const result: {
+      id: string;
+      cityName: string;
+      pricePerPerson: number;
+      isDefault: boolean;
+    }[] = [];
+    raw.forEach((item: any, idx: number) => {
+      if (typeof item === 'string' && item.trim()) {
+        result.push({
+          id: `city-${idx}`,
+          cityName: item.trim(),
+          pricePerPerson: 0,
+          isDefault: idx === 0,
+        });
+      } else if (item && typeof item === 'object') {
+        const name = (item.cityName || item.name || item.city || item.title || '').trim();
+        if (name) {
+          result.push({
+            id: String(item.id || item.$id || `city-${idx}`),
+            cityName: name,
+            pricePerPerson: Number(item.pricePerPerson) || 0,
+            isDefault: Boolean(item.isDefault),
+          });
+        }
+      }
+    });
+    return result;
+  }, [pkgData?.departureCities]);
+
+  useEffect(() => {
+    if (availableDepartureCityObjects.length > 0) {
+      const defaultItem = availableDepartureCityObjects.find((c) => c.isDefault) || availableDepartureCityObjects[0];
+      if (defaultItem?.cityName) {
+        setDepartureCity(defaultItem.cityName);
+      }
+    } else {
+      // Fallback only if CMS has no departure cities configured for this package
+      const fallback = (pkgData?.location?.split('·')[0] || pkgData?.city || 'Haldwani').trim();
+      setDepartureCity(fallback);
+    }
+  }, [availableDepartureCityObjects, pkgData?.location, pkgData?.city]);
+
   // Review Modal State
-  const [reviewsList, setReviewsList] = useState(MOCK_REVIEWS);
   const [isWriteReviewOpen, setIsWriteReviewOpen] = useState(false);
   const [userRating, setUserRating] = useState(5);
   const [userNameInput, setUserNameInput] = useState(profile?.name || '');
   const [userReviewComment, setUserReviewComment] = useState('');
+
+  const effectiveReviewsCount = reviewsList.length;
+  const effectiveRating = effectiveReviewsCount > 0
+    ? (reviewsList.reduce((sum, r) => sum + Number(r.rating || 5), 0) / effectiveReviewsCount).toFixed(1)
+    : (realPackage?.rating ? Number(realPackage.rating).toFixed(1) : null);
 
   // Scroll View Ref & Section Positions
   const scrollRef = useRef<ScrollView>(null);
@@ -235,7 +326,7 @@ export default function PackageDetailScreen() {
     );
   };
 
-  const handleAddReview = () => {
+  const handleAddReview = async () => {
     if (!userReviewComment.trim()) return;
     const newRev = {
       id: `rev-${Date.now()}`,
@@ -247,6 +338,19 @@ export default function PackageDetailScreen() {
     setReviewsList([newRev, ...reviewsList]);
     setUserReviewComment('');
     setIsWriteReviewOpen(false);
+
+    try {
+      await createReview({
+        propertyId: String(pkgId),
+        vendorId: realPackage?.vendorId || 'package-vendor',
+        userName: newRev.userName,
+        rating: userRating,
+        text: newRev.text,
+        category: 'Package Tour',
+      });
+    } catch (err) {
+      console.warn('Error saving package review:', err);
+    }
   };
 
   const scrollToSection = (section: 'plan' | 'stays' | 'activities' | 'reviews' | 'contact') => {
@@ -257,20 +361,154 @@ export default function PackageDetailScreen() {
     }
   };
 
-  // Pricing calculations
-  const basePriceNum = Number(pkgData.price) || 18499;
-  const nightsCount = 5;
-  const baseHotelPrice = MOCK_HOTEL_OPTIONS[0].pricePerNight;
-  const currentHotelPrice = MOCK_HOTEL_OPTIONS[selectedHotelIndex]?.pricePerNight || baseHotelPrice;
+  // Dynamic duration nights count (e.g. "5 Nights / 6 Days" -> 5)
+  const nightsMatch = String(pkgData?.duration || '').match(/(\d+)\s*Nights?/i);
+  const nightsCount = nightsMatch ? parseInt(nightsMatch[1], 10) : 1;
+
+  // Effective itinerary, hotel options, and activity options from live CMS pkgData
+  const effectiveItinerary = useMemo(() => {
+    if (Array.isArray(pkgData?.itinerary) && pkgData.itinerary.length > 0) {
+      return pkgData.itinerary.map((day: any, idx: number) => ({
+        dayNumber: day.dayNumber || idx + 1,
+        title: day.title || `Day ${idx + 1} Overview`,
+        activities: day.activities || day.title || '',
+        points: Array.isArray(day.points) ? day.points : [],
+      }));
+    }
+    return MOCK_ITINERARY;
+  }, [pkgData?.itinerary]);
+
+  const effectiveHotels = useMemo(() => {
+    if (Array.isArray(pkgData?.hotelOptions) && pkgData.hotelOptions.length > 0) {
+      const basePrice = Number(pkgData.hotelOptions[0]?.pricePerNight || pkgData.hotelOptions[0]?.price || 4500);
+      return pkgData.hotelOptions.map((h: any, idx: number) => {
+        const hPrice = Number(h.pricePerNight || h.price || 4500);
+        return {
+          id: String(h.id || h.$id || `h-${idx}`),
+          title: h.title || h.name || 'Resort Stay',
+          description: h.description || 'Comfortable stay with modern amenities',
+          image: h.image || 'https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=800&auto=format&fit=crop',
+          tags: Array.isArray(h.tags) && h.tags.length > 0 ? h.tags : ['Resort', 'Free Breakfast'],
+          pricePerNight: hPrice,
+          isDefault: idx === 0,
+          priceLabel: idx === 0 ? 'Included in Package' : `+ ₹${Math.abs(hPrice - basePrice).toLocaleString('en-IN')} / night`,
+        };
+      });
+    }
+    return MOCK_HOTEL_OPTIONS;
+  }, [pkgData?.hotelOptions]);
+
+  const effectiveActivities = useMemo(() => {
+    if (Array.isArray(pkgData?.activityOptions) && pkgData.activityOptions.length > 0) {
+      return pkgData.activityOptions.map((act: any, idx: number) => ({
+        id: act.id || idx,
+        title: act.title || act.name || 'Outdoor Experience',
+        description: act.description || 'Exciting adventure activity',
+        image: act.image || 'https://images.unsplash.com/photo-1522163182402-834f871fd851?q=80&w=800&auto=format&fit=crop',
+        pricePerPerson: Number(act.pricePerPerson || act.price || 0),
+        priceLabel: idx === 0 ? 'Included in Package' : `+ ₹${Number(act.pricePerPerson || 0).toLocaleString('en-IN')} / person`,
+      }));
+    }
+    return MOCK_ACTIVITY_OPTIONS;
+  }, [pkgData?.activityOptions]);
+
+  // Group base price with tiered pricing slabs based on adults count (matching User portal)
+  const defaultBasePriceNum = Number(pkgData?.price) || 18499;
+  let groupBasePrice = defaultBasePriceNum * adultsCount;
+
+  if (pkgData?.pricing && Array.isArray(pkgData.pricing) && pkgData.pricing.length > 0) {
+    const sortedSlabs = [...pkgData.pricing].sort((a: any, b: any) => {
+      const aMin = Math.min(a.minPersons || 1, a.maxPersons || 999);
+      const bMin = Math.min(b.minPersons || 1, b.maxPersons || 999);
+      return aMin - bMin;
+    });
+
+    let applicableSlab = sortedSlabs.find((slab: any) => {
+      const min = Math.min(slab.minPersons || 1, slab.maxPersons || 999);
+      const max = Math.max(slab.minPersons || 1, slab.maxPersons || 999);
+      return adultsCount >= min && adultsCount <= max;
+    });
+
+    if (!applicableSlab) {
+      const lowerSlabs = sortedSlabs.filter((slab: any) => Math.min(slab.minPersons || 1, slab.maxPersons || 999) <= adultsCount);
+      applicableSlab = lowerSlabs.length > 0 ? lowerSlabs[lowerSlabs.length - 1] : sortedSlabs[0];
+    }
+
+    if (applicableSlab) {
+      groupBasePrice = (Number(applicableSlab.pricePerPerson) || defaultBasePriceNum) * adultsCount;
+    }
+  }
+
+  const baseHotelPrice = effectiveHotels[0]?.pricePerNight || 0;
+  const currentHotelPrice = effectiveHotels[selectedHotelIndex]?.pricePerNight || baseHotelPrice;
   const hotelExtraPerPerson = (currentHotelPrice - baseHotelPrice) * nightsCount;
 
   const activitiesExtraPerPerson = selectedActivities.reduce((sum, actIdx) => {
-    const act = MOCK_ACTIVITY_OPTIONS[actIdx];
-    return sum + (act ? act.pricePerPerson : 0);
+    const act = effectiveActivities[actIdx];
+    return sum + (act && actIdx !== 0 ? act.pricePerPerson : 0);
   }, 0);
 
-  const effectivePricePerPerson = basePriceNum + hotelExtraPerPerson + activitiesExtraPerPerson;
-  const grandTotalPrice = effectivePricePerPerson * adultsCount;
+  const selectedCityObj = availableDepartureCityObjects.find(
+    (c) => c.cityName.toLowerCase() === (departureCity || '').toLowerCase()
+  );
+  const cityExtraPerPerson = selectedCityObj?.pricePerPerson || 0;
+
+  const groupHotelExtra = hotelExtraPerPerson * adultsCount;
+  const groupActivitiesExtra = activitiesExtraPerPerson * adultsCount;
+  const groupCityExtra = cityExtraPerPerson * adultsCount;
+
+  const grandTotalPrice = groupBasePrice + groupHotelExtra + groupActivitiesExtra + groupCityExtra;
+  const effectivePricePerPerson = Math.round(grandTotalPrice / adultsCount);
+
+  // Request Custom Quote State (Need Assistance & Inquiry)
+  const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
+  const [isQuoteSubmitting, setIsQuoteSubmitting] = useState(false);
+  const [quoteForm, setQuoteForm] = useState({
+    name: profile?.name || '',
+    phone: profile?.phone || '',
+    email: profile?.email || '',
+    destination: '',
+    departureCity: '',
+    message: '',
+  });
+
+  const handleQuoteSubmit = async () => {
+    if (!quoteForm.name.trim() || !quoteForm.phone.trim() || !quoteForm.email.trim()) {
+      Alert.alert('Incomplete Details', 'Please provide your full name, phone number, and email.');
+      return;
+    }
+    setIsQuoteSubmitting(true);
+    try {
+      await createPackageLead({
+        packageId: String(pkgId),
+        packageTitle: pkgData?.title || 'Tour Package',
+        name: quoteForm.name.trim(),
+        phone: quoteForm.phone.trim(),
+        email: quoteForm.email.trim(),
+        destination: quoteForm.destination || pkgData?.location || 'Uttarakhand',
+        departureCity: quoteForm.departureCity || departureCity || 'Haldwani',
+        message: quoteForm.message.trim(),
+      });
+      setIsQuoteModalOpen(false);
+      setQuoteForm({
+        name: profile?.name || '',
+        phone: profile?.phone || '',
+        email: profile?.email || '',
+        destination: '',
+        departureCity: '',
+        message: '',
+      });
+      Alert.alert(
+        'Request Sent!',
+        'Your custom quote request has been sent successfully. Our travel experts will contact you shortly.'
+      );
+    } catch (err) {
+      console.warn('Failed to submit quote request:', err);
+      Alert.alert('Error', 'Could not send request. Please try again.');
+    } finally {
+      setIsQuoteSubmitting(false);
+    }
+  };
 
   const handleBookNow = () => {
     if (!isAuthenticated) {
@@ -287,6 +525,7 @@ export default function PackageDetailScreen() {
         checkOut: checkOutDate,
         location: 'Uttarakhand, India',
         bookingType: 'package',
+        departureCity: departureCity,
       },
     });
   };
@@ -298,7 +537,7 @@ export default function PackageDetailScreen() {
       <ScrollView
         ref={scrollRef}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: 100 + bottomNavPadding }]}
       >
         {/* Top Header Navigation Overlay */}
         <View style={styles.topNavContainer}>
@@ -377,11 +616,23 @@ export default function PackageDetailScreen() {
 
           {/* Rating Summary */}
           <View style={styles.ratingRow}>
-            <View style={styles.ratingBox}>
-              <Star color="#F59E0B" fill="#F59E0B" size={14} />
-              <Text style={styles.ratingScore}>{pkgData.rating}</Text>
-            </View>
-            <Text style={styles.reviewsCount}>({pkgData.reviews || 142} traveler reviews)</Text>
+            {effectiveRating ? (
+              <>
+                <View style={styles.ratingBox}>
+                  <Star color="#F59E0B" fill="#F59E0B" size={14} />
+                  <Text style={styles.ratingScore}>{effectiveRating}</Text>
+                </View>
+                <Text style={styles.reviewsCount}>
+                  ({effectiveReviewsCount} {effectiveReviewsCount === 1 ? 'traveler review' : 'traveler reviews'})
+                </Text>
+              </>
+            ) : (
+              <View style={styles.ratingBox}>
+                <Star color="#F59E0B" fill="#F59E0B" size={14} />
+                <Text style={styles.ratingScore}>New</Text>
+                <Text style={styles.reviewsCount}>· No reviews yet</Text>
+              </View>
+            )}
           </View>
 
           {/* Highlights */}
@@ -394,9 +645,26 @@ export default function PackageDetailScreen() {
             ))}
           </View>
 
-          {/* 🌟 START DATE / END DATE & TRAVELERS GROUPED BAR */}
+          {/* 🌟 3-COLUMN BOOKING BAR: DEPARTURE CITY | START DATE | TRAVELERS (Matches Design) */}
           <View style={styles.packageBookingGroupedBar}>
-            {/* Start Date */}
+            {/* Departure City */}
+            <TouchableOpacity
+              style={styles.packageGroupedCol}
+              activeOpacity={0.7}
+              onPress={() => setIsDeparturePickerOpen(true)}
+            >
+              <Text style={styles.packageGroupedCoralLabel}>DEPARTURE CITY</Text>
+              <View style={styles.departureValueRow}>
+                <Text style={styles.packageGroupedValue} numberOfLines={1}>
+                  {typeof departureCity === 'string' ? departureCity : ((departureCity as any)?.cityName || 'Haldwani')}
+                </Text>
+                <ChevronDown color="#475569" size={14} style={{ marginLeft: 3 }} />
+              </View>
+            </TouchableOpacity>
+
+            <View style={styles.packageGroupedDivider} />
+
+            {/* Start Date Only */}
             <TouchableOpacity
               style={styles.packageGroupedCol}
               activeOpacity={0.8}
@@ -405,30 +673,15 @@ export default function PackageDetailScreen() {
                 setIsDatePickerOpen(true);
               }}
             >
-              <Text style={styles.packageGroupedLabel}>START DATE</Text>
-              <Text style={styles.packageGroupedValue}>{checkInDate || 'Add date'}</Text>
-            </TouchableOpacity>
-
-            <View style={styles.packageGroupedDivider} />
-
-            {/* End Date */}
-            <TouchableOpacity
-              style={styles.packageGroupedCol}
-              activeOpacity={0.8}
-              onPress={() => {
-                setDateSelectionStep('checkout');
-                setIsDatePickerOpen(true);
-              }}
-            >
-              <Text style={styles.packageGroupedLabel}>END DATE</Text>
-              <Text style={styles.packageGroupedValue}>{checkOutDate || 'Add date'}</Text>
+              <Text style={styles.packageGroupedDarkLabel}>START DATE</Text>
+              <Text style={styles.packageGroupedValue} numberOfLines={1}>{checkInDate || 'Add date'}</Text>
             </TouchableOpacity>
 
             <View style={styles.packageGroupedDivider} />
 
             {/* Travelers Stepper */}
             <View style={styles.packageGroupedCol}>
-              <Text style={styles.packageGroupedLabel}>TRAVELERS</Text>
+              <Text style={styles.packageGroupedDarkLabel}>TRAVELERS</Text>
               <View style={styles.travelerStepperRow}>
                 <TouchableOpacity
                   style={styles.stepperCircleBtn}
@@ -517,7 +770,7 @@ export default function PackageDetailScreen() {
             <Text style={styles.sectionSubtitle}>Detailed day-by-day plan organized by Racoonn</Text>
 
             <View style={styles.itineraryList}>
-              {MOCK_ITINERARY.map((day) => {
+              {effectiveItinerary.map((day: any) => {
                 const isOpen = openDay === day.dayNumber;
                 return (
                   <View
@@ -549,17 +802,29 @@ export default function PackageDetailScreen() {
 
                     {isOpen && (
                       <View style={styles.itineraryBody}>
-                        {day.points.map((pt, pIdx) => (
-                          <View key={pIdx} style={styles.stepCard}>
+                        {Array.isArray(day.points) && day.points.length > 0 ? (
+                          day.points.map((pt: any, pIdx: number) => (
+                            <View key={pIdx} style={styles.stepCard}>
+                              <View style={styles.stepIconBadge}>
+                                <CheckCircle2 color={Colors.brand.coral} size={15} />
+                              </View>
+                              <View style={{ flex: 1 }}>
+                                <Text style={styles.pointTitle}>{pt.title}</Text>
+                                <Text style={styles.pointDesc}>{pt.description}</Text>
+                              </View>
+                            </View>
+                          ))
+                        ) : (
+                          <View style={styles.stepCard}>
                             <View style={styles.stepIconBadge}>
                               <CheckCircle2 color={Colors.brand.coral} size={15} />
                             </View>
                             <View style={{ flex: 1 }}>
-                              <Text style={styles.pointTitle}>{pt.title}</Text>
-                              <Text style={styles.pointDesc}>{pt.description}</Text>
+                              <Text style={styles.pointTitle}>{day.activities || day.title || `Day ${day.dayNumber} Overview`}</Text>
+                              <Text style={styles.pointDesc}>Enjoy scheduled activities and sightseeings for Day {day.dayNumber}.</Text>
                             </View>
                           </View>
-                        ))}
+                        )}
                       </View>
                     )}
                   </View>
@@ -579,7 +844,7 @@ export default function PackageDetailScreen() {
             <Text style={styles.sectionSubtitle}>Select resort option to customize your tour package</Text>
 
             <View style={styles.optionsList}>
-              {MOCK_HOTEL_OPTIONS.map((hotel, idx) => {
+              {effectiveHotels.map((hotel: any, idx: number) => {
                 const isSelected = selectedHotelIndex === idx;
                 return (
                   <TouchableOpacity
@@ -598,7 +863,7 @@ export default function PackageDetailScreen() {
                       </View>
 
                       {/* Star Rating Overlay */}
-                      {hotel.tags[0] && (
+                      {hotel.tags && hotel.tags[0] && (
                         <View style={styles.hotelTagOverlay}>
                           <Star color="#F59E0B" fill="#F59E0B" size={11} />
                           <Text style={styles.hotelTagOverlayText}>{hotel.tags[0]}</Text>
@@ -612,13 +877,15 @@ export default function PackageDetailScreen() {
                       <Text style={styles.optionDesc}>{hotel.description}</Text>
 
                       {/* Feature Tags */}
-                      <View style={styles.tagRow}>
-                        {hotel.tags.slice(1).map((t, ti) => (
-                          <View key={ti} style={styles.tagChip}>
-                            <Text style={styles.tagChipText}>{t}</Text>
-                          </View>
-                        ))}
-                      </View>
+                      {Array.isArray(hotel.tags) && hotel.tags.length > 1 && (
+                        <View style={styles.tagRow}>
+                          {hotel.tags.slice(1).map((t: string, ti: number) => (
+                            <View key={ti} style={styles.tagChip}>
+                              <Text style={styles.tagChipText}>{t}</Text>
+                            </View>
+                          ))}
+                        </View>
+                      )}
 
                       {/* Divider */}
                       <View style={styles.optionDivider} />
@@ -656,7 +923,7 @@ export default function PackageDetailScreen() {
             <Text style={styles.sectionSubtitle}>Tap to add optional adventure activities</Text>
 
             <View style={styles.optionsList}>
-              {MOCK_ACTIVITY_OPTIONS.map((act, idx) => {
+              {effectiveActivities.map((act: any, idx: number) => {
                 const isSelected = selectedActivities.includes(idx);
                 return (
                   <TouchableOpacity
@@ -724,80 +991,103 @@ export default function PackageDetailScreen() {
             </View>
 
             <View style={styles.reviewsList}>
-              {reviewsList.map((rev) => (
-                <View key={rev.id} style={styles.reviewCard}>
-                  <View style={styles.reviewCardHeader}>
-                    <View style={styles.reviewAvatar}>
-                      <Text style={styles.reviewAvatarText}>{rev.userName.slice(0, 1)}</Text>
-                    </View>
-                    <View style={{ flex: 1, marginLeft: 10 }}>
-                      <Text style={styles.reviewUserName}>{rev.userName}</Text>
-                      <Text style={styles.reviewDate}>{rev.date}</Text>
-                    </View>
-                    <View style={styles.reviewStarBadge}>
-                      <Star color="#F59E0B" fill="#F59E0B" size={12} />
-                      <Text style={styles.reviewStarText}>{rev.rating}.0</Text>
-                    </View>
-                  </View>
-                  <Text style={styles.reviewText}>{rev.text}</Text>
+              {reviewsList.length === 0 ? (
+                <View style={styles.noReviewsBox}>
+                  <MessageCircle size={32} color="#94A3B8" style={{ marginBottom: 8 }} />
+                  <Text style={styles.noReviewsTitle}>No reviews yet</Text>
+                  <Text style={styles.noReviewsSub}>Be the first to share your experience on this package!</Text>
                 </View>
-              ))}
+              ) : (
+                reviewsList.map((rev) => (
+                  <View key={rev.id} style={styles.reviewCard}>
+                    <View style={styles.reviewCardHeader}>
+                      <View style={styles.reviewAvatar}>
+                        <Text style={styles.reviewAvatarText}>{rev.userName.slice(0, 1)}</Text>
+                      </View>
+                      <View style={{ flex: 1, marginLeft: 10 }}>
+                        <Text style={styles.reviewUserName}>{rev.userName}</Text>
+                        <Text style={styles.reviewDate}>{rev.date}</Text>
+                      </View>
+                      <View style={styles.reviewStarBadge}>
+                        <Star color="#F59E0B" fill="#F59E0B" size={12} />
+                        <Text style={styles.reviewStarText}>{rev.rating}.0</Text>
+                      </View>
+                    </View>
+                    <Text style={styles.reviewText}>{rev.text}</Text>
+                  </View>
+                ))
+              )}
             </View>
           </View>
 
           <View style={styles.divider} />
 
-          {/* Section 5: Contact & Verification */}
+          {/* Section 5: Get in Touch (Need Assistance & Inquiry) */}
           <View
             onLayout={(e: any) => (sectionPositions.current['contact'] = e.nativeEvent.layout.y)}
             style={styles.sectionBox}
           >
-            <Text style={styles.sectionTitle}>Need Assistance & Inquiry</Text>
-            <Text style={styles.sectionSubtitle}>Get in touch with our 24/7 Racoonn tour experts</Text>
+            <Text style={styles.sectionTitle}>Get in Touch</Text>
 
-            {/* 100% Guaranteed Badge */}
-            <View style={styles.contactCard}>
-              <ShieldCheck color={Colors.brand.coral} size={32} />
-              <View style={{ flex: 1, marginLeft: 12 }}>
-                <Text style={styles.contactCardTitle}>100% Guaranteed Racoonn Experience</Text>
-                <Text style={styles.contactCardSub}>
-                  Assigned personal tour manager, 24/7 mountain helpline & instant confirmation.
-                </Text>
-              </View>
-            </View>
+            <View style={styles.getInTouchCard}>
+              <Text style={styles.getInTouchDescription}>
+                Have a special request or need more details about this package? Our travel experts are here to help!
+              </Text>
 
-            {/* Contact Action Buttons */}
-            <View style={styles.contactButtonsGrid}>
+              {/* Request Custom Quote */}
+              <TouchableOpacity
+                style={styles.customQuoteBtn}
+                activeOpacity={0.88}
+                onPress={() => {
+                  setQuoteForm((prev) => ({
+                    ...prev,
+                    destination: pkgData?.location || 'Uttarakhand',
+                    departureCity: departureCity || 'Haldwani',
+                  }));
+                  setIsQuoteModalOpen(true);
+                }}
+              >
+                <Sparkles color="#FFFFFF" size={18} style={{ marginRight: 8 }} />
+                <Text style={styles.customQuoteBtnText}>Request a Custom Quote</Text>
+              </TouchableOpacity>
+
               {/* Call Us Now */}
               <TouchableOpacity
-                style={styles.contactActionBtn}
+                style={styles.callNowBtn}
                 activeOpacity={0.85}
                 onPress={() => Linking.openURL('tel:+9118001234567')}
               >
-                <View style={styles.contactActionIconBg}>
-                  <PhoneCall color={Colors.brand.coral} size={20} />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.contactActionTitle}>Call Us Now</Text>
-                  <Text style={styles.contactActionSub}>1800 123 4567 (Toll Free)</Text>
-                </View>
-                <ArrowRight color="#94A3B8" size={16} />
+                <PhoneCall color="#FFFFFF" size={18} style={{ marginRight: 8 }} />
+                <Text style={styles.callNowBtnText}>Call Us Now</Text>
+              </TouchableOpacity>
+
+              {/* WhatsApp */}
+              <TouchableOpacity
+                style={styles.whatsAppBtn}
+                activeOpacity={0.85}
+                onPress={() =>
+                  Linking.openURL(
+                    'https://wa.me/919876543210?text=' +
+                      encodeURIComponent(`Hi Racoonn Team, I would like to inquire about the package "${pkgData.title}".`)
+                  )
+                }
+              >
+                <MessageCircle color="#FFFFFF" size={18} style={{ marginRight: 8 }} />
+                <Text style={styles.whatsAppBtnText}>WhatsApp</Text>
               </TouchableOpacity>
 
               {/* Email Support */}
               <TouchableOpacity
-                style={styles.contactActionBtn}
+                style={styles.emailSupportBtn}
                 activeOpacity={0.85}
-                onPress={() => Linking.openURL('mailto:support@racoonn.com')}
+                onPress={() =>
+                  Linking.openURL(
+                    'mailto:support@racoonn.com?subject=' +
+                      encodeURIComponent(`Inquiry for Package: ${pkgData.title}`)
+                  )
+                }
               >
-                <View style={styles.contactActionIconBg}>
-                  <Mail color={Colors.brand.coral} size={20} />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.contactActionTitle}>Email Support</Text>
-                  <Text style={styles.contactActionSub}>support@racoonn.com</Text>
-                </View>
-                <ArrowRight color="#94A3B8" size={16} />
+                <Text style={styles.emailSupportBtnText}>Email Support</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -806,7 +1096,7 @@ export default function PackageDetailScreen() {
 
       {/* Floating Bottom Booking Bar */}
       {!isWriteReviewOpen && !isDatePickerOpen && !isGuestPickerOpen && (
-        <View style={styles.bottomBar}>
+        <View style={[styles.bottomBar, { paddingBottom: bottomNavPadding }]}>
           <View>
             <Text style={styles.bottomPriceLabel}>Total for {adultsCount} {adultsCount === 1 ? 'Guest' : 'Guests'}</Text>
             <View style={styles.bottomPriceRow}>
@@ -903,117 +1193,133 @@ export default function PackageDetailScreen() {
         </TouchableWithoutFeedback>
       </Modal>
 
-      {/* Date Selection Slide-Up Bottom Sheet Window */}
+      {/* Departure City Slide-Up Selection Modal */}
       <Modal
-        visible={isDatePickerOpen}
+        visible={isDeparturePickerOpen}
         animationType="slide"
         transparent={true}
-        onRequestClose={() => setIsDatePickerOpen(false)}
+        onRequestClose={() => setIsDeparturePickerOpen(false)}
       >
-        <TouchableWithoutFeedback onPress={() => setIsDatePickerOpen(false)}>
+        <TouchableWithoutFeedback onPress={() => setIsDeparturePickerOpen(false)}>
           <View style={styles.modalOverlay}>
             <TouchableWithoutFeedback onPress={(e) => e.stopPropagation()}>
               <View style={[styles.writeModalCard, { paddingBottom: Math.max(insets.bottom + 24, 32) }]}>
                 {/* Top Drag Handle Bar */}
                 <View style={styles.sheetHandleBar} />
 
-                {/* Header Row */}
+                {/* Header */}
                 <View style={styles.modalHeaderRow}>
                   <View>
-                    <Text style={styles.modalTitle}>
-                      {dateSelectionStep === 'checkin' ? 'Select Check-In Date' : 'Select Check-Out Date'}
-                    </Text>
-                    <Text style={styles.modalSubTitle}>
-                      {dateSelectionStep === 'checkin'
-                        ? 'Tap a date to set Check-In'
-                        : `Check-in set to ${checkInDate}. Now choose Check-Out date.`}
-                    </Text>
+                    <Text style={styles.modalTitle}>Departure City</Text>
+                    <Text style={styles.modalSubTitle}>Select where your package trip begins</Text>
                   </View>
                   <TouchableOpacity
                     style={styles.closeBtnCircle}
-                    onPress={() => setIsDatePickerOpen(false)}
+                    onPress={() => setIsDeparturePickerOpen(false)}
                   >
                     <X color="#64748B" size={18} />
                   </TouchableOpacity>
                 </View>
 
-                {/* Step Switcher Tabs */}
-                <View style={styles.dateStepTabRow}>
-                  <TouchableOpacity
-                    style={[styles.dateStepTab, dateSelectionStep === 'checkin' && styles.dateStepTabActive]}
-                    onPress={() => setDateSelectionStep('checkin')}
-                  >
-                    <Text style={[styles.dateStepTabText, dateSelectionStep === 'checkin' && styles.dateStepTabTextActive]}>
-                      1. CHECK-IN ({checkInDate})
-                    </Text>
-                  </TouchableOpacity>
+                {/* City Options List - Realtime from CMS */}
+                <View style={{ marginTop: 14, gap: 10 }}>
+                  {availableDepartureCityObjects.length === 0 ? (
+                    <View style={styles.noCitiesBox}>
+                      <MapPin color="#94A3B8" size={24} style={{ marginBottom: 6 }} />
+                      <Text style={styles.noCitiesTitle}>No Departure Cities Available</Text>
+                      <Text style={styles.noCitiesSub}>
+                        This package does not have custom departure cities configured in the CMS.
+                      </Text>
+                    </View>
+                  ) : (
+                    availableDepartureCityObjects.map((cityObj) => {
+                      const isSelected = (departureCity || '').trim().toLowerCase() === cityObj.cityName.trim().toLowerCase();
+                      return (
+                        <TouchableOpacity
+                          key={cityObj.id || cityObj.cityName}
+                          style={[
+                            styles.cityPickerOption,
+                            isSelected && styles.cityPickerOptionActive,
+                          ]}
+                          activeOpacity={0.75}
+                          onPress={() => {
+                            setDepartureCity(cityObj.cityName);
+                            setIsDeparturePickerOpen(false);
+                          }}
+                        >
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}>
+                            <View
+                              style={[
+                                styles.cityIconCircle,
+                                isSelected && styles.cityIconCircleActive,
+                              ]}
+                            >
+                              <MapPin
+                                color={isSelected ? Colors.brand.coral : '#64748B'}
+                                size={16}
+                              />
+                            </View>
+                            <View style={{ flex: 1 }}>
+                              <Text
+                                style={[
+                                  styles.cityNameText,
+                                  isSelected && styles.cityNameTextActive,
+                                ]}
+                                numberOfLines={1}
+                              >
+                                {cityObj.cityName}
+                              </Text>
+                              {cityObj.isDefault && (
+                                <Text style={styles.cityDefaultBadge}>
+                                  Default Departure
+                                </Text>
+                              )}
+                            </View>
+                          </View>
 
-                  <TouchableOpacity
-                    style={[styles.dateStepTab, dateSelectionStep === 'checkout' && styles.dateStepTabActive]}
-                    onPress={() => setDateSelectionStep('checkout')}
-                  >
-                    <Text style={[styles.dateStepTabText, dateSelectionStep === 'checkout' && styles.dateStepTabTextActive]}>
-                      2. CHECK-OUT ({checkOutDate})
-                    </Text>
-                  </TouchableOpacity>
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                            {cityObj.pricePerPerson > 0 && (
+                              <Text
+                                style={[
+                                  styles.cityPriceBadge,
+                                  isSelected && styles.cityPriceBadgeActive,
+                                ]}
+                              >
+                                +₹{cityObj.pricePerPerson.toLocaleString('en-IN')}
+                              </Text>
+                            )}
+
+                            {isSelected ? (
+                              <View style={styles.cityCheckBadge}>
+                                <Check color="#FFFFFF" size={13} />
+                              </View>
+                            ) : (
+                              <View style={styles.cityRadioUnchecked} />
+                            )}
+                          </View>
+                        </TouchableOpacity>
+                      );
+                    })
+                  )}
                 </View>
-
-                {/* Date Grid Selector */}
-                <Text style={styles.inputLabel}>August 2026</Text>
-                <View style={styles.datePillsGrid}>
-                  {['06 Aug, 2026', '07 Aug, 2026', '08 Aug, 2026', '09 Aug, 2026', '10 Aug, 2026', '11 Aug, 2026', '12 Aug, 2026', '13 Aug, 2026', '14 Aug, 2026', '15 Aug, 2026'].map((dt) => {
-                    const checkInDayNum = parseInt(checkInDate.split(' ')[0], 10) || 6;
-                    const thisDayNum = parseInt(dt.split(' ')[0], 10) || 6;
-                    const isDisabled = dateSelectionStep === 'checkout' && thisDayNum <= checkInDayNum;
-                    const isSelected = dateSelectionStep === 'checkin' ? checkInDate === dt : checkOutDate === dt;
-                    return (
-                      <TouchableOpacity
-                        key={dt}
-                        disabled={isDisabled}
-                        style={[
-                          styles.datePill,
-                          isDisabled && { opacity: 0.35, backgroundColor: '#F1F5F9' },
-                          isSelected && styles.datePillActive,
-                        ]}
-                        activeOpacity={0.8}
-                        onPress={() => {
-                          if (dateSelectionStep === 'checkin') {
-                            setCheckInDate(dt);
-                            // Auto open checkout step after checkin selection!
-                            setDateSelectionStep('checkout');
-                          } else {
-                            setCheckOutDate(dt);
-                            // Auto close modal on checkout selection!
-                            setIsDatePickerOpen(false);
-                          }
-                        }}
-                      >
-                        <Text style={[styles.datePillText, isDisabled && { color: '#94A3B8' }, isSelected && styles.datePillTextActive]}>{dt}</Text>
-                      </TouchableOpacity>
-                    );
-                  })}
-                </View>
-
-                <TouchableOpacity
-                  style={styles.submitReviewBtn}
-                  activeOpacity={0.88}
-                  onPress={() => {
-                    if (dateSelectionStep === 'checkin') {
-                      setDateSelectionStep('checkout');
-                    } else {
-                      setIsDatePickerOpen(false);
-                    }
-                  }}
-                >
-                  <Text style={styles.submitReviewText}>
-                    {dateSelectionStep === 'checkin' ? 'Continue to Check-Out Date →' : 'Confirm Dates'}
-                  </Text>
-                </TouchableOpacity>
               </View>
             </TouchableWithoutFeedback>
           </View>
         </TouchableWithoutFeedback>
       </Modal>
+
+      {/* Custom Calendar Bottom Sheet Modal (Single Start Date Mode) */}
+      <CustomCalendarModal
+        key={`pkg_cal_${checkInDate}_${isDatePickerOpen}`}
+        visible={isDatePickerOpen}
+        onClose={() => setIsDatePickerOpen(false)}
+        checkInDate={checkInDate}
+        mode="single"
+        onSelectDates={(newIn) => {
+          setCheckInDate(newIn);
+          setCheckOutDate(newIn);
+        }}
+      />
 
       {/* Guests & Rooms Slide-Up Dropdown Sheet Window */}
       <Modal
@@ -1176,6 +1482,126 @@ export default function PackageDetailScreen() {
           </View>
         </TouchableWithoutFeedback>
       </Modal>
+
+      {/* Request Custom Quote Modal */}
+      <Modal
+        visible={isQuoteModalOpen}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setIsQuoteModalOpen(false)}
+      >
+        <TouchableWithoutFeedback onPress={() => setIsQuoteModalOpen(false)}>
+          <View style={styles.modalOverlay}>
+            <TouchableWithoutFeedback onPress={(e) => e.stopPropagation()}>
+              <View style={[styles.writeModalCard, { paddingBottom: Math.max(insets.bottom + 24, 32) }]}>
+                {/* Drag Handle Bar */}
+                <View style={styles.sheetHandleBar} />
+
+                {/* Header Row */}
+                <View style={styles.modalHeaderRow}>
+                  <View style={{ flex: 1, paddingRight: 10 }}>
+                    <Text style={styles.modalTitle}>Request a Custom Quote</Text>
+                    <Text style={styles.modalSubTitle}>
+                      Interested in this package? Our travel experts will get back with a personalized quote.
+                    </Text>
+                  </View>
+                  <TouchableOpacity
+                    style={styles.closeBtnCircle}
+                    onPress={() => setIsQuoteModalOpen(false)}
+                  >
+                    <X color="#64748B" size={18} />
+                  </TouchableOpacity>
+                </View>
+
+                {/* Full Name */}
+                <Text style={styles.inputLabel}>Full Name</Text>
+                <TextInput
+                  style={styles.textInput}
+                  placeholder="e.g. John Doe"
+                  placeholderTextColor="#94A3B8"
+                  value={quoteForm.name}
+                  onChangeText={(text) => setQuoteForm((prev) => ({ ...prev, name: text }))}
+                />
+
+                {/* Phone & Email Row */}
+                <View style={{ flexDirection: 'row', gap: 10 }}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.inputLabel}>Phone Number</Text>
+                    <TextInput
+                      style={styles.textInput}
+                      placeholder="+91 9876543210"
+                      placeholderTextColor="#94A3B8"
+                      keyboardType="phone-pad"
+                      value={quoteForm.phone}
+                      onChangeText={(text) => setQuoteForm((prev) => ({ ...prev, phone: text }))}
+                    />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.inputLabel}>Email Address</Text>
+                    <TextInput
+                      style={styles.textInput}
+                      placeholder="john@example.com"
+                      placeholderTextColor="#94A3B8"
+                      keyboardType="email-address"
+                      autoCapitalize="none"
+                      value={quoteForm.email}
+                      onChangeText={(text) => setQuoteForm((prev) => ({ ...prev, email: text }))}
+                    />
+                  </View>
+                </View>
+
+                {/* Destination & Departure City Row */}
+                <View style={{ flexDirection: 'row', gap: 10 }}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.inputLabel}>Destination</Text>
+                    <TextInput
+                      style={styles.textInput}
+                      placeholder="e.g. Mussoorie"
+                      placeholderTextColor="#94A3B8"
+                      value={quoteForm.destination}
+                      onChangeText={(text) => setQuoteForm((prev) => ({ ...prev, destination: text }))}
+                    />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.inputLabel}>Departure City</Text>
+                    <TextInput
+                      style={styles.textInput}
+                      placeholder="e.g. Haldwani"
+                      placeholderTextColor="#94A3B8"
+                      value={quoteForm.departureCity}
+                      onChangeText={(text) => setQuoteForm((prev) => ({ ...prev, departureCity: text }))}
+                    />
+                  </View>
+                </View>
+
+                {/* Additional Requirements */}
+                <Text style={styles.inputLabel}>Additional Requirements (Optional)</Text>
+                <TextInput
+                  style={[styles.textInput, { height: 80, textAlignVertical: 'top' }]}
+                  multiline
+                  placeholder="Tell us about specific customization, travelers count, or special requests..."
+                  placeholderTextColor="#94A3B8"
+                  value={quoteForm.message}
+                  onChangeText={(text) => setQuoteForm((prev) => ({ ...prev, message: text }))}
+                />
+
+                {/* Submit Button */}
+                <TouchableOpacity
+                  style={[styles.customQuoteSubmitBtn, isQuoteSubmitting && { opacity: 0.7 }]}
+                  activeOpacity={0.88}
+                  disabled={isQuoteSubmitting}
+                  onPress={handleQuoteSubmit}
+                >
+                  <Text style={styles.submitReviewText}>
+                    {isQuoteSubmitting ? 'Sending Request...' : 'Send Request'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
+
       <AuthBottomSheet
         visible={isAuthSheetVisible}
         onClose={() => setIsAuthSheetVisible(false)}
@@ -1378,6 +1804,20 @@ const styles = StyleSheet.create({
     height: 36,
     backgroundColor: '#E2E8F0',
   },
+  packageGroupedCoralLabel: {
+    fontSize: 9.5,
+    fontWeight: '800',
+    color: '#E86A70', // Coral color matching user screenshot
+    letterSpacing: 0.5,
+    marginBottom: 3,
+  },
+  packageGroupedDarkLabel: {
+    fontSize: 9.5,
+    fontWeight: '800',
+    color: '#0F172A',
+    letterSpacing: 0.5,
+    marginBottom: 3,
+  },
   packageGroupedLabel: {
     fontSize: 9.5,
     fontWeight: '800',
@@ -1389,6 +1829,97 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '800',
     color: '#0F172A',
+  },
+  departureValueRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  cityPickerOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderRadius: 14,
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1.5,
+    borderColor: '#E2E8F0',
+  },
+  cityPickerOptionActive: {
+    backgroundColor: 'rgba(232, 106, 112, 0.08)',
+    borderColor: Colors.brand.coral,
+  },
+  cityIconCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#EDF2F7',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cityIconCircleActive: {
+    backgroundColor: 'rgba(232, 106, 112, 0.15)',
+  },
+  cityNameText: {
+    fontSize: 14.5,
+    fontWeight: '700',
+    color: '#1E293B',
+  },
+  cityNameTextActive: {
+    color: Colors.brand.coral,
+    fontWeight: '900',
+  },
+  cityCheckBadge: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: Colors.brand.coral,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cityRadioUnchecked: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 1.5,
+    borderColor: '#CBD5E1',
+  },
+  cityDefaultBadge: {
+    fontSize: 10.5,
+    color: '#64748B',
+    fontWeight: '600',
+    marginTop: 1,
+  },
+  cityPriceBadge: {
+    fontSize: 12.5,
+    fontWeight: '800',
+    color: '#0F172A',
+  },
+  cityPriceBadgeActive: {
+    color: Colors.brand.coral,
+  },
+  noCitiesBox: {
+    backgroundColor: '#F8FAFC',
+    borderRadius: 16,
+    paddingVertical: 28,
+    paddingHorizontal: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    borderStyle: 'dashed',
+  },
+  noCitiesTitle: {
+    fontSize: 14.5,
+    fontWeight: '700',
+    color: Colors.brand.navy,
+    marginBottom: 4,
+  },
+  noCitiesSub: {
+    fontSize: 12,
+    color: '#64748B',
+    textAlign: 'center',
+    lineHeight: 16,
   },
   travelerStepperRow: {
     flexDirection: 'row',
@@ -2053,37 +2584,105 @@ const styles = StyleSheet.create({
     marginTop: 2,
     lineHeight: 18,
   },
-  contactButtonsGrid: {
-    gap: 10,
-    marginTop: 12,
-  },
-  contactActionBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F8FAFC',
-    borderRadius: 18,
-    padding: 14,
+  getInTouchCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
     borderWidth: 1,
     borderColor: '#E2E8F0',
+    padding: 22,
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
+    marginTop: 4,
   },
-  contactActionIconBg: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    backgroundColor: 'rgba(232, 106, 112, 0.12)',
+  getInTouchDescription: {
+    fontSize: 15.5,
+    color: '#334155',
+    lineHeight: 23,
+    marginBottom: 22,
+    fontWeight: '400',
+  },
+  customQuoteBtn: {
+    backgroundColor: Colors.brand.coral,
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 14,
+    paddingVertical: 15,
+    borderRadius: 18,
+    marginBottom: 12,
+    shadowColor: Colors.brand.coral,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 3,
   },
-  contactActionTitle: {
-    fontSize: 14.5,
-    fontWeight: '800',
-    color: Colors.brand.navy,
+  customQuoteBtnText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '700',
   },
-  contactActionSub: {
-    fontSize: 12,
-    color: '#64748B',
-    marginTop: 2,
+  customQuoteSubmitBtn: {
+    backgroundColor: Colors.brand.coral,
+    paddingVertical: 15,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 14,
+    shadowColor: Colors.brand.coral,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  callNowBtn: {
+    backgroundColor: '#121826',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 15,
+    borderRadius: 18,
+    marginBottom: 12,
+  },
+  callNowBtnText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  whatsAppBtn: {
+    backgroundColor: '#22C55E',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 15,
+    borderRadius: 18,
+    marginBottom: 12,
+  },
+  whatsAppBtnText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  emailSupportBtn: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 15,
+    borderRadius: 18,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 3,
+    elevation: 1,
+  },
+  emailSupportBtnText: {
+    color: '#0F172A',
+    fontSize: 16,
+    fontWeight: '700',
   },
   bottomBar: {
     position: 'absolute',
@@ -2095,7 +2694,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingVertical: 14,
+    paddingTop: 14,
+    paddingBottom: 14,
     borderTopWidth: 1,
     borderTopColor: '#E2E8F0',
     shadowColor: '#0F172A',
@@ -2223,5 +2823,29 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 15,
     fontWeight: '800',
+  },
+  noReviewsBox: {
+    backgroundColor: '#F8FAFC',
+    borderRadius: 16,
+    paddingVertical: 32,
+    paddingHorizontal: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    borderStyle: 'dashed',
+    marginTop: 8,
+  },
+  noReviewsTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: Colors.brand.navy,
+    marginBottom: 4,
+  },
+  noReviewsSub: {
+    fontSize: 13,
+    color: '#64748B',
+    textAlign: 'center',
+    lineHeight: 18,
   },
 });

@@ -32,17 +32,19 @@ export default function PopularStaysDehradun() {
           });
 
           const mapped = dehradunDocs.map((d: any) => {
-            const rawPrice = Number(d.price || d.startingPrice || d.minPrice || d.basePrice || d.pricePerNight || 3500);
+            const rawPrice = Number(d.price || d.startingPrice || d.minPrice || d.basePrice || d.pricePerNight || 0);
             const photos = Array.isArray(d.photos) ? d.photos : [];
             const photoUrl = photos[0] ? String(photos[0]) : 'https://images.unsplash.com/photo-1549294413-26f195200c16?q=80&w=800&auto=format&fit=crop';
+
+            const hasReviews = Number(d.reviewsCount || 0) > 0 && Number(d.rating || 0) > 0;
 
             return {
               id: String(d.$id),
               title: String(d.propertyName || d.title || 'Dehradun Stay'),
               location: String(d.location || d.city || 'Dehradun'),
               details: String(d.description || 'Premium stay with mountain view'),
-              price: `₹${rawPrice.toLocaleString('en-IN')}`,
-              rating: d.rating ? String(d.rating) : 'New',
+              price: rawPrice > 0 ? `₹${rawPrice.toLocaleString('en-IN')}` : 'Check Rates',
+              rating: hasReviews ? Number(d.rating).toFixed(1) : 'New',
               reviews: Number(d.reviewsCount || 0),
               image: photoUrl,
             };
@@ -100,7 +102,9 @@ export default function PopularStaysDehradun() {
                 <View style={styles.ratingBadge}>
                   <Star color="#F59E0B" fill="#F59E0B" size={11} />
                   <Text style={styles.ratingText}>{item.rating}</Text>
-                  <Text style={styles.reviewsText}>({item.reviews})</Text>
+                  {item.reviews > 0 && item.rating !== 'New' && (
+                    <Text style={styles.reviewsText}> ({item.reviews})</Text>
+                  )}
                 </View>
 
                 <Text style={styles.cardTitle} numberOfLines={1}>{item.title}</Text>

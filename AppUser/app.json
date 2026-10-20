@@ -16,9 +16,11 @@
         "backgroundColor": "#FFFFFF"
       },
       "package": "com.racoonn.appuser",
+      "googleServicesFile": "./google-services.json",
       "permissions": [
         "android.permission.ACCESS_COARSE_LOCATION",
-        "android.permission.ACCESS_FINE_LOCATION"
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.POST_NOTIFICATIONS"
       ]
     },
     "web": {
@@ -43,7 +45,13 @@
           "locationAlwaysAndWhenInUsePermission": "Allow Racoonn to use your location to find nearby hotels and stays."
         }
       ],
-      "expo-notifications",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/icon.png",
+          "color": "#FF5A5F"
+        }
+      ],
       "expo-sharing"
     ],
     "experiments": {
@@ -52,9 +60,9 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "9d6632e1-19ba-48eb-8130-067d57299abd"
+        "projectId": "75c1f1ca-7ffe-4abf-b78a-04af4931876c"
       }
     },
-    "owner": "preettech08"
+    "owner": "racoonn"
   }
 }

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "38380256093",
+    "project_id": "racoonn-8cfb8",
+    "storage_bucket": "racoonn-8cfb8.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:38380256093:android:6d88c7d2c8a1283a9b46b4",
+        "android_client_info": {
+          "package_name": "com.racoonn.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDHjazUB9tWnsMuIOcvCKgPdhM8GDssaiw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

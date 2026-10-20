@@ -30,6 +30,7 @@ import {
   Map as MapIcon,
   Layers,
   ArrowRight,
+  ArrowLeft,
   Wifi,
   Utensils,
   Zap,
@@ -52,10 +53,16 @@ import {
   Coffee,
   Calendar as CalendarIcon,
   Users,
+  Minus,
+  Plus,
+  ChevronLeft,
+  ChevronRight,
+  Sparkles,
 } from 'lucide-react-native';
 import { WebView } from 'react-native-webview';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Colors from '@/constants/Colors';
+import { REAL_STAY_IMAGE } from '@/constants/RealImages';
 import { useAuthStore } from '../../store/authStore';
 import { usePropertyFilterStore } from '../../store/propertyFilterStore';
 import { parseFlexibleDate, formatDisplayDate } from '../../utils/dateUtils';
@@ -67,7 +74,7 @@ const { width: WINDOW_WIDTH, height: WINDOW_HEIGHT } = Dimensions.get('window');
 const MAPBOX_ACCESS_TOKEN =
   process.env.EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN ||
   process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN ||
-  '';
+  'pk.eyJ1IjoiaGltYW5zaHUwNjY2IiwiYSI6ImNtcnc0ankydzAzb2ozMHNlb29ueWtsbTQifQ.mR3wqM4d-EnIXpp1S-l6pQ';
 
 const CITY_COORDINATES: Record<string, [number, number]> = {
   dehradun: [78.0322, 30.3165],
@@ -80,15 +87,26 @@ const CITY_COORDINATES: Record<string, [number, number]> = {
   kathgodam: [79.5434, 29.2713],
   rudrapur: [79.3984, 28.9818],
   bhimtal: [79.5606, 29.3496],
+  sattal: [79.5333, 29.3500],
+  mukteshwar: [79.6473, 29.4722],
+  bhowali: [79.5186, 29.3844],
+  ramgarh: [79.5552, 29.4285],
+  ranikhet: [79.4284, 29.6434],
+  almora: [79.6591, 29.5971],
+  corbett: [79.1284, 29.3949],
+  ramnagar: [79.1284, 29.3949],
   goa: [73.8567, 15.2993],
+  delhi: [77.2090, 28.6139],
+  'new delhi': [77.2090, 28.6139],
 };
 
 const CITY_CHIPS = [
   'All',
+  'Haldwani',
   'Dehradun',
   'Nainital',
   'Mussoorie',
-  'Haldwani',
+  'Delhi',
   'Rishikesh',
   'Bhimtal',
   'Haridwar',
@@ -214,8 +232,9 @@ function renderBookingOptionIcon(iconName: string, isSelected: boolean) {
 function getMapboxSearchHtml(
   stays: any[],
   center: [number, number],
-  styleMode: 'outdoors-v12' | 'satellite-streets-v12',
-  mapboxToken: string
+  styleMode: string = 'outdoors-v12',
+  mapboxToken: string,
+  selectedId: string | null = null
 ): string {
   const [lng, lat] = center;
   const staysJson = JSON.stringify(
@@ -225,7 +244,8 @@ function getMapboxSearchHtml(
       location: s.location,
       price: s.price,
       image: s.image,
-      coords: s.coords || [79.513, 29.2183],
+      ratingText: s.ratingText || '4.8',
+      coords: s.coords || [79.5606, 29.3496],
     }))
   );
 
@@ -234,103 +254,249 @@ function getMapboxSearchHtml(
 <html>
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes" />
   <script src="https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.js"></script>
   <link href="https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.css" rel="stylesheet" />
   <style>
-    * { box-sizing: border-box; }
-    body { margin: 0; padding: 0; width: 100vw; height: 100vh; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    html, body { width: 100%; height: 100%; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
     #map { position: absolute; top: 0; bottom: 0; width: 100%; height: 100%; }
+
+    /* Custom Floating Price Marker matching image */
     .price-marker {
       background-color: #FFFFFF;
       color: #0F172A;
       padding: 6px 14px;
-      border-radius: 20px;
+      border-radius: 22px;
       font-weight: 800;
-      font-size: 13px;
-      border: 2px solid #E86A70;
-      box-shadow: 0 4px 14px rgba(0,0,0,0.22);
+      font-size: 13.5px;
+      letter-spacing: -0.2px;
+      border: 2px solid #FF5A5F;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.22), 0 1px 3px rgba(0,0,0,0.1);
       cursor: pointer;
       white-space: nowrap;
-      transition: transform 0.15s ease, background-color 0.15s ease;
+      transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      user-select: none;
+      -webkit-user-select: none;
     }
-    .price-marker:hover, .price-marker:active {
-      transform: scale(1.12);
-      background-color: #E86A70;
-      color: #FFFFFF;
+    .price-marker.active {
+      background-color: #FF5A5F !important;
+      color: #FFFFFF !important;
+      border-color: #FF5A5F !important;
+      transform: scale(1.15);
+      box-shadow: 0 6px 20px rgba(255, 90, 95, 0.45);
+      z-index: 1000 !important;
     }
+
+    /* Floating Layer Switcher Button matching image */
+    .layer-control-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      width: 38px;
+      height: 38px;
+      background: #FFFFFF;
+      border-radius: 10px;
+      box-shadow: 0 0 0 2px rgba(0,0,0,0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      z-index: 10;
+      transition: background 0.15s ease, transform 0.1s ease;
+    }
+    .layer-control-btn:active {
+      background: #F1F5F9;
+      transform: scale(0.95);
+    }
+    .layer-control-btn svg {
+      width: 20px;
+      height: 20px;
+      fill: none;
+      stroke: #334155;
+      stroke-width: 2;
+    }
+
+    /* Mapbox standard controls repositioned under layer button */
+    .mapboxgl-ctrl-top-right {
+      top: 54px !important;
+      right: 10px !important;
+    }
+    .mapboxgl-ctrl-group {
+      border-radius: 10px !important;
+      overflow: hidden;
+      box-shadow: 0 0 0 2px rgba(0,0,0,0.1) !important;
+    }
+    .mapboxgl-ctrl-group button {
+      width: 36px !important;
+      height: 36px !important;
+    }
+
+    /* Popup card styling */
     .mapboxgl-popup-content {
       border-radius: 16px;
       padding: 0;
       overflow: hidden;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+      box-shadow: 0 10px 25px rgba(0,0,0,0.25);
+      max-width: 220px;
+    }
+    .popup-card {
+      cursor: pointer;
     }
     .popup-img {
       width: 100%;
-      height: 110px;
+      height: 105px;
       object-fit: cover;
+      display: block;
     }
     .popup-body {
-      padding: 10px 12px;
+      padding: 9px 12px 11px;
     }
     .popup-title {
       font-weight: 800;
       font-size: 13px;
       color: #0F172A;
-      margin: 0 0 2px 0;
+      margin: 0 0 3px 0;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
+    .popup-loc {
+      font-size: 11px;
+      color: #64748B;
+      margin-bottom: 5px;
+    }
     .popup-price {
-      color: #E86A70;
+      color: #FF5A5F;
       font-weight: 900;
-      font-size: 14px;
-      margin: 4px 0 0 0;
+      font-size: 13.5px;
     }
   </style>
 </head>
 <body>
   <div id="map"></div>
+
+  <!-- Layer toggle icon matching screenshot -->
+  <div class="layer-control-btn" id="layerToggleBtn" title="Switch Map View">
+    <svg viewBox="0 0 24 24">
+      <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </div>
+
   <script>
     mapboxgl.accessToken = '${mapboxToken}';
+
+    const STYLES = [
+      'mapbox://styles/mapbox/outdoors-v12',
+      'mapbox://styles/mapbox/streets-v12',
+      'mapbox://styles/mapbox/satellite-streets-v12'
+    ];
+    let currentStyleIdx = 0;
+
     const map = new mapboxgl.Map({
       container: 'map',
-      style: 'mapbox://styles/mapbox/${styleMode}',
+      style: STYLES[0],
       center: [${lng}, ${lat}],
-      zoom: 12,
-      pitch: 0
+      zoom: 12.2,
+      pitch: 0,
+      dragRotate: true,
+      touchZoomRotate: true,
+      touchPitch: true
     });
 
     map.addControl(new mapboxgl.NavigationControl({ showCompass: true, showZoom: true }), 'top-right');
-    map.addControl(new mapboxgl.GeolocateControl({
+
+    const geolocate = new mapboxgl.GeolocateControl({
       positionOptions: { enableHighAccuracy: true },
-      trackUserLocation: true
-    }), 'top-right');
+      trackUserLocation: true,
+      showUserHeading: true
+    });
+    map.addControl(geolocate, 'top-right');
+
+    // Layer toggle click handler
+    document.getElementById('layerToggleBtn').addEventListener('click', function() {
+      currentStyleIdx = (currentStyleIdx + 1) % STYLES.length;
+      map.setStyle(STYLES[currentStyleIdx]);
+    });
 
     const staysData = ${staysJson};
+    const markers = {};
+    let activeStayId = '${selectedId || ''}';
 
-    staysData.forEach(stay => {
-      if (!stay.coords || !Array.isArray(stay.coords)) return;
-      const el = document.createElement('div');
-      el.className = 'price-marker';
-      el.innerText = '₹' + Number(stay.price || 3500).toLocaleString('en-IN');
+    function createMarkers() {
+      staysData.forEach(stay => {
+        if (!stay.coords || !Array.isArray(stay.coords)) return;
+        const el = document.createElement('div');
+        el.className = 'price-marker' + (stay.id === activeStayId ? ' active' : '');
+        el.innerText = '₹' + Number(stay.price || 1500).toLocaleString('en-IN');
+        el.id = 'marker-' + stay.id;
 
-      const popupHtml = \`
-        <div onclick="window.ReactNativeWebView.postMessage('\${stay.id}')">
-          <img src="\${stay.image}" class="popup-img" />
-          <div class="popup-body">
-            <div class="popup-title">\${stay.title}</div>
-            <div style="font-size: 11px; color: #64748B;">\${stay.location}</div>
-            <div class="popup-price">₹\${Number(stay.price).toLocaleString('en-IN')} /night</div>
+        const popupHtml = \`
+          <div class="popup-card" onclick="window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'open_stay', id: '\${stay.id}' }))">
+            <img src="\${stay.image}" class="popup-img" />
+            <div class="popup-body">
+              <div class="popup-title">\${stay.title}</div>
+              <div class="popup-loc">\${stay.location}</div>
+              <div class="popup-price">₹\${Number(stay.price).toLocaleString('en-IN')} /night</div>
+            </div>
           </div>
-        </div>
-      \`;
+        \`;
 
-      new mapboxgl.Marker(el)
-        .setLngLat(stay.coords)
-        .setPopup(new mapboxgl.Popup({ offset: 15 }).setHTML(popupHtml))
-        .addTo(map);
+        const popup = new mapboxgl.Popup({ offset: 16 }).setHTML(popupHtml);
+
+        el.addEventListener('click', (e) => {
+          e.stopPropagation();
+          setActiveMarker(stay.id);
+          map.easeTo({ center: stay.coords, duration: 350 });
+          if (window.ReactNativeWebView) {
+            window.ReactNativeWebView.postMessage(JSON.stringify({
+              type: 'marker_click',
+              id: stay.id,
+              title: stay.title,
+              price: stay.price,
+              coords: stay.coords
+            }));
+          }
+        });
+
+        const marker = new mapboxgl.Marker({ element: el })
+          .setLngLat(stay.coords)
+          .setPopup(popup)
+          .addTo(map);
+
+        markers[stay.id] = { marker, el, data: stay };
+      });
+    }
+
+    function setActiveMarker(id) {
+      activeStayId = id;
+      Object.keys(markers).forEach(k => {
+        if (k === id) {
+          markers[k].el.classList.add('active');
+        } else {
+          markers[k].el.classList.remove('active');
+        }
+      });
+    }
+
+    map.on('load', () => {
+      createMarkers();
+      if (staysData.length > 0) {
+        const bounds = new mapboxgl.LngLatBounds();
+        staysData.forEach(s => {
+          if (s.coords && Array.isArray(s.coords)) bounds.extend(s.coords);
+        });
+        if (!bounds.isEmpty()) {
+          map.fitBounds(bounds, { padding: 45, maxZoom: 14.5 });
+        }
+      }
+    });
+
+    map.on('style.load', () => {
+      createMarkers();
     });
   </script>
 </body>
@@ -351,6 +517,7 @@ export default function SearchScreen() {
     infants?: string;
     guests?: string;
     rooms?: string;
+    ai?: string;
   }>();
   const { profile, toggleSavedHotel } = useAuthStore();
   const filterStore = usePropertyFilterStore();
@@ -411,8 +578,45 @@ export default function SearchScreen() {
   const [selectedCity, setSelectedCity] = useState<string>(params.city || 'All');
 
   // Map state
+  const DEFAULT_MAP_HEIGHT = Math.round(WINDOW_HEIGHT * 0.44);
+  const MIN_MAP_HEIGHT = 170;
+  const MAX_MAP_HEIGHT = Math.round(WINDOW_HEIGHT * 0.76);
   const [showMap, setShowMap] = useState<boolean>(false);
-  const [mapCenter, setMapCenter] = useState<[number, number]>([79.5130, 29.2183]);
+  const [mapHeight, setMapHeight] = useState<number>(DEFAULT_MAP_HEIGHT);
+  const [selectedStayId, setSelectedStayId] = useState<string | null>(null);
+  const dragStartHeight = useRef<number>(DEFAULT_MAP_HEIGHT);
+  const mapHeightRef = useRef<number>(DEFAULT_MAP_HEIGHT);
+  mapHeightRef.current = mapHeight;
+  const webViewRef = useRef<WebView>(null);
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: (_, gestureState) => Math.abs(gestureState.dy) > 3,
+      onPanResponderGrant: () => {
+        dragStartHeight.current = mapHeightRef.current;
+      },
+      onPanResponderMove: (_, gestureState) => {
+        const nextH = Math.max(
+          MIN_MAP_HEIGHT,
+          Math.min(MAX_MAP_HEIGHT, dragStartHeight.current + gestureState.dy)
+        );
+        setMapHeight(nextH);
+      },
+      onPanResponderRelease: (_, gestureState) => {
+        const current = dragStartHeight.current + gestureState.dy;
+        if (Math.abs(current - MIN_MAP_HEIGHT) < 40 || gestureState.vy < -0.6) {
+          setMapHeight(MIN_MAP_HEIGHT);
+        } else if (Math.abs(current - MAX_MAP_HEIGHT) < 50 || gestureState.vy > 0.6) {
+          setMapHeight(MAX_MAP_HEIGHT);
+        } else if (Math.abs(current - DEFAULT_MAP_HEIGHT) < 40) {
+          setMapHeight(DEFAULT_MAP_HEIGHT);
+        }
+      },
+    })
+  ).current;
+
+  const [mapCenter, setMapCenter] = useState<[number, number]>([79.5606, 29.3496]);
   const [isSatelliteMode, setIsSatelliteMode] = useState<boolean>(false);
 
   // Filters Modal State (Committed)
@@ -433,6 +637,151 @@ export default function SearchScreen() {
   const [draftBookingOptions, setDraftBookingOptions] = useState<string[]>([]);
   const [showPropertyType, setShowPropertyType] = useState<boolean>(true);
   const [draftPropertyTypes, setDraftPropertyTypes] = useState<string[]>([]);
+
+  // Search Popup Modal State (Image 2)
+  const [isSearchPopupOpen, setIsSearchPopupOpen] = useState<boolean>(false);
+  const [popupDestination, setPopupDestination] = useState<string>('');
+  const [popupCheckIn, setPopupCheckIn] = useState<string>(selectedCheckIn);
+  const [popupCheckOut, setPopupCheckOut] = useState<string>(selectedCheckOut);
+  const [popupAdults, setPopupAdults] = useState<number>(searchAdults);
+  const [popupChildren, setPopupChildren] = useState<number>(searchChildren);
+  const [popupRooms, setPopupRooms] = useState<number>(searchRooms);
+  const [isDatesExpanded, setIsDatesExpanded] = useState<boolean>(false);
+  const [isGuestsExpanded, setIsGuestsExpanded] = useState<boolean>(false);
+
+  const MONTH_NAMES = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ];
+  const WEEK_DAYS = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+
+  const today = useMemo(() => {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  }, []);
+
+  const [popupViewDate, setPopupViewDate] = useState<Date>(() => {
+    const inD = parseFlexibleDate(selectedCheckIn);
+    const safeIn = inD.getTime() < today.getTime() ? today : inD;
+    return new Date(safeIn.getFullYear(), safeIn.getMonth(), 1);
+  });
+
+  const [dateSelectionStep, setDateSelectionStep] = useState<'checkin' | 'checkout'>('checkin');
+
+  const viewYear = popupViewDate.getFullYear();
+  const viewMonth = popupViewDate.getMonth();
+  const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+  const firstDayOfWeek = new Date(viewYear, viewMonth, 1).getDay();
+
+  const isCurrentOrPastMonth =
+    viewYear < today.getFullYear() ||
+    (viewYear === today.getFullYear() && viewMonth <= today.getMonth());
+
+  const handlePrevMonth = () => {
+    if (isCurrentOrPastMonth) return;
+    setPopupViewDate(new Date(viewYear, viewMonth - 1, 1));
+  };
+
+  const handleNextMonth = () => {
+    setPopupViewDate(new Date(viewYear, viewMonth + 1, 1));
+  };
+
+  const parsedIn = useMemo(() => parseFlexibleDate(popupCheckIn), [popupCheckIn]);
+  const parsedOut = useMemo(() => parseFlexibleDate(popupCheckOut), [popupCheckOut]);
+
+  const isCheckInDay = (day: number) => {
+    const y = popupViewDate.getFullYear();
+    const m = popupViewDate.getMonth();
+    return (
+      parsedIn.getFullYear() === y &&
+      parsedIn.getMonth() === m &&
+      parsedIn.getDate() === day
+    );
+  };
+
+  const isCheckOutDay = (day: number) => {
+    const y = popupViewDate.getFullYear();
+    const m = popupViewDate.getMonth();
+    return (
+      parsedOut.getFullYear() === y &&
+      parsedOut.getMonth() === m &&
+      parsedOut.getDate() === day
+    );
+  };
+
+  const isInRangeDay = (day: number) => {
+    const y = popupViewDate.getFullYear();
+    const m = popupViewDate.getMonth();
+    const d = new Date(y, m, day).getTime();
+    return d > parsedIn.getTime() && d < parsedOut.getTime();
+  };
+
+  const isPastDay = (day: number) => {
+    const y = popupViewDate.getFullYear();
+    const m = popupViewDate.getMonth();
+    return new Date(y, m, day).getTime() < today.getTime();
+  };
+
+  const handleInlineDatePress = (day: number) => {
+    const y = popupViewDate.getFullYear();
+    const m = popupViewDate.getMonth();
+    const tapped = new Date(y, m, day);
+    if (tapped.getTime() < today.getTime()) return;
+
+    if (dateSelectionStep === 'checkin') {
+      const newInStr = formatDisplayDate(tapped);
+      setPopupCheckIn(newInStr);
+      if (!popupCheckOut || parsedOut.getTime() <= tapped.getTime()) {
+        const nextDay = new Date(tapped.getTime() + 86400000);
+        setPopupCheckOut(formatDisplayDate(nextDay));
+      }
+      setDateSelectionStep('checkout');
+    } else {
+      if (tapped.getTime() <= parsedIn.getTime()) {
+        setPopupCheckIn(formatDisplayDate(tapped));
+        const nextDay = new Date(tapped.getTime() + 86400000);
+        setPopupCheckOut(formatDisplayDate(nextDay));
+        setDateSelectionStep('checkout');
+      } else {
+        setPopupCheckOut(formatDisplayDate(tapped));
+        setDateSelectionStep('checkin');
+      }
+    }
+  };
+
+  const handleSelectDatePreset = (preset: 'today' | 'weekend' | '3days' | '7days') => {
+    const d1 = new Date();
+    let d2 = new Date();
+    if (preset === 'today') {
+      d2.setDate(d1.getDate() + 1);
+    } else if (preset === '3days') {
+      d2.setDate(d1.getDate() + 3);
+    } else if (preset === '7days') {
+      d2.setDate(d1.getDate() + 7);
+    } else if (preset === 'weekend') {
+      const day = d1.getDay();
+      const daysUntilFri = (5 - day + 7) % 7 || 7;
+      d1.setDate(d1.getDate() + daysUntilFri);
+      d2 = new Date(d1);
+      d2.setDate(d2.getDate() + 2);
+    }
+    setPopupCheckIn(formatDisplayDate(d1));
+    setPopupCheckOut(formatDisplayDate(d2));
+    setPopupViewDate(new Date(d1.getFullYear(), d1.getMonth(), 1));
+  };
+
+  // Number of nights based on selected check-in and check-out
+  const numberOfNights = useMemo(() => {
+    try {
+      const inD = parseFlexibleDate(selectedCheckIn);
+      const outD = parseFlexibleDate(selectedCheckOut);
+      const diffTime = outD.getTime() - inD.getTime();
+      const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+      return Math.max(1, diffDays);
+    } catch {
+      return 1;
+    }
+  }, [selectedCheckIn, selectedCheckOut]);
 
   // Slider dragging & width measurement
   const [sliderWidth, setSliderWidth] = useState<number>(WINDOW_WIDTH - 64);
@@ -585,7 +934,7 @@ export default function SearchScreen() {
             const photos = Array.isArray(d.photos) ? d.photos : [];
             const photoUrl = photos[0]
               ? String(photos[0])
-              : 'https://images.unsplash.com/photo-1540541338287-41700207dee6?auto=format&fit=crop&w=800&q=80';
+              : REAL_STAY_IMAGE;
 
             const cityKey = (d.city || d.location || 'haldwani').toLowerCase().split(',')[0].trim();
             const coords = CITY_COORDINATES[cityKey] || [79.5130 + index * 0.02, 29.2183 + index * 0.02];
@@ -606,6 +955,9 @@ export default function SearchScreen() {
               price: rawPrice > 0 ? rawPrice : 3500,
               image: photoUrl,
               amenities: amList,
+              maxGuests: Number(
+                d.maxGuests || d.guestCapacity || d.capacity || d.occupancy || d.guests || 0
+              ),
               isInstantBook: !!(
                 d.isInstantBook ||
                 d.instantBook ||
@@ -654,7 +1006,219 @@ export default function SearchScreen() {
     setIsFilterModalOpen(true);
   };
 
-  // Helper matching function
+  // AI Natural Language Query Parser (Matches User Portal Search Engine)
+  const [activeAiQuery, setActiveAiQuery] = useState<string>(params.ai || '');
+
+  useEffect(() => {
+    if (params.ai !== undefined) {
+      setActiveAiQuery(params.ai);
+    }
+  }, [params.ai]);
+
+  const parsedAiQuery = useMemo(() => {
+    if (!activeAiQuery || activeAiQuery.trim() === '') return null;
+    let q = activeAiQuery.toLowerCase();
+
+    // Expand abbreviations & common typos
+    q = q
+      .replace(/\bac\b/g, 'air conditioning')
+      .replace(/\bwi-?fi\b/g, 'internet')
+      .replace(/\btv\b/g, 'television')
+      .replace(/\bswiming\b/g, 'pool')
+      .replace(/\bswimmimg\b/g, 'pool');
+
+    // Hinglish dictionary
+    const hinglishMap: Record<string, string> = {
+      sasta: 'budget',
+      saste: 'budget',
+      mahnga: 'luxury',
+      mahanga: 'luxury',
+      pani: 'pool',
+      tarak: 'pool',
+      bacche: 'kids',
+      bache: 'kids',
+      parivar: 'family',
+      shadi: 'event',
+      shaadi: 'event',
+      kutta: 'pet',
+      billi: 'pet',
+      janwar: 'pet',
+      khana: 'restaurant',
+      bhojan: 'restaurant',
+      badiya: 'best',
+      achha: 'good',
+      mast: 'awesome',
+      jabardast: 'awesome',
+      saundarya: 'beautiful',
+      kamar: 'room',
+      kamra: 'room',
+      sardi: 'heater',
+      garmi: 'air conditioning',
+      thanda: 'air conditioning',
+      hawa: 'air conditioning',
+    };
+
+    Object.entries(hinglishMap).forEach(([hinglish, english]) => {
+      const regex = new RegExp(`\\b${hinglish}\\b`, 'gi');
+      q = q.replace(regex, english);
+    });
+
+    // Parse Budget (supports numbers, commas, and 'k' notation like 5k, 10k)
+    let maxBudget = Infinity;
+    const kBudgetMatch = q.match(
+      /(?:under|below|less than|max|budget|around|cheaper than|under rs|under inr|under ₹)\s*(?:rs\.?|inr|₹)?\s*(\d+(?:\.\d+)?)\s*k\b/i
+    );
+    if (kBudgetMatch) {
+      maxBudget = parseFloat(kBudgetMatch[1]) * 1000;
+    } else {
+      const budgetMatch = q.match(
+        /(?:under|below|less than|max|budget|around|cheaper than|under rs|under inr|under ₹)\s*(?:rs\.?|inr|₹)?\s*(\d+(?:,\d+)?)/i
+      );
+      if (budgetMatch) {
+        maxBudget = parseInt(budgetMatch[1].replace(/,/g, ''), 10);
+      }
+    }
+
+    // Parse Guests
+    let minGuests = 1;
+    const guestMatch = q.match(/(?:for\s+)?(\d+)\s*(?:guests?|people|persons?|adults?)/i);
+    if (guestMatch) {
+      minGuests = parseInt(guestMatch[1], 10);
+    } else if (
+      q.includes('couple') ||
+      q.includes('2 people') ||
+      q.includes('two people') ||
+      q.includes('two guests')
+    ) {
+      minGuests = 2;
+    } else if (
+      q.includes('family of 4') ||
+      q.includes('4 people') ||
+      q.includes('four people') ||
+      q.includes('kids')
+    ) {
+      minGuests = 4;
+    }
+
+    // Extract property types
+    const possibleTypes = [
+      'hotel',
+      'homestay',
+      'villa',
+      'resort',
+      'apartment',
+      'cabin',
+      'cottage',
+      'guest house',
+      'camp',
+      'tent',
+    ];
+    const requiredTypes = possibleTypes.filter((t) => q.includes(t));
+
+    // Extract destination / city from AI query if mentioned
+    const knownCities = [
+      'haldwani',
+      'dehradun',
+      'nainital',
+      'mussoorie',
+      'delhi',
+      'rishikesh',
+      'bhimtal',
+      'haridwar',
+      'goa',
+      'manali',
+      'shimla',
+      'jim corbett',
+      'corbett',
+      'ramnagar',
+      'mumbai',
+      'jaipur',
+      'udaipur',
+      'kerala',
+    ];
+    const matchedCity = knownCities.find((c) => q.includes(c));
+
+    // Extract remaining text keywords
+    const stopWords = [
+      'best',
+      'top',
+      'cheap',
+      'show',
+      'me',
+      'find',
+      'the',
+      'in',
+      'at',
+      'on',
+      'with',
+      'for',
+      'of',
+      'and',
+      'good',
+      'great',
+      'awesome',
+      'under',
+      'below',
+      'less',
+      'than',
+      'max',
+      'budget',
+      'around',
+      'price',
+      'cheaper',
+      'rs',
+      'inr',
+      'guests',
+      'people',
+      'persons',
+      'adults',
+      'couple',
+      'family',
+      'properties',
+      'property',
+      'stays',
+      'stay',
+      'rooms',
+      'room',
+      'places',
+      'place',
+      'looking',
+      'want',
+      'need',
+      'please',
+    ];
+    const rawWords = q.split(' ').filter((w) => w.length > 2);
+    const keywords = rawWords.filter(
+      (w) =>
+        !stopWords.includes(w) &&
+        !w.match(/^\d+$/) &&
+        !w.match(/^\d+k$/) &&
+        !requiredTypes.some((t) => t.includes(w)) &&
+        (!matchedCity || !matchedCity.includes(w))
+    );
+
+    return { maxBudget, minGuests, requiredTypes, matchedCity, keywords, rawWords };
+  }, [activeAiQuery]);
+
+  // When AI query specifies a city, auto-set selectedCity and center map
+  useEffect(() => {
+    if (parsedAiQuery?.matchedCity) {
+      const cityCapitalized =
+        parsedAiQuery.matchedCity.charAt(0).toUpperCase() + parsedAiQuery.matchedCity.slice(1);
+      const matchedChip = CITY_CHIPS.find(
+        (c) => c.toLowerCase() === parsedAiQuery.matchedCity?.toLowerCase()
+      );
+      if (matchedChip) {
+        setSelectedCity(matchedChip);
+      }
+      const cKey = parsedAiQuery.matchedCity.toLowerCase();
+      if (CITY_COORDINATES[cKey]) {
+        setMapCenter(CITY_COORDINATES[cKey]);
+      }
+    }
+  }, [parsedAiQuery?.matchedCity]);
+
+  // Helper matching function (matches User Portal logic)
   const checkStayMatches = (
     stay: any,
     minP: number,
@@ -663,16 +1227,66 @@ export default function SearchScreen() {
     bookingOpts: string[],
     propTypes: string[]
   ) => {
-    // City chip filter
-    if (selectedCity !== 'All') {
+    // AI Natural Query Filter
+    if (parsedAiQuery) {
+      const p = Number(stay.price || 0);
+      // 1. Budget check
+      if (p > parsedAiQuery.maxBudget) return false;
+
+      // 2. Capacity check
+      const estimatedCap =
+        stay.maxGuests || Math.max((stay.beds || 1) * 2, (stay.bedrooms || 1) * 2);
+      if (estimatedCap < parsedAiQuery.minGuests) return false;
+
+      // 3. Property Type check
+      if (parsedAiQuery.requiredTypes.length > 0) {
+        const typeStr = `${stay.title} ${stay.subtitle || ''} ${stay.propertyType || ''}`.toLowerCase();
+        const hasType = parsedAiQuery.requiredTypes.some((t) => typeStr.includes(t));
+        if (!hasType) return false;
+      }
+
+      // 4. City match from AI query
+      if (parsedAiQuery.matchedCity) {
+        const locStr = `${stay.title} ${stay.subtitle || ''} ${stay.location || ''} ${stay.city || ''}`.toLowerCase();
+        if (!locStr.includes(parsedAiQuery.matchedCity)) {
+          return false;
+        }
+      }
+
+      // 5. Smart Keywords check (Location, title, amenities) - Matches User Portal 60% flexibility rule
+      const amenitiesStr = Array.isArray(stay.amenities)
+        ? stay.amenities.join(' ')
+        : stay.amenities || '';
+      const fullSearchStr = `${stay.title} ${stay.subtitle || ''} ${stay.location || ''} ${stay.city || ''} ${amenitiesStr}`.toLowerCase();
+
+      const wordsToMatch =
+        parsedAiQuery.keywords.length > 0
+          ? parsedAiQuery.keywords
+          : parsedAiQuery.maxBudget === Infinity &&
+            parsedAiQuery.minGuests === 1 &&
+            parsedAiQuery.requiredTypes.length === 0 &&
+            !parsedAiQuery.matchedCity
+          ? parsedAiQuery.rawWords
+          : [];
+
+      if (wordsToMatch.length > 0) {
+        const matchCount = wordsToMatch.filter((w) => fullSearchStr.includes(w)).length;
+        const requiredMatches =
+          wordsToMatch.length <= 2 ? wordsToMatch.length : Math.ceil(wordsToMatch.length * 0.6);
+        if (matchCount < requiredMatches) return false;
+      }
+    }
+
+    // City chip filter (if selected city is not 'All' and not superseded by parsedAiQuery)
+    if (selectedCity !== 'All' && !parsedAiQuery?.matchedCity) {
       const cLower = selectedCity.toLowerCase();
-      const matchesCity = stay.city.toLowerCase().includes(cLower);
-      const matchesLoc = stay.location.toLowerCase().includes(cLower);
+      const matchesCity = stay.city?.toLowerCase().includes(cLower);
+      const matchesLoc = stay.location?.toLowerCase().includes(cLower);
       if (!matchesCity && !matchesLoc) return false;
     }
 
-    // Search query filter
-    if (searchQuery.trim()) {
+    // Search query filter (when manual query is typed)
+    if (searchQuery.trim() && !activeAiQuery) {
       const qLower = searchQuery.toLowerCase().trim();
       const matchesTitle = stay.title.toLowerCase().includes(qLower);
       const matchesLoc = stay.location.toLowerCase().includes(qLower);
@@ -683,6 +1297,12 @@ export default function SearchScreen() {
     // Price filter
     const p = Number(stay.price || 0);
     if (p < minP || p > maxP) return false;
+
+    // Guest capacity filter (if property specifies maximum guests)
+    if (stay.maxGuests && stay.maxGuests > 0) {
+      const totalAllowed = stay.maxGuests * Math.max(1, searchRooms);
+      if (searchAdults + searchChildren > totalAllowed) return false;
+    }
 
     // Amenities filter
     if (amenities.length > 0) {
@@ -739,7 +1359,17 @@ export default function SearchScreen() {
     selectedAmenities,
     selectedBookingOptions,
     selectedPropertyTypes,
+    searchAdults,
+    searchChildren,
+    searchRooms,
+    activeAiQuery,
+    parsedAiQuery,
   ]);
+
+  const selectedStay = useMemo(() => {
+    if (!selectedStayId) return filteredStays[0] || null;
+    return filteredStays.find((s) => s.id === selectedStayId) || filteredStays[0] || null;
+  }, [selectedStayId, filteredStays]);
 
   // Match count dynamically previewed inside the modal
   const draftMatchCount = useMemo(() => {
@@ -762,6 +1392,8 @@ export default function SearchScreen() {
     draftAmenities,
     draftBookingOptions,
     draftPropertyTypes,
+    activeAiQuery,
+    parsedAiQuery,
   ]);
 
   const activeFiltersCount =
@@ -866,6 +1498,64 @@ export default function SearchScreen() {
     }
   };
 
+  // Open search details popup modal (Image 2)
+  const handleOpenSearchPopup = (focus?: 'destination' | 'dates' | 'guests') => {
+    setPopupDestination(searchQuery || (selectedCity !== 'All' ? selectedCity : ''));
+    setPopupCheckIn(selectedCheckIn);
+    setPopupCheckOut(selectedCheckOut);
+    setPopupAdults(searchAdults);
+    setPopupChildren(searchChildren);
+    setPopupRooms(searchRooms);
+
+    const inD = parseFlexibleDate(selectedCheckIn);
+    const safeIn = inD.getTime() < today.getTime() ? today : inD;
+    setPopupViewDate(new Date(safeIn.getFullYear(), safeIn.getMonth(), 1));
+    setDateSelectionStep('checkin');
+
+    setIsDatesExpanded(focus === 'dates');
+    setIsGuestsExpanded(focus === 'guests');
+    setIsSearchPopupOpen(true);
+  };
+
+  // Commit and apply search parameters from popup modal
+  const handleApplySearchPopup = () => {
+    setSelectedCheckIn(popupCheckIn);
+    setSelectedCheckOut(popupCheckOut);
+    setSearchAdults(popupAdults);
+    setSearchChildren(popupChildren);
+    setSearchRooms(popupRooms);
+
+    const cleanDest = popupDestination.trim();
+    setSearchQuery(cleanDest);
+
+    // If destination matches one of the city chips, set that city chip
+    const matchedCity = CITY_CHIPS.find(
+      (c) => c !== 'All' && c.toLowerCase() === cleanDest.toLowerCase()
+    );
+    if (matchedCity) {
+      setSelectedCity(matchedCity);
+      const cKey = matchedCity.toLowerCase();
+      if (CITY_COORDINATES[cKey]) {
+        setMapCenter(CITY_COORDINATES[cKey]);
+      }
+    } else if (cleanDest === '') {
+      setSelectedCity('All');
+    }
+
+    usePropertyFilterStore.getState().setFilters({
+      checkIn: popupCheckIn,
+      checkOut: popupCheckOut,
+      adults: popupAdults,
+      children: popupChildren,
+      rooms: popupRooms,
+      destination: cleanDest,
+    });
+
+    setIsDatesExpanded(false);
+    setIsGuestsExpanded(false);
+    setIsSearchPopupOpen(false);
+  };
+
   const bottomNavPadding =
     insets.bottom > 0
       ? insets.bottom + 70
@@ -880,59 +1570,87 @@ export default function SearchScreen() {
   const leftThumbPos = minPct * trackUsable;
   const rightThumbPos = maxPct * trackUsable;
 
+  // Dynamic search location title (Defaults to Haldwani if none selected, or shows searched location/city)
+  const currentSearchLocation = useMemo(() => {
+    if (activeAiQuery && activeAiQuery.trim() !== '') {
+      if (parsedAiQuery?.matchedCity) {
+        return parsedAiQuery.matchedCity.charAt(0).toUpperCase() + parsedAiQuery.matchedCity.slice(1);
+      }
+      return 'AI Recommendations';
+    }
+    if (searchQuery && searchQuery.trim() !== '') {
+      const q = searchQuery.trim();
+      // Capitalize first letter of words
+      return q.charAt(0).toUpperCase() + q.slice(1);
+    }
+    if (selectedCity && selectedCity !== 'All') {
+      return selectedCity;
+    }
+    if (params.city && params.city !== 'All') {
+      return params.city;
+    }
+    if (params.q && params.q.trim() !== '') {
+      const q = params.q.trim();
+      return q.charAt(0).toUpperCase() + q.slice(1);
+    }
+    return 'Haldwani';
+  }, [activeAiQuery, parsedAiQuery?.matchedCity, searchQuery, selectedCity, params.city, params.q]);
+
+  // Concise dates and guests subtitle formatted like Image 2: "23–24 Oct · 2 guests"
+  const searchSummarySubtext = useMemo(() => {
+    if (activeAiQuery && activeAiQuery.trim() !== '') {
+      return `Prompt: "${activeAiQuery.length > 28 ? activeAiQuery.substring(0, 28) + '...' : activeAiQuery}"`;
+    }
+    let dateStr = 'Anytime';
+    try {
+      if (selectedCheckIn && selectedCheckOut) {
+        const inD = parseFlexibleDate(selectedCheckIn);
+        const outD = parseFlexibleDate(selectedCheckOut);
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        if (inD.getMonth() === outD.getMonth()) {
+          dateStr = `${inD.getDate()}–${outD.getDate()} ${months[inD.getMonth()]}`;
+        } else {
+          dateStr = `${inD.getDate()} ${months[inD.getMonth()]} – ${outD.getDate()} ${months[outD.getMonth()]}`;
+        }
+      }
+    } catch {
+      dateStr = 'Anytime';
+    }
+
+    const totalGuests = (searchAdults || 2) + (searchChildren || 0);
+    const guestStr = `${totalGuests} ${totalGuests === 1 ? 'guest' : 'guests'}`;
+    return `${dateStr} · ${guestStr}`;
+  }, [activeAiQuery, selectedCheckIn, selectedCheckOut, searchAdults, searchChildren]);
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
       {/* Header Container */}
       <View style={[styles.header, { paddingTop: Math.max(insets.top + 8, 16) }]}>
-        <View style={styles.headerTitleRow}>
-          <View>
-            <View style={styles.badgePillHeader}>
-              <Text style={styles.badgePillHeaderText}>DISCOVER & BOOK</Text>
-            </View>
-            <Text style={styles.headerTitle}>Find Places to Stay</Text>
-          </View>
-          <View style={styles.countBadgeHeader}>
-            <Text style={styles.countBadgeText}>{filteredStays.length} Stays</Text>
-          </View>
-        </View>
+        {/* Search Bar Capsule with Back Arrow (Matches Image 2) */}
+        <View style={styles.searchCapsuleHeaderRow}>
+          <TouchableOpacity
+            style={styles.headerBackBtn}
+            activeOpacity={0.7}
+            onPress={() => router.back()}
+          >
+            <ArrowLeft color="#0F172A" size={22} strokeWidth={2.2} />
+          </TouchableOpacity>
 
-        {/* Integrated Search Bar */}
-        <View style={styles.searchBarBox}>
-          <Search color="#94A3B8" size={18} style={{ marginRight: 10 }} />
-          <TextInput
-            style={styles.searchBarInput}
-            placeholder="Search city, destination, or resort..."
-            placeholderTextColor="#94A3B8"
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-          />
-          {searchQuery.length > 0 && (
-            <TouchableOpacity onPress={() => setSearchQuery('')}>
-              <X color="#94A3B8" size={16} />
-            </TouchableOpacity>
-          )}
+          <TouchableOpacity
+            style={styles.searchCapsuleBar}
+            activeOpacity={0.88}
+            onPress={() => handleOpenSearchPopup()}
+          >
+            <Text style={styles.searchCapsuleTitle} numberOfLines={1}>
+              {currentSearchLocation ? `Homes in ${currentSearchLocation}` : 'Homes nearby'}
+            </Text>
+            <Text style={styles.searchCapsuleSub} numberOfLines={1}>
+              {searchSummarySubtext}
+            </Text>
+          </TouchableOpacity>
         </View>
-
-        {/* Active Search Summary Pill (Dates & Guests) */}
-        {selectedCheckIn ? (
-          <View style={styles.searchSummaryPillRow}>
-            <View style={styles.searchSummaryPill}>
-              <CalendarIcon size={12} color={Colors.brand.coral} style={{ marginRight: 4 }} />
-              <Text style={styles.searchSummaryPillText} numberOfLines={1}>
-                {selectedCheckIn} - {selectedCheckOut}
-              </Text>
-            </View>
-            <View style={[styles.searchSummaryPill, { marginLeft: 6 }]}>
-              <Users size={12} color={Colors.brand.coral} style={{ marginRight: 4 }} />
-              <Text style={styles.searchSummaryPillText}>
-                {searchAdults + searchChildren} {searchAdults + searchChildren === 1 ? 'Guest' : 'Guests'}
-                {searchRooms > 1 ? ` · ${searchRooms} Rooms` : ''}
-              </Text>
-            </View>
-          </View>
-        ) : null}
       </View>
 
       {/* Filter and Mode Bar */}
@@ -942,6 +1660,23 @@ export default function SearchScreen() {
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.filterBarScroll}
         >
+          {/* Active AI Query Badge */}
+          {activeAiQuery ? (
+            <TouchableOpacity
+              style={styles.aiActiveBadgeChip}
+              activeOpacity={0.8}
+              onPress={() => setActiveAiQuery('')}
+            >
+              <Sparkles size={14} color="#FFFFFF" style={{ marginRight: 5 }} />
+              <Text style={styles.aiActiveBadgeText} numberOfLines={1}>
+                AI: {activeAiQuery.length > 20 ? activeAiQuery.slice(0, 20) + '...' : activeAiQuery}
+              </Text>
+              <View style={styles.aiActiveBadgeClose}>
+                <X size={12} color="#FFFFFF" />
+              </View>
+            </TouchableOpacity>
+          ) : null}
+
           {/* Main Filters Button */}
           <TouchableOpacity
             style={[styles.filterToggleBtn, activeFiltersCount > 0 && styles.filterToggleBtnActive]}
@@ -1007,35 +1742,129 @@ export default function SearchScreen() {
         </ScrollView>
       </View>
 
-      {/* Optional Interactive Mapbox View */}
+      {/* Draggable & Adjustable Map View */}
       {showMap && (
-        <View style={styles.mapContainer}>
+        <View style={[styles.mapContainer, { height: mapHeight }]}>
           <WebView
+            ref={webViewRef}
             originWhitelist={['*']}
             source={{
               html: getMapboxSearchHtml(
                 filteredStays,
                 mapCenter,
                 isSatelliteMode ? 'satellite-streets-v12' : 'outdoors-v12',
-                MAPBOX_ACCESS_TOKEN
+                MAPBOX_ACCESS_TOKEN,
+                selectedStayId
               ),
             }}
             style={{ flex: 1 }}
             javaScriptEnabled={true}
             domStorageEnabled={true}
             onMessage={(event) => {
-              const stayId = event.nativeEvent.data;
-              if (stayId) {
-                navigateToStay(stayId);
+              try {
+                const data = JSON.parse(event.nativeEvent.data);
+                if (data.type === 'marker_click' && data.id) {
+                  setSelectedStayId(data.id);
+                } else if (data.type === 'open_stay' && data.id) {
+                  navigateToStay(data.id);
+                }
+              } catch (e) {
+                const stayId = event.nativeEvent.data;
+                if (stayId) {
+                  setSelectedStayId(stayId);
+                }
               }
             }}
           />
-          <TouchableOpacity
-            style={styles.satelliteToggleBtn}
-            onPress={() => setIsSatelliteMode(!isSatelliteMode)}
-          >
-            <Layers color="#0F172A" size={16} />
-          </TouchableOpacity>
+
+          {/* Floating Peeking Card when Map is in Full Mode (matching user image) */}
+          {mapHeight >= WINDOW_HEIGHT * 0.58 && selectedStay && (
+            <View style={styles.floatingStayCard}>
+              <TouchableOpacity
+                style={styles.floatingCardInner}
+                activeOpacity={0.92}
+                onPress={() => navigateToStay(selectedStay.id)}
+              >
+                <Image
+                  source={{ uri: selectedStay.image }}
+                  style={styles.floatingCardImage}
+                  resizeMode="cover"
+                />
+                <View style={styles.floatingCardInfo}>
+                  <View style={styles.floatingCardRatingRow}>
+                    <Star color="#F59E0B" fill="#F59E0B" size={12} style={{ marginRight: 3 }} />
+                    <Text style={styles.floatingCardRatingText}>{selectedStay.ratingText}</Text>
+                    <Text style={styles.floatingCardCityText}>• {selectedStay.city}</Text>
+                  </View>
+                  <Text style={styles.floatingCardTitle} numberOfLines={1}>
+                    {selectedStay.title}
+                  </Text>
+                  <Text style={styles.floatingCardPrice}>
+                    ₹{Number(selectedStay.price).toLocaleString('en-IN')}{' '}
+                    <Text style={styles.floatingCardNight}>/ night</Text>
+                  </Text>
+                </View>
+                <View style={styles.floatingCardAction}>
+                  <ArrowRight color="#FFFFFF" size={16} />
+                </View>
+              </TouchableOpacity>
+            </View>
+          )}
+        </View>
+      )}
+
+      {/* Draggable Divider Handle */}
+      {showMap && (
+        <View {...panResponder.panHandlers} style={styles.dragHandleBar}>
+          <View style={styles.dragPill} />
+          <View style={styles.dragControlsRow}>
+            <Text style={styles.dragHintText}>
+              {mapHeight >= WINDOW_HEIGHT * 0.65
+                ? 'Full Map View'
+                : mapHeight >= WINDOW_HEIGHT * 0.38
+                ? 'Split View'
+                : 'Compact Map'}
+            </Text>
+            <View style={styles.dragSnapButtons}>
+              <TouchableOpacity
+                style={[styles.snapBtn, mapHeight <= 220 && styles.snapBtnActive]}
+                onPress={() => setMapHeight(MIN_MAP_HEIGHT)}
+              >
+                <Text style={[styles.snapBtnText, mapHeight <= 220 && styles.snapBtnTextActive]}>
+                  Small
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.snapBtn,
+                  mapHeight > 220 && mapHeight < WINDOW_HEIGHT * 0.6 && styles.snapBtnActive,
+                ]}
+                onPress={() => setMapHeight(DEFAULT_MAP_HEIGHT)}
+              >
+                <Text
+                  style={[
+                    styles.snapBtnText,
+                    mapHeight > 220 && mapHeight < WINDOW_HEIGHT * 0.6 && styles.snapBtnTextActive,
+                  ]}
+                >
+                  Half
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.snapBtn, mapHeight >= WINDOW_HEIGHT * 0.6 && styles.snapBtnActive]}
+                onPress={() => setMapHeight(MAX_MAP_HEIGHT)}
+              >
+                <Text
+                  style={[
+                    styles.snapBtnText,
+                    mapHeight >= WINDOW_HEIGHT * 0.6 && styles.snapBtnTextActive,
+                  ]}
+                >
+                  Full
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
         </View>
       )}
 
@@ -1138,7 +1967,13 @@ export default function SearchScreen() {
                         <Text style={styles.stayPrice}>₹{stay.price.toLocaleString('en-IN')}</Text>
                         <Text style={styles.stayPricePeriod}> / night</Text>
                       </View>
-                      <Text style={styles.stayTaxText}>+ taxes & fees included</Text>
+                      {numberOfNights > 1 ? (
+                        <Text style={styles.stayTaxText}>
+                          ₹{(stay.price * numberOfNights).toLocaleString('en-IN')} total for {numberOfNights} nights
+                        </Text>
+                      ) : (
+                        <Text style={styles.stayTaxText}>+ taxes & fees included</Text>
+                      )}
                     </View>
 
                     <View style={styles.viewDealBtn}>
@@ -1467,6 +2302,278 @@ export default function SearchScreen() {
           </TouchableWithoutFeedback>
         </KeyboardAvoidingView>
       </Modal>
+
+      {/* Search Details Popup Modal (Image 2 - The Only Popup) */}
+      <Modal
+        visible={isSearchPopupOpen}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setIsSearchPopupOpen(false)}
+      >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={styles.popupModalOverlay}
+        >
+          <TouchableOpacity
+            style={styles.popupBackdropTouchable}
+            activeOpacity={1}
+            onPress={() => setIsSearchPopupOpen(false)}
+          >
+            <View style={styles.popupCardWrapper}>
+              {/* Floating Top-Right Close Button as in Image 2 */}
+              <TouchableOpacity
+                style={styles.popupFloatingCloseBtn}
+                activeOpacity={0.85}
+                onPress={() => setIsSearchPopupOpen(false)}
+              >
+                <X color="#0F172A" size={20} strokeWidth={2.2} />
+              </TouchableOpacity>
+
+              {/* White Card */}
+              <TouchableOpacity
+                activeOpacity={1}
+                style={styles.popupCard}
+                onPress={(e) => e.stopPropagation()}
+              >
+                <ScrollView
+                  style={{ maxHeight: WINDOW_HEIGHT * 0.76 }}
+                  showsVerticalScrollIndicator={false}
+                  bounces={false}
+                >
+                  {/* 3-Section Grouped Box (Matches Image 2) */}
+                  <View style={styles.popupGroupedBox}>
+                    {/* Row 1: Where to? */}
+                    <View style={styles.popupBoxRow}>
+                      <MapPin color={Colors.brand.coral} size={24} strokeWidth={2} style={styles.popupBoxIcon} />
+                      <View style={styles.popupBoxContent}>
+                        <Text style={styles.popupBoxTitle}>Where to?</Text>
+                        <TextInput
+                          style={styles.popupBoxInput}
+                          placeholder="Search destination"
+                          placeholderTextColor="#94A3B8"
+                          value={popupDestination}
+                          onChangeText={setPopupDestination}
+                          returnKeyType="done"
+                        />
+                      </View>
+                      {popupDestination.length > 0 && (
+                        <TouchableOpacity onPress={() => setPopupDestination('')} style={styles.popupClearInputBtn}>
+                          <X color="#94A3B8" size={16} />
+                        </TouchableOpacity>
+                      )}
+                    </View>
+
+                    <View style={styles.popupBoxDivider} />
+
+                    {/* Row 2: Check in - Check out */}
+                    <TouchableOpacity
+                      style={styles.popupBoxRow}
+                      activeOpacity={0.7}
+                      onPress={() => setIsDatesExpanded(!isDatesExpanded)}
+                    >
+                      <CalendarIcon color={Colors.brand.coral} size={24} strokeWidth={2} style={styles.popupBoxIcon} />
+                      <View style={styles.popupBoxContent}>
+                        <Text style={styles.popupBoxTitle}>Check in - Check out</Text>
+                        <Text
+                          style={[
+                            styles.popupBoxSubtitle,
+                            popupCheckIn && popupCheckOut && styles.popupBoxSubtitleActive,
+                          ]}
+                        >
+                          {popupCheckIn && popupCheckOut
+                            ? `${popupCheckIn} - ${popupCheckOut}`
+                            : 'Add dates'}
+                        </Text>
+                      </View>
+                    </TouchableOpacity>
+
+                    {/* Expandable Clean Compact Inline Calendar */}
+                    {isDatesExpanded && (
+                      <View style={styles.inlineCalendarContainer}>
+                        {/* Month Switcher Header */}
+                        <View style={styles.calMonthNavRow}>
+                          <TouchableOpacity
+                            style={[styles.calNavBtn, isCurrentOrPastMonth && styles.calNavBtnDisabled]}
+                            disabled={isCurrentOrPastMonth}
+                            onPress={handlePrevMonth}
+                          >
+                            <ChevronLeft size={18} color={isCurrentOrPastMonth ? '#CBD5E1' : '#0F172A'} />
+                          </TouchableOpacity>
+
+                          <Text style={styles.calMonthNavTitle}>
+                            {MONTH_NAMES[viewMonth]} {viewYear}
+                          </Text>
+
+                          <TouchableOpacity style={styles.calNavBtn} onPress={handleNextMonth}>
+                            <ChevronRight size={18} color="#0F172A" />
+                          </TouchableOpacity>
+                        </View>
+
+                        {/* Weekday Labels */}
+                        <View style={styles.calWeekDaysRow}>
+                          {WEEK_DAYS.map((w, idx) => (
+                            <Text key={idx} style={styles.calWeekDayLabel}>
+                              {w}
+                            </Text>
+                          ))}
+                        </View>
+
+                        {/* Day Grid */}
+                        <View style={styles.calDaysGrid}>
+                          {Array.from({ length: firstDayOfWeek }).map((_, i) => (
+                            <View key={`empty-${i}`} style={styles.calDayCell} />
+                          ))}
+                          {Array.from({ length: daysInMonth }).map((_, i) => {
+                            const day = i + 1;
+                            const isSelected = isCheckInDay(day) || isCheckOutDay(day);
+                            const inRange = isInRangeDay(day);
+                            const past = isPastDay(day);
+
+                            return (
+                              <TouchableOpacity
+                                key={day}
+                                style={[
+                                  styles.calDayCell,
+                                  inRange && styles.calDayCellInRange,
+                                  isSelected && styles.calDayCellSelected,
+                                ]}
+                                disabled={past}
+                                onPress={() => handleInlineDatePress(day)}
+                                activeOpacity={0.7}
+                              >
+                                <Text
+                                  style={[
+                                    styles.calDayText,
+                                    past && styles.calDayTextPast,
+                                    inRange && styles.calDayTextInRange,
+                                    isSelected && styles.calDayTextSelected,
+                                  ]}
+                                >
+                                  {day}
+                                </Text>
+                              </TouchableOpacity>
+                            );
+                          })}
+                        </View>
+                      </View>
+                    )}
+
+                    <View style={styles.popupBoxDivider} />
+
+                    {/* Row 3: Guests */}
+                    <TouchableOpacity
+                      style={styles.popupBoxRow}
+                      activeOpacity={0.7}
+                      onPress={() => setIsGuestsExpanded(!isGuestsExpanded)}
+                    >
+                      <Users color={Colors.brand.coral} size={24} strokeWidth={2} style={styles.popupBoxIcon} />
+                      <View style={styles.popupBoxContent}>
+                        <Text style={styles.popupBoxTitle}>Guests</Text>
+                        <Text
+                          style={[
+                            styles.popupBoxSubtitle,
+                            popupAdults + popupChildren > 0 && styles.popupBoxSubtitleActive,
+                          ]}
+                        >
+                          {popupAdults + popupChildren > 0
+                            ? `${popupAdults + popupChildren} ${popupAdults + popupChildren === 1 ? 'Guest' : 'Guests'}${popupRooms > 1 ? ` · ${popupRooms} Rooms` : ''}`
+                            : 'Add guests'}
+                        </Text>
+                      </View>
+                    </TouchableOpacity>
+
+                    {/* Expandable Guest & Room Steppers */}
+                    {isGuestsExpanded && (
+                      <View style={styles.popupStepperContainer}>
+                        {/* Adults */}
+                        <View style={styles.popupStepperRow}>
+                          <View>
+                            <Text style={styles.popupStepperTitle}>Adults</Text>
+                            <Text style={styles.popupStepperSub}>Ages 13 or above</Text>
+                          </View>
+                          <View style={styles.popupStepperControls}>
+                            <TouchableOpacity
+                              style={[styles.popupStepperBtn, popupAdults <= 1 && styles.popupStepperBtnDisabled]}
+                              disabled={popupAdults <= 1}
+                              onPress={() => setPopupAdults((prev) => Math.max(1, prev - 1))}
+                            >
+                              <Minus size={16} color={popupAdults <= 1 ? '#CBD5E1' : '#0F172A'} />
+                            </TouchableOpacity>
+                            <Text style={styles.popupStepperValue}>{popupAdults}</Text>
+                            <TouchableOpacity
+                              style={styles.popupStepperBtn}
+                              onPress={() => setPopupAdults((prev) => prev + 1)}
+                            >
+                              <Plus size={16} color="#0F172A" />
+                            </TouchableOpacity>
+                          </View>
+                        </View>
+
+                        {/* Children */}
+                        <View style={styles.popupStepperRow}>
+                          <View>
+                            <Text style={styles.popupStepperTitle}>Children</Text>
+                            <Text style={styles.popupStepperSub}>Ages 2 – 12</Text>
+                          </View>
+                          <View style={styles.popupStepperControls}>
+                            <TouchableOpacity
+                              style={[styles.popupStepperBtn, popupChildren <= 0 && styles.popupStepperBtnDisabled]}
+                              disabled={popupChildren <= 0}
+                              onPress={() => setPopupChildren((prev) => Math.max(0, prev - 1))}
+                            >
+                              <Minus size={16} color={popupChildren <= 0 ? '#CBD5E1' : '#0F172A'} />
+                            </TouchableOpacity>
+                            <Text style={styles.popupStepperValue}>{popupChildren}</Text>
+                            <TouchableOpacity
+                              style={styles.popupStepperBtn}
+                              onPress={() => setPopupChildren((prev) => prev + 1)}
+                            >
+                              <Plus size={16} color="#0F172A" />
+                            </TouchableOpacity>
+                          </View>
+                        </View>
+
+                        {/* Rooms */}
+                        <View style={[styles.popupStepperRow, { borderBottomWidth: 0 }]}>
+                          <View>
+                            <Text style={styles.popupStepperTitle}>Rooms</Text>
+                            <Text style={styles.popupStepperSub}>Number of rooms</Text>
+                          </View>
+                          <View style={styles.popupStepperControls}>
+                            <TouchableOpacity
+                              style={[styles.popupStepperBtn, popupRooms <= 1 && styles.popupStepperBtnDisabled]}
+                              disabled={popupRooms <= 1}
+                              onPress={() => setPopupRooms((prev) => Math.max(1, prev - 1))}
+                            >
+                              <Minus size={16} color={popupRooms <= 1 ? '#CBD5E1' : '#0F172A'} />
+                            </TouchableOpacity>
+                            <Text style={styles.popupStepperValue}>{popupRooms}</Text>
+                            <TouchableOpacity
+                              style={styles.popupStepperBtn}
+                              onPress={() => setPopupRooms((prev) => prev + 1)}
+                            >
+                              <Plus size={16} color="#0F172A" />
+                            </TouchableOpacity>
+                          </View>
+                        </View>
+                      </View>
+                    )}
+                  </View>
+                </ScrollView>
+
+                {/* Big Coral Search Button - ALWAYS PINNED AT CARD BOTTOM */}
+                <TouchableOpacity
+                  style={styles.popupSearchBtn}
+                  activeOpacity={0.88}
+                  onPress={handleApplySearchPopup}
+                >
+                  <Text style={styles.popupSearchBtnText}>Search</Text>
+                </TouchableOpacity>
+              </TouchableOpacity>
+            </View>
+          </TouchableOpacity>
+        </KeyboardAvoidingView>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -1477,15 +2584,57 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
   },
   header: {
-    paddingHorizontal: 20,
-    paddingBottom: 14,
+    paddingHorizontal: 16,
+    paddingBottom: 12,
     backgroundColor: '#FFFFFF',
+  },
+  searchCapsuleHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+    marginTop: 4,
+  },
+  headerBackBtn: {
+    width: 42,
+    height: 42,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 6,
+  },
+  searchCapsuleBar: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 9999,
+    paddingVertical: 10,
+    paddingHorizontal: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 4,
+  },
+  searchCapsuleTitle: {
+    fontSize: 14.5,
+    fontWeight: '700',
+    color: '#0F172A',
+    letterSpacing: -0.2,
+  },
+  searchCapsuleSub: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#64748B',
+    marginTop: 2,
   },
   headerTitleRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    paddingHorizontal: 4,
+    marginBottom: 6,
   },
   badgePillHeader: {
     backgroundColor: 'rgba(232, 106, 112, 0.1)',
@@ -1521,16 +2670,16 @@ const styles = StyleSheet.create({
   searchBarBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F8FAFC',
-    borderWidth: 1,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1.5,
     borderColor: '#E2E8F0',
-    borderRadius: 16,
-    paddingHorizontal: 14,
-    height: 48,
+    borderRadius: 22,
+    paddingHorizontal: 16,
+    height: 50,
   },
   searchBarInput: {
     flex: 1,
-    fontSize: 14.5,
+    fontSize: 15,
     color: '#0F172A',
     fontWeight: '500',
   },
@@ -1544,6 +2693,34 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     gap: 8,
     alignItems: 'center',
+  },
+  aiActiveBadgeChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.brand.coral,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 14,
+    shadowColor: Colors.brand.coral,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  aiActiveBadgeText: {
+    fontSize: 12.5,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    maxWidth: 160,
+  },
+  aiActiveBadgeClose: {
+    marginLeft: 6,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255,255,255,0.25)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   filterToggleBtn: {
     flexDirection: 'row',
@@ -1609,23 +2786,141 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   mapContainer: {
-    height: 220,
     width: '100%',
     backgroundColor: '#F1F5F9',
     position: 'relative',
+    overflow: 'hidden',
   },
-  satelliteToggleBtn: {
-    position: 'absolute',
-    top: 12,
-    right: 12,
+  dragHandleBar: {
+    width: '100%',
     backgroundColor: '#FFFFFF',
-    padding: 8,
-    borderRadius: 10,
+    borderTopLeftRadius: 18,
+    borderTopRightRadius: 18,
+    paddingTop: 8,
+    paddingBottom: 8,
+    paddingHorizontal: 16,
+    alignItems: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
     shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.06,
     shadowRadius: 4,
     elevation: 3,
+  },
+  dragPill: {
+    width: 42,
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: '#CBD5E1',
+    marginBottom: 6,
+  },
+  dragControlsRow: {
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  dragHintText: {
+    fontSize: 11.5,
+    fontWeight: '700',
+    color: '#64748B',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  dragSnapButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  snapBtn: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    backgroundColor: '#F1F5F9',
+  },
+  snapBtnActive: {
+    backgroundColor: Colors.brand.coral,
+  },
+  snapBtnText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#64748B',
+  },
+  snapBtnTextActive: {
+    color: '#FFFFFF',
+  },
+  floatingStayCard: {
+    position: 'absolute',
+    bottom: 12,
+    left: 14,
+    right: 14,
+    zIndex: 25,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.22,
+    shadowRadius: 14,
+    elevation: 8,
+  },
+  floatingCardInner: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 18,
+    padding: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  floatingCardImage: {
+    width: 76,
+    height: 76,
+    borderRadius: 14,
+    backgroundColor: '#F1F5F9',
+  },
+  floatingCardInfo: {
+    flex: 1,
+    marginLeft: 12,
+    marginRight: 8,
+    justifyContent: 'center',
+  },
+  floatingCardRatingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 2,
+  },
+  floatingCardRatingText: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#0F172A',
+  },
+  floatingCardCityText: {
+    fontSize: 11,
+    color: '#64748B',
+    marginLeft: 4,
+  },
+  floatingCardTitle: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#0F172A',
+    marginBottom: 4,
+  },
+  floatingCardPrice: {
+    fontSize: 14,
+    fontWeight: '900',
+    color: Colors.brand.coral,
+  },
+  floatingCardNight: {
+    fontSize: 11,
+    fontWeight: '500',
+    color: '#64748B',
+  },
+  floatingCardAction: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: Colors.brand.coral,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   staysScrollContent: {
     paddingHorizontal: 20,
@@ -2086,22 +3381,283 @@ const styles = StyleSheet.create({
   searchSummaryPillRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 8,
-    flexWrap: 'wrap',
+    marginTop: 4,
+    paddingBottom: 2,
   },
   searchSummaryPill: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFF1F2',
     borderWidth: 1,
-    borderColor: '#FFE4E6',
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    borderColor: '#FECDD3',
+    borderRadius: 9999,
+    paddingHorizontal: 16,
+    paddingVertical: 8.5,
   },
   searchSummaryPillText: {
-    fontSize: 11,
+    fontSize: 13.5,
     fontWeight: '700',
     color: '#E86A70',
+  },
+  searchCircleBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: Colors.brand.coral,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 8,
+    shadowColor: Colors.brand.coral,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+
+  /* Search Details Popup Modal (Image 2) Styles */
+  popupModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.55)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  popupBackdropTouchable: {
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  popupCardWrapper: {
+    width: '100%',
+    maxWidth: 420,
+  },
+  popupFloatingCloseBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    alignSelf: 'flex-end',
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  popupCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 28,
+    padding: 24,
+    width: '100%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.2,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  popupGroupedBox: {
+    backgroundColor: '#FFFFFF',
+  },
+  popupBoxRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 4,
+    paddingVertical: 14,
+  },
+  popupBoxIcon: {
+    marginRight: 16,
+  },
+  popupBoxContent: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  popupBoxTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#1E293B',
+    marginBottom: 3,
+  },
+  popupBoxSubtitle: {
+    fontSize: 14,
+    color: '#94A3B8',
+    fontWeight: '500',
+  },
+  popupBoxSubtitleActive: {
+    color: '#334155',
+    fontWeight: '600',
+  },
+  popupBoxInput: {
+    fontSize: 14.5,
+    color: '#1E293B',
+    fontWeight: '500',
+    padding: 0,
+    margin: 0,
+  },
+  popupClearInputBtn: {
+    padding: 4,
+  },
+  popupBoxDivider: {
+    height: 1,
+    backgroundColor: '#F1F5F9',
+    marginVertical: 4,
+  },
+  popupStepperContainer: {
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 14,
+    backgroundColor: '#FFFFFF',
+    borderTopWidth: 1,
+    borderTopColor: '#EDF2F7',
+  },
+  popupStepperRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
+  },
+  popupStepperTitle: {
+    fontSize: 14.5,
+    fontWeight: '700',
+    color: '#0F172A',
+  },
+  popupStepperSub: {
+    fontSize: 12,
+    color: '#64748B',
+    marginTop: 1,
+  },
+  popupStepperControls: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  popupStepperBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  popupStepperBtnDisabled: {
+    borderColor: '#F1F5F9',
+    backgroundColor: '#F8FAFC',
+  },
+  popupStepperValue: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#0F172A',
+    minWidth: 20,
+    textAlign: 'center',
+  },
+  popupSearchBtn: {
+    backgroundColor: Colors.brand.coral,
+    borderRadius: 24,
+    height: 52,
+    marginTop: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: Colors.brand.coral,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  popupSearchBtnText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+
+  /* Inline Calendar Styles in Popup */
+  inlineCalendarContainer: {
+    paddingHorizontal: 2,
+    paddingTop: 4,
+    paddingBottom: 6,
+    backgroundColor: '#FFFFFF',
+  },
+  calMonthNavRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 8,
+    paddingHorizontal: 4,
+    marginBottom: 2,
+  },
+  calMonthNavTitle: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#0F172A',
+  },
+  calNavBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  calNavBtnDisabled: {
+    opacity: 0.35,
+  },
+  calWeekDaysRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 6,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
+    marginBottom: 4,
+  },
+  calWeekDayLabel: {
+    width: '14.28%',
+    textAlign: 'center',
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#94A3B8',
+  },
+  calDaysGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'flex-start',
+  },
+  calDayCell: {
+    width: '14.28%',
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginVertical: 2,
+    borderRadius: 18,
+  },
+  calDayCellInRange: {
+    backgroundColor: '#FFF1F2',
+    borderRadius: 0,
+  },
+  calDayCellSelected: {
+    backgroundColor: Colors.brand.coral,
+    borderRadius: 18,
+  },
+  calDayText: {
+    fontSize: 13.5,
+    fontWeight: '600',
+    color: '#0F172A',
+  },
+  calDayTextPast: {
+    color: '#CBD5E1',
+    fontWeight: '400',
+  },
+  calDayTextInRange: {
+    color: Colors.brand.coral,
+    fontWeight: '700',
+  },
+  calDayTextSelected: {
+    color: '#FFFFFF',
+    fontWeight: '800',
   },
 });

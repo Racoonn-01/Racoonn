@@ -21,6 +21,8 @@ export const appwriteConfig = {
   ticketsCollectionId: process.env.EXPO_PUBLIC_APPWRITE_TICKETS_COLLECTION_ID || 'support_tickets',
   activitiesCollectionId: process.env.EXPO_PUBLIC_APPWRITE_ACTIVITIES_COLLECTION_ID || 'activities',
   packagesCollectionId: process.env.EXPO_PUBLIC_APPWRITE_PACKAGES_COLLECTION_ID || '6a4372ef7ff33f643071',
+  notificationsCollectionId: process.env.EXPO_PUBLIC_APPWRITE_NOTIFICATIONS_COLLECTION_ID || 'user_notifications',
+  deviceTokensCollectionId: process.env.EXPO_PUBLIC_APPWRITE_DEVICE_TOKENS_COLLECTION_ID || 'user_device_tokens',
 
   propertyBucketId: process.env.EXPO_PUBLIC_APPWRITE_PROPERTY_IMAGES_BUCKET_ID || '6a3e398000280b2b3d20',
   roomBucketId: process.env.EXPO_PUBLIC_APPWRITE_ROOM_IMAGES_BUCKET_ID || '6a3e398000280b2b3d20',

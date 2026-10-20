@@ -10,6 +10,7 @@ import {
 import { Star, Heart, MapPin } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import Colors from '@/constants/Colors';
+import { REAL_STAY_IMAGE } from '@/constants/RealImages';
 import { useAuthStore } from '../../store/authStore';
 import { getProperties } from '../../lib/appwrite/api';
 import { isActiveProperty } from '../../utils/isActiveProperty';
@@ -34,7 +35,7 @@ export default function PopularStaysNainital() {
           const mapped = nainitalDocs.map((d: any) => {
             const rawPrice = Number(d.price || d.startingPrice || d.minPrice || d.basePrice || d.pricePerNight || 0);
             const photos = Array.isArray(d.photos) ? d.photos : [];
-            const photoUrl = photos[0] ? String(photos[0]) : 'https://images.unsplash.com/photo-1510798831971-661eb04b3739?q=80&w=800&auto=format&fit=crop';
+            const photoUrl = photos[0] ? String(photos[0]) : REAL_STAY_IMAGE;
 
             const hasReviews = Number(d.reviewsCount || 0) > 0 && Number(d.rating || 0) > 0;
 

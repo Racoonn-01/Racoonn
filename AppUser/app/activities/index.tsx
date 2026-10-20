@@ -16,6 +16,7 @@ import { ChevronLeft, MapPin, Clock, Users, Navigation } from 'lucide-react-nati
 import { databases, appwriteConfig } from '@/lib/appwrite/config';
 import { Query } from 'react-native-appwrite';
 import Colors from '@/constants/Colors';
+import { REAL_ACTIVITY_IMAGE } from '@/constants/RealImages';
 
 const { width } = Dimensions.get('window');
 
@@ -73,7 +74,7 @@ export default function ActivitiesScreen() {
 
   const renderActivity = ({ item }: { item: Activity }) => {
     const images = item.images && item.images.length > 0 ? item.images : (item.image ? [item.image] : []);
-    const coverImage = images[0] || 'https://images.unsplash.com/photo-1540541338287-41700207dee6?auto=format&fit=crop&w=800&q=80';
+    const coverImage = images[0] || REAL_ACTIVITY_IMAGE;
 
     return (
       <View style={styles.card}>

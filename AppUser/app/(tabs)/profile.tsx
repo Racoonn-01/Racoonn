@@ -41,6 +41,8 @@ import {
   Download,
   FileText,
   AlertTriangle,
+  Trash2,
+  Bell,
 } from 'lucide-react-native';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
@@ -55,6 +57,7 @@ import { databases } from '../../lib/appwrite/config';
 import { Query } from 'react-native-appwrite';
 import { useRouter } from 'expo-router';
 import { sendLocalNotification } from '../../services/notificationService';
+import { useNotificationStore } from '../../store/notificationStore';
 
 const DATABASE_ID =
   process.env.EXPO_PUBLIC_APPWRITE_DATABASE_ID ||
@@ -64,7 +67,8 @@ const DATABASE_ID =
 export default function UserPortalProfileScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { user, profile, isAuthenticated, isLoading, checkAuth, logout } = useAuthStore();
+  const { user, profile, isAuthenticated, isLoading, checkAuth, logout, deleteAccount } = useAuthStore();
+  const { unreadCount } = useNotificationStore();
 
   // Form State
   const initialFirstName = profile?.name?.split(' ')[0] || user?.name?.split(' ')[0] || '';
@@ -91,6 +95,8 @@ export default function UserPortalProfileScreen() {
   const [bookings, setBookings] = useState<any[]>([]);
   const [loadingBookings, setLoadingBookings] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
 
   // Modal Visibility States
   const [isPersonalModalOpen, setIsPersonalModalOpen] = useState(false);
@@ -549,6 +555,26 @@ export default function UserPortalProfileScreen() {
     await logout();
   };
 
+  const handleConfirmDeleteAccount = async () => {
+    try {
+      setIsDeletingAccount(true);
+      await deleteAccount();
+      setShowDeleteModal(false);
+      Alert.alert(
+        'Account Deleted',
+        'Your Racoonn account and personal data have been permanently deleted.'
+      );
+    } catch (err) {
+      console.error('Failed to delete account:', err);
+      Alert.alert(
+        'Deletion Error',
+        'Could not complete account deletion. Please check your internet connection or contact 24/7 support.'
+      );
+    } finally {
+      setIsDeletingAccount(false);
+    }
+  };
+
   const filteredBookings = bookings.filter((b) => {
     if (bookingTab === 'Upcoming') return b.status === 'Confirmed' || b.status === 'Upcoming';
     if (bookingTab === 'Completed') return b.status === 'Completed';
@@ -904,42 +930,7 @@ export default function UserPortalProfileScreen() {
             </TouchableOpacity>
           </View>
 
-          {/* Quick Interactive Stat Cards Grid */}
-          <View style={styles.statsCardsRow}>
-            <TouchableOpacity
-              style={styles.statCardTile}
-              activeOpacity={0.85}
-              onPress={() => setIsBookingsModalOpen(true)}
-            >
-              <View style={[styles.statIconBadge, { backgroundColor: '#FFF1F2' }]}>
-                <Ticket color={Colors.brand.coral} size={18} />
-              </View>
-              <Text style={styles.statTileVal}>{bookings.length || 0}</Text>
-              <Text style={styles.statTileLbl}>Bookings</Text>
-            </TouchableOpacity>
 
-            <TouchableOpacity
-              style={styles.statCardTile}
-              activeOpacity={0.85}
-              onPress={() => router.push('/stays' as any)}
-            >
-              <View style={[styles.statIconBadge, { backgroundColor: '#FFF1F2' }]}>
-                <Heart color={Colors.brand.coral} size={18} />
-              </View>
-              <Text style={styles.statTileVal}>
-                {(profile?.savedHotels?.length || 0) + (profile?.savedPackages?.length || 0)}
-              </Text>
-              <Text style={styles.statTileLbl}>Saved</Text>
-            </TouchableOpacity>
-
-            <View style={styles.statCardTile}>
-              <View style={[styles.statIconBadge, { backgroundColor: '#FFF1F2' }]}>
-                <Award color={Colors.brand.coral} size={18} />
-              </View>
-              <Text style={styles.statTileVal}>2026</Text>
-              <Text style={styles.statTileLbl}>Member</Text>
-            </View>
-          </View>
         </View>
 
         {/* 🌟 2. Grouped Settings Sections (iOS Style) */}
@@ -1028,6 +1019,31 @@ export default function UserPortalProfileScreen() {
           <Text style={styles.sectionHeaderLabel}>PREFERENCES & SECURITY</Text>
 
           <View style={styles.groupedCard}>
+            {/* Notifications & Alerts */}
+            <TouchableOpacity
+              style={styles.menuRowItem}
+              activeOpacity={0.75}
+              onPress={() => router.push('/notifications' as any)}
+            >
+              <View style={styles.menuRowLeft}>
+                <View style={[styles.menuIconBox, { backgroundColor: '#FFF1F2' }]}>
+                  <Bell color={Colors.brand.coral} size={18} />
+                </View>
+                <View>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    <Text style={styles.menuRowTitle}>Notifications & Alerts</Text>
+                    {unreadCount > 0 && (
+                      <View style={{ backgroundColor: Colors.brand.coral, paddingHorizontal: 6, paddingVertical: 1, borderRadius: 8 }}>
+                        <Text style={{ color: '#FFFFFF', fontSize: 10, fontWeight: '800' }}>{unreadCount}</Text>
+                      </View>
+                    )}
+                  </View>
+                  <Text style={styles.menuRowSub}>Reminders, booking updates & preferences</Text>
+                </View>
+              </View>
+              <ChevronRight color="#94A3B8" size={18} />
+            </TouchableOpacity>
+
             {/* Privacy */}
             <TouchableOpacity style={styles.menuRowItem} activeOpacity={0.75} onPress={() => router.push('/privacy' as any)}>
               <View style={styles.menuRowLeft}>
@@ -1081,6 +1097,24 @@ export default function UserPortalProfileScreen() {
           <Text style={styles.sectionHeaderLabel}>ACCOUNT ACTIONS</Text>
 
           <View style={styles.groupedCard}>
+            {/* Delete Account */}
+            <TouchableOpacity
+              style={styles.menuRowItem}
+              activeOpacity={0.75}
+              onPress={() => setShowDeleteModal(true)}
+            >
+              <View style={styles.menuRowLeft}>
+                <View style={[styles.menuIconBox, { backgroundColor: '#FFF1F2' }]}>
+                  <Trash2 color="#E11D48" size={18} />
+                </View>
+                <View>
+                  <Text style={[styles.menuRowTitle, { color: '#E11D48' }]}>Delete Account</Text>
+                  <Text style={styles.menuRowSub}>Permanently delete your Racoonn account</Text>
+                </View>
+              </View>
+              <ChevronRight color="#E11D48" size={18} />
+            </TouchableOpacity>
+
             {/* Log Out */}
             <TouchableOpacity
               style={[styles.menuRowItem, { borderBottomWidth: 0 }]}
@@ -1304,6 +1338,54 @@ export default function UserPortalProfileScreen() {
                   <ActivityIndicator size="small" color="#FFFFFF" />
                 ) : (
                   <Text style={styles.confirmCancelBookingText}>Yes, Cancel</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Delete Account Confirmation Dialog */}
+      <Modal
+        visible={showDeleteModal}
+        animationType="fade"
+        transparent={true}
+        onRequestClose={() => !isDeletingAccount && setShowDeleteModal(false)}
+      >
+        <View style={styles.logoutModalOverlay}>
+          <View style={styles.logoutDialogBox}>
+            <View style={[styles.logoutIconBadge, { backgroundColor: '#FFE4E6' }]}>
+              <AlertTriangle color="#E11D48" size={24} />
+            </View>
+            <Text style={styles.logoutDialogTitle}>Delete Account Permanently?</Text>
+            <Text style={styles.logoutDialogSub}>
+              This action cannot be undone. All your profile information, active bookings, saved vouchers, and preferences will be permanently wiped.
+            </Text>
+
+            <View style={styles.deleteWarningBox}>
+              <Text style={styles.deleteWarningText}>
+                ⚠️ You will immediately lose access to your Racoonn account.
+              </Text>
+            </View>
+
+            <View style={styles.logoutDialogBtnRow}>
+              <TouchableOpacity
+                style={styles.cancelLogoutBtn}
+                disabled={isDeletingAccount}
+                onPress={() => setShowDeleteModal(false)}
+              >
+                <Text style={styles.cancelLogoutText}>Cancel</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.confirmLogoutBtn, { backgroundColor: '#E11D48' }]}
+                disabled={isDeletingAccount}
+                onPress={handleConfirmDeleteAccount}
+              >
+                {isDeletingAccount ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <Text style={styles.confirmLogoutText}>Yes, Delete</Text>
                 )}
               </TouchableOpacity>
             </View>
@@ -2397,6 +2479,23 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
     color: '#FFFFFF',
+  },
+  deleteWarningBox: {
+    backgroundColor: '#FFF1F2',
+    borderColor: '#FECDD3',
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    marginBottom: 20,
+    width: '100%',
+  },
+  deleteWarningText: {
+    fontSize: 12,
+    color: '#E11D48',
+    fontWeight: '600',
+    lineHeight: 17,
+    textAlign: 'center',
   },
   /* Guest State Styles */
   cleanHeader: {

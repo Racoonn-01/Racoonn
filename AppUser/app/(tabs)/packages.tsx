@@ -19,7 +19,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import {
   SlidersHorizontal,
-  ChevronDown,
   MapPin,
   Clock,
   Utensils,
@@ -31,6 +30,7 @@ import {
   Search,
 } from 'lucide-react-native';
 import Colors from '@/constants/Colors';
+import { REAL_PACKAGE_IMAGE } from '@/constants/RealImages';
 import { getCMSPackages } from '../../lib/appwrite/api';
 import { useAuthStore } from '../../store/authStore';
 
@@ -267,8 +267,13 @@ export default function PackagesScreen() {
           );
           if (publishedOnly.length > 0) {
             const mapped = publishedOnly.map((cmsPkg: any) => {
-              const firstPricing = Array.isArray(cmsPkg.pricing) && cmsPkg.pricing.length > 0 ? cmsPkg.pricing[0] : null;
-              const minPrice = firstPricing ? Number(firstPricing.pricePerPerson) : Number(cmsPkg.price || 0);
+              const citiesList: any[] = Array.isArray(cmsPkg.departureCities) ? cmsPkg.departureCities : [];
+              const defaultCity = citiesList.find((c: any) => c.isDefault) || citiesList[0] || null;
+              const minPrice = defaultCity && Number(defaultCity.pricePerPerson) > 0
+                ? Number(defaultCity.pricePerPerson)
+                : (Array.isArray(cmsPkg.pricing) && cmsPkg.pricing[0] && Number(cmsPkg.pricing[0].pricePerPerson) > 0
+                    ? Number(cmsPkg.pricing[0].pricePerPerson)
+                    : Number(cmsPkg.price || 0));
               const safePrice = isNaN(minPrice) || minPrice === 0 ? Number(cmsPkg.price || 0) : minPrice;
 
               return {
@@ -283,12 +288,13 @@ export default function PackagesScreen() {
                   ? cmsPkg.features
                   : (Array.isArray(cmsPkg.features) ? cmsPkg.features.join(' | ') : 'Meals | Stay | Transfer'),
                 price: `₹${safePrice.toLocaleString('en-IN')}`,
+                departureCityName: defaultCity?.cityName?.trim(),
                 badge: cmsPkg.badge || 'Featured',
                 badgeColor: Colors.brand.coral,
                 images:
                   Array.isArray(cmsPkg.images) && cmsPkg.images.length > 0
                     ? cmsPkg.images
-                    : ['https://images.unsplash.com/photo-1595815771614-ade9d652a65d?w=800&q=80'],
+                    : [REAL_PACKAGE_IMAGE],
               };
             });
             setPackageList(mapped);
@@ -483,22 +489,6 @@ export default function PackagesScreen() {
             </Text>
           </TouchableOpacity>
 
-          {/* Duration Button */}
-          <TouchableOpacity
-            style={[styles.filterChip, durationOption !== 'any' && styles.filterChipActive]}
-            activeOpacity={0.8}
-            onPress={() => setActiveModalMode('filters')}
-          >
-            <Text style={[styles.filterChipText, durationOption !== 'any' && styles.filterChipTextActive]}>
-              Duration
-            </Text>
-            <ChevronDown
-              color={durationOption !== 'any' ? '#FFFFFF' : '#64748B'}
-              size={13}
-              style={{ marginLeft: 4 }}
-            />
-          </TouchableOpacity>
-
           {/* Destination & Category Tabs */}
           {FILTERS.filter((f) => f !== 'Price' && f !== 'Duration').map((cat) => {
             const isSelected = selectedFilters.includes(cat);
@@ -548,7 +538,7 @@ export default function PackagesScreen() {
             const mainImg =
               Array.isArray(pkg.images) && pkg.images.length > 0
                 ? pkg.images[0]
-                : 'https://images.unsplash.com/photo-1626621341517-bbf3d9990a23?auto=format&fit=crop&w=800&q=80';
+                : REAL_PACKAGE_IMAGE;
             const badgeTextColor = getBadgeColor(pkg.badge);
 
             return (
@@ -611,7 +601,9 @@ export default function PackagesScreen() {
                   {/* Bottom Row */}
                   <View style={styles.cardFooter}>
                     <View>
-                      <Text style={styles.startingLabel}>Starting from</Text>
+                      <Text style={styles.startingLabel}>
+                        {pkg.departureCityName ? `Ex-${pkg.departureCityName}` : 'Starting from'}
+                      </Text>
                       <Text style={styles.priceAmount}>{pkg.price}</Text>
                     </View>
 

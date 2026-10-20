@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   StyleSheet,
   Text,
@@ -44,7 +44,12 @@ const tabs = [
   { id: 'activities', label: 'Activities', icon: Ticket },
 ];
 
-export default function HeroSection() {
+interface HeroSectionProps {
+  onOpenNotifications?: () => void;
+  openNotifCounter?: number;
+}
+
+export default function HeroSection({ onOpenNotifications, openNotifCounter }: HeroSectionProps = {}) {
   const router = useRouter();
   const { user, profile, isAuthenticated, logout } = useAuthStore();
 
@@ -124,6 +129,12 @@ export default function HeroSection() {
     ]).start();
   };
 
+  useEffect(() => {
+    if (openNotifCounter && openNotifCounter > 0) {
+      openNotifSidebar();
+    }
+  }, [openNotifCounter]);
+
   const closeNotifSidebar = () => {
     Animated.parallel([
       Animated.timing(notifSlideAnim, {
@@ -155,6 +166,39 @@ export default function HeroSection() {
 
   const totalGuestsOrParticipants = adultsCount + childrenCount;
 
+  const [isAiModalOpen, setIsAiModalOpen] = useState(false);
+  const [aiQuery, setAiQuery] = useState('');
+  const [isAiAnalyzing, setIsAiAnalyzing] = useState(false);
+  const aiPulseAnim = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    let pulseLoop: Animated.CompositeAnimation | null = null;
+    if (isAiAnalyzing) {
+      pulseLoop = Animated.loop(
+        Animated.sequence([
+          Animated.timing(aiPulseAnim, {
+            toValue: 1.15,
+            duration: 700,
+            easing: Easing.inOut(Easing.ease),
+            useNativeDriver: true,
+          }),
+          Animated.timing(aiPulseAnim, {
+            toValue: 1,
+            duration: 700,
+            easing: Easing.inOut(Easing.ease),
+            useNativeDriver: true,
+          }),
+        ])
+      );
+      pulseLoop.start();
+    } else {
+      aiPulseAnim.setValue(1);
+    }
+    return () => {
+      if (pulseLoop) pulseLoop.stop();
+    };
+  }, [isAiAnalyzing, aiPulseAnim]);
+
   const getGuestsText = () => {
     if (activeTab === 'activities') {
       if (totalGuestsOrParticipants === 0) return 'Add participants';
@@ -162,6 +206,23 @@ export default function HeroSection() {
     }
     if (totalGuestsOrParticipants === 0) return 'Add guests';
     return `${totalGuestsOrParticipants} Guest${totalGuestsOrParticipants > 1 ? 's' : ''}`;
+  };
+
+  const handleAiSearchSubmit = (queryText?: string) => {
+    const q = (queryText !== undefined ? queryText : aiQuery).trim();
+    if (!q) return;
+    setIsAiAnalyzing(true);
+    setTimeout(() => {
+      setIsAiAnalyzing(false);
+      setIsAiModalOpen(false);
+      setAiQuery('');
+      router.push({
+        pathname: '/(tabs)/search' as any,
+        params: {
+          ai: q,
+        },
+      });
+    }, 2000);
   };
 
   const handleSearchSubmit = () => {
@@ -215,31 +276,6 @@ export default function HeroSection() {
   return (
     <View style={styles.heroContainer}>
       <View style={styles.heroBackground}>
-
-        {/* Top Header Capsule with White Background */}
-        <View style={styles.topHeaderWrapper}>
-          <View style={styles.topHeaderCapsule}>
-            <Image
-              source={require('@/assets/images/Racoonn-Logo-02.png')}
-              style={styles.logoImage}
-              resizeMode="contain"
-            />
-
-            <TouchableOpacity
-              style={styles.bellBtn}
-              onPress={openNotifSidebar}
-              activeOpacity={0.8}
-            >
-              <Bell color={Colors.brand.navy} size={20} />
-              {unreadCount > 0 && <View style={styles.notificationBadge} />}
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* Hero Title Greeting */}
-        {/* <View style={styles.heroHeaderContainer}>
-          <Text style={styles.heroMainHeading}>Find your next luxury stay ✨</Text>
-        </View> */}
 
         {/* Main Floating Search Card Box */}
         <View style={styles.cardContainer}>
@@ -477,19 +513,36 @@ export default function HeroSection() {
               </View>
             )}
 
-            {/* Big Coral Red Search Button */}
-            <TouchableOpacity
-              style={styles.searchSubmitBtn}
-              activeOpacity={0.9}
-              onPress={handleSearchSubmit}
-            >
-              <Text style={styles.searchSubmitText}>
-                {activeTab === 'packages' ? 'Search Packages' : activeTab === 'activities' ? 'Search Activities' : 'Search Available Stays'}
-              </Text>
-              <View style={styles.arrowCircle}>
-                <ArrowRight color="#FFFFFF" size={16} />
-              </View>
-            </TouchableOpacity>
+            {/* 2 Action Buttons: Ask AI & Search (Matches User Portal) */}
+            <View style={styles.actionButtonsRow}>
+              {/* Left Button: Ask AI */}
+              <TouchableOpacity
+                style={styles.askAiBtn}
+                activeOpacity={0.85}
+                onPress={() => setIsAiModalOpen(true)}
+              >
+                <View style={styles.askAiIconWrapper}>
+                  <Image
+                    source={require('@/assets/images/Racoonn-Logo-03.png')}
+                    style={styles.askAiAvatarImg}
+                    resizeMode="contain"
+                  />
+                </View>
+                <Text style={styles.askAiBtnText}>Ask AI</Text>
+              </TouchableOpacity>
+
+              {/* Right Button: Search */}
+              <TouchableOpacity
+                style={styles.searchSubmitBtnRow}
+                activeOpacity={0.88}
+                onPress={handleSearchSubmit}
+              >
+                <Text style={styles.searchSubmitTextRow}>Search</Text>
+                <View style={styles.arrowCircleRow}>
+                  <ArrowRight color="#FFFFFF" size={16} />
+                </View>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </View>
@@ -775,13 +828,23 @@ export default function HeroSection() {
                 {unreadCount > 0 && (
                   <TouchableOpacity
                     style={styles.clearNotifBtn}
-                    onPress={markAllAsRead}
+                    onPress={() => markAllAsRead()}
                     activeOpacity={0.7}
                   >
                     <CheckCheck color={Colors.brand.navy} size={15} style={{ marginRight: 5 }} />
                     <Text style={styles.clearNotifText}>Mark all read</Text>
                   </TouchableOpacity>
                 )}
+                <TouchableOpacity
+                  style={[styles.clearNotifBtn, { backgroundColor: '#F1F5F9' }]}
+                  onPress={() => {
+                    closeNotifSidebar();
+                    router.push('/notifications' as any);
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[styles.clearNotifText, { color: '#0F172A', fontWeight: '700' }]}>View All</Text>
+                </TouchableOpacity>
                 <TouchableOpacity
                   style={[styles.clearNotifBtn, { backgroundColor: '#FEE2E2' }]}
                   onPress={clearAll}
@@ -903,6 +966,136 @@ export default function HeroSection() {
           </ScrollView>
         </View>
       </Modal>
+
+      {/* 🌟 Ask AI Modal (Matches User Portal AI Assistant) */}
+      <Modal
+        visible={isAiModalOpen}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => {
+          if (!isAiAnalyzing) setIsAiModalOpen(false);
+        }}
+      >
+        <View style={styles.aiModalOverlay}>
+          <TouchableOpacity
+            style={styles.aiModalBackdrop}
+            activeOpacity={1}
+            onPress={() => {
+              if (!isAiAnalyzing) setIsAiModalOpen(false);
+            }}
+          />
+
+          <View style={styles.aiModalCard}>
+            {/* Header */}
+            <View style={styles.aiModalHeader}>
+              <View style={styles.aiModalTitleRow}>
+                <View style={styles.aiModalMascotBox}>
+                  <Image
+                    source={require('@/assets/images/Racoonn-Logo-03.png')}
+                    style={styles.aiModalMascotImg}
+                    resizeMode="contain"
+                  />
+                </View>
+                <View>
+                  <Text style={styles.aiModalTitle}>Ask Racoonn AI</Text>
+                  <Text style={styles.aiModalSub}>Smart search in natural language or Hinglish</Text>
+                </View>
+              </View>
+
+              <TouchableOpacity
+                onPress={() => {
+                  if (!isAiAnalyzing) setIsAiModalOpen(false);
+                }}
+                style={styles.aiModalCloseBtn}
+              >
+                <X color="#64748B" size={20} />
+              </TouchableOpacity>
+            </View>
+
+            {isAiAnalyzing ? (
+              /* Analyzing Screen (Matches User Portal Mascot Pulse) */
+              <View style={styles.aiAnalyzingBox}>
+                <Animated.View
+                  style={[
+                    styles.aiAnalyzingPulseCircle,
+                    { transform: [{ scale: aiPulseAnim }] },
+                  ]}
+                >
+                  <Image
+                    source={require('@/assets/images/Racoonn-Logo-03.png')}
+                    style={styles.aiAnalyzingMascot}
+                    resizeMode="contain"
+                  />
+                </Animated.View>
+                <Text style={styles.aiAnalyzingTitle}>Racoonn AI is analyzing...</Text>
+                <Text style={styles.aiAnalyzingSub}>
+                  Finding the perfect properties for your prompt
+                </Text>
+              </View>
+            ) : (
+              /* Input & Sample Prompts Screen */
+              <View style={styles.aiInputBody}>
+                <View style={styles.aiTextInputWrapper}>
+                  <TextInput
+                    style={styles.aiTextInput}
+                    placeholder="e.g. Find me a luxury pool villa in Manali for 2 adults under ₹5000..."
+                    placeholderTextColor="#94A3B8"
+                    multiline
+                    value={aiQuery}
+                    onChangeText={setAiQuery}
+                    autoFocus
+                  />
+                  {aiQuery.length > 0 && (
+                    <TouchableOpacity
+                      onPress={() => setAiQuery('')}
+                      style={styles.aiClearInputBtn}
+                    >
+                      <X color="#94A3B8" size={16} />
+                    </TouchableOpacity>
+                  )}
+                </View>
+
+                {/* Quick Suggestion Chips */}
+                <Text style={styles.aiSuggestionsLabel}>Try asking:</Text>
+                <View style={styles.aiChipsRow}>
+                  {[
+                    'Saste hotels in Nainital',
+                    'Beachfront villa with pool',
+                    'Family homestay in Dehradun under ₹3000',
+                    'Pet-friendly luxury resort in Goa',
+                  ].map((chip) => (
+                    <TouchableOpacity
+                      key={chip}
+                      style={styles.aiChipItem}
+                      activeOpacity={0.8}
+                      onPress={() => {
+                        setAiQuery(chip);
+                        handleAiSearchSubmit(chip);
+                      }}
+                    >
+                      <Text style={styles.aiChipText}>{chip}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+
+                {/* Submit AI Button */}
+                <TouchableOpacity
+                  style={[
+                    styles.aiSubmitBtn,
+                    !aiQuery.trim() && styles.aiSubmitBtnDisabled,
+                  ]}
+                  activeOpacity={0.88}
+                  disabled={!aiQuery.trim()}
+                  onPress={() => handleAiSearchSubmit()}
+                >
+                  <Text style={styles.aiSubmitBtnText}>Search with AI</Text>
+                  <ArrowRight color="#FFFFFF" size={17} style={{ marginLeft: 6 }} />
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -914,7 +1107,8 @@ const styles = StyleSheet.create({
   },
   heroBackground: {
     width: '100%',
-    paddingBottom: 36,
+    paddingTop: 10,
+    paddingBottom: 24,
   },
   overlay: {
     ...StyleSheet.absoluteFill,
@@ -1097,34 +1291,257 @@ const styles = StyleSheet.create({
     marginTop: 2,
     fontWeight: '500',
   },
-  searchSubmitBtn: {
-    backgroundColor: Colors.brand.coral,
-    borderRadius: 30,
-    paddingVertical: 14,
-    paddingHorizontal: 20,
+  /* 🌟 2 Action Buttons Row: Ask AI & Search (Exact Match to Image 2) */
+  actionButtonsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginTop: 18,
+  },
+  askAiBtn: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 18,
+    backgroundColor: '#FFF1F2',
+    borderWidth: 1.2,
+    borderColor: '#FECDD3',
+    borderRadius: 30,
+    paddingVertical: 13,
+    paddingHorizontal: 16,
+    shadowColor: Colors.brand.coral,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+    elevation: 2,
+  },
+  askAiIconWrapper: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  askAiAvatarImg: {
+    width: 20,
+    height: 20,
+  },
+  askAiBtnText: {
+    color: '#1E293B',
+    fontSize: 16,
+    fontWeight: '800',
+  },
+  searchSubmitBtnRow: {
+    flex: 1.15,
+    backgroundColor: Colors.brand.coral,
+    borderRadius: 30,
+    paddingVertical: 13,
+    paddingHorizontal: 18,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     shadowColor: Colors.brand.coral,
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
+    shadowOpacity: 0.35,
+    shadowRadius: 8,
     elevation: 4,
   },
-  searchSubmitText: {
+  searchSubmitTextRow: {
     color: '#FFFFFF',
-    fontSize: 18,
+    fontSize: 16.5,
     fontWeight: '800',
-    marginRight: 10,
+    marginRight: 8,
   },
-  arrowCircle: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+  arrowCircleRow: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     backgroundColor: 'rgba(255, 255, 255, 0.3)',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+
+  /* 🌟 Ask AI Modal Styles */
+  aiModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(15, 23, 42, 0.65)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  aiModalBackdrop: {
+    ...StyleSheet.absoluteFill,
+  },
+  aiModalCard: {
+    width: '100%',
+    maxWidth: 420,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 28,
+    padding: 22,
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.25,
+    shadowRadius: 24,
+    elevation: 12,
+  },
+  aiModalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  aiModalTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    flex: 1,
+  },
+  aiModalMascotBox: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#FFF1F2',
+    borderWidth: 1,
+    borderColor: '#FECDD3',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  aiModalMascotImg: {
+    width: 28,
+    height: 28,
+  },
+  aiModalTitle: {
+    fontSize: 17,
+    fontWeight: '900',
+    color: '#0F172A',
+  },
+  aiModalSub: {
+    fontSize: 12,
+    color: '#64748B',
+    marginTop: 1,
+  },
+  aiModalCloseBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: '#F1F5F9',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  aiInputBody: {
+    marginTop: 4,
+  },
+  aiTextInputWrapper: {
+    backgroundColor: '#FFF5F5',
+    borderWidth: 1.5,
+    borderColor: '#FECDD3',
+    borderRadius: 18,
+    padding: 14,
+    minHeight: 110,
+    position: 'relative',
+  },
+  aiTextInput: {
+    fontSize: 14.5,
+    color: '#0F172A',
+    lineHeight: 22,
+    textAlignVertical: 'top',
+    padding: 0,
+    margin: 0,
+    flex: 1,
+  },
+  aiClearInputBtn: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    padding: 4,
+  },
+  aiSuggestionsLabel: {
+    fontSize: 12.5,
+    fontWeight: '700',
+    color: '#475569',
+    marginTop: 14,
+    marginBottom: 8,
+  },
+  aiChipsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 16,
+  },
+  aiChipItem: {
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    borderRadius: 16,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+  },
+  aiChipText: {
+    fontSize: 12,
+    color: '#334155',
+    fontWeight: '600',
+  },
+  aiSubmitBtn: {
+    backgroundColor: Colors.brand.coral,
+    borderRadius: 24,
+    paddingVertical: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: Colors.brand.coral,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  aiSubmitBtnDisabled: {
+    opacity: 0.5,
+  },
+  aiSubmitBtnText: {
+    color: '#FFFFFF',
+    fontSize: 15.5,
+    fontWeight: '800',
+  },
+  aiAnalyzingBox: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 36,
+    paddingHorizontal: 16,
+  },
+  aiAnalyzingPulseCircle: {
+    width: 76,
+    height: 76,
+    borderRadius: 38,
+    backgroundColor: '#FFF1F2',
+    borderWidth: 2,
+    borderColor: '#FECDD3',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
+  aiAnalyzingMascot: {
+    width: 52,
+    height: 52,
+  },
+  aiAnalyzingTitle: {
+    fontSize: 18,
+    fontWeight: '900',
+    color: Colors.brand.navy,
+    marginBottom: 6,
+    textAlign: 'center',
+  },
+  aiAnalyzingSub: {
+    fontSize: 13,
+    color: '#64748B',
+    textAlign: 'center',
+    lineHeight: 18,
   },
 
   /* Calendar Modal Styles */

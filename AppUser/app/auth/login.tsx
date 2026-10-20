@@ -20,6 +20,8 @@ import Svg, { Path } from 'react-native-svg';
 import Colors from '@/constants/Colors';
 import { authService } from '../../lib/appwrite/auth';
 import { useAuthStore } from '../../store/authStore';
+import CustomMessageModal from '../../components/shared/CustomMessageModal';
+import { getFriendlyAuthError } from '../../utils/authErrorHelper';
 
 function GoogleOfficialIcon({ size = 20 }: { size?: number }) {
   return (
@@ -57,9 +59,32 @@ export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
 
+  // Custom in-app modal state
+  const [modalConfig, setModalConfig] = useState<{
+    visible: boolean;
+    type?: 'error' | 'warning' | 'success' | 'info';
+    title: string;
+    message: string;
+    primaryButtonText?: string;
+    onPrimaryPress?: () => void;
+    secondaryButtonText?: string;
+    onSecondaryPress?: () => void;
+  }>({
+    visible: false,
+    title: '',
+    message: '',
+  });
+
   const handleLogin = async () => {
     if (!email.trim() || !password.trim()) {
-      Alert.alert('Required Fields', 'Please enter both your email and password.');
+      setModalConfig({
+        visible: true,
+        type: 'warning',
+        title: 'Required Fields',
+        message: 'Please enter both your email address and password to sign in.',
+        primaryButtonText: 'Got It',
+        onPrimaryPress: () => setModalConfig((prev) => ({ ...prev, visible: false })),
+      });
       return;
     }
 
@@ -69,7 +94,15 @@ export default function LoginScreen() {
       await checkAuth();
       router.replace('/profile' as any);
     } catch (error: any) {
-      Alert.alert('Sign In Failed', error?.message || 'Invalid email or password.');
+      const friendly = getFriendlyAuthError(error, 'login');
+      setModalConfig({
+        visible: true,
+        type: friendly.type,
+        title: friendly.title,
+        message: friendly.message,
+        primaryButtonText: friendly.primaryText,
+        onPrimaryPress: () => setModalConfig((prev) => ({ ...prev, visible: false })),
+      });
     } finally {
       setLoading(false);
     }
@@ -84,7 +117,15 @@ export default function LoginScreen() {
         router.replace('/profile' as any);
       }
     } catch (error: any) {
-      Alert.alert('Google Sign-In Error', error?.message || 'Failed to sign in with Google.');
+      const friendly = getFriendlyAuthError(error, 'login');
+      setModalConfig({
+        visible: true,
+        type: 'error',
+        title: 'Google Sign-In Error',
+        message: error?.message || friendly.message || 'Failed to sign in with Google.',
+        primaryButtonText: 'OK',
+        onPrimaryPress: () => setModalConfig((prev) => ({ ...prev, visible: false })),
+      });
     } finally {
       setGoogleLoading(false);
     }
@@ -179,7 +220,18 @@ export default function LoginScreen() {
             <View style={styles.passwordLabelRow}>
               <Text style={styles.inputLabel}>Password</Text>
               <TouchableOpacity
-                onPress={() => Alert.alert('Reset Password', 'A password reset link will be sent to your email.')}
+                onPress={() => {
+                  setModalConfig({
+                    visible: true,
+                    type: 'info',
+                    title: 'Reset Password',
+                    message: email.trim()
+                      ? `Password reset instructions will be sent to ${email.trim()}.`
+                      : 'Please enter your registered email address above first, then tap Forgot password.',
+                    primaryButtonText: 'Got It',
+                    onPrimaryPress: () => setModalConfig((prev) => ({ ...prev, visible: false })),
+                  });
+                }}
                 activeOpacity={0.7}
               >
                 <Text style={styles.forgotText}>Forgot password</Text>
@@ -242,6 +294,19 @@ export default function LoginScreen() {
           </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      {/* Custom Message Modal */}
+      <CustomMessageModal
+        visible={modalConfig.visible}
+        type={modalConfig.type}
+        title={modalConfig.title}
+        message={modalConfig.message}
+        primaryButtonText={modalConfig.primaryButtonText}
+        onPrimaryPress={modalConfig.onPrimaryPress}
+        secondaryButtonText={modalConfig.secondaryButtonText}
+        onSecondaryPress={modalConfig.onSecondaryPress}
+        onClose={() => setModalConfig((prev) => ({ ...prev, visible: false }))}
+      />
     </SafeAreaView>
   );
 }

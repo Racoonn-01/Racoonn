@@ -17,6 +17,7 @@ import {
   Linking,
   Platform,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -44,6 +45,7 @@ import {
   Sparkles,
 } from 'lucide-react-native';
 import Colors from '@/constants/Colors';
+import { REAL_PACKAGE_IMAGE, REAL_PACKAGE_IMAGES, REAL_STAY_IMAGE, REAL_STAY_IMAGES, REAL_ACTIVITY_IMAGE } from '@/constants/RealImages';
 import { useAuthStore } from '../../store/authStore';
 import AuthBottomSheet from '../../components/shared/AuthBottomSheet';
 import CustomCalendarModal from '../../components/shared/CustomCalendarModal';
@@ -97,7 +99,7 @@ const MOCK_HOTEL_OPTIONS = [
     id: 'h-1',
     title: 'The Himalayan Cloud Retreat & Spa',
     description: '4-Star luxury resort with mountain view balcony, infinity pool, and buffet breakfast.',
-    image: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=800&auto=format&fit=crop',
+    image: REAL_STAY_IMAGE,
     tags: ['4-Star Resort', 'Free Breakfast', 'AC Rooms'],
     pricePerNight: 4500,
     isDefault: true,
@@ -107,7 +109,7 @@ const MOCK_HOTEL_OPTIONS = [
     id: 'h-2',
     title: 'Azure Bay Luxury Heritage Villa',
     description: 'Ultra-luxury 5-Star boutique villa featuring private dip pool and butler service.',
-    image: 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?q=80&w=800&auto=format&fit=crop',
+    image: REAL_STAY_IMAGES[1],
     tags: ['5-Star Luxury', 'Private Pool', 'Butler Service'],
     pricePerNight: 7500,
     isDefault: false,
@@ -120,7 +122,7 @@ const MOCK_ACTIVITY_OPTIONS = [
     id: 1,
     title: 'Adventure Sports & Zipline Pass',
     description: 'Get an adrenaline rush with mountain zip-lining, valley crossing, rope climbing, and rappelling.',
-    image: 'https://images.unsplash.com/photo-1522163182402-834f871fd851?q=80&w=800&auto=format&fit=crop',
+    image: REAL_ACTIVITY_IMAGE,
     pricePerPerson: 2500,
     priceLabel: '+ ₹2,500 / person',
   },
@@ -138,9 +140,11 @@ export default function PackageDetailScreen() {
   const pkgId = (id as string) || 'pkg-1';
   const [realPackage, setRealPackage] = useState<any>(null);
   const [reviewsList, setReviewsList] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
   useEffect(() => {
     async function fetchRealPkgAndReviews() {
+      setIsLoading(true);
       try {
         const pkgs = await getCMSPackages();
         if (pkgs && pkgs.length > 0) {
@@ -151,6 +155,8 @@ export default function PackageDetailScreen() {
         }
       } catch (e) {
         console.warn('Error loading real package in detail:', e);
+      } finally {
+        setIsLoading(false);
       }
 
       try {
@@ -177,23 +183,19 @@ export default function PackageDetailScreen() {
   // Find package or fallback
   const pkgData: any = realPackage || (MOCK_PACKAGES as any[]).find((p) => String(p.id) === String(pkgId)) || {
     id: pkgId,
-    title: 'Exotic Uttarakhand Mountain Escape',
-    location: 'Dehradun · Mussoorie · Dhanaulti',
-    duration: '5 Nights / 6 Days',
-    price: 18499,
-    originalPrice: 24999,
-    image: 'https://images.unsplash.com/photo-1626621341517-bbf3d9990a23?auto=format&fit=crop&w=1200&q=80',
-    category: 'Adventure',
+    title: 'Tour Package',
+    location: 'Uttarakhand',
+    duration: '3 Days / 2 Nights',
+    price: 0,
+    originalPrice: 0,
+    image: REAL_PACKAGE_IMAGE,
+    category: 'Featured',
     highlights: ['Private SUV Transfer', '4-Star Resort Stays', 'Sightseeing & Breakfast'],
   };
 
   const heroImages: string[] = Array.isArray(pkgData.images) && pkgData.images.length > 0
     ? pkgData.images
-    : [
-        pkgData.image || 'https://images.unsplash.com/photo-1626621341517-bbf3d9990a23?q=80&w=1200&auto=format&fit=crop',
-        'https://images.unsplash.com/photo-1510798831971-661eb04b3739?q=80&w=1200&auto=format&fit=crop',
-        'https://images.unsplash.com/photo-1593693397690-362cb9666fc2?q=80&w=1200&auto=format&fit=crop',
-      ];
+    : (pkgData.image ? [pkgData.image, ...REAL_PACKAGE_IMAGES.slice(1, 4)] : REAL_PACKAGE_IMAGES);
 
   const [activeImageIndex, setActiveImageIndex] = useState<number>(0);
 
@@ -235,7 +237,6 @@ export default function PackageDetailScreen() {
   });
 
   // Date, Departure City & Guest Modal States
-  const [departureCity, setDepartureCity] = useState<string>('Haldwani');
   const [isDeparturePickerOpen, setIsDeparturePickerOpen] = useState(false);
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const [dateSelectionStep, setDateSelectionStep] = useState<'checkin' | 'checkout'>('checkin');
@@ -247,6 +248,7 @@ export default function PackageDetailScreen() {
     cityName: string;
     pricePerPerson: number;
     isDefault: boolean;
+    pricing: any[];
   }[]>(() => {
     const raw = pkgData?.departureCities;
     if (!Array.isArray(raw) || raw.length === 0) {
@@ -257,6 +259,7 @@ export default function PackageDetailScreen() {
       cityName: string;
       pricePerPerson: number;
       isDefault: boolean;
+      pricing: any[];
     }[] = [];
     raw.forEach((item: any, idx: number) => {
       if (typeof item === 'string' && item.trim()) {
@@ -265,6 +268,7 @@ export default function PackageDetailScreen() {
           cityName: item.trim(),
           pricePerPerson: 0,
           isDefault: idx === 0,
+          pricing: [],
         });
       } else if (item && typeof item === 'object') {
         const name = (item.cityName || item.name || item.city || item.title || '').trim();
@@ -274,6 +278,7 @@ export default function PackageDetailScreen() {
             cityName: name,
             pricePerPerson: Number(item.pricePerPerson) || 0,
             isDefault: Boolean(item.isDefault),
+            pricing: Array.isArray(item.pricing) ? item.pricing : [],
           });
         }
       }
@@ -281,18 +286,34 @@ export default function PackageDetailScreen() {
     return result;
   }, [pkgData?.departureCities]);
 
+  const defaultDepartureCity = useMemo(() => {
+    return (
+      availableDepartureCityObjects.find((c) => c.isDefault) ||
+      availableDepartureCityObjects[0] ||
+      null
+    );
+  }, [availableDepartureCityObjects]);
+
+  const [selectedCityId, setSelectedCityId] = useState<string>('');
+  const [departureCity, setDepartureCity] = useState<string>('');
+
   useEffect(() => {
-    if (availableDepartureCityObjects.length > 0) {
-      const defaultItem = availableDepartureCityObjects.find((c) => c.isDefault) || availableDepartureCityObjects[0];
-      if (defaultItem?.cityName) {
-        setDepartureCity(defaultItem.cityName);
-      }
-    } else {
-      // Fallback only if CMS has no departure cities configured for this package
+    if (defaultDepartureCity && !selectedCityId) {
+      setSelectedCityId(defaultDepartureCity.id);
+      setDepartureCity(defaultDepartureCity.cityName);
+    } else if (availableDepartureCityObjects.length === 0) {
       const fallback = (pkgData?.location?.split('·')[0] || pkgData?.city || 'Haldwani').trim();
       setDepartureCity(fallback);
     }
-  }, [availableDepartureCityObjects, pkgData?.location, pkgData?.city]);
+  }, [defaultDepartureCity, selectedCityId, availableDepartureCityObjects.length, pkgData?.location, pkgData?.city]);
+
+  const selectedCityObj = useMemo(() => {
+    if (selectedCityId) {
+      const found = availableDepartureCityObjects.find((c) => c.id === selectedCityId);
+      if (found) return found;
+    }
+    return defaultDepartureCity;
+  }, [availableDepartureCityObjects, selectedCityId, defaultDepartureCity]);
 
   // Review Modal State
   const [isWriteReviewOpen, setIsWriteReviewOpen] = useState(false);
@@ -387,7 +408,7 @@ export default function PackageDetailScreen() {
           id: String(h.id || h.$id || `h-${idx}`),
           title: h.title || h.name || 'Resort Stay',
           description: h.description || 'Comfortable stay with modern amenities',
-          image: h.image || 'https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=800&auto=format&fit=crop',
+          image: h.image || REAL_STAY_IMAGE,
           tags: Array.isArray(h.tags) && h.tags.length > 0 ? h.tags : ['Resort', 'Free Breakfast'],
           pricePerNight: hPrice,
           isDefault: idx === 0,
@@ -404,7 +425,7 @@ export default function PackageDetailScreen() {
         id: act.id || idx,
         title: act.title || act.name || 'Outdoor Experience',
         description: act.description || 'Exciting adventure activity',
-        image: act.image || 'https://images.unsplash.com/photo-1522163182402-834f871fd851?q=80&w=800&auto=format&fit=crop',
+        image: act.image || REAL_ACTIVITY_IMAGE,
         pricePerPerson: Number(act.pricePerPerson || act.price || 0),
         priceLabel: idx === 0 ? 'Included in Package' : `+ ₹${Number(act.pricePerPerson || 0).toLocaleString('en-IN')} / person`,
       }));
@@ -412,52 +433,103 @@ export default function PackageDetailScreen() {
     return MOCK_ACTIVITY_OPTIONS;
   }, [pkgData?.activityOptions]);
 
-  // Group base price with tiered pricing slabs based on adults count (matching User portal)
-  const defaultBasePriceNum = Number(pkgData?.price) || 18499;
-  let groupBasePrice = defaultBasePriceNum * adultsCount;
+  // Find the absolute maximum allowed travelers across slabs (matching User portal)
+  const activeSlabsForLimit = (selectedCityObj && Array.isArray(selectedCityObj.pricing) && selectedCityObj.pricing.length > 0)
+    ? selectedCityObj.pricing
+    : (pkgData?.pricing && Array.isArray(pkgData.pricing) ? pkgData.pricing : []);
 
-  if (pkgData?.pricing && Array.isArray(pkgData.pricing) && pkgData.pricing.length > 0) {
-    const sortedSlabs = [...pkgData.pricing].sort((a: any, b: any) => {
+  const maxTravelersLimit = activeSlabsForLimit.length > 0
+    ? Math.max(...activeSlabsForLimit.map((slab: any) => Math.max(slab.maxPersons || 1, slab.minPersons || 1)))
+    : 999;
+
+  // Group base price with tiered pricing slabs based on adults count (matching User portal)
+  const citySlabs: any[] = (selectedCityObj && Array.isArray(selectedCityObj.pricing) && selectedCityObj.pricing.length > 0)
+    ? selectedCityObj.pricing
+    : [];
+
+  let groupBasePrice = 0;
+
+  // 1. If city has its own custom slabs, use them directly (User portal logic)
+  if (citySlabs.length > 0) {
+    const sortedCitySlabs = [...citySlabs].sort((a: any, b: any) => {
       const aMin = Math.min(a.minPersons || 1, a.maxPersons || 999);
       const bMin = Math.min(b.minPersons || 1, b.maxPersons || 999);
       return aMin - bMin;
     });
 
-    let applicableSlab = sortedSlabs.find((slab: any) => {
+    let applicableSlab = sortedCitySlabs.find((slab: any) => {
       const min = Math.min(slab.minPersons || 1, slab.maxPersons || 999);
       const max = Math.max(slab.minPersons || 1, slab.maxPersons || 999);
       return adultsCount >= min && adultsCount <= max;
     });
 
     if (!applicableSlab) {
-      const lowerSlabs = sortedSlabs.filter((slab: any) => Math.min(slab.minPersons || 1, slab.maxPersons || 999) <= adultsCount);
-      applicableSlab = lowerSlabs.length > 0 ? lowerSlabs[lowerSlabs.length - 1] : sortedSlabs[0];
+      const lowerSlabs = sortedCitySlabs.filter(
+        (slab: any) => Math.min(slab.minPersons || 1, slab.maxPersons || 999) <= adultsCount
+      );
+      applicableSlab = lowerSlabs.length > 0 ? lowerSlabs[lowerSlabs.length - 1] : sortedCitySlabs[0];
     }
 
     if (applicableSlab) {
-      groupBasePrice = (Number(applicableSlab.pricePerPerson) || defaultBasePriceNum) * adultsCount;
+      groupBasePrice = (Number(applicableSlab.pricePerPerson) || 0) * adultsCount;
+    } else {
+      groupBasePrice = (Number(selectedCityObj?.pricePerPerson) || 0) * adultsCount;
+    }
+  } else {
+    // 2. Fallback to package base slabs with city delta or flat price (User portal logic)
+    let cityRateDelta = 0;
+    if (selectedCityObj && defaultDepartureCity && availableDepartureCityObjects.length > 0) {
+      cityRateDelta = (Number(selectedCityObj.pricePerPerson) || 0) - (Number(defaultDepartureCity.pricePerPerson) || 0);
+    }
+
+    const defaultBasePriceNum = selectedCityObj 
+      ? (Number(selectedCityObj.pricePerPerson) || 0) 
+      : (Number(String(pkgData?.price || 0).replace(/[^\d]/g, '')) || 0);
+    groupBasePrice = defaultBasePriceNum * adultsCount;
+
+    if (pkgData?.pricing && Array.isArray(pkgData.pricing) && pkgData.pricing.length > 0) {
+      const sortedSlabs = [...pkgData.pricing].sort((a: any, b: any) => {
+        const aMin = Math.min(a.minPersons || 1, a.maxPersons || 999);
+        const bMin = Math.min(b.minPersons || 1, b.maxPersons || 999);
+        return aMin - bMin;
+      });
+
+      let applicableSlab = sortedSlabs.find((slab: any) => {
+        const min = Math.min(slab.minPersons || 1, slab.maxPersons || 999);
+        const max = Math.max(slab.minPersons || 1, slab.maxPersons || 999);
+        return adultsCount >= min && adultsCount <= max;
+      });
+
+      if (!applicableSlab) {
+        const lowerSlabs = sortedSlabs.filter(
+          (slab: any) => Math.min(slab.minPersons || 1, slab.maxPersons || 999) <= adultsCount
+        );
+        applicableSlab = lowerSlabs.length > 0 ? lowerSlabs[lowerSlabs.length - 1] : sortedSlabs[0];
+      }
+
+      if (applicableSlab) {
+        const slabBase = (Number(applicableSlab.pricePerPerson) || 0) + cityRateDelta;
+        groupBasePrice = Math.max(0, slabBase) * adultsCount;
+      }
     }
   }
 
+  // Accommodation extra cost per person relative to default base option (Hotel 0)
   const baseHotelPrice = effectiveHotels[0]?.pricePerNight || 0;
   const currentHotelPrice = effectiveHotels[selectedHotelIndex]?.pricePerNight || baseHotelPrice;
   const hotelExtraPerPerson = (currentHotelPrice - baseHotelPrice) * nightsCount;
 
+  // Activities extra cost per person (Index 0 is included in base package)
   const activitiesExtraPerPerson = selectedActivities.reduce((sum, actIdx) => {
     const act = effectiveActivities[actIdx];
     return sum + (act && actIdx !== 0 ? act.pricePerPerson : 0);
   }, 0);
 
-  const selectedCityObj = availableDepartureCityObjects.find(
-    (c) => c.cityName.toLowerCase() === (departureCity || '').toLowerCase()
-  );
-  const cityExtraPerPerson = selectedCityObj?.pricePerPerson || 0;
-
   const groupHotelExtra = hotelExtraPerPerson * adultsCount;
   const groupActivitiesExtra = activitiesExtraPerPerson * adultsCount;
-  const groupCityExtra = cityExtraPerPerson * adultsCount;
 
-  const grandTotalPrice = groupBasePrice + groupHotelExtra + groupActivitiesExtra + groupCityExtra;
+  // Total price calculations (matching User portal: groupBasePrice + groupHotelExtra + groupActivitiesExtra)
+  const grandTotalPrice = groupBasePrice + groupHotelExtra + groupActivitiesExtra;
   const effectivePricePerPerson = Math.round(grandTotalPrice / adultsCount);
 
   // Request Custom Quote State (Need Assistance & Inquiry)
@@ -515,6 +587,12 @@ export default function PackageDetailScreen() {
       setIsAuthSheetVisible(true);
       return;
     }
+    const selectedCoverImage =
+      (Array.isArray(pkgData?.images) && pkgData.images.length > 0 && pkgData.images[0]) ||
+      pkgData?.image ||
+      (Array.isArray(heroImages) && heroImages.length > 0 && heroImages[0]) ||
+      '';
+
     router.push({
       pathname: `/checkout/${pkgId}` as any,
       params: {
@@ -523,12 +601,32 @@ export default function PackageDetailScreen() {
         totalPrice: grandTotalPrice,
         checkIn: checkInDate,
         checkOut: checkOutDate,
-        location: 'Uttarakhand, India',
+        location: pkgData.location || 'Uttarakhand, India',
         bookingType: 'package',
         departureCity: departureCity,
+        image: selectedCoverImage,
       },
     });
   };
+
+  if (isLoading && !realPackage) {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: '#FFFFFF' }]}>
+        <StatusBar barStyle="dark-content" />
+        <View style={[styles.topNavContainer, { position: 'relative', width: '100%', paddingHorizontal: 20, paddingTop: 10 }]}>
+          <TouchableOpacity style={styles.navCircleBtn} onPress={() => router.back()}>
+            <ArrowLeft color={Colors.brand.navy} size={20} />
+          </TouchableOpacity>
+        </View>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <ActivityIndicator size="large" color={Colors.brand.coral} />
+          <Text style={{ marginTop: 14, fontSize: 14, fontWeight: '600', color: '#64748B' }}>
+            Loading package details...
+          </Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -696,8 +794,9 @@ export default function PackageDetailScreen() {
                 </Text>
 
                 <TouchableOpacity
-                  style={styles.stepperCircleBtn}
-                  onPress={() => setAdultsCount(adultsCount + 1)}
+                  style={[styles.stepperCircleBtn, adultsCount >= maxTravelersLimit && { opacity: 0.4 }]}
+                  onPress={() => setAdultsCount(Math.min(maxTravelersLimit, adultsCount + 1))}
+                  disabled={adultsCount >= maxTravelersLimit}
                   activeOpacity={0.7}
                 >
                   <Text style={styles.stepperBtnText}>+</Text>
@@ -1233,7 +1332,9 @@ export default function PackageDetailScreen() {
                     </View>
                   ) : (
                     availableDepartureCityObjects.map((cityObj) => {
-                      const isSelected = (departureCity || '').trim().toLowerCase() === cityObj.cityName.trim().toLowerCase();
+                      const isSelected = selectedCityId
+                        ? cityObj.id === selectedCityId
+                        : (departureCity || '').trim().toLowerCase() === cityObj.cityName.trim().toLowerCase();
                       return (
                         <TouchableOpacity
                           key={cityObj.id || cityObj.cityName}
@@ -1243,6 +1344,7 @@ export default function PackageDetailScreen() {
                           ]}
                           activeOpacity={0.75}
                           onPress={() => {
+                            setSelectedCityId(cityObj.id);
                             setDepartureCity(cityObj.cityName);
                             setIsDeparturePickerOpen(false);
                           }}
@@ -1285,7 +1387,7 @@ export default function PackageDetailScreen() {
                                   isSelected && styles.cityPriceBadgeActive,
                                 ]}
                               >
-                                +₹{cityObj.pricePerPerson.toLocaleString('en-IN')}
+                                ₹{cityObj.pricePerPerson.toLocaleString('en-IN')}
                               </Text>
                             )}
 

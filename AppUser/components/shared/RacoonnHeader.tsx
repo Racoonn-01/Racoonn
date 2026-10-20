@@ -32,6 +32,7 @@ export default function RacoonnHeader() {
               source={require('@/assets/images/Racoonn-Logo-02.png')}
               style={styles.logoImage}
               resizeMode="contain"
+              fadeDuration={0}
             />
           </TouchableOpacity>
 

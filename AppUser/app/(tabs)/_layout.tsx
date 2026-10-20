@@ -64,11 +64,31 @@ export default function TabLayout() {
         headerShown: false,
       }}
     >
-      {/* 1. Home */}
+      {/* 1. Discover */}
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Home',
+          title: 'Discover',
+          tabBarIcon: ({ focused }) => (
+            <View style={[styles.iconContainer, focused && styles.iconContainerActive]}>
+              <Search
+                color={focused ? '#FFFFFF' : '#94A3B8'}
+                strokeWidth={2.4}
+                size={isTablet ? 22 : 19}
+              />
+            </View>
+          ),
+          tabBarLabel: ({ focused }) => (
+            <Text style={[styles.label, focused && styles.labelActive]}>Discover</Text>
+          ),
+        }}
+      />
+
+      {/* 2. Stays */}
+      <Tabs.Screen
+        name="search"
+        options={{
+          title: 'Stays',
           tabBarIcon: ({ focused }) => (
             <View style={[styles.iconContainer, focused && styles.iconContainerActive]}>
               <Home
@@ -80,27 +100,7 @@ export default function TabLayout() {
             </View>
           ),
           tabBarLabel: ({ focused }) => (
-            <Text style={[styles.label, focused && styles.labelActive]}>Home</Text>
-          ),
-        }}
-      />
-
-      {/* 2. Search (After Home) */}
-      <Tabs.Screen
-        name="search"
-        options={{
-          title: 'Search',
-          tabBarIcon: ({ focused }) => (
-            <View style={[styles.iconContainer, focused && styles.iconContainerActive]}>
-              <Search
-                color={focused ? '#FFFFFF' : '#94A3B8'}
-                strokeWidth={2.4}
-                size={isTablet ? 22 : 19}
-              />
-            </View>
-          ),
-          tabBarLabel: ({ focused }) => (
-            <Text style={[styles.label, focused && styles.labelActive]}>Search</Text>
+            <Text style={[styles.label, focused && styles.labelActive]}>Stays</Text>
           ),
         }}
       />

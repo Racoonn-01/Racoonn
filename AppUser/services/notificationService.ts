@@ -1,14 +1,20 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { Platform } from 'react-native';
 import Constants, { ExecutionEnvironment } from 'expo-constants';
 import { useRouter } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { registerDeviceTokenApi, unregisterDeviceTokenApi } from '../lib/appwrite/api';
+import { useNotificationStore, NotificationCategory } from '../store/notificationStore';
+import { useAuthStore } from '../store/authStore';
+
+const SAVED_PUSH_TOKEN_KEY = '@racoonn_device_push_token';
 
 // Safely require expo-notifications to prevent module load crash in Expo Go (SDK 53+)
 let Notifications: typeof import('expo-notifications') | null = null;
 try {
   Notifications = require('expo-notifications');
 } catch (e) {
-  console.warn('expo-notifications module load warning:', e);
+  console.warn('[NotificationService] expo-notifications module load warning:', e);
 }
 
 // Configure default foreground notification behavior
@@ -25,40 +31,63 @@ if (Notifications && typeof Notifications.setNotificationHandler === 'function')
 }
 
 /**
- * Registers the device for Push Notifications and returns the Expo Push Token.
+ * Configure Android notification channels with appropriate sound and importance
  */
-export async function registerForPushNotificationsAsync(): Promise<string | null> {
+export async function setupAndroidNotificationChannels() {
+  if (Platform.OS !== 'android' || !Notifications) return;
+
+  try {
+    await Notifications.setNotificationChannelAsync('default', {
+      name: 'General Updates',
+      importance: Notifications.AndroidImportance.DEFAULT,
+      vibrationPattern: [0, 250, 250, 250],
+      lightColor: '#FF5A5F',
+      sound: 'default',
+    });
+
+    await Notifications.setNotificationChannelAsync('bookings', {
+      name: 'Bookings & Trips',
+      importance: Notifications.AndroidImportance.MAX,
+      vibrationPattern: [0, 300, 200, 300],
+      lightColor: '#FF5A5F',
+      sound: 'default',
+    });
+
+    await Notifications.setNotificationChannelAsync('reminders', {
+      name: 'Travel Reminders',
+      importance: Notifications.AndroidImportance.HIGH,
+      vibrationPattern: [0, 250, 250, 250],
+      lightColor: '#D97706',
+      sound: 'default',
+    });
+
+    await Notifications.setNotificationChannelAsync('promotions', {
+      name: 'Offers & Discounts',
+      importance: Notifications.AndroidImportance.LOW,
+      sound: 'default',
+    });
+  } catch (channelErr) {
+    console.warn('[NotificationService] Error creating notification channels:', channelErr);
+  }
+}
+
+/**
+ * Registers the device for Push Notifications, returns the Expo Push Token,
+ * and saves it in Appwrite for the authenticated user.
+ */
+export async function registerForPushNotificationsAsync(userId?: string): Promise<string | null> {
   if (!Notifications) return null;
 
-  // Check if running inside Expo Go
+  // Initialize Android Channels
+  await setupAndroidNotificationChannels();
+
   const isExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
   if (isExpoGo && Platform.OS === 'android') {
-    console.log('[NotificationService] Android Push notifications are disabled in Expo Go. Use a development build to receive remote push tokens.');
+    console.log('[NotificationService] Android Push tokens are disabled in Expo Go. Use a development build.');
   }
 
-  // Create Notification Channel for Android
-  if (Platform.OS === 'android') {
-    try {
-      await Notifications.setNotificationChannelAsync('default', {
-        name: 'Default Channel',
-        importance: Notifications.AndroidImportance.MAX,
-        vibrationPattern: [0, 250, 250, 250],
-        lightColor: '#4F46E5',
-        sound: 'default',
-      });
-
-      await Notifications.setNotificationChannelAsync('bookings', {
-        name: 'Booking Updates',
-        importance: Notifications.AndroidImportance.HIGH,
-        sound: 'default',
-      });
-    } catch (channelErr) {
-      console.warn('Error setting notification channel:', channelErr);
-    }
-  }
-
-  // Request Permissions
   try {
+    // 1. Check existing permission status
     const { status: existingStatus } = await Notifications.getPermissionsAsync();
     let finalStatus = existingStatus;
 
@@ -72,48 +101,95 @@ export async function registerForPushNotificationsAsync(): Promise<string | null
       return null;
     }
 
-    // Don't call getExpoPushTokenAsync in Expo Go on Android to prevent SDK 53 crash
     if (isExpoGo && Platform.OS === 'android') {
       return 'expo-go-mock-token';
     }
 
-    const projectId = Constants.expoConfig?.extra?.eas?.projectId;
+    // 2. Fetch native FCM token and Expo Push Token
+    let nativeFcmToken: string | null = null;
+    try {
+      const deviceToken = await Notifications.getDevicePushTokenAsync();
+      if (deviceToken?.data) {
+        nativeFcmToken = typeof deviceToken.data === 'string' ? deviceToken.data : JSON.stringify(deviceToken.data);
+        console.log('[NotificationService] Native FCM Device Token:', nativeFcmToken);
+      }
+    } catch (fcmErr) {
+      // Normal in Expo Go or simulators without Play Services
+    }
+
+    const projectId =
+      Constants.expoConfig?.extra?.eas?.projectId ||
+      Constants.easConfig?.projectId ||
+      '9d6632e1-19ba-48eb-8130-067d57299abd';
+
     const tokenData = await Notifications.getExpoPushTokenAsync({
-      projectId: projectId || undefined,
+      projectId,
     });
 
-    console.log('[NotificationService] Expo Push Token:', tokenData.data);
-    return tokenData.data;
+    const pushToken = tokenData.data;
+    console.log('[NotificationService] Expo Push Token obtained:', pushToken);
+
+    // Save token to local cache
+    await AsyncStorage.setItem(SAVED_PUSH_TOKEN_KEY, pushToken);
+    if (nativeFcmToken) {
+      await AsyncStorage.setItem('@racoonn_native_fcm_token', nativeFcmToken);
+    }
+
+    // 3. Register to Appwrite database if user is authenticated
+    const targetUserId = userId || useAuthStore.getState().user?.$id;
+    if (targetUserId) {
+      await registerDeviceTokenApi(
+        targetUserId,
+        pushToken,
+        Platform.OS as any,
+        `${Platform.OS === 'ios' ? 'Apple Device' : 'Android Device'} (${Platform.Version})`
+      );
+    }
+
+    return pushToken;
   } catch (err) {
-    console.warn('[NotificationService] Failed to get push token:', err);
+    console.warn('[NotificationService] Failed to register push token:', err);
     return null;
   }
 }
 
-import { useNotificationStore } from '../store/notificationStore';
+/**
+ * Deactivates device token on user logout
+ */
+export async function unregisterPushNotificationsAsync(userId: string) {
+  try {
+    const pushToken = (await AsyncStorage.getItem(SAVED_PUSH_TOKEN_KEY)) || undefined;
+    await unregisterDeviceTokenApi(userId, pushToken);
+    await AsyncStorage.removeItem(SAVED_PUSH_TOKEN_KEY);
+    console.log('[NotificationService] Push token unregistered successfully for user:', userId);
+  } catch (err) {
+    console.warn('[NotificationService] Error unregistering push token:', err);
+  }
+}
 
 /**
- * Triggers a local push notification immediately or after a delay.
- * Also synchronizes the real-time notification directly into the notification store.
+ * Triggers a local push notification and registers it in the notification store.
  */
 export async function sendLocalNotification({
   title,
   body,
+  category = 'system',
   data = {},
   seconds = 1,
 }: {
   title: string;
   body: string;
+  category?: NotificationCategory;
   data?: Record<string, any>;
   seconds?: number;
 }): Promise<string | null> {
-  // Always register the real-time notification in the store
+  // Always register in local reactive store
   try {
-    const notifType = (data?.type as any) || (title.toLowerCase().includes('cancel') ? 'cancellation' : 'booking');
     await useNotificationStore.getState().addNotification({
       title,
       message: body,
-      type: notifType,
+      category,
+      type: category,
       data,
       timestamp: Date.now(),
     });
@@ -128,7 +204,7 @@ export async function sendLocalNotification({
       content: {
         title,
         body,
-        data,
+        data: { ...data, category, channelId: category === 'booking' ? 'bookings' : 'default' },
         sound: 'default',
       },
       trigger: seconds > 0 ? { seconds, type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL } : null,
@@ -141,47 +217,81 @@ export async function sendLocalNotification({
 }
 
 /**
- * Custom React hook to observe incoming notifications and user tap responses.
+ * Custom React hook to observe incoming push notifications, tap events, and cold starts.
  */
 export function useNotificationObserver() {
   const router = useRouter();
+  const hasHandledInitial = useRef(false);
 
   useEffect(() => {
-    // Load initial stored notifications on app launch
+    // 1. Load initial stored notifications
     useNotificationStore.getState().loadNotifications();
 
     if (!Notifications) return;
 
-    // Listener for notifications received while app is in foreground
+    // 2. Setup channels
+    setupAndroidNotificationChannels();
+
+    // 3. Handle cold-start tap response (when app is launched by tapping notification)
+    if (!hasHandledInitial.current) {
+      hasHandledInitial.current = true;
+      Notifications.getLastNotificationResponseAsync()
+        .then((response) => {
+          if (response) {
+            handleNotificationTap(response);
+          }
+        })
+        .catch((err) => {
+          console.warn('[NotificationService] Error checking initial notification response:', err);
+        });
+    }
+
+    // 4. Foreground notification listener
     const notificationListener = Notifications.addNotificationReceivedListener((notification) => {
-      console.log('[NotificationService] Notification Received:', notification.request.content);
+      console.log('[NotificationService] Foreground notification received:', notification.request.content);
       const content = notification.request.content;
+      const data = content.data || {};
+      const cat = (data.category as NotificationCategory) || 'system';
+
       useNotificationStore.getState().addNotification({
+        id: (data.notificationId as string) || undefined,
         title: content.title || 'New Notification',
         message: content.body || '',
-        type: (content.data?.type as any) || 'system',
-        data: content.data,
+        category: cat,
+        type: cat,
+        data,
         timestamp: Date.now(),
       });
     });
 
-    // Listener for when a user clicks/taps on a notification
+    // 5. Notification tap listener (background & active app)
     const responseListener = Notifications.addNotificationResponseReceivedListener((response) => {
-      console.log('[NotificationService] Notification Clicked:', response.notification.request.content);
-      const data = response.notification.request.content.data;
+      console.log('[NotificationService] Notification tapped:', response.notification.request.content);
+      handleNotificationTap(response);
+    });
 
-      if (data?.notificationId) {
+    function handleNotificationTap(response: any) {
+      const data = response?.notification?.request?.content?.data || {};
+
+      if (data.notificationId) {
         useNotificationStore.getState().markAsRead(String(data.notificationId));
       }
 
-      if (data && data.url) {
-        try {
+      // Safe navigation based on structured data payload
+      try {
+        if (data.url) {
           router.push(data.url as any);
-        } catch (navErr) {
-          console.warn('[NotificationService] Navigation error on notification tap:', navErr);
+        } else if (data.bookingId || data.category === 'booking' || data.category === 'cancellation' || data.category === 'reminder') {
+          router.push('/(tabs)/profile' as any);
+        } else if (data.hotelId) {
+          router.push(`/hotel/${data.hotelId}` as any);
+        } else {
+          router.push('/notifications' as any);
         }
+      } catch (navErr) {
+        console.warn('[NotificationService] Navigation error on notification tap:', navErr);
       }
-    });
+    }
 
     return () => {
       if (notificationListener && typeof notificationListener.remove === 'function') {

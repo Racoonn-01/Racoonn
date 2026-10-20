@@ -20,6 +20,8 @@ import Svg, { Path } from 'react-native-svg';
 import Colors from '@/constants/Colors';
 import { authService } from '../../lib/appwrite/auth';
 import { useAuthStore } from '../../store/authStore';
+import CustomMessageModal from '../../components/shared/CustomMessageModal';
+import { getFriendlyAuthError } from '../../utils/authErrorHelper';
 
 function GoogleOfficialIcon({ size = 20 }: { size?: number }) {
   return (
@@ -58,9 +60,73 @@ export default function RegisterScreen() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
 
+  // Custom in-app modal state
+  const [modalConfig, setModalConfig] = useState<{
+    visible: boolean;
+    type?: 'error' | 'warning' | 'success' | 'info';
+    title: string;
+    message: string;
+    primaryButtonText?: string;
+    onPrimaryPress?: () => void;
+    secondaryButtonText?: string;
+    onSecondaryPress?: () => void;
+  }>({
+    visible: false,
+    title: '',
+    message: '',
+  });
+
   const handleRegister = async () => {
     if (!name.trim() || !email.trim() || !password.trim()) {
-      Alert.alert('Required Fields', 'Please fill in all details.');
+      setModalConfig({
+        visible: true,
+        type: 'warning',
+        title: 'Required Fields',
+        message: 'Please fill in all details (name, email, and password) to register.',
+        primaryButtonText: 'Got It',
+        onPrimaryPress: () => setModalConfig((prev) => ({ ...prev, visible: false })),
+      });
+      return;
+    }
+
+    if (!/\S+@\S+\.\S+/.test(email.trim())) {
+      setModalConfig({
+        visible: true,
+        type: 'warning',
+        title: 'Invalid Email Address',
+        message: 'Please enter a valid email address (e.g. name@example.com).',
+        primaryButtonText: 'Check Email',
+        onPrimaryPress: () => setModalConfig((prev) => ({ ...prev, visible: false })),
+      });
+      return;
+    }
+
+    if (password.length < 8) {
+      setModalConfig({
+        visible: true,
+        type: 'warning',
+        title: 'Password Too Short',
+        message: 'Your password must be at least 8 characters long.',
+        primaryButtonText: 'Update Password',
+        onPrimaryPress: () => setModalConfig((prev) => ({ ...prev, visible: false })),
+      });
+      return;
+    }
+
+    if (!agreeTerms) {
+      setModalConfig({
+        visible: true,
+        type: 'warning',
+        title: 'Terms of Service',
+        message: 'Please accept the Terms & Privacy Policy to create your account.',
+        primaryButtonText: 'I Agree',
+        onPrimaryPress: () => {
+          setAgreeTerms(true);
+          setModalConfig((prev) => ({ ...prev, visible: false }));
+        },
+        secondaryButtonText: 'Cancel',
+        onSecondaryPress: () => setModalConfig((prev) => ({ ...prev, visible: false })),
+      });
       return;
     }
 
@@ -70,7 +136,24 @@ export default function RegisterScreen() {
       await checkAuth();
       router.replace('/profile' as any);
     } catch (error: any) {
-      Alert.alert('Registration Failed', error?.message || 'Could not create account.');
+      const friendly = getFriendlyAuthError(error, 'register');
+      setModalConfig({
+        visible: true,
+        type: friendly.type,
+        title: friendly.title,
+        message: friendly.message,
+        primaryButtonText: friendly.primaryText,
+        secondaryButtonText: friendly.secondaryText,
+        onPrimaryPress: () => {
+          setModalConfig((prev) => ({ ...prev, visible: false }));
+          if (friendly.action === 'login') {
+            router.push('/auth/login' as any);
+          }
+        },
+        onSecondaryPress: friendly.secondaryText
+          ? () => setModalConfig((prev) => ({ ...prev, visible: false }))
+          : undefined,
+      });
     } finally {
       setLoading(false);
     }
@@ -85,7 +168,15 @@ export default function RegisterScreen() {
         router.replace('/profile' as any);
       }
     } catch (error: any) {
-      Alert.alert('Google Sign-Up Error', error?.message || 'Failed to sign up with Google.');
+      const friendly = getFriendlyAuthError(error, 'register');
+      setModalConfig({
+        visible: true,
+        type: 'error',
+        title: 'Google Sign-Up Error',
+        message: error?.message || friendly.message || 'Failed to sign up with Google.',
+        primaryButtonText: 'OK',
+        onPrimaryPress: () => setModalConfig((prev) => ({ ...prev, visible: false })),
+      });
     } finally {
       setGoogleLoading(false);
     }
@@ -248,6 +339,19 @@ export default function RegisterScreen() {
           </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      {/* Custom Message Modal */}
+      <CustomMessageModal
+        visible={modalConfig.visible}
+        type={modalConfig.type}
+        title={modalConfig.title}
+        message={modalConfig.message}
+        primaryButtonText={modalConfig.primaryButtonText}
+        onPrimaryPress={modalConfig.onPrimaryPress}
+        secondaryButtonText={modalConfig.secondaryButtonText}
+        onSecondaryPress={modalConfig.onSecondaryPress}
+        onClose={() => setModalConfig((prev) => ({ ...prev, visible: false }))}
+      />
     </SafeAreaView>
   );
 }

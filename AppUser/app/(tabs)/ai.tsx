@@ -32,6 +32,7 @@ import {
   Waves,
 } from 'lucide-react-native';
 import Colors from '@/constants/Colors';
+import { REAL_STAY_IMAGE, REAL_PACKAGE_IMAGE } from '@/constants/RealImages';
 import { getProperties, getCMSPackages } from '../../lib/appwrite/api';
 import { isActiveProperty } from '../../utils/isActiveProperty';
 
@@ -102,7 +103,7 @@ export default function AskAIScreen() {
               location: String(d.location || d.address || [d.city, d.state].filter(Boolean).join(', ') || 'Uttarakhand'),
               price: `₹${rawPrice.toLocaleString('en-IN')}`,
               numericPrice: rawPrice,
-              images: photos.length > 0 ? photos : ['https://images.unsplash.com/photo-1540541338287-41700207dee6?w=800&q=80'],
+              images: photos.length > 0 ? photos : [REAL_STAY_IMAGE],
               type: 'hotel',
               rating: d.rating ? String(d.rating) : 'New',
               badge: 'Verified Stay',
@@ -118,7 +119,7 @@ export default function AskAIScreen() {
           location: String(p.location || 'Uttarakhand'),
           price: typeof p.price === 'number' ? `₹${p.price.toLocaleString('en-IN')}` : String(p.price || '₹12,499'),
           numericPrice: Number(String(p.price).replace(/[^0-9]/g, '')) || 12000,
-          images: Array.isArray(p.images) && p.images.length > 0 ? p.images : ['https://images.unsplash.com/photo-1626621341517-bbf3d9990a23?w=800&q=80'],
+          images: Array.isArray(p.images) && p.images.length > 0 ? p.images : [REAL_PACKAGE_IMAGE],
           type: 'package',
           rating: p.rating ? String(p.rating) : 'New',
           badge: p.badge || 'Verified Package',
@@ -378,7 +379,9 @@ export default function AskAIScreen() {
                                     ? item.images[0]
                                     : typeof item.image === 'string'
                                       ? item.image
-                                      : 'https://images.unsplash.com/photo-1626621341517-bbf3d9990a23?w=800&q=80',
+                                      : item.type === 'package'
+                                        ? REAL_PACKAGE_IMAGE
+                                        : REAL_STAY_IMAGE,
                               }}
                               style={styles.fullCoverImage}
                               resizeMode="cover"

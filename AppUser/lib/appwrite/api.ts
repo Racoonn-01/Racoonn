@@ -1,6 +1,7 @@
 import { databases, appwriteConfig, storage } from './config';
 import { Query, ID } from 'react-native-appwrite';
 import { calculateHotelGST } from '../../utils/gst';
+import { REAL_PACKAGE_IMAGE } from '../../constants/RealImages';
 
 export async function getProperties(): Promise<any[]> {
   try {
@@ -429,6 +430,7 @@ export async function createBooking(input: BookingInput) {
       gstRate: gstCalc.gstPercentage,
       gstAmount: gstCalc.gstAmount,
       hotelId: input.hotelId,
+      userId: input.userId,
       isPackage:
         (input.roomId || '').startsWith('Package:') ||
         (input.roomName || '').toLowerCase().includes('package') ||
@@ -459,6 +461,7 @@ export async function sendBookingConfirmationAndGenerateInvoice(data: {
   gstAmount?: number;
   hotelId?: string;
   isPackage?: boolean;
+  userId?: string;
 }): Promise<boolean> {
   try {
     const payload = {
@@ -636,8 +639,17 @@ export async function getCMSPackages(): Promise<any[]> {
 
       return response.documents.map((doc: any) => {
         const pricing = safeParse(doc.pricing, []);
+        const departureCities = safeParse(doc.departureCities, []);
         const firstPricing = Array.isArray(pricing) && pricing.length > 0 ? pricing[0] : null;
-        const resolvedPrice = Number(firstPricing?.pricePerPerson || doc.price || 0);
+        const defaultCity = Array.isArray(departureCities)
+          ? (departureCities.find((c: any) => c.isDefault) || departureCities[0])
+          : null;
+        const resolvedPrice = Number(
+          (defaultCity && defaultCity.pricePerPerson) ||
+          firstPricing?.pricePerPerson ||
+          doc.price ||
+          0
+        );
 
         return {
           id: String(doc.$id),
@@ -651,13 +663,13 @@ export async function getCMSPackages(): Promise<any[]> {
           badgeColor: String(doc.badgeColor || ''),
           images: Array.isArray(doc.images) && doc.images.length > 0
             ? doc.images
-            : ['https://images.unsplash.com/photo-1626621341517-bbf3d9990a23?q=80&w=800&auto=format&fit=crop'],
+            : [REAL_PACKAGE_IMAGE],
           price: resolvedPrice,
           pricing,
           hotelOptions: safeParse(doc.hotelOptions, []),
           activityOptions: safeParse(doc.activityOptions, []),
           itinerary: safeParse(doc.itinerary, []),
-          departureCities: safeParse(doc.departureCities, []),
+          departureCities,
           metaTitle: String(doc.metaTitle || ''),
           metaDescription: String(doc.metaDescription || ''),
           status: String(doc.status || 'published'),
@@ -766,3 +778,308 @@ export async function getCMSPopularDestinations() {
     return [];
   }
 }
+
+// ==========================================
+// PUSH NOTIFICATION & NOTIFICATION CENTER APIS
+// ==========================================
+
+export interface UserNotificationItem {
+  id: string;
+  userId: string;
+  title: string;
+  message: string;
+  category: 'booking' | 'payment' | 'cancellation' | 'reminder' | 'vendor' | 'promo' | 'system';
+  read: boolean;
+  createdAt: string;
+  data?: Record<string, any>;
+}
+
+export interface NotificationPreferencesData {
+  bookings: boolean;
+  reminders: boolean;
+  promos: boolean;
+  system: boolean;
+}
+
+/**
+ * Register or update push notification token in Appwrite and backend
+ */
+export async function registerDeviceTokenApi(
+  userId: string,
+  pushToken: string,
+  platform: 'android' | 'ios' | 'web',
+  deviceName?: string
+) {
+  if (!userId || !pushToken) return;
+
+  const now = new Date().toISOString();
+  const deviceIdentifier = pushToken;
+
+  // 1. Direct Appwrite document sync
+  try {
+    const existing = await databases.listDocuments(
+      appwriteConfig.databaseId,
+      appwriteConfig.deviceTokensCollectionId,
+      [Query.equal('userId', userId), Query.equal('pushToken', pushToken), Query.limit(1)]
+    );
+
+    if (existing.documents.length > 0) {
+      await databases.updateDocument(
+        appwriteConfig.databaseId,
+        appwriteConfig.deviceTokensCollectionId,
+        existing.documents[0].$id,
+        {
+          isActive: true,
+          lastActiveAt: now,
+          platform,
+          deviceName: deviceName || 'Mobile Device',
+        }
+      );
+    } else {
+      await databases.createDocument(
+        appwriteConfig.databaseId,
+        appwriteConfig.deviceTokensCollectionId,
+        ID.unique(),
+        {
+          userId,
+          pushToken,
+          platform,
+          deviceIdentifier,
+          deviceName: deviceName || 'Mobile Device',
+          isActive: true,
+          lastActiveAt: now,
+          createdAt: now,
+        }
+      );
+    }
+  } catch (err: any) {
+    console.warn('[API] Could not sync device token directly to Appwrite:', err.message);
+  }
+
+  // 2. Also notify Backend
+  const candidateUrls = [
+    process.env.EXPO_PUBLIC_API_BASE_URL ? `${process.env.EXPO_PUBLIC_API_BASE_URL}/api/notifications/devices/register` : '',
+    'https://racoonn.com/api/notifications/devices/register',
+    'http://192.168.1.7:5005/api/notifications/devices/register',
+    'http://10.0.2.2:5005/api/notifications/devices/register',
+    'http://localhost:5005/api/notifications/devices/register',
+  ].filter(Boolean);
+
+  for (const url of candidateUrls) {
+    try {
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, pushToken, platform, deviceIdentifier, deviceName }),
+      });
+      if (res.ok) break;
+    } catch {}
+  }
+}
+
+/**
+ * Deactivates device token on user logout
+ */
+export async function unregisterDeviceTokenApi(userId: string, pushToken?: string) {
+  if (!userId) return;
+
+  try {
+    const queries = [Query.equal('userId', userId)];
+    if (pushToken) queries.push(Query.equal('pushToken', pushToken));
+
+    const docs = await databases.listDocuments(
+      appwriteConfig.databaseId,
+      appwriteConfig.deviceTokensCollectionId,
+      queries
+    );
+
+    for (const doc of docs.documents) {
+      await databases.updateDocument(
+        appwriteConfig.databaseId,
+        appwriteConfig.deviceTokensCollectionId,
+        doc.$id,
+        { isActive: false, lastActiveAt: new Date().toISOString() }
+      );
+    }
+  } catch (err: any) {
+    console.warn('[API] Could not deactivate device token:', err.message);
+  }
+}
+
+/**
+ * Fetches notifications for user with pagination and filter options
+ */
+export async function fetchUserNotificationsApi(
+  userId: string,
+  options?: { limit?: number; offset?: number; category?: string; unreadOnly?: boolean }
+): Promise<{ documents: UserNotificationItem[]; total: number; unreadCount: number }> {
+  if (!userId) return { documents: [], total: 0, unreadCount: 0 };
+
+  const limit = options?.limit || 40;
+  const offset = options?.offset || 0;
+  const category = options?.category;
+  const unreadOnly = options?.unreadOnly;
+
+  try {
+    const queries = [
+      Query.equal('userId', userId),
+      Query.orderDesc('createdAt'),
+      Query.limit(limit),
+      Query.offset(offset),
+    ];
+
+    if (unreadOnly) {
+      queries.push(Query.equal('read', false));
+    }
+
+    if (category && category !== 'all') {
+      queries.push(Query.equal('category', category));
+    }
+
+    const res = await databases.listDocuments(
+      appwriteConfig.databaseId,
+      appwriteConfig.notificationsCollectionId,
+      queries
+    );
+
+    const unreadCountRes = await databases.listDocuments(
+      appwriteConfig.databaseId,
+      appwriteConfig.notificationsCollectionId,
+      [Query.equal('userId', userId), Query.equal('read', false), Query.limit(1)]
+    );
+
+    const mapped: UserNotificationItem[] = res.documents.map((d: any) => ({
+      id: d.$id,
+      userId: d.userId,
+      title: d.title,
+      message: d.message,
+      category: d.category || 'system',
+      read: !!d.read,
+      createdAt: d.createdAt || d.$createdAt,
+      data: d.data ? (() => { try { return JSON.parse(d.data); } catch { return {}; } })() : {},
+    }));
+
+    return {
+      documents: mapped,
+      total: res.total,
+      unreadCount: unreadCountRes.total,
+    };
+  } catch (err: any) {
+    console.warn('[API] Failed to fetch user notifications from Appwrite:', err.message);
+    return { documents: [], total: 0, unreadCount: 0 };
+  }
+}
+
+/**
+ * Marks a single notification as read in Appwrite
+ */
+export async function markNotificationReadApi(notificationId: string) {
+  try {
+    await databases.updateDocument(
+      appwriteConfig.databaseId,
+      appwriteConfig.notificationsCollectionId,
+      notificationId,
+      { read: true }
+    );
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Marks all unread notifications as read for a user
+ */
+export async function markAllNotificationsReadApi(userId: string) {
+  if (!userId) return false;
+  try {
+    const unread = await databases.listDocuments(
+      appwriteConfig.databaseId,
+      appwriteConfig.notificationsCollectionId,
+      [Query.equal('userId', userId), Query.equal('read', false), Query.limit(100)]
+    );
+
+    for (const d of unread.documents) {
+      await databases.updateDocument(
+        appwriteConfig.databaseId,
+        appwriteConfig.notificationsCollectionId,
+        d.$id,
+        { read: true }
+      );
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Deletes a notification from Appwrite
+ */
+export async function deleteNotificationApi(notificationId: string) {
+  try {
+    await databases.deleteDocument(
+      appwriteConfig.databaseId,
+      appwriteConfig.notificationsCollectionId,
+      notificationId
+    );
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Reads user notification preferences
+ */
+export async function fetchNotificationPreferencesApi(userId: string): Promise<NotificationPreferencesData> {
+  const defaults: NotificationPreferencesData = {
+    bookings: true,
+    reminders: true,
+    promos: true,
+    system: true,
+  };
+
+  if (!userId) return defaults;
+
+  try {
+    const profile = await databases.getDocument(
+      appwriteConfig.databaseId,
+      appwriteConfig.profilesCollectionId,
+      userId
+    ).catch(() => null);
+
+    if (profile && profile.notificationPreferences) {
+      const parsed = JSON.parse(profile.notificationPreferences);
+      return { ...defaults, ...parsed };
+    }
+    return defaults;
+  } catch {
+    return defaults;
+  }
+}
+
+/**
+ * Updates user notification preferences in Appwrite
+ */
+export async function updateNotificationPreferencesApi(
+  userId: string,
+  prefs: Partial<NotificationPreferencesData>
+): Promise<NotificationPreferencesData> {
+  const current = await fetchNotificationPreferencesApi(userId);
+  const updated = { ...current, ...prefs };
+
+  try {
+    await databases.updateDocument(
+      appwriteConfig.databaseId,
+      appwriteConfig.profilesCollectionId,
+      userId,
+      { notificationPreferences: JSON.stringify(updated) }
+    );
+  } catch (err: any) {
+    console.warn('[API] Could not update notification preferences in Appwrite:', err.message);
+  }
+
+  return updated;
+}
+

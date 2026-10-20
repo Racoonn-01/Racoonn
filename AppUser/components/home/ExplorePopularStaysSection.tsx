@@ -12,6 +12,7 @@ import {
 import { Heart, ChevronRight, Star, MapPin } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import Colors from '@/constants/Colors';
+import { REAL_STAY_IMAGE } from '@/constants/RealImages';
 import { useAuthStore } from '../../store/authStore';
 import { getProperties } from '../../lib/appwrite/api';
 import { isActiveProperty } from '../../utils/isActiveProperty';
@@ -45,7 +46,7 @@ export default function ExplorePopularStaysSection() {
 
           const photoUrl = photos[0]
             ? String(photos[0])
-            : 'https://images.unsplash.com/photo-1540541338287-41700207dee6?auto=format&fit=crop&w=800&q=80';
+            : REAL_STAY_IMAGE;
 
           const formattedLocation = String(
             d.location || d.address || [d.city, d.state].filter(Boolean).join(', ') || 'Uttarakhand'

@@ -14,6 +14,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { X, User, Maximize2, ArrowRight } from 'lucide-react-native';
 import Colors from '@/constants/Colors';
+import { REAL_ROOM_IMAGE } from '@/constants/RealImages';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -107,7 +108,7 @@ export default function RoomSelectionModal({
                       room.images?.[0] ||
                       room.photos?.[0] ||
                       room.image ||
-                      'https://images.unsplash.com/photo-1618773928121-c32242e63f39?q=80&w=800&auto=format&fit=crop';
+                      REAL_ROOM_IMAGE;
 
                     const roomOccupied = room.occupiedCount || 0;
                     const totalRms = room.totalRooms !== undefined && room.totalRooms !== null ? Number(room.totalRooms) : 0;

@@ -1,3 +1,5 @@
+import { REAL_STAY_IMAGE, REAL_STAY_IMAGES } from '../constants/RealImages';
+
 export const allProperties = [
   // Dehradun Stays
   {
@@ -8,7 +10,7 @@ export const allProperties = [
     price: '₹8,500',
     rating: '4.8',
     reviews: 320,
-    image: 'https://images.unsplash.com/photo-1542314831-c6a4d14d837e?q=80&w=800&auto=format&fit=crop',
+    image: REAL_STAY_IMAGES[0],
   },
   {
     id: 'd2',
@@ -18,7 +20,7 @@ export const allProperties = [
     price: '₹10,200',
     rating: '4.7',
     reviews: 215,
-    image: 'https://images.unsplash.com/photo-1551882547-ff40c0d5e9af?q=80&w=800&auto=format&fit=crop',
+    image: REAL_STAY_IMAGES[1],
     status: 'draft',
   },
   {
@@ -29,7 +31,7 @@ export const allProperties = [
     price: '₹12,000',
     rating: '4.9',
     reviews: 450,
-    image: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=800&auto=format&fit=crop',
+    image: REAL_STAY_IMAGES[2],
   },
   {
     id: 'd4',
@@ -39,7 +41,7 @@ export const allProperties = [
     price: '₹7,500',
     rating: '4.5',
     reviews: 128,
-    image: 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?q=80&w=800&auto=format&fit=crop',
+    image: REAL_STAY_IMAGES[3],
   },
   {
     id: 'd5',
@@ -49,7 +51,7 @@ export const allProperties = [
     price: '₹15,200',
     rating: '4.6',
     reviews: 189,
-    image: 'https://images.unsplash.com/photo-1499793983690-e29da59ef1c2?q=80&w=800&auto=format&fit=crop',
+    image: REAL_STAY_IMAGES[4],
   },
   // Nainital Stays
   {
@@ -60,7 +62,7 @@ export const allProperties = [
     price: '₹12,500',
     rating: '4.8',
     reviews: 320,
-    image: 'https://images.unsplash.com/photo-1510798831971-661eb04b3739?q=80&w=800&auto=format&fit=crop',
+    image: REAL_STAY_IMAGES[5],
   },
   {
     id: 'n2',
@@ -70,7 +72,7 @@ export const allProperties = [
     price: '₹9,800',
     rating: '4.7',
     reviews: 215,
-    image: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=800&auto=format&fit=crop',
+    image: REAL_STAY_IMAGES[6],
   },
   {
     id: 'n3',
@@ -80,7 +82,7 @@ export const allProperties = [
     price: '₹15,000',
     rating: '4.9',
     reviews: 450,
-    image: 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?q=80&w=800&auto=format&fit=crop',
+    image: REAL_STAY_IMAGES[7],
   },
   {
     id: 'n4',
@@ -90,7 +92,7 @@ export const allProperties = [
     price: '₹6,500',
     rating: '4.5',
     reviews: 128,
-    image: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?q=80&w=800&auto=format&fit=crop',
+    image: REAL_STAY_IMAGES[8],
   },
   {
     id: 'n5',
@@ -100,79 +102,79 @@ export const allProperties = [
     price: '₹5,200',
     rating: '4.6',
     reviews: 189,
-    image: 'https://images.unsplash.com/photo-1449844908441-8829872d2607?q=80&w=800&auto=format&fit=crop',
+    image: REAL_STAY_IMAGES[9],
   },
   // Featured Hotels
   {
     id: '1',
-    title: 'The Ritz-Carlton, Paris',
-    location: 'Paris, France',
+    title: 'Himashray Luxury Stay',
+    location: 'Mukteshwar, Uttarakhand',
     rating: '4.9',
     reviews: 1240,
-    price: '₹45,000',
-    image: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=2070&auto=format&fit=crop',
-    details: 'Luxury | City Center',
+    price: '₹4,500',
+    image: REAL_STAY_IMAGES[0],
+    details: 'Luxury | Mountain Views',
   },
   {
     id: '2',
-    title: 'Aman Tokyo',
-    location: 'Tokyo, Japan',
+    title: 'Hotel Yoga',
+    location: 'Rishikesh, Uttarakhand',
     rating: '4.8',
     reviews: 890,
-    price: '₹60,000',
-    image: 'https://images.unsplash.com/photo-1582719508461-905c673771fd?q=80&w=1925&auto=format&fit=crop',
-    details: 'Spa | Views',
+    price: '₹2,500',
+    image: REAL_STAY_IMAGES[2],
+    details: 'Riverside | Yoga & Meditation',
   },
   {
     id: '3',
-    title: 'Four Seasons Maldives',
-    location: 'Baa Atoll, Maldives',
+    title: 'Himdarshan Home Stay',
+    location: 'Nainital, Uttarakhand',
     rating: '5.0',
     reviews: 512,
-    price: '₹120,000',
-    image: 'https://images.unsplash.com/photo-1499793983690-e29da59ef1c2?q=80&w=2070&auto=format&fit=crop',
-    details: 'Beachfront | Villas',
+    price: '₹3,800',
+    image: REAL_STAY_IMAGES[1],
+    details: 'Lake View | Balcony',
   },
   // Search Page
   {
     id: 's1',
-    title: 'Hotel in Gurugram',
-    location: 'Gurugram, Haryana',
-    details: 'Charming Studio | Kitchenette & Balcony',
-    price: '₹11,497',
+    title: 'Haldwani Home',
+    location: 'Haldwani, Uttarakhand',
+    details: 'Charming Studio | Mountain View & Balcony',
+    price: '₹2,499',
     rating: '4.52',
     reviews: 463,
-    image: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?q=80&w=800&auto=format&fit=crop',
+    image: REAL_STAY_IMAGES[6],
   },
   {
     id: 's2',
-    title: 'Flat in Gurugram',
-    location: 'Gurugram, Haryana',
-    details: 'Stylish Luxury 1BHK w/ Balcony | Prime DLF Phase 3',
-    price: '₹18,369',
+    title: 'Royal Hotel',
+    location: 'Mussoorie, Uttarakhand',
+    details: 'Stylish Luxury Room | Mall Road View',
+    price: '₹4,369',
     rating: '4.71',
     reviews: 414,
-    image: 'https://images.unsplash.com/photo-1502672023488-70e25813eb80?q=80&w=800&auto=format&fit=crop',
+    image: REAL_STAY_IMAGES[5],
   },
   {
     id: 's3',
-    title: 'Guest House in Noida',
-    location: 'Noida, UP',
-    details: 'Modern Room near Metro | Free Parking & Wi-Fi',
-    price: '₹1,299',
+    title: 'Hotel Gold Green',
+    location: 'Haldwani, Uttarakhand',
+    details: 'Modern Room near Highway | Free Parking & Wi-Fi',
+    price: '₹1,899',
     rating: '4.6',
     reviews: 312,
-    image: 'https://images.unsplash.com/photo-1512918728675-ed5a9ecdebfd?q=80&w=800&auto=format&fit=crop',
+    image: REAL_STAY_IMAGES[4],
   },
   {
     id: 's4',
-    title: 'Apartment in Faridabad',
-    location: 'Faridabad, Haryana',
-    details: 'Cozy 2BHK | Fully Furnished | Near Bata Chowk',
-    price: '₹2,199',
+    title: 'Valley View Retreat Stays',
+    location: 'Dehradun, Uttarakhand',
+    details: 'Cozy Cottage | Fully Furnished | Mountain Serenity',
+    price: '₹3,199',
     rating: '4.9',
     reviews: 218,
-    image: 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?q=80&w=800&auto=format&fit=crop',
+    image: REAL_STAY_IMAGES[3],
   }
 ];
 
@@ -180,11 +182,11 @@ export function getPropertyById(id: string) {
   return allProperties.find(p => p.id === id) || {
     id,
     title: 'Beautiful Property',
-    location: 'Destination',
+    location: 'Uttarakhand, India',
     details: 'Entire home/apt',
-    price: '₹5,000',
+    price: '₹3,500',
     rating: '4.5',
     reviews: 10,
-    image: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?q=80&w=800&auto=format&fit=crop'
+    image: REAL_STAY_IMAGE,
   };
 }

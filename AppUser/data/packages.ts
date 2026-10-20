@@ -1,3 +1,5 @@
+import { REAL_PACKAGE_IMAGES } from '../constants/RealImages';
+
 export const packages = [
   { 
     id: 1, 
@@ -9,9 +11,9 @@ export const packages = [
     badge: 'Bestseller',
     badgeColor: 'text-brand-coral',
     images: [
-      'https://images.unsplash.com/photo-1626621341517-bbf3d9990a23?q=80&w=800&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1510798831971-661eb04b3739?q=80&w=800&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1593693397690-362cb9666fc2?q=80&w=800&auto=format&fit=crop'
+      REAL_PACKAGE_IMAGES[0],
+      REAL_PACKAGE_IMAGES[1],
+      REAL_PACKAGE_IMAGES[2],
     ]
   },
   { 
@@ -24,9 +26,9 @@ export const packages = [
     badge: 'Popular',
     badgeColor: 'text-blue-500',
     images: [
-      'https://images.unsplash.com/photo-1613395877344-13d4a8e0d49e?q=80&w=800&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1499793983690-e29da59ef1c2?q=80&w=800&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1625449281218-cbb6183f0aec?q=80&w=800&auto=format&fit=crop'
+      REAL_PACKAGE_IMAGES[2],
+      REAL_PACKAGE_IMAGES[3],
+      REAL_PACKAGE_IMAGES[4],
     ]
   },
   { 
@@ -39,9 +41,9 @@ export const packages = [
     badge: 'New',
     badgeColor: 'text-green-500',
     images: [
-      'https://images.unsplash.com/photo-1551698618-1dfe5d97d256?q=80&w=800&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1582610116397-edb318620f90?q=80&w=800&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1510798831971-661eb04b3739?q=80&w=800&auto=format&fit=crop'
+      REAL_PACKAGE_IMAGES[4],
+      REAL_PACKAGE_IMAGES[5],
+      REAL_PACKAGE_IMAGES[0],
     ]
   },
   { 
@@ -54,9 +56,9 @@ export const packages = [
     badge: 'Trending',
     badgeColor: 'text-orange-500',
     images: [
-      'https://images.unsplash.com/photo-1514282401047-d79a71a590e8?q=80&w=800&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1439066615861-d1af74d74000?q=80&w=800&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1499793983690-e29da59ef1c2?q=80&w=800&auto=format&fit=crop'
+      REAL_PACKAGE_IMAGES[1],
+      REAL_PACKAGE_IMAGES[3],
+      REAL_PACKAGE_IMAGES[5],
     ]
   },
   { 
@@ -69,9 +71,9 @@ export const packages = [
     badge: 'Popular',
     badgeColor: 'text-blue-500',
     images: [
-      'https://images.unsplash.com/photo-1613395877344-13d4a8e0d49e?q=80&w=800&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1595815771614-ade9d652a65d?q=80&w=800&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1510798831971-661eb04b3739?q=80&w=800&auto=format&fit=crop'
+      REAL_PACKAGE_IMAGES[3],
+      REAL_PACKAGE_IMAGES[6],
+      REAL_PACKAGE_IMAGES[7],
     ]
   },
   { 
@@ -84,9 +86,9 @@ export const packages = [
     badge: 'Trending',
     badgeColor: 'text-orange-500',
     images: [
-      'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?q=80&w=800&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1534080537060-159d332dc331?q=80&w=800&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1510798831971-661eb04b3739?q=80&w=800&auto=format&fit=crop'
+      REAL_PACKAGE_IMAGES[2],
+      REAL_PACKAGE_IMAGES[4],
+      REAL_PACKAGE_IMAGES[6],
     ]
   },
   { 
@@ -99,9 +101,9 @@ export const packages = [
     badge: 'New',
     badgeColor: 'text-green-500',
     images: [
-      'https://images.unsplash.com/photo-1623910350785-520e5dbb0918?q=80&w=800&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1593693397690-362cb9666fc2?q=80&w=800&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1605649487212-4d43be61795f?q=80&w=800&auto=format&fit=crop'
+      REAL_PACKAGE_IMAGES[5],
+      REAL_PACKAGE_IMAGES[7],
+      REAL_PACKAGE_IMAGES[1],
     ]
   },
   { 
@@ -114,9 +116,9 @@ export const packages = [
     badge: 'Bestseller',
     badgeColor: 'text-brand-coral',
     images: [
-      'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?q=80&w=800&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1526495124232-a04e1849168c?q=80&w=800&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1582672060624-cb814c4033b0?q=80&w=800&auto=format&fit=crop'
+      REAL_PACKAGE_IMAGES[0],
+      REAL_PACKAGE_IMAGES[2],
+      REAL_PACKAGE_IMAGES[4],
     ]
   }
 ];

@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { X } from 'lucide-react-native';
 import Colors from '@/constants/Colors';
+import { REAL_ROOM_IMAGE } from '@/constants/RealImages';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -33,7 +34,7 @@ export default function RoomImageSlider({
 
   const safeImages = images && images.length > 0
     ? images
-    : ['https://images.unsplash.com/photo-1618773928121-c32242e63f39?q=80&w=800&auto=format&fit=crop'];
+    : [REAL_ROOM_IMAGE];
 
   const [containerWidth, setContainerWidth] = useState(SCREEN_WIDTH - 32);
 

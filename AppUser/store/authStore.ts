@@ -26,6 +26,7 @@ interface AuthState {
 
   checkAuth: () => Promise<void>;
   logout: () => Promise<void>;
+  deleteAccount: () => Promise<void>;
   setLoading: (loading: boolean) => void;
   toggleSavedHotel: (hotelId: string) => Promise<void>;
   toggleSavedPackage: (packageId: string) => Promise<void>;
@@ -68,6 +69,15 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         }
 
         set({ user, profile, isAuthenticated: true });
+
+        // Auto-register push notification token & synchronize notification center for authenticated user
+        try {
+          const { registerForPushNotificationsAsync } = require('../services/notificationService');
+          registerForPushNotificationsAsync(user.$id).catch(() => {});
+          const { useNotificationStore } = require('./notificationStore');
+          useNotificationStore.getState().syncUserNotifications(user.$id).catch(() => {});
+          useNotificationStore.getState().loadPreferences(user.$id).catch(() => {});
+        } catch {}
       } else {
         set({ user: null, profile: null, isAuthenticated: false });
       }
@@ -81,10 +91,39 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   logout: async () => {
     set({ isLoading: true });
     try {
+      const { user } = get();
+      if (user?.$id) {
+        try {
+          const { unregisterPushNotificationsAsync } = require('../services/notificationService');
+          await unregisterPushNotificationsAsync(user.$id);
+          const { useNotificationStore } = require('./notificationStore');
+          await useNotificationStore.getState().clearAll();
+        } catch {}
+      }
       await authService.logout();
       set({ user: null, profile: null, isAuthenticated: false });
     } catch (error) {
       console.error('Logout failed', error);
+    } finally {
+      set({ isLoading: false });
+    }
+  },
+
+  deleteAccount: async () => {
+    set({ isLoading: true });
+    try {
+      const { user } = get();
+      if (user?.$id) {
+        try {
+          const { unregisterPushNotificationsAsync } = require('../services/notificationService');
+          await unregisterPushNotificationsAsync(user.$id);
+        } catch {}
+        await authService.deleteAccount(user.$id);
+      }
+      set({ user: null, profile: null, isAuthenticated: false });
+    } catch (error) {
+      console.error('Delete account failed', error);
+      throw error;
     } finally {
       set({ isLoading: false });
     }

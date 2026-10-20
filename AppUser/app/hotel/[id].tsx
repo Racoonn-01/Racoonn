@@ -59,6 +59,7 @@ import {
   ChevronRight,
 } from 'lucide-react-native';
 import Colors from '@/constants/Colors';
+import { REAL_STAY_IMAGE, REAL_ROOM_IMAGE } from '@/constants/RealImages';
 import { useAuthStore } from '../../store/authStore';
 import AuthBottomSheet from '../../components/shared/AuthBottomSheet';
 import { calculateRoomPricing } from '../../utils/pricing';
@@ -510,7 +511,7 @@ export default function PropertyDetailScreen() {
                 .map((p: any) => getImageUrl(p) || (typeof p === 'string' ? p : ''))
                 .filter((p: string) => typeof p === 'string' && p.length > 0);
 
-              const fallbackImg = getImageUrl(photos[0]) || 'https://images.unsplash.com/photo-1618773928121-c32242e63f39?q=80&w=800&auto=format&fit=crop';
+              const fallbackImg = getImageUrl(photos[0]) || REAL_ROOM_IMAGE;
               const finalPhotos = resolvedPhotos.length > 0 ? resolvedPhotos : [fallbackImg];
 
               const amenitiesList = Array.isArray(r.amenities) && r.amenities.length > 0
@@ -564,7 +565,7 @@ export default function PropertyDetailScreen() {
             rating: Number(found.rating || 0),
             reviewsCount: Number(found.reviewsCount || 0),
             price: propertyPrice,
-            images: photos.length > 0 ? photos.map((p: any) => getImageUrl(p) || p) : ['https://images.unsplash.com/photo-1540541338287-41700207dee6?auto=format&fit=crop&w=800&q=80'],
+            images: photos.length > 0 ? photos.map((p: any) => getImageUrl(p) || p) : [REAL_STAY_IMAGE],
             description: String(found.description || ''),
             amenities: Array.isArray(found.amenities) && found.amenities.length > 0
               ? found.amenities

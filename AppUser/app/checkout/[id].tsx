@@ -53,9 +53,10 @@ import {
   Wine,
 } from 'lucide-react-native';
 import Colors from '@/constants/Colors';
+import { REAL_STAY_IMAGE, REAL_PACKAGE_IMAGE } from '@/constants/RealImages';
 import { COUNTRIES, CountryItem, formatPhoneNumber } from '@/constants/countries';
 import { useAuthStore } from '../../store/authStore';
-import { createBooking, getProperties, checkRoomAvailability } from '../../lib/appwrite/api';
+import { createBooking, getProperties, getCMSPackages, checkRoomAvailability } from '../../lib/appwrite/api';
 import { calculateHotelGST } from '../../utils/gst';
 import { RazorpayCheckoutModal, RazorpaySuccessData } from '../../components/booking/RazorpayCheckoutModal';
 
@@ -104,35 +105,87 @@ export default function CheckoutScreen() {
   const { user, profile } = useAuthStore();
 
   const [realProperty, setRealProperty] = useState<any>(null);
+  const [realPackage, setRealPackage] = useState<any>(null);
 
-  // Fetch real property from Appwrite database if available
+  // Fetch real property or package from Appwrite database if available
   useEffect(() => {
-    async function fetchRealHotel() {
-      if (params.id) {
-        try {
-          const docs = await getProperties();
-          if (docs && docs.length > 0) {
-            const found = docs.find((d: any) => String(d.$id) === String(params.id));
-            if (found) {
-              setRealProperty(found);
+    async function fetchRealItem() {
+      if (!params.id) return;
+      const idStr = String(params.id);
+      const isPkg = params.bookingType === 'package';
+
+      try {
+        if (isPkg) {
+          const pkgs = await getCMSPackages();
+          if (pkgs && pkgs.length > 0) {
+            const foundPkg = pkgs.find((p: any) => String(p.id || p.$id) === idStr);
+            if (foundPkg) {
+              setRealPackage(foundPkg);
+              return;
             }
           }
-        } catch (e) {
-          console.log('Error fetching property document in checkout:', e);
         }
+
+        const docs = await getProperties();
+        if (docs && docs.length > 0) {
+          const found = docs.find((d: any) => String(d.$id || d.id) === idStr);
+          if (found) {
+            setRealProperty(found);
+            return;
+          }
+        }
+
+        // If not found in properties, check packages as well
+        const pkgs = await getCMSPackages();
+        if (pkgs && pkgs.length > 0) {
+          const foundPkg = pkgs.find((p: any) => String(p.id || p.$id) === idStr);
+          if (foundPkg) {
+            setRealPackage(foundPkg);
+          }
+        }
+      } catch (e) {
+        console.log('Error fetching item document in checkout:', e);
       }
     }
-    fetchRealHotel();
-  }, [params.id]);
+    fetchRealItem();
+  }, [params.id, params.bookingType]);
 
-  const pkgId = (params.id as string) || realProperty?.$id || 'pkg-1';
-  const itemTitle = (params.packageTitle as string) || realProperty?.propertyName || realProperty?.title || 'Selected Hotel Stay';
-  const location = (params.location as string) || realProperty?.location || (realProperty?.city ? `${realProperty.city}, ${realProperty.state || ''}` : '') || 'Uttarakhand, India';
-  const image = (params.image as string) || realProperty?.photos?.[0] || 'https://images.unsplash.com/photo-1626621341517-bbf3d9990a23?q=80&w=800&auto=format&fit=crop';
-  const roomName = (params.roomName as string) || 'Standard Room';
   const bookingType = (params.bookingType as string) || 'hotel';
   const isPackageCheckout = bookingType === 'package';
+  const pkgId = (params.id as string) || realPackage?.id || realProperty?.$id || 'pkg-1';
+  const itemTitle =
+    (params.packageTitle as string) ||
+    realPackage?.title ||
+    realProperty?.propertyName ||
+    realProperty?.title ||
+    (isPackageCheckout ? 'Selected Tour Package' : 'Selected Hotel Stay');
+  const location =
+    (params.location as string) ||
+    realPackage?.location ||
+    realProperty?.location ||
+    (realProperty?.city ? `${realProperty.city}, ${realProperty.state || ''}` : '') ||
+    'Uttarakhand, India';
   const departureCity = (params.departureCity as string) || 'Haldwani';
+
+  const selectedPackagePhoto =
+    (Array.isArray(realPackage?.images) && realPackage.images.length > 0 && realPackage.images[0]) ||
+    realPackage?.image ||
+    null;
+
+  const selectedHotelPhoto =
+    (Array.isArray(realProperty?.photos) && realProperty.photos.length > 0 && realProperty.photos[0]) ||
+    (Array.isArray(realProperty?.images) && realProperty.images.length > 0 && realProperty.images[0]) ||
+    realProperty?.image ||
+    null;
+
+  // Selected package's exact image: priority given to params.image, then fetched package image, then fallback
+  const image =
+    (params.image as string) ||
+    (isPackageCheckout ? selectedPackagePhoto : selectedHotelPhoto) ||
+    selectedPackagePhoto ||
+    selectedHotelPhoto ||
+    (isPackageCheckout ? REAL_PACKAGE_IMAGE : REAL_STAY_IMAGE);
+  const roomName = (params.roomName as string) || 'Standard Room';
 
   const initialGuests = Number(params.guests || 2);
   const nightsCount = Math.max(1, Number(params.nights || 1));

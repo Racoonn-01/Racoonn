@@ -9,3 +9,6 @@ expo-env.d.ts
 .env.*
 # @end expo-cli
 dist/
+*.jks
+*.keystore
+

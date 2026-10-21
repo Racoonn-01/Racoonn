@@ -32,6 +32,13 @@
         <category android:name="android.intent.category.BROWSABLE"/>
         <data android:scheme="racoonn"/>
       </intent-filter>
+      <intent-filter>
+        <action android:name="android.intent.action.VIEW"/>
+        <category android:name="android.intent.category.DEFAULT"/>
+        <category android:name="android.intent.category.BROWSABLE"/>
+        <data android:scheme="appwrite-callback-6a3bce6900381359c3ce"/>
+      </intent-filter>
     </activity>
+
   </application>
 </manifest>

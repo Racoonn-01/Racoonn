@@ -3,19 +3,20 @@
     "name": "Racoonn",
     "slug": "AppUser",
     "version": "1.0.0",
-    "scheme": "racoonn",
+    "scheme": ["racoonn", "appwrite-callback-6a3bce6900381359c3ce"],
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.racoonn.appuser"
+      "bundleIdentifier": "com.racoonn.app"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/icon.png",
         "backgroundColor": "#FFFFFF"
       },
-      "package": "com.racoonn.appuser",
+      "package": "com.racoonn.app",
+      "versionCode": 2,
       "googleServicesFile": "./google-services.json",
       "permissions": [
         "android.permission.ACCESS_COARSE_LOCATION",

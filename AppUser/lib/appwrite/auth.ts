@@ -1,6 +1,7 @@
 import { ID, OAuthProvider } from 'react-native-appwrite';
 import * as WebBrowser from 'expo-web-browser';
 import * as Linking from 'expo-linking';
+import { Platform } from 'react-native';
 import { account, databases, appwriteConfig } from './config';
 
 WebBrowser.maybeCompleteAuthSession();
@@ -58,7 +59,22 @@ export const authService = {
 
   async loginWithGoogle() {
     try {
-      const redirectUrl = Linking.createURL('/');
+      // In web, use OAuth session directly
+      if (Platform.OS === 'web') {
+        const origin = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:8081';
+        account.createOAuth2Session(
+          OAuthProvider.Google,
+          `${origin}/`,
+          `${origin}/`
+        );
+        return true;
+      }
+
+      // Appwrite native mobile OAuth redirect format:
+      // appwrite-callback-[PROJECT_ID]://
+      const callbackScheme = `appwrite-callback-${appwriteConfig.projectId}`;
+      const redirectUrl = `${callbackScheme}://`;
+
       const loginUrl = account.createOAuth2Token(
         OAuthProvider.Google,
         redirectUrl,
@@ -72,12 +88,30 @@ export const authService = {
         redirectUrl
       );
 
-      if (result.type === 'success') {
-        const url = Linking.parse(result.url);
-        const secret = url.queryParams?.secret as string;
-        const userId = url.queryParams?.userId as string;
+      if (result.type === 'success' && result.url) {
+        let secret = '';
+        let userId = '';
+
+        try {
+          const parsed = Linking.parse(result.url);
+          secret = (parsed.queryParams?.secret as string) || '';
+          userId = (parsed.queryParams?.userId as string) || '';
+        } catch {}
+
+        if (!secret || !userId) {
+          try {
+            const urlObj = new URL(result.url);
+            secret = secret || urlObj.searchParams.get('secret') || '';
+            userId = userId || urlObj.searchParams.get('userId') || '';
+          } catch {}
+        }
 
         if (secret && userId) {
+          // Clear any active session to avoid session conflict
+          try {
+            await account.deleteSession('current');
+          } catch {}
+
           await account.createSession(userId, secret);
           const currentUser = await account.get();
           if (currentUser) {

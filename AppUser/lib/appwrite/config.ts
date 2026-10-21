@@ -8,6 +8,11 @@ const client = new Client()
   .setEndpoint(endpoint)
   .setProject(projectId);
 
+if (Platform.OS === 'ios' || Platform.OS === 'android') {
+  client.setPlatform('com.racoonn.app');
+}
+
+
 export const appwriteConfig = {
   endpoint,
   projectId,

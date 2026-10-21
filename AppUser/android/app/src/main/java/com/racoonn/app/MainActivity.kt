@@ -1,4 +1,4 @@
-package com.racoonn.appuser
+package com.racoonn.app
 import expo.modules.splashscreen.SplashScreenManager
 
 import android.os.Build

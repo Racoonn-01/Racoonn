@@ -9,7 +9,7 @@
       "client_info": {
         "mobilesdk_app_id": "1:38380256093:android:6d88c7d2c8a1283a9b46b4",
         "android_client_info": {
-          "package_name": "com.racoonn.appuser"
+          "package_name": "com.racoonn.app"
         }
       },
       "oauth_client": [],
@@ -28,7 +28,7 @@
       "client_info": {
         "mobilesdk_app_id": "1:38380256093:android:6d88c7d2c8a1283a9b46b4",
         "android_client_info": {
-          "package_name": "com.racoonn.app"
+          "package_name": "com.racoonn.appuser"
         }
       },
       "oauth_client": [],

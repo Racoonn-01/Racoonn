@@ -1,4 +1,4 @@
-package com.racoonn.appuser
+package com.racoonn.app
 
 import android.app.Application
 import android.content.res.Configuration

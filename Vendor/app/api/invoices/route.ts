@@ -85,7 +85,7 @@ export async function POST(request: Request) {
     let currentInvoices = await getInvoices();
 
     // Add or update invoice
-    const existingIndex = currentInvoices.findIndex((inv) => inv.id === newInvoice.id);
+    const existingIndex = currentInvoices.findIndex((inv: any) => inv.id === newInvoice.id);
     if (existingIndex >= 0) {
       currentInvoices[existingIndex] = newInvoice;
     } else {
@@ -107,7 +107,7 @@ export async function PATCH(request: Request) {
     let currentInvoices = await getInvoices();
 
     let updated = false;
-    currentInvoices = currentInvoices.map((inv) => {
+    currentInvoices = currentInvoices.map((inv: any) => {
       if (inv.id === id) {
         updated = true;
         return { ...inv, status };

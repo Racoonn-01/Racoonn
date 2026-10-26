@@ -92,7 +92,7 @@ export default function LoginScreen() {
     try {
       await authService.login(email.trim(), password);
       await checkAuth();
-      router.replace('/profile' as any);
+      router.replace('/(tabs)/profile' as any);
     } catch (error: any) {
       const friendly = getFriendlyAuthError(error, 'login');
       setModalConfig({
@@ -114,7 +114,7 @@ export default function LoginScreen() {
       const success = await authService.loginWithGoogle();
       if (success) {
         await checkAuth();
-        router.replace('/profile' as any);
+        router.replace('/(tabs)/profile' as any);
       }
     } catch (error: any) {
       const friendly = getFriendlyAuthError(error, 'login');

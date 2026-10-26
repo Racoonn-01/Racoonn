@@ -75,22 +75,73 @@ import { isActiveProperty } from '../../utils/isActiveProperty';
 import { WebView } from 'react-native-webview';
 
 const MAPBOX_TOKEN =
-  process.env.EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN || '';
+  process.env.EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN ||
+  process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN ||
+  'pk.eyJ1IjoiaGltYW5zaHUwNjY2IiwiYSI6ImNtcnc0ankydzAzb2ozMHNlb29ueWtsbTQifQ.mR3wqM4d-EnIXpp1S-l6pQ';
+
+const CITY_COORDINATES: Record<string, [number, number]> = {
+  dehradun: [78.0322, 30.3165],
+  nainital: [79.4540, 29.3803],
+  mussoorie: [78.0754, 30.4598],
+  rishikesh: [78.2676, 30.0869],
+  haridwar: [78.1642, 29.9457],
+  haldwani: [79.5130, 29.2183],
+  dewalchaurh: [79.5130, 29.2183],
+  kathgodam: [79.5434, 29.2713],
+  rudrapur: [79.3984, 28.9818],
+  bhimtal: [79.5606, 29.3496],
+  sattal: [79.5333, 29.3500],
+  mukteshwar: [79.6473, 29.4722],
+  bhowali: [79.5186, 29.3844],
+  ramgarh: [79.5552, 29.4285],
+  ranikhet: [79.4284, 29.6434],
+  almora: [79.6591, 29.5971],
+  corbett: [79.1284, 29.3949],
+  ramnagar: [79.1284, 29.3949],
+  goa: [73.8567, 15.2993],
+  delhi: [77.2090, 28.6139],
+  'new delhi': [77.2090, 28.6139],
+};
+
+function parseLocationGeo(rawLocation?: string): { cleanLocation: string; lat?: number; lng?: number } {
+  if (!rawLocation) return { cleanLocation: '' };
+  const geoMatch = rawLocation.match(/\[GEO:\s*(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)\]/i);
+  if (geoMatch) {
+    const lat = parseFloat(geoMatch[1]);
+    const lng = parseFloat(geoMatch[2]);
+    const cleanLocation = rawLocation.replace(/\[GEO:\s*-?\d+(?:\.\d+)?,\\s*-?\d+(?:\.\d+)?\]/gi, '').replace(/\s+,/g, ',').trim();
+    return {
+      cleanLocation: cleanLocation || rawLocation.trim(),
+      lat: isNaN(lat) ? undefined : lat,
+      lng: isNaN(lng) ? undefined : lng,
+    };
+  }
+  return { cleanLocation: rawLocation.replace(/\s*\[GEO:[^\]]*\]/gi, '').trim() };
+}
 
 function getCoordinates(locationStr: string): [number, number] {
+  const parsed = parseLocationGeo(locationStr);
+  if (parsed.lat !== undefined && parsed.lng !== undefined) {
+    return [parsed.lng, parsed.lat];
+  }
+
   const locLower = (locationStr || '').toLowerCase();
-  if (locLower.includes('nainital')) return [79.454, 29.3803];
-  if (locLower.includes('mussoorie')) return [78.0754, 30.4598];
-  if (locLower.includes('rishikesh')) return [78.2676, 30.0869];
-  if (locLower.includes('haridwar')) return [78.1642, 29.9457];
-  if (locLower.includes('auli')) return [79.5701, 30.5288];
-  return [78.0322, 30.3165]; // Dehradun default
+  for (const [cityKey, coords] of Object.entries(CITY_COORDINATES)) {
+    if (locLower.includes(cityKey)) {
+      return coords;
+    }
+  }
+
+  return [79.5130, 29.2183]; // Default to Haldwani
 }
 
 function getMapboxHtml(title: string, locationStr: string): string {
   const [lng, lat] = getCoordinates(locationStr);
+  const parsed = parseLocationGeo(locationStr);
+  const displayLocation = parsed.cleanLocation || locationStr || 'Uttarakhand';
   const cleanTitle = (title || 'Luxury Hotel').replace(/'/g, "\\'");
-  const cleanLoc = (locationStr || 'Uttarakhand').replace(/'/g, "\\'");
+  const cleanLoc = displayLocation.replace(/'/g, "\\'");
+  const hasExactGeo = parsed.lat !== undefined && parsed.lng !== undefined;
 
   return `
 <!DOCTYPE html>
@@ -106,8 +157,8 @@ function getMapboxHtml(title: string, locationStr: string): string {
     #map { position: absolute; top: 0; bottom: 0; width: 100%; height: 100%; }
     .custom-marker {
       background-color: #E86A70;
-      width: 32px;
-      height: 32px;
+      width: 34px;
+      height: 34px;
       border-radius: 50%;
       border: 3.5px solid #FFFFFF;
       box-shadow: 0 4px 14px rgba(0,0,0,0.35);
@@ -115,6 +166,7 @@ function getMapboxHtml(title: string, locationStr: string): string {
       display: flex;
       align-items: center;
       justify-content: center;
+      animation: pulse 2s infinite;
     }
     .custom-marker::after {
       content: '';
@@ -122,6 +174,11 @@ function getMapboxHtml(title: string, locationStr: string): string {
       height: 10px;
       background: #FFFFFF;
       border-radius: 50%;
+    }
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(232, 106, 112, 0.6); }
+      70% { box-shadow: 0 0 0 12px rgba(232, 106, 112, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(232, 106, 112, 0); }
     }
     .mapboxgl-popup-content {
       border-radius: 14px;
@@ -146,11 +203,15 @@ function getMapboxHtml(title: string, locationStr: string): string {
   <div id="map"></div>
   <script>
     mapboxgl.accessToken = '${MAPBOX_TOKEN}';
+    let currentLng = ${lng};
+    let currentLat = ${lat};
+    const hasExact = ${hasExactGeo};
+
     const map = new mapboxgl.Map({
       container: 'map',
       style: 'mapbox://styles/mapbox/outdoors-v12',
-      center: [${lng}, ${lat}],
-      zoom: 14,
+      center: [currentLng, currentLat],
+      zoom: 15,
       pitch: 20
     });
 
@@ -166,10 +227,26 @@ function getMapboxHtml(title: string, locationStr: string): string {
     const popup = new mapboxgl.Popup({ offset: 25 })
       .setHTML('<h4>${cleanTitle}</h4><p>${cleanLoc}</p>');
 
-    new mapboxgl.Marker(el)
-      .setLngLat([${lng}, ${lat}])
+    const marker = new mapboxgl.Marker(el)
+      .setLngLat([currentLng, currentLat])
       .setPopup(popup)
       .addTo(map);
+
+    // If exact coordinates were not in GEO tag, geocode address via Mapbox API dynamically
+    if (!hasExact && '${cleanLoc}') {
+      fetch('https://api.mapbox.com/geocoding/v5/mapbox.places/' + encodeURIComponent('${cleanLoc}') + '.json?access_token=' + mapboxgl.accessToken + '&country=in&limit=1')
+        .then(function(res) { return res.json(); })
+        .then(function(data) {
+          if (data && data.features && data.features.length > 0) {
+            const coords = data.features[0].center;
+            marker.setLngLat(coords);
+            map.flyTo({ center: coords, zoom: 15 });
+          }
+        })
+        .catch(function(err) {
+          console.warn('Geocoding fetch failed:', err);
+        });
+    }
   </script>
 </body>
 </html>
@@ -554,14 +631,18 @@ export default function PropertyDetailScreen() {
             ? minRoomPrice
             : Number(found.price || found.startingPrice || found.minPrice || found.pricePerNight || 0);
 
+          const rawLoc = String(
+            found.location ||
+            [found.city, found.state].filter(Boolean).join(', ') ||
+            'Uttarakhand'
+          );
+          const parsedLoc = parseLocationGeo(rawLoc);
+
           setHotel({
             id: String(found.$id),
             title: String(found.propertyName || found.title || 'Verified Stay'),
-            location: String(
-              found.location ||
-              [found.city, found.state].filter(Boolean).join(', ') ||
-              'Uttarakhand'
-            ),
+            location: parsedLoc.cleanLocation || rawLoc,
+            rawLocation: rawLoc,
             rating: Number(found.rating || 0),
             reviewsCount: Number(found.reviewsCount || 0),
             price: propertyPrice,
@@ -711,28 +792,6 @@ export default function PropertyDetailScreen() {
           </TouchableOpacity>
 
           <View style={styles.topRightBtns}>
-            <TouchableOpacity
-              style={[
-                styles.headerBookNowBtn,
-                isHotelUnavailable && styles.headerBookNowBtnDisabled,
-              ]}
-              disabled={isHotelUnavailable}
-              onPress={() => {
-                if (isHotelUnavailable) return;
-                setIsRoomSelectionModalOpen(true);
-              }}
-              activeOpacity={0.88}
-            >
-              <Text
-                style={[
-                  styles.headerBookNowText,
-                  isHotelUnavailable && styles.headerBookNowTextDisabled,
-                ]}
-              >
-                {isHotelUnavailable ? 'Unavailable' : 'Book Now'}
-              </Text>
-            </TouchableOpacity>
-
             <TouchableOpacity style={styles.navCircleBtn} onPress={handleShare}>
               <Share2 color={Colors.brand.navy} size={18} />
             </TouchableOpacity>
@@ -1181,11 +1240,17 @@ export default function PropertyDetailScreen() {
             <View style={styles.mapCard}>
               <WebView
                 originWhitelist={['*']}
-                source={{ html: getMapboxHtml(hotel.title, hotel.location) }}
+                source={{
+                  html: getMapboxHtml(hotel.title, hotel.rawLocation || hotel.location),
+                  baseUrl: 'https://api.mapbox.com',
+                }}
                 style={{ flex: 1, borderRadius: 20 }}
                 javaScriptEnabled={true}
                 domStorageEnabled={true}
                 scrollEnabled={true}
+                mixedContentMode="always"
+                allowsInlineMediaPlayback={true}
+                androidHardwareAccelerationDisabled={false}
               />
             </View>
           </View>

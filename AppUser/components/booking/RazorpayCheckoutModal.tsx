@@ -177,7 +177,7 @@ export function RazorpayCheckoutModal({
           key: "${razorpayKey}",
           amount: ${amountInPaise},
           currency: "INR",
-          name: "Racoonn Travel",
+          name: "CIELLE TRAVELS PVT LTD",
           description: "${safeTitle}",
           image: "https://racoonn.com/favicon.png",
           prefill: {

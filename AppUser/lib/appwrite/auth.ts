@@ -81,12 +81,14 @@ export const authService = {
         redirectUrl
       );
 
-      if (!loginUrl) throw new Error('Failed to generate Google Sign-in URL');
+      console.log('Appwrite OAuth loginUrl generated:', loginUrl.toString());
 
       const result = await WebBrowser.openAuthSessionAsync(
         loginUrl.toString(),
         redirectUrl
       );
+
+      console.log('Appwrite OAuth WebBrowser result:', JSON.stringify(result));
 
       if (result.type === 'success' && result.url) {
         let secret = '';
@@ -96,14 +98,18 @@ export const authService = {
           const parsed = Linking.parse(result.url);
           secret = (parsed.queryParams?.secret as string) || '';
           userId = (parsed.queryParams?.userId as string) || '';
-        } catch {}
+        } catch (parseErr) {
+          console.warn('Linking.parse error:', parseErr);
+        }
 
         if (!secret || !userId) {
           try {
             const urlObj = new URL(result.url);
             secret = secret || urlObj.searchParams.get('secret') || '';
             userId = userId || urlObj.searchParams.get('userId') || '';
-          } catch {}
+          } catch (urlErr) {
+            console.warn('URL parsing error:', urlErr);
+          }
         }
 
         if (secret && userId) {
@@ -113,16 +119,28 @@ export const authService = {
           } catch {}
 
           await account.createSession(userId, secret);
-          const currentUser = await account.get();
-          if (currentUser) {
-            await this.saveUserProfile(currentUser.$id, {
-              userId: currentUser.$id,
-              email: currentUser.email,
-              name: currentUser.name || 'Racoonn Traveler',
-              role: 'Customer',
-            });
+          try {
+            const currentUser = await account.get();
+            if (currentUser) {
+              await this.saveUserProfile(currentUser.$id, {
+                userId: currentUser.$id,
+                email: currentUser.email,
+                name: currentUser.name || 'Racoonn Traveler',
+                role: 'Customer',
+              }).catch(() => {});
+            }
+          } catch (profileErr) {
+            console.warn('Error fetching or updating profile post-login:', profileErr);
           }
           return true;
+        } else {
+          // If Appwrite creates session directly or returned without params
+          try {
+            const user = await account.get();
+            if (user) {
+              return true;
+            }
+          } catch {}
         }
       }
       return false;

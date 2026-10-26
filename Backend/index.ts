@@ -8,6 +8,19 @@ import crypto from 'crypto';
 import Razorpay from 'razorpay';
 import { Client, Databases, Query } from 'node-appwrite';
 import PDFDocument from 'pdfkit';
+import {
+  registerDeviceToken,
+  unregisterDeviceToken,
+  getUserNotifications,
+  markNotificationAsRead,
+  markAllNotificationsAsRead,
+  deleteNotificationDocument,
+  getUserPreferences,
+  updateUserPreferences,
+  sendBookingConfirmationPush,
+  sendVendorNewBookingAlert,
+} from './services/pushNotificationService';
+import { startRemindersScheduler, runBookingRemindersJob } from './cron/remindersCron';
 
 dotenv.config();
 
@@ -305,9 +318,9 @@ function generateInvoicePdf(data: any): Promise<Buffer> {
       doc.text('CIELLE TRAVELS PRIVATE LIMITED', 50, 90);
       doc.fontSize(9).font('Helvetica').fillColor(INVOICE_COLORS.textLight);
       doc.text('GSTIN - 05AAOCC0859Q1Z0', 50, 105);
-      doc.text('B-81, Rose Villa, Samiah Lake City, Rudrapur,', 50, 120);
-      doc.text('Kichha, Udham Singh Nagar - 263153, Uttarakhand', 50, 135);
-      doc.text('Phone: +91 8954442144 | Email: support@racoonn.com', 50, 150);
+      doc.text('SECOND FLOOR  PSA PLAZA, SHOP NO 207 , NAINITAL ROAD,', 50, 120);
+      doc.text('Rudrapur, Udham Singh Nagar, Uttarakhand, 263153', 50, 135);
+      doc.text('Phone: +91 8954442144 | Email: info@racoonn.com', 50, 150);
 
       // Invoice Meta (Right Aligned)
       doc.fontSize(28).font('Helvetica-Bold').fillColor(INVOICE_COLORS.textDark).text('INVOICE', 350, 45, { align: 'right' });
@@ -507,7 +520,31 @@ app.post('/api/email/booking-confirmation', async (req, res) => {
       </div>
     `;
 
-    // Send to guest
+    // 2. Dispatch Instant Push Notification to Guest
+    try {
+      let guestUserId = data.userId;
+      if (!guestUserId && bookingId && bookingId !== 'N/A') {
+        const { db, dbId } = getAppwriteAdminDb();
+        const bDoc = await db.getDocument(dbId, 'bookings', bookingId).catch(() => null);
+        if (bDoc && bDoc.userId) guestUserId = bDoc.userId;
+      }
+      if (guestUserId) {
+        await sendBookingConfirmationPush({
+          userId: guestUserId,
+          hotelName,
+          bookingId,
+          displayBookingId: data.displayBookingId,
+          checkIn,
+          checkOut,
+          price,
+        });
+        console.log('Push notification dispatched to guest user:', guestUserId);
+      }
+    } catch (pushErr: any) {
+      console.warn('Failed to send booking confirmation push notification:', pushErr.message);
+    }
+
+    // 2b. Send Confirmation Email with PDF Invoice (non-blocking)
     try {
       const mailOptions: any = {
         from: `"Racoonn Bookings" <${process.env.SMTP_USER || process.env.SMTP_USERNAME || 'info@racoonn.com'}>`,
@@ -526,10 +563,11 @@ app.post('/api/email/booking-confirmation', async (req, res) => {
         ];
       }
 
-      await transporter.sendMail(mailOptions);
-      console.log('Confirmation email sent to user:', email);
+      transporter.sendMail(mailOptions)
+        .then(() => console.log('Confirmation email sent to user:', email))
+        .catch((emailErr) => console.error('Failed to send user confirmation email:', emailErr));
     } catch (emailErr) {
-      console.error('Failed to send user confirmation email:', emailErr);
+      console.error('Failed to prepare user confirmation email:', emailErr);
     }
 
     // 3. Notify Vendor & Generate Vendor Dashboard Invoice
@@ -576,6 +614,24 @@ app.post('/api/email/booking-confirmation', async (req, res) => {
             console.log('Vendor notification sent to:', vendor.email);
           } catch (vendorEmailErr) {
             console.error('Failed to send vendor notification email:', vendorEmailErr);
+          }
+
+          // Also dispatch real-time vendor push notification if vendor has registered devices
+          try {
+            const vendorUserId = vendor.userId || vendor.$id;
+            if (vendorUserId) {
+              await sendVendorNewBookingAlert({
+                vendorId: vendorUserId,
+                propertyName: hotelName,
+                bookingId,
+                guestName: `${firstName} ${lastName || ''}`.trim(),
+                checkIn,
+                checkOut,
+              });
+              console.log('Vendor push notification dispatched to:', vendorUserId);
+            }
+          } catch (vendorPushErr: any) {
+            console.warn('Failed to send vendor push notification:', vendorPushErr.message);
           }
         }
 
@@ -774,8 +830,153 @@ app.get('/api/cms/popular-stays', async (req, res) => {
   return res.json({ success: true, sections: [] });
 });
 
-app.listen(PORT, '0.0.0.0', () => {
-    console.log(`🚀 Server is running on http://0.0.0.0:${PORT}`);
+// ==========================================
+// PUSH NOTIFICATION & NOTIFICATION CENTER APIS
+// ==========================================
+
+// Register device push token
+app.post('/api/notifications/devices/register', async (req, res) => {
+  try {
+    const { userId, pushToken, platform, deviceIdentifier, deviceName } = req.body;
+    if (!userId || !pushToken) {
+      return res.status(400).json({ error: 'userId and pushToken are required' });
+    }
+    const result = await registerDeviceToken({
+      userId,
+      pushToken,
+      platform: platform || 'android',
+      deviceIdentifier: deviceIdentifier || pushToken,
+      deviceName,
+    });
+    return res.status(200).json(result);
+  } catch (err: any) {
+    console.error('Error registering device token:', err);
+    return res.status(500).json({ error: 'Failed to register device token', details: err.message });
+  }
 });
+
+// Unregister device push token (logout)
+app.post('/api/notifications/devices/unregister', async (req, res) => {
+  try {
+    const { userId, pushToken } = req.body;
+    if (!userId) {
+      return res.status(400).json({ error: 'userId is required' });
+    }
+    const result = await unregisterDeviceToken(userId, pushToken);
+    return res.status(200).json(result);
+  } catch (err: any) {
+    console.error('Error unregistering device token:', err);
+    return res.status(500).json({ error: 'Failed to unregister device token', details: err.message });
+  }
+});
+
+// Get user in-app notifications
+app.get('/api/notifications', async (req, res) => {
+  try {
+    const userId = String(req.query.userId || '');
+    if (!userId) {
+      return res.status(400).json({ error: 'userId query parameter is required' });
+    }
+    const limit = Number(req.query.limit || 30);
+    const offset = Number(req.query.offset || 0);
+    const category = req.query.category ? String(req.query.category) : undefined;
+    const unreadOnly = req.query.unreadOnly === 'true';
+
+    const result = await getUserNotifications({
+      userId,
+      limit,
+      offset,
+      category,
+      unreadOnly,
+    });
+    return res.status(200).json(result);
+  } catch (err: any) {
+    console.error('Error fetching user notifications:', err);
+    return res.status(500).json({ error: 'Failed to fetch notifications', details: err.message });
+  }
+});
+
+// Mark single notification as read
+app.patch('/api/notifications/:id/read', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await markNotificationAsRead(id);
+    return res.status(200).json(result);
+  } catch (err: any) {
+    return res.status(500).json({ error: 'Failed to mark as read', details: err.message });
+  }
+});
+
+// Mark all notifications as read for a user
+app.post('/api/notifications/mark-all-read', async (req, res) => {
+  try {
+    const { userId } = req.body;
+    if (!userId) return res.status(400).json({ error: 'userId is required' });
+    const result = await markAllNotificationsAsRead(userId);
+    return res.status(200).json(result);
+  } catch (err: any) {
+    return res.status(500).json({ error: 'Failed to mark all as read', details: err.message });
+  }
+});
+
+// Delete a notification
+app.delete('/api/notifications/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await deleteNotificationDocument(id);
+    return res.status(200).json(result);
+  } catch (err: any) {
+    return res.status(500).json({ error: 'Failed to delete notification', details: err.message });
+  }
+});
+
+// Get user notification preferences
+app.get('/api/notifications/preferences', async (req, res) => {
+  try {
+    const userId = String(req.query.userId || '');
+    if (!userId) return res.status(400).json({ error: 'userId is required' });
+    const prefs = await getUserPreferences(userId);
+    return res.status(200).json({ preferences: prefs });
+  } catch (err: any) {
+    return res.status(500).json({ error: 'Failed to fetch preferences', details: err.message });
+  }
+});
+
+// Update user notification preferences
+app.put('/api/notifications/preferences', async (req, res) => {
+  try {
+    const { userId, preferences } = req.body;
+    if (!userId || !preferences) return res.status(400).json({ error: 'userId and preferences are required' });
+    const result = await updateUserPreferences(userId, preferences);
+    return res.status(200).json(result);
+  } catch (err: any) {
+    return res.status(500).json({ error: 'Failed to update preferences', details: err.message });
+  }
+});
+
+// Trigger reminders manually (for cron service or testing)
+app.post('/api/notifications/cron/run-reminders', async (req, res) => {
+  try {
+    const summary = await runBookingRemindersJob();
+    return res.status(200).json({ success: true, summary });
+  } catch (err: any) {
+    return res.status(500).json({ error: 'Failed to run reminders', details: err.message });
+  }
+});
+
+if (process.env.NODE_ENV !== 'test') {
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`🚀 Server is running on http://0.0.0.0:${PORT}`);
+    // Start background reminders scheduler
+    try {
+      startRemindersScheduler();
+    } catch (schedErr: any) {
+      console.warn('Could not start reminders scheduler:', schedErr.message);
+    }
+  });
+}
+
+export default app;
+export { app };
 
 

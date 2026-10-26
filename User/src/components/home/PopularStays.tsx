@@ -98,30 +98,30 @@ export default function PopularStays() {
   const activeStays = properties.filter(isActiveProperty);
 
   return (
-    <section className="container mx-auto px-4 py-12 relative group">
+    <section className="container mx-auto px-4 py-8 md:py-12 relative group">
       {/* Header with Smooth Animation */}
       <motion.div 
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: "easeOut" }}
-        className="flex justify-between items-end sm:items-center mb-6 sm:mb-8 gap-4"
+        className="flex justify-between items-end sm:items-center mb-5 sm:mb-8 gap-4"
       >
-        <h2 className="text-[22px] leading-tight sm:text-2xl font-bold text-brand-navy font-heading">Explore popular stays</h2>
+        <h2 className="text-[20px] sm:text-2xl font-bold text-brand-navy font-heading">Explore popular stays</h2>
         <Link href="/search" className="text-brand-coral font-medium flex items-center hover:underline group/link whitespace-nowrap shrink-0 text-sm sm:text-base">
           View all <ChevronRight size={16} className="ml-1 group-hover/link:translate-x-1 transition-transform" />
         </Link>
       </motion.div>
 
       {/* Cards Container */}
-      <div className="relative mb-8 group/carousel">
+      <div className="relative mb-4 sm:mb-8 group/carousel">
         <div 
           ref={scrollContainerRef}
-          className="flex overflow-x-auto hide-scrollbar gap-4 md:gap-6 pb-4 snap-x snap-mandatory"
-          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+          className="flex overflow-x-auto hide-scrollbar gap-4 md:gap-6 pb-4 snap-x snap-mandatory overscroll-x-contain"
+          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch' }}
         >
           {loading ? (
             [1, 2, 3, 4].map((n) => (
-              <div key={n} className="w-full min-w-full md:min-w-0 md:w-[calc(50%-12px)] lg:w-[calc(25%-18px)] shrink-0 snap-center md:snap-start">
+              <div key={n} className="w-[85vw] sm:w-[320px] md:w-[calc(50%-12px)] lg:w-[calc(25%-18px)] shrink-0 snap-center md:snap-start">
                 <PropertyCardSkeleton />
               </div>
             ))
@@ -129,15 +129,12 @@ export default function PopularStays() {
             activeStays.map((stay, index) => {
               const isSaved = savedHotelIds.includes(stay.id);
               return (
-                <motion.div
+                <div
                   key={stay.id}
-                  initial={{ opacity: 0, y: 24 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.45, delay: index * 0.08, ease: "easeOut" }}
-                  className="w-full min-w-full md:min-w-0 md:w-[calc(50%-12px)] lg:w-[calc(25%-18px)] shrink-0 snap-center md:snap-start"
+                  className="w-[85vw] sm:w-[320px] md:w-[calc(50%-12px)] lg:w-[calc(25%-18px)] shrink-0 snap-center md:snap-start"
                 >
                   <Link 
-                    href={`/property/${generatePropertySlug(stay.id, stay.name || stay.title || stay.propertyName || "")}`} 
+                    href={`/property/${generatePropertySlug(stay.id, stay.name || "")}`} 
                     className="bg-white rounded-2xl p-3 shadow-[0_2px_15px_rgb(0,0,0,0.05)] border border-brand-sky/30 group/card cursor-pointer transition-all duration-300 hover:-translate-y-1.5 hover:shadow-lg flex flex-col h-full overflow-hidden w-full"
                   >
                     {/* Image */}
@@ -177,7 +174,7 @@ export default function PopularStays() {
                       </div>
                     </div>
                   </Link>
-                </motion.div>
+                </div>
               );
             })
           )}

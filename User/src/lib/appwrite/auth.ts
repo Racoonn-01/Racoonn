@@ -173,5 +173,19 @@ export const authService = {
       throw new Error(data.error || 'Failed to reset password');
     }
     return await res.json();
+  },
+
+  async deleteAccount(userId: string) {
+    const res = await fetch('/api/auth/delete-account', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.error || 'Failed to delete account');
+    }
+    return data;
   }
 };
+

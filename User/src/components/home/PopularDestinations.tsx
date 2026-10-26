@@ -77,21 +77,44 @@ export default function PopularDestinations() {
     }
   };
 
+  const isInteractingRef = useRef(false);
+
+  useEffect(() => {
+    if (destinations.length <= 1) return;
+
+    const interval = setInterval(() => {
+      if (isInteractingRef.current) return;
+      const el = scrollContainerRef.current;
+      if (!el) return;
+
+      const itemWidth = el.firstElementChild ? (el.firstElementChild as HTMLElement).offsetWidth + 16 : 300;
+      const maxScrollLeft = el.scrollWidth - el.clientWidth;
+
+      if (el.scrollLeft >= maxScrollLeft - 10) {
+        el.scrollTo({ left: 0, behavior: 'smooth' });
+      } else {
+        el.scrollBy({ left: itemWidth, behavior: 'smooth' });
+      }
+    }, 4000);
+
+    return () => clearInterval(interval);
+  }, [destinations.length]);
+
   if (!loading && destinations.length === 0) {
     return null; // Return null if Admin has not uploaded any destinations in CMS
   }
 
   return (
-    <section className="container mx-auto px-4 pt-4 pb-4 relative">
+    <section className="container mx-auto px-4 pt-4 pb-6 md:pb-10 relative">
       {/* Header Section */}
-      <div className="flex flex-col items-center text-center mb-8 md:mb-12">
-        <div className="flex items-center gap-2 text-brand-coral font-bold text-xs md:text-sm tracking-widest uppercase mb-3 md:mb-4">
+      <div className="flex flex-col items-center text-center mb-6 md:mb-12">
+        <div className="flex items-center gap-2 text-brand-coral font-bold text-xs md:text-sm tracking-widest uppercase mb-2 md:mb-4">
           <span>EXPLORE UTTARAKHAND</span>
         </div>
-        <h2 className="text-[28px] leading-tight md:text-4xl lg:text-5xl font-extrabold text-brand-navy font-heading mb-3 md:mb-4">
+        <h2 className="text-[24px] sm:text-[28px] leading-tight md:text-4xl lg:text-5xl font-extrabold text-brand-navy font-heading mb-2 md:mb-4">
           Popular Destinations in <span className="text-brand-coral">Uttarakhand</span>
         </h2>
-        <p className="text-brand-charcoal/70 text-base md:text-lg max-w-2xl px-2">
+        <p className="text-brand-charcoal/70 text-sm sm:text-base md:text-lg max-w-2xl px-2">
           From serene mountains to spiritual towns, explore the best stays and packages in Devbhoomi.
         </p>
       </div>
@@ -100,15 +123,19 @@ export default function PopularDestinations() {
       <div className="relative mb-4 group/carousel">
         <div
           ref={scrollContainerRef}
-          className="flex overflow-x-auto hide-scrollbar gap-4 md:gap-6 pb-4 snap-x snap-mandatory"
-          style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+          onTouchStart={() => { isInteractingRef.current = true; }}
+          onTouchEnd={() => { setTimeout(() => { isInteractingRef.current = false; }, 2500); }}
+          onMouseEnter={() => { isInteractingRef.current = true; }}
+          onMouseLeave={() => { isInteractingRef.current = false; }}
+          className="flex overflow-x-auto hide-scrollbar gap-4 md:gap-6 pb-4 snap-x snap-mandatory overscroll-x-contain"
+          style={{ scrollbarWidth: "none", msOverflowStyle: "none", WebkitOverflowScrolling: "touch" }}
         >
           {loading ? (
             <>
               {[1, 2, 3, 4].map((i) => (
                 <div 
                   key={i} 
-                  className="w-full min-w-full md:min-w-0 md:w-[calc(50%-12px)] lg:w-[calc(25%-18px)] shrink-0 rounded-3xl overflow-hidden shadow-sm h-[360px] md:h-[450px] bg-gray-100 animate-pulse relative snap-center md:snap-start"
+                  className="w-[85vw] sm:w-[320px] md:min-w-0 md:w-[calc(50%-12px)] lg:w-[calc(25%-18px)] shrink-0 rounded-3xl overflow-hidden shadow-sm h-[340px] sm:h-[380px] md:h-[450px] bg-gray-100 animate-pulse relative snap-center md:snap-start"
                 >
                   <div className="absolute top-4 left-4 bg-gray-200 w-28 h-8 rounded-full" />
                   <div className="absolute bottom-4 md:bottom-6 left-4 md:left-6 right-4 md:right-6 flex flex-col gap-3 md:gap-4">
@@ -126,7 +153,7 @@ export default function PopularDestinations() {
                 <Link
                   href={`/search?location=${encodeURIComponent(dest.city)}`}
                   key={dest.id}
-                  className="w-full min-w-full md:min-w-0 md:w-[calc(50%-12px)] lg:w-[calc(25%-18px)] shrink-0 group/card relative rounded-3xl overflow-hidden cursor-pointer shadow-sm hover:shadow-xl transition-all duration-300 snap-center md:snap-start h-[360px] md:h-[450px] bg-gray-100"
+                  className="w-[85vw] sm:w-[320px] md:min-w-0 md:w-[calc(50%-12px)] lg:w-[calc(25%-18px)] shrink-0 group/card relative rounded-3xl overflow-hidden cursor-pointer shadow-sm hover:shadow-xl transition-all duration-300 snap-center md:snap-start h-[340px] sm:h-[380px] md:h-[450px] bg-gray-100"
                 >
                   <Image
                     src={optimizeAppwriteImage(dest.image || "https://images.unsplash.com/photo-1626621341517-bbf3d9990a23?q=80&w=800&auto=format&fit=crop")}

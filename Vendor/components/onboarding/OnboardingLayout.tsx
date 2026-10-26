@@ -4,8 +4,19 @@ import { motion } from "framer-motion";
 import { ProgressSidebar } from "./ProgressSidebar";
 import Link from "next/link";
 import Image from "next/image";
+import { LogOut } from "lucide-react";
+import { useAuthStore } from "@/store/authStore";
+import { useRouter } from "next/navigation";
 
 export function OnboardingLayout({ children, currentStep }: { children: React.ReactNode, currentStep: number }) {
+  const { logout } = useAuthStore();
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    await logout();
+    router.push("/");
+  };
+
   // Mobile Sticky Progress (0 to 100 based on steps 1-9)
   const progressPercent = Math.min((currentStep / 9) * 100, 100);
 
@@ -18,7 +29,15 @@ export function OnboardingLayout({ children, currentStep }: { children: React.Re
           <Link href="/">
             <Image src="/racoonn-logo.png" alt="Racoonn" width={100} height={30} className="h-6 w-auto" />
           </Link>
-          <span className="text-sm font-bold text-slate-500">Step {currentStep} of 9</span>
+          <div className="flex items-center gap-3">
+            <span className="text-sm font-bold text-slate-500">Step {currentStep} of 9</span>
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-1 text-xs font-semibold text-slate-500 hover:text-red-600 p-1.5 rounded-lg border border-slate-200"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+            </button>
+          </div>
         </div>
         <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
           <motion.div 

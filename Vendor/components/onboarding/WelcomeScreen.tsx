@@ -2,10 +2,19 @@
 
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Globe2, ShieldCheck, Headphones, Zap, ArrowRight } from "lucide-react";
+import { Globe2, ShieldCheck, Headphones, Zap, ArrowRight, LogOut } from "lucide-react";
 import Image from "next/image";
+import { useAuthStore } from "@/store/authStore";
+import { useRouter } from "next/navigation";
 
 export function WelcomeScreen({ onNext }: { onNext: () => void }) {
+  const { logout } = useAuthStore();
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    await logout();
+    router.push("/");
+  };
   const fadeUpVariants: any = {
     hidden: { opacity: 0, y: 30 },
     visible: (i: number) => ({
@@ -20,8 +29,15 @@ export function WelcomeScreen({ onNext }: { onNext: () => void }) {
       {/* Left Column: Content */}
       <div className="w-full lg:w-[55%] flex flex-col relative z-10 overflow-y-auto">
         {/* Top Navbar */}
-        <div className="px-6 md:px-12 py-8 flex items-center w-full shrink-0">
+        <div className="px-6 md:px-12 py-8 flex items-center justify-between w-full shrink-0">
           <Image src="/racoonn-logo-text.png" alt="Racoonn" width={140} height={40} className="h-8 md:h-10 w-auto" />
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-2 px-3.5 py-2 text-sm font-semibold text-slate-600 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all duration-200 border border-slate-200 hover:border-red-100 shadow-2xs cursor-pointer"
+          >
+            <LogOut className="w-4 h-4 text-slate-400 group-hover:text-red-500" />
+            <span>Logout</span>
+          </button>
         </div>
 
         {/* Main Content */}

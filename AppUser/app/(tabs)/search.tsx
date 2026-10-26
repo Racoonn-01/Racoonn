@@ -937,7 +937,16 @@ export default function SearchScreen() {
               : REAL_STAY_IMAGE;
 
             const cityKey = (d.city || d.location || 'haldwani').toLowerCase().split(',')[0].trim();
-            const coords = CITY_COORDINATES[cityKey] || [79.5130 + index * 0.02, 29.2183 + index * 0.02];
+            let coords = CITY_COORDINATES[cityKey] || [79.5130 + index * 0.02, 29.2183 + index * 0.02];
+            const rawLocStr = String(d.location || '');
+            const geoMatch = rawLocStr.match(/\[GEO:\s*(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)\]/i);
+            if (geoMatch) {
+              const geoLat = parseFloat(geoMatch[1]);
+              const geoLng = parseFloat(geoMatch[2]);
+              if (!isNaN(geoLat) && !isNaN(geoLng)) {
+                coords = [geoLng, geoLat];
+              }
+            }
             const hasReviews = Number(d.reviewsCount || 0) > 0 && Number(d.rating || 0) > 0;
             const amList = Array.isArray(d.amenities) ? d.amenities : ['WiFi', 'Parking'];
 
@@ -1756,10 +1765,14 @@ export default function SearchScreen() {
                 MAPBOX_ACCESS_TOKEN,
                 selectedStayId
               ),
+              baseUrl: 'https://api.mapbox.com',
             }}
             style={{ flex: 1 }}
             javaScriptEnabled={true}
             domStorageEnabled={true}
+            mixedContentMode="always"
+            allowsInlineMediaPlayback={true}
+            androidHardwareAccelerationDisabled={false}
             onMessage={(event) => {
               try {
                 const data = JSON.parse(event.nativeEvent.data);

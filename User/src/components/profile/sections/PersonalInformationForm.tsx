@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { UserProfile, useAuthStore } from '@/store/authStore';
 import { authService } from '@/lib/appwrite/auth';
-import { CheckCircle2, Loader2, ChevronDown } from 'lucide-react';
+import { CheckCircle2, Loader2, ChevronDown, Trash2, AlertTriangle } from 'lucide-react';
 import { SearchableSelect } from '@/components/ui/searchable-select';
 import { CountryCodeSelect } from '@/components/ui/country-code-select';
 import { Country, State, City } from 'country-state-city';
+import DeleteAccountModal from './DeleteAccountModal';
 
 // Reusable wrapper for the MakeMyTrip style floating label inputs
 const FieldWrapper = ({ label, children }: { label: string, children: React.ReactNode }) => (
@@ -88,6 +89,7 @@ export default function PersonalInformationForm({ profile }: { profile: UserProf
   
   const [isEditingPhone, setIsEditingPhone] = useState(false);
   const [isEditingEmail, setIsEditingEmail] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
@@ -404,27 +406,70 @@ export default function PersonalInformationForm({ profile }: { profile: UserProf
               </button>
             </div>
           </div>
-        </section>        <div className="pt-8 pb-4 flex items-center gap-4 border-t border-gray-100">
-          <button 
-            type="submit" 
-            disabled={isSaving}
-            className="bg-brand-coral hover:bg-opacity-90 disabled:opacity-50 disabled:cursor-not-allowed text-white px-8 py-3 rounded-xl font-bold transition-all shadow-md shadow-brand-coral/20 hover:-translate-y-0.5 hover:shadow-lg flex items-center gap-2"
+        </section>
+
+        <div className="pt-8 pb-4 flex items-center justify-between gap-4 border-t border-gray-100 flex-wrap">
+          <div className="flex items-center gap-4">
+            <button 
+              type="submit" 
+              disabled={isSaving}
+              className="bg-brand-coral hover:bg-opacity-90 disabled:opacity-50 disabled:cursor-not-allowed text-white px-8 py-3 rounded-xl font-bold transition-all shadow-md shadow-brand-coral/20 hover:-translate-y-0.5 hover:shadow-lg flex items-center gap-2 cursor-pointer"
+            >
+              {isSaving ? <Loader2 size={20} className="animate-spin" /> : 'Save Changes'}
+            </button>
+            
+            {saveStatus === 'success' && (
+              <span className="text-green-500 font-bold text-sm flex items-center gap-1.5 animate-in fade-in slide-in-from-left-2">
+                <CheckCircle2 size={18} /> Profile updated successfully!
+              </span>
+            )}
+            {saveStatus === 'error' && (
+              <span className="text-red-500 font-bold text-sm">
+                Failed to update. Try again.
+              </span>
+            )}
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setIsDeleteModalOpen(true)}
+            className="px-5 py-2.5 rounded-xl border border-red-200 bg-red-50/50 hover:bg-red-600 hover:text-white text-red-600 font-semibold text-sm transition-all flex items-center gap-2 cursor-pointer active:scale-95 shadow-sm"
           >
-            {isSaving ? <Loader2 size={20} className="animate-spin" /> : 'Save Changes'}
+            <Trash2 size={16} />
+            Delete Account
           </button>
-          
-          {saveStatus === 'success' && (
-            <span className="text-green-500 font-bold text-sm flex items-center gap-1.5 animate-in fade-in slide-in-from-left-2">
-              <CheckCircle2 size={18} /> Profile updated successfully!
-            </span>
-          )}
-          {saveStatus === 'error' && (
-            <span className="text-red-500 font-bold text-sm">
-              Failed to update. Try again.
-            </span>
-          )}
         </div>
       </form>
+
+      {/* DANGER ZONE / PERMANENT ACCOUNT DELETION */}
+      <div className="pt-6 border-t border-gray-100">
+        <div className="rounded-2xl border border-red-200/80 bg-red-50/30 p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all hover:bg-red-50/50">
+          <div>
+            <h4 className="font-bold text-red-600 text-base flex items-center gap-2">
+              <AlertTriangle size={18} />
+              Danger Zone
+            </h4>
+            <p className="text-sm text-gray-500 mt-1 max-w-xl">
+              Permanently delete your account and all associated personal information, wishlists, and booking data. This action cannot be undone.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setIsDeleteModalOpen(true)}
+            className="shrink-0 px-5 py-2.5 rounded-xl border border-red-300 bg-white text-red-600 font-bold text-sm hover:bg-red-600 hover:text-white hover:border-red-600 active:scale-95 transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer"
+          >
+            <Trash2 size={16} />
+            Delete Account
+          </button>
+        </div>
+      </div>
+
+      {/* Confirmation Modal */}
+      <DeleteAccountModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+      />
     </div>
   );
 }
+

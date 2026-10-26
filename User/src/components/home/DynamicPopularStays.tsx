@@ -27,6 +27,105 @@ interface Property {
   status?: string;
 }
 
+function DynamicStaySection({
+  sec,
+  displayProperties,
+  targetLocation,
+  secIndex,
+}: {
+  sec: PopularStaySection;
+  displayProperties: Property[];
+  targetLocation: string;
+  secIndex: number;
+}) {
+  const scrollRef = React.useRef<HTMLDivElement>(null);
+
+  return (
+    <motion.section 
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, delay: secIndex * 0.1, ease: "easeOut" }}
+      className="container mx-auto px-4 py-4 md:py-6 relative group"
+    >
+      {/* Section Header */}
+      <div className="flex justify-between items-end sm:items-center mb-4 sm:mb-6 gap-4">
+        <div className="flex-1">
+          <h2 className="text-[20px] sm:text-2xl font-bold text-gray-900 tracking-tight font-heading">
+            {sec.title}
+          </h2>
+          {sec.subtitle && (
+            <p className="text-gray-500 text-[13px] sm:text-sm mt-1 line-clamp-1 sm:line-clamp-none">{sec.subtitle}</p>
+          )}
+        </div>
+        <Link
+          href={targetLocation ? `/search?location=${encodeURIComponent(targetLocation)}` : "/search"}
+          className="text-rose-600 font-semibold flex items-center hover:underline text-xs sm:text-sm whitespace-nowrap shrink-0 group/link"
+        >
+          View all <ChevronRight size={16} className="ml-0.5 sm:ml-1 group-hover/link:translate-x-1 transition-transform" />
+        </Link>
+      </div>
+
+      {/* Property Cards Slider */}
+      <div 
+        ref={scrollRef}
+        className="flex md:grid md:grid-cols-2 lg:grid-cols-4 overflow-x-auto md:overflow-visible hide-scrollbar gap-4 md:gap-6 pb-4 md:pb-0 snap-x snap-mandatory overscroll-x-contain"
+        style={{ scrollbarWidth: "none", msOverflowStyle: "none", WebkitOverflowScrolling: "touch" }}
+      >
+        {displayProperties.map((stay) => (
+          <div
+            key={stay.id}
+            className="w-[85vw] sm:w-[320px] md:w-auto shrink-0 snap-center md:snap-align-none"
+          >
+            <Link
+              href={`/property/${generatePropertySlug(stay.id, stay.title || "")}`}
+              className="w-full bg-white rounded-2xl p-2.5 sm:p-3 border border-gray-100 shadow-xs hover:shadow-md group/card cursor-pointer flex flex-col h-full transition-all duration-300"
+            >
+              {/* Image Card */}
+              <div className="relative w-full aspect-4/3 shrink-0 rounded-xl overflow-hidden mb-3 bg-gray-100">
+                <Image
+                  src={optimizeAppwriteImage(stay.image)}
+                  alt={stay.title}
+                  fill
+                  onError={(e) => {
+                    e.currentTarget.src = "https://images.unsplash.com/photo-1542314831-c6a4d14d837e?q=80&w=800&auto=format&fit=crop";
+                  }}
+                  sizes="(max-width: 768px) 85vw, (max-width: 1200px) 50vw, 25vw"
+                  className="object-cover group-hover/card:scale-105 transition-transform duration-500"
+                />
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                  }}
+                  className="absolute top-2.5 right-2.5 w-8 h-8 rounded-full bg-white/80 backdrop-blur-xs flex items-center justify-center text-gray-700 hover:text-rose-500 hover:scale-110 active:scale-95 transition-all z-10 shadow-xs"
+                >
+                  <Heart size={16} strokeWidth={2} />
+                </button>
+              </div>
+
+              {/* Info Block */}
+              <div className="flex flex-col flex-1 min-w-0 px-1 pb-1">
+                <h3 className="font-bold text-[15px] sm:text-[16px] text-gray-900 line-clamp-1 group-hover/card:text-rose-600 transition-colors" title={stay.title}>
+                  {stay.title}
+                </h3>
+                <p className="text-[13px] text-gray-500 truncate mt-1 w-full" title={stay.location}>{stay.location}</p>
+                {Boolean(stay.subtitle || stay.details) && (
+                  <p className="text-[12px] text-gray-400 line-clamp-1 mt-0.5 w-full">{stay.subtitle || stay.details}</p>
+                )}
+                <div className="mt-3 pt-2 border-t border-gray-50 flex items-baseline gap-1.5 text-gray-900 font-bold text-[15px]">
+                  <span>₹{stay.price.toLocaleString("en-IN")}</span>
+                  <span className="font-normal text-xs text-gray-500">per night</span>
+                </div>
+              </div>
+            </Link>
+          </div>
+        ))}
+      </div>
+    </motion.section>
+  );
+}
+
 export default function DynamicPopularStays() {
   const [sections, setSections] = useState<PopularStaySection[]>([]);
   const [allProperties, setAllProperties] = useState<Property[]>([]);
@@ -77,9 +176,7 @@ export default function DynamicPopularStays() {
         const propertyPriceMap: Record<string, number> = {};
         const propertyRoomPhotosMap: Record<string, string[]> = {};
         if (typeof window !== "undefined") {
-          // Dynamic import or direct fetch to avoid circular dependency / SSR issues if needed
           await fetch("/api/properties/rooms").catch(() => null);
-          // Wait, we can just use Appwrite directly since this is client-side
           try {
             const { databases, appwriteConfig } = await import("@/lib/appwrite/config");
             const { Query } = await import("appwrite");
@@ -192,7 +289,7 @@ export default function DynamicPopularStays() {
   }
 
   return (
-    <div className="space-y-12">
+    <div className="space-y-6 md:space-y-12">
       {activeSections.map((sec, secIndex) => {
         let matchedProps: Property[] = [];
 
@@ -231,91 +328,13 @@ export default function DynamicPopularStays() {
           : "";
 
         return (
-          <motion.section 
-            key={sec.id} 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: secIndex * 0.1, ease: "easeOut" }}
-            className="container mx-auto px-4 py-6 relative group"
-          >
-            {/* Section Header */}
-            <div className="flex justify-between items-end sm:items-center mb-5 sm:mb-6 gap-4">
-              <div className="flex-1">
-                <h2 className="text-[22px] leading-tight sm:text-2xl font-bold text-gray-900 tracking-tight font-heading">
-                  {sec.title}
-                </h2>
-                <p className="text-gray-500 text-[13px] sm:text-sm mt-1.5 line-clamp-2 sm:line-clamp-none">{sec.subtitle}</p>
-              </div>
-              <Link
-                href={targetLocation ? `/search?location=${encodeURIComponent(targetLocation)}` : "/search"}
-                className="text-rose-600 font-semibold flex items-center hover:underline text-sm whitespace-nowrap shrink-0 group/link"
-              >
-                View all <ChevronRight size={16} className="ml-1 group-hover/link:translate-x-1 transition-transform" />
-              </Link>
-            </div>
-
-            {/* Property Cards Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {displayProperties.map((stay, index) => (
-                <motion.div
-                  key={stay.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.4, delay: index * 0.08, ease: "easeOut" }}
-                >
-                  <Link
-                    href={`/property/${generatePropertySlug(stay.id, stay.title || stay.name || stay.propertyName || "")}`}
-                    className="w-full group/card cursor-pointer flex flex-col h-full"
-                  >
-                    {/* Image Card */}
-                    <div className="relative w-full aspect-4/3 shrink-0 rounded-2xl overflow-hidden mb-3 bg-gray-100 shadow-xs">
-                      <Image
-                        src={optimizeAppwriteImage(stay.image)}
-                        alt={stay.title}
-                        fill
-                       
-                        onError={(e) => {
-                          e.currentTarget.src = "https://images.unsplash.com/photo-1542314831-c6a4d14d837e?q=80&w=800&auto=format&fit=crop";
-                        }}
-                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
-                        className="object-cover group-hover/card:scale-105 transition-transform duration-500"
-                      />
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                        }}
-                        className="absolute top-3 right-3 text-white hover:scale-110 active:scale-95 transition-transform z-10 p-1"
-                      >
-                        <Heart
-                          size={22}
-                          className="fill-black/30 text-white"
-                          strokeWidth={2}
-                        />
-                      </button>
-                    </div>
-
-                    {/* Info Block */}
-                    <div className="flex flex-col flex-1 min-w-0">
-                      <div className="flex justify-between items-start gap-2 min-w-0">
-                        <h3 className="font-bold text-[15px] text-gray-900 line-clamp-1 group-hover/card:text-rose-600 transition-colors flex-1 min-w-0">
-                          {stay.title}
-                        </h3>
-
-                      </div>
-                      <p className="text-[13px] text-gray-500 truncate mt-0.5 w-full">{stay.location}</p>
-                      <p className="text-[13px] text-gray-500 line-clamp-1 mt-0.5 w-full">{stay.subtitle || stay.details}</p>
-                      <div className="mt-2 text-[15px] font-bold text-gray-900">
-                        ₹{stay.price.toLocaleString("en-IN")}{" "}
-                        <span className="font-normal text-xs text-gray-500">per night</span>
-                      </div>
-                    </div>
-                  </Link>
-                </motion.div>
-              ))}
-            </div>
-          </motion.section>
+          <DynamicStaySection
+            key={sec.id}
+            sec={sec}
+            displayProperties={displayProperties}
+            targetLocation={targetLocation}
+            secIndex={secIndex}
+          />
         );
       })}
     </div>

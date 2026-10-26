@@ -9,8 +9,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { 
   ChevronLeft, ChevronRight,
   Wifi, Car, Coffee, Tv, Wind, Check, UploadCloud, 
-  Plus, Trash2, Loader2, Dumbbell, Utensils, GlassWater, Dog, Plane, Waves
+  Plus, Trash2, Loader2, Dumbbell, Utensils, GlassWater, Dog, Plane, Waves,
+  Building, Building2, Warehouse, Ship, Home, Castle, Mountain, Box, Circle, Globe, Tractor, Users, Palmtree, Tent
 } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
@@ -26,6 +28,46 @@ const steps = [
   { id: 3, title: "Media & Photos" },
   { id: 4, title: "Rooms & Pricing" },
   { id: 5, title: "Property Addons" },
+];
+
+export const PROPERTY_TYPES = [
+  { name: "Apartment", icon: Building },
+  { name: "Barn", icon: Warehouse },
+  { name: "Bed & breakfast", icon: Coffee },
+  { name: "Boat", icon: Ship },
+  { name: "Boutique Hotel", icon: Building2 },
+  { name: "Cabin", icon: Home },
+  { name: "Campervan/motorhome", icon: Car },
+  { name: "Casa particular", icon: Home },
+  { name: "Castle", icon: Castle },
+  { name: "Cave", icon: Mountain },
+  { name: "Container", icon: Box },
+  { name: "Cottage", icon: Home },
+  { name: "Cycladic home", icon: Home },
+  { name: "Dammuso", icon: Home },
+  { name: "Dome", icon: Circle },
+  { name: "Earth home", icon: Globe },
+  { name: "Farm", icon: Tractor },
+  { name: "Flat/apartment", icon: Building },
+  { name: "Guest house", icon: Home },
+  { name: "HomeStay", icon: Home },
+  { name: "Hostel", icon: Users },
+  { name: "Hotel", icon: Building2 },
+  { name: "Houseboat", icon: Ship },
+  { name: "Lodge", icon: Home },
+  { name: "Minsu", icon: Home },
+  { name: "Resort", icon: Palmtree },
+  { name: "Riad", icon: Home },
+  { name: "Ryokan", icon: Home },
+  { name: "Shepherd’s hut", icon: Home },
+  { name: "Tent", icon: Tent },
+  { name: "Tiny home", icon: Home },
+  { name: "Tower", icon: Building2 },
+  { name: "Tree house", icon: Home },
+  { name: "Trullo", icon: Home },
+  { name: "Villa", icon: Home },
+  { name: "Windmill", icon: Wind },
+  { name: "Yurt", icon: Tent }
 ];
 
 const AMENITIES_LIST = [
@@ -597,12 +639,30 @@ export function PropertyWizard({ propertyId }: PropertyWizardProps) {
                       </div>
                       <div className="space-y-2">
                         <label className="text-[12px] font-semibold text-slate-700 uppercase tracking-wide">Property Type</label>
-                        <select className="w-full h-14 px-4 rounded-xl border border-slate-200 bg-slate-50/50 focus:bg-white focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all text-[15px] appearance-none" value={formData.type} onChange={(e) => setFormData({...formData, type: e.target.value})}>
-                          <option>Hotel</option>
-                          <option>Resort</option>
-                          <option>Villa</option>
-                          <option>Boutique</option>
-                        </select>
+                        <Select 
+                          value={formData.type || "Hotel"} 
+                          onValueChange={(val) => { if (val) setFormData({...formData, type: val}); }}
+                        >
+                          <SelectTrigger className="w-full h-14! rounded-xl border-slate-200 bg-slate-50/50 hover:bg-white focus:bg-white px-4 focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all font-medium text-slate-700 text-[15px]">
+                            <SelectValue placeholder="Select a property type" />
+                          </SelectTrigger>
+                          <SelectContent alignItemWithTrigger={false} className="max-h-100 w-[80vw] sm:w-150 p-2 z-50 bg-white shadow-2xl border border-slate-200 rounded-2xl">
+                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                              {PROPERTY_TYPES.map(type => (
+                                <SelectItem 
+                                  key={type.name} 
+                                  value={type.name} 
+                                  className="flex flex-col items-start justify-center p-3.5 rounded-xl border border-slate-200 hover:border-slate-300 transition-all text-left cursor-pointer data-[state=checked]:border-slate-900 data-[state=checked]:bg-slate-50 data-[state=checked]:ring-1 data-[state=checked]:ring-slate-900 focus:bg-slate-50 focus:text-slate-900 h-22"
+                                >
+                                  <div className="flex flex-col items-start gap-1.5 w-full">
+                                    <type.icon className="w-5 h-5 stroke-[1.5px] text-slate-700" />
+                                    <span className="font-semibold text-xs whitespace-normal text-left leading-tight text-slate-900">{type.name}</span>
+                                  </div>
+                                </SelectItem>
+                              ))}
+                            </div>
+                          </SelectContent>
+                        </Select>
                       </div>
                       <div className="space-y-2 sm:col-span-2">
                         <label className="text-[12px] font-semibold text-slate-700 uppercase tracking-wide">About the property (Description)</label>

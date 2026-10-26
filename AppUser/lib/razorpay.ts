@@ -69,7 +69,7 @@ export async function collectRazorpayPayment(input: RazorpayPaymentInput) {
     key: razorpayKeyId,
     amount: orderPayload.order.amount,
     currency: orderPayload.order.currency,
-    name: 'Racoonn Travel',
+    name: 'CIELLE TRAVELS PVT LTD',
     description: input.description,
     order_id: orderPayload.order.id,
     prefill: { name: input.name, email: input.email, contact: input.contact },

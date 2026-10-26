@@ -32,6 +32,7 @@ interface AuthState {
   
   checkAuth: () => Promise<void>;
   logout: () => Promise<void>;
+  deleteAccount: () => Promise<void>;
   setLoading: (loading: boolean) => void;
   toggleSavedHotel: (hotelId: string) => Promise<void>;
 }
@@ -80,6 +81,23 @@ export const useAuthStore = create<AuthState>((set) => ({
       set({ user: null, profile: null, isAuthenticated: false });
     } catch (error) {
       console.error('Logout failed', error);
+    } finally {
+      set({ isLoading: false });
+    }
+  },
+
+  deleteAccount: async () => {
+    set({ isLoading: true });
+    try {
+      const { user } = useAuthStore.getState();
+      if (!user?.$id) throw new Error("No authenticated user found");
+      await authService.deleteAccount(user.$id);
+      try {
+        await authService.logout();
+      } catch {
+        // Session might already be invalidated by account deletion
+      }
+      set({ user: null, profile: null, isAuthenticated: false });
     } finally {
       set({ isLoading: false });
     }

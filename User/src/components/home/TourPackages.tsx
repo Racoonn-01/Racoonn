@@ -117,6 +117,8 @@ export default function TourPackages() {
     };
   }, []);
 
+  const isInteractingRef = useRef(false);
+
   const scroll = (direction: 'left' | 'right') => {
     if (scrollContainerRef.current) {
       const { current } = scrollContainerRef;
@@ -126,26 +128,26 @@ export default function TourPackages() {
   };
 
   return (
-    <section className="container mx-auto px-4 pt-10 pb-16 relative">
+    <section className="container mx-auto px-4 pt-6 md:pt-10 pb-10 md:pb-16 relative">
       
       {/* Section Header */}
-      <div className="flex flex-col items-center text-center mb-8 md:mb-10">
-        <div className="flex items-center gap-2 text-brand-coral font-bold text-xs md:text-sm tracking-widest uppercase mb-3 md:mb-4">
+      <div className="flex flex-col items-center text-center mb-6 md:mb-10">
+        <div className="flex items-center gap-2 text-brand-coral font-bold text-xs md:text-sm tracking-widest uppercase mb-2 md:mb-4">
           <span>CURATED FOR YOU</span>
         </div>
-        <h2 className="text-[28px] leading-tight md:text-4xl lg:text-5xl font-extrabold text-brand-navy font-heading mb-3 md:mb-4">
+        <h2 className="text-[24px] sm:text-[28px] leading-tight md:text-4xl lg:text-5xl font-extrabold text-brand-navy font-heading mb-2 md:mb-4">
           Best <span className="text-brand-coral">Tour Packages</span>
         </h2>
-        <p className="text-brand-charcoal/70 text-base md:text-lg max-w-2xl px-2">
+        <p className="text-brand-charcoal/70 text-sm sm:text-base md:text-lg max-w-2xl px-2">
           Discover handpicked tour packages that promise an unforgettable journey through the mountains.
         </p>
       </div>
 
       {/* Filter & Navigation Bar */}
-      <div className="flex flex-col md:flex-row items-center justify-between mb-8 gap-4">
+      <div className="flex flex-col md:flex-row items-center justify-between mb-6 md:mb-8 gap-4">
         
         {/* Filters */}
-        <div className="flex items-center gap-3 overflow-x-auto hide-scrollbar w-full md:w-auto pb-2 md:pb-0">
+        <div className="flex items-center gap-2 sm:gap-3 overflow-x-auto hide-scrollbar w-full md:w-auto pb-2 md:pb-0">
           {filters.map((filter) => {
             const Icon = filter.icon;
             const isActive = activeFilter === filter.id;
@@ -153,7 +155,7 @@ export default function TourPackages() {
               <button
                 key={filter.id}
                 onClick={() => setActiveFilter(filter.id)}
-                className={`flex items-center gap-2 px-5 py-2.5 rounded-full whitespace-nowrap font-medium text-sm transition-all ${
+                className={`flex items-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full whitespace-nowrap font-medium text-xs sm:text-sm transition-all ${
                   isActive 
                     ? 'bg-brand-coral text-white shadow-md' 
                     : 'bg-white text-brand-navy border border-gray-200 hover:border-brand-coral hover:text-brand-coral'
@@ -187,12 +189,13 @@ export default function TourPackages() {
       <div className="relative group/carousel">
         <div 
           ref={scrollContainerRef}
-          className="flex overflow-x-auto hide-scrollbar gap-4 md:gap-6 snap-x snap-mandatory pb-8"
+          className="flex overflow-x-auto hide-scrollbar gap-4 md:gap-6 snap-x snap-mandatory pb-6 md:pb-8 overscroll-x-contain"
+          style={{ scrollbarWidth: "none", msOverflowStyle: "none", WebkitOverflowScrolling: "touch" }}
         >
           {loading ? (
             <>
               {[1, 2, 3, 4].map((i) => (
-                <div key={`skeleton-${i}`} className="w-full min-w-full md:min-w-0 md:w-[calc(50%-12px)] lg:w-[calc(25%-18px)] shrink-0 snap-center md:snap-start">
+                <div key={`skeleton-${i}`} className="w-[85vw] sm:w-[320px] md:min-w-0 md:w-[calc(50%-12px)] lg:w-[calc(25%-18px)] shrink-0 snap-center md:snap-start">
                   <PackageCardSkeleton />
                 </div>
               ))}
@@ -245,7 +248,7 @@ export default function TourPackages() {
                   exit={{ opacity: 0, scale: 0.9 }}
                   transition={{ duration: 0.3 }}
                   key={pkg.id} 
-                  className="w-full min-w-full md:min-w-0 md:w-[calc(50%-12px)] lg:w-[calc(25%-18px)] shrink-0 snap-center md:snap-start"
+                  className="w-[85vw] sm:w-[320px] md:min-w-0 md:w-[calc(50%-12px)] lg:w-[calc(25%-18px)] shrink-0 snap-center md:snap-start"
                 >
                   <TourCard pkg={pkg} />
                 </motion.div>

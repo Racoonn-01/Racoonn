@@ -134,7 +134,7 @@ export default function RegisterScreen() {
     try {
       await authService.register(email.trim(), password, name.trim());
       await checkAuth();
-      router.replace('/profile' as any);
+      router.replace('/(tabs)/profile' as any);
     } catch (error: any) {
       const friendly = getFriendlyAuthError(error, 'register');
       setModalConfig({
@@ -165,7 +165,7 @@ export default function RegisterScreen() {
       const success = await authService.loginWithGoogle();
       if (success) {
         await checkAuth();
-        router.replace('/profile' as any);
+        router.replace('/(tabs)/profile' as any);
       }
     } catch (error: any) {
       const friendly = getFriendlyAuthError(error, 'register');

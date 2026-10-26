@@ -114,7 +114,7 @@ export default function RacoonnFooter() {
             <View style={{ flex: 1 }}>
               <Text style={styles.contactLabel}>Location</Text>
               <Text style={styles.contactValue}>
-                B-81, Rose Villa, Samiah Lake City, Rudrapur,{'\n'}Kichha, Udham Singh Nagar - 263153, Uttarakhand
+                SECOND FLOOR PSA PLAZA, SHOP NO 207, NAINITAL ROAD, Rudrapur, Udham Singh Nagar, Uttarakhand, 263153
               </Text>
             </View>
           </View>
@@ -126,7 +126,7 @@ export default function RacoonnFooter() {
             </View>
             <View style={{ flex: 1 }}>
               <Text style={styles.contactLabel}>Phone</Text>
-              <Text style={styles.contactValue}>+1 (555) 123-4567</Text>
+              <Text style={styles.contactValue}>+91 8954442144</Text>
             </View>
           </View>
 

@@ -55,7 +55,7 @@ import { authService } from '../../lib/appwrite/auth';
 import { cancelBooking } from '../../lib/appwrite/api';
 import { databases } from '../../lib/appwrite/config';
 import { Query } from 'react-native-appwrite';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { sendLocalNotification } from '../../services/notificationService';
 import { useNotificationStore } from '../../store/notificationStore';
 
@@ -252,9 +252,9 @@ export default function UserPortalProfileScreen() {
                     <div class="company-name">CIELLE TRAVELS PRIVATE LIMITED</div>
                     <div class="company-meta">
                       GSTIN - 05AAOCC0859Q1Z0<br/>
-                      B-81, Rose Villa, Samiah Lake City, Rudrapur,<br/>
-                      Kichha, Udham Singh Nagar - 263153, Uttarakhand<br/>
-                      Phone: +91 8954442144 | Email: support@racoonn.com
+                      SECOND FLOOR  PSA PLAZA, SHOP NO 207 , NAINITAL ROAD,<br/>
+                      Rudrapur, Udham Singh Nagar, Uttarakhand, 263153<br/>
+                      Phone: +91 8954442144 | Email: info@racoonn.com
                     </div>
                   </div>
                   <div class="inv-header-meta">
@@ -412,9 +412,11 @@ export default function UserPortalProfileScreen() {
     }
   };
 
-  useEffect(() => {
-    checkAuth();
-  }, [checkAuth]);
+  useFocusEffect(
+    useCallback(() => {
+      checkAuth();
+    }, [checkAuth])
+  );
 
   useEffect(() => {
     if (profile || user) {
@@ -1051,7 +1053,7 @@ export default function UserPortalProfileScreen() {
                   <ShieldCheck color={Colors.brand.coral} size={18} />
                 </View>
                 <View>
-                  <Text style={styles.menuRowTitle}>Privacy & Security</Text>
+                  <Text style={styles.menuRowTitle}>Privacy & Policy</Text>
                   <Text style={styles.menuRowSub}>Account security & data policies</Text>
                 </View>
               </View>
@@ -1441,7 +1443,7 @@ export default function UserPortalProfileScreen() {
             <View style={styles.modalHeaderRow}>
               <View>
                 <Text style={styles.modalTitle}>24/7 Support & Concierge</Text>
-                <Text style={styles.modalSub}>Racoonn VIP assistance & customer service</Text>
+                <Text style={styles.modalSub}>Racoonn assistance & customer service</Text>
               </View>
 
               <TouchableOpacity
@@ -1456,19 +1458,6 @@ export default function UserPortalProfileScreen() {
               showsVerticalScrollIndicator={false}
               contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 12, paddingBottom: 30 }}
             >
-              {/* Concierge Pill Header */}
-              <View style={styles.conciergePillHeader}>
-                <View style={styles.conciergeIconRing}>
-                  <HelpCircle color={Colors.brand.coral} size={20} />
-                </View>
-                <View style={{ flex: 1, marginLeft: 12 }}>
-                  <Text style={styles.conciergePillTitle}>24/7 VIP Concierge Desk</Text>
-                  <Text style={styles.conciergePillSub}>
-                    Direct line to assistance for hotel vouchers, modifications & instant queries.
-                  </Text>
-                </View>
-              </View>
-
               {/* Direct Contact Grouped Card */}
               <Text style={styles.supportSectionTitle}>CONTACT US DIRECTLY</Text>
               
@@ -1476,14 +1465,14 @@ export default function UserPortalProfileScreen() {
                 <TouchableOpacity
                   style={styles.contactRowItem}
                   activeOpacity={0.75}
-                  onPress={() => Linking.openURL('tel:+9118001234567')}
+                  onPress={() => Linking.openURL('tel:+918954442144')}
                 >
                   <View style={[styles.contactRowIconBox, { backgroundColor: '#FFF1F2' }]}>
                     <PhoneCall color={Colors.brand.coral} size={18} />
                   </View>
                   <View style={{ flex: 1, marginLeft: 12 }}>
                     <Text style={styles.contactRowTitle}>Call Customer Support</Text>
-                    <Text style={styles.contactRowSub}>+91 1800 123 4567 (Toll-Free 24/7)</Text>
+                    <Text style={styles.contactRowSub}>+91 8954442144</Text>
                   </View>
                   <ChevronRight color="#94A3B8" size={18} />
                 </TouchableOpacity>
@@ -1493,14 +1482,14 @@ export default function UserPortalProfileScreen() {
                 <TouchableOpacity
                   style={styles.contactRowItem}
                   activeOpacity={0.75}
-                  onPress={() => Linking.openURL('https://wa.me/919876543210')}
+                  onPress={() => Linking.openURL('https://wa.me/918954442144')}
                 >
                   <View style={[styles.contactRowIconBox, { backgroundColor: '#DCFCE7' }]}>
                     <MessageSquare color="#16A34A" size={18} />
                   </View>
                   <View style={{ flex: 1, marginLeft: 12 }}>
                     <Text style={styles.contactRowTitle}>WhatsApp Concierge</Text>
-                    <Text style={styles.contactRowSub}>Chat instantly with our VIP assistant</Text>
+                    <Text style={styles.contactRowSub}>+91 8954442144</Text>
                   </View>
                   <ChevronRight color="#94A3B8" size={18} />
                 </TouchableOpacity>
@@ -1510,14 +1499,14 @@ export default function UserPortalProfileScreen() {
                 <TouchableOpacity
                   style={[styles.contactRowItem, { borderBottomWidth: 0 }]}
                   activeOpacity={0.75}
-                  onPress={() => Linking.openURL('mailto:support@racoonn.com')}
+                  onPress={() => Linking.openURL('mailto:info@racoonn.com')}
                 >
                   <View style={[styles.contactRowIconBox, { backgroundColor: '#EFF6FF' }]}>
                     <Mail color="#2563EB" size={18} />
                   </View>
                   <View style={{ flex: 1, marginLeft: 12 }}>
                     <Text style={styles.contactRowTitle}>Email Support</Text>
-                    <Text style={styles.contactRowSub}>support@racoonn.com</Text>
+                    <Text style={styles.contactRowSub}>info@racoonn.com</Text>
                   </View>
                   <ChevronRight color="#94A3B8" size={18} />
                 </TouchableOpacity>
@@ -1529,28 +1518,20 @@ export default function UserPortalProfileScreen() {
               <View style={{ gap: 10 }}>
                 {[
                   {
-                    q: 'What GST tax slabs & HSN SAC code apply to my bookings?',
-                    a: 'All hotel stay reservations are billed under Indian GST SAC Code 996311. Statutory GST slabs apply: 12% GST for room tariffs up to ₹7,500/night and 18% GST for tariffs above ₹7,500/night. CGST (9%) and SGST (9%) are itemized on your downloadable PDF tax invoice.',
+                    q: 'How do I book a stay?',
+                    a: 'You can book a stay by searching for your desired destination, selecting your dates, and choosing a hotel from the results. Follow the checkout process to confirm your reservation.',
                   },
                   {
-                    q: 'What is the booking cancellation & GST refund policy?',
-                    a: 'Free cancellation is available up to 48 hours prior to check-in for a 100% full refund (including all statutory GST taxes). Cancellations between 24 and 48 hours before check-in incur a 20% fee. No-shows or cancellations within 24 hours of check-in are non-refundable.',
+                    q: 'How can I change my booking dates?',
+                    a: "To change your booking dates, please go to 'My Account' > 'My Bookings', select the booking you wish to modify, and choose the 'Modify Dates' option. Please note that changes are subject to availability and may incur additional charges.",
                   },
                   {
-                    q: 'How do I cancel or modify my booking?',
-                    a: 'Go to My Bookings on your profile screen, select your active booking voucher, and tap "Modify or Cancel Booking". Cancellation fees depend on hotel policy.',
+                    q: 'When will I be charged for my booking?',
+                    a: 'Payment terms depend on the specific booking rate. Some bookings require upfront payment, while others allow you to pay at the property. The payment details are always shown before you confirm your booking.',
                   },
                   {
-                    q: 'Where can I find my hotel voucher?',
-                    a: 'Your digital check-in voucher is generated instantly after booking and can be accessed under My Bookings at any time, even offline.',
-                  },
-                  {
-                    q: 'How do I request early check-in or late check-out?',
-                    a: 'Contact our WhatsApp Concierge above with your booking ID. Our team will coordinate directly with the hotel front desk on your behalf.',
-                  },
-                  {
-                    q: 'What payment methods are supported on Racoonn?',
-                    a: 'We accept Credit/Debit cards, UPI (GPay, PhonePe, Paytm), Net Banking, and Racoonn Pay later options.',
+                    q: 'Are pets allowed in the hotels?',
+                    a: "Pet policies are determined by each individual property. Use the 'Pet Friendly' filter when searching for hotels to find accommodations that welcome your furry friends.",
                   },
                 ].map((faq, idx) => {
                   const isOpen = activeFaqIndex === idx;

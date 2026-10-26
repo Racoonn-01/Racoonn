@@ -1424,7 +1424,7 @@ export default function CheckoutScreen() {
                       </View>
                     </View>
 
-                    <Text style={styles.razorpayMerchantName}>Racoonn Travel Pvt Ltd</Text>
+                    <Text style={styles.razorpayMerchantName}>CIELLE TRAVELS PVT LTD</Text>
                     <Text style={styles.razorpayOrderDesc}>{itemTitle}</Text>
                   </View>
 
@@ -2500,7 +2500,9 @@ const styles = StyleSheet.create({
   razorpayHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    backgroundColor: '#02042B',
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
     padding: 16,
     borderRadius: 20,
     marginBottom: 16,
@@ -2515,7 +2517,7 @@ const styles = StyleSheet.create({
     width: 18,
     height: 18,
     borderRadius: 4,
-    backgroundColor: '#3B82F6',
+    backgroundColor: '#2563EB',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -2525,7 +2527,7 @@ const styles = StyleSheet.create({
     fontWeight: '900',
   },
   razorpayBrandTitle: {
-    color: '#FFFFFF',
+    color: '#0F172A',
     fontSize: 13,
     fontWeight: '900',
     letterSpacing: 0.5,
@@ -2533,24 +2535,24 @@ const styles = StyleSheet.create({
   razorpaySecurePill: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(16, 185, 129, 0.15)',
+    backgroundColor: '#DCFCE7',
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 6,
     gap: 3,
   },
   razorpaySecureText: {
-    color: '#10B981',
+    color: '#15803D',
     fontSize: 9,
     fontWeight: '900',
   },
   razorpayMerchantName: {
-    color: '#E2E8F0',
-    fontSize: 13,
+    color: '#0F172A',
+    fontSize: 13.5,
     fontWeight: '800',
   },
   razorpayOrderDesc: {
-    color: '#94A3B8',
+    color: '#64748B',
     fontSize: 11,
     marginTop: 2,
   },
@@ -2558,13 +2560,13 @@ const styles = StyleSheet.create({
     width: 26,
     height: 26,
     borderRadius: 13,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: '#E2E8F0',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 10,
   },
   razorpayAmountLabel: {
-    color: '#94A3B8',
+    color: '#64748B',
     fontSize: 9.5,
     fontWeight: '800',
   },

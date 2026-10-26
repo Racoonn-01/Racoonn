@@ -1,13 +1,15 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Check, Clock, ShieldCheck, PlayCircle } from "lucide-react";
+import { Check, Clock, ShieldCheck, PlayCircle, LogOut } from "lucide-react";
 import Image from "next/image";
 import logoExpanded from "@/assets/Racoonn-Logo-02.png";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useAuthStore } from "@/store/authStore";
+import { useRouter } from "next/navigation";
 
 const STEPS = [
   { id: 1, name: "Create Account" },
@@ -23,14 +25,32 @@ const STEPS = [
 
 export function ProgressSidebar({ currentStep }: { currentStep: number }) {
   const [isTutorialOpen, setIsTutorialOpen] = useState(false);
+  const { logout } = useAuthStore();
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    await logout();
+    router.push("/");
+  };
+
   const progressPercent = Math.min((currentStep / 9) * 100, 100);
 
   return (
     <div className="h-full flex flex-col p-8">
-      {/* Logo */}
-      <Link href="/" className="mb-12 inline-block">
-        <Image src={logoExpanded} alt="Racoonn" width={120} height={40} className="h-8 w-auto" />
-      </Link>
+      {/* Header: Logo & Logout */}
+      <div className="flex items-center justify-between mb-12">
+        <Link href="/" className="inline-block">
+          <Image src={logoExpanded} alt="Racoonn" width={120} height={40} className="h-8 w-auto" />
+        </Link>
+        <button
+          onClick={handleLogout}
+          title="Logout"
+          className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-red-600 hover:bg-red-50 px-2.5 py-1.5 rounded-lg border border-slate-200 hover:border-red-100 transition-colors cursor-pointer"
+        >
+          <LogOut className="w-3.5 h-3.5" />
+          <span>Logout</span>
+        </button>
+      </div>
 
       <div className="mb-8">
         <div className="flex items-center justify-between mb-2">

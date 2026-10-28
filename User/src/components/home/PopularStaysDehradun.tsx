@@ -13,7 +13,7 @@ import { getProperties } from '@/lib/appwrite/api';
 
 import { Models } from 'appwrite';
 
-const DATABASE_ID = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID!;
+const DATABASE_ID = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID || '6a3cec630035d63ea963';
 
 const dehradunStays = [
   {

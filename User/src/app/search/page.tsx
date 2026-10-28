@@ -15,7 +15,7 @@ import { getProperties } from '@/lib/appwrite/api';
 import { databases } from '@/lib/appwrite/config';
 import { Query } from 'appwrite';
 
-const DATABASE_ID = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID!;
+const DATABASE_ID = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID || '6a3cec630035d63ea963';
 
 // We will compute filters dynamically inside SearchContent based on fetched properties.
 const DEFAULT_FILTERS = ['Price', 'Washing machine', 'WiFi', 'Allows pets', 'Instant Book', 'Air conditioning', 'Free parking', 'TV', 'Kitchen'];

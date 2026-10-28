@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { Client, Databases, Query } from 'node-appwrite';
 
-const DATABASE_ID = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID!;
+const DATABASE_ID = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID || '6a3cec630035d63ea963';
 
 export const dynamic = 'force-dynamic';
 export const fetchCache = 'force-no-store';

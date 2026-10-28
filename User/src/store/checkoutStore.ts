@@ -5,7 +5,7 @@ import { ID, Query } from 'appwrite';
 import { useAuthStore } from './authStore';
 import { calculateRoomGst } from "@/lib/gst";
 
-const DATABASE_ID = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID!;
+const DATABASE_ID = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID || '6a3cec630035d63ea963';
 
 interface GuestDetails {
   firstName: string;

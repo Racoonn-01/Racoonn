@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { CalendarDays, IndianRupee, BedDouble, Percent, CheckCircle2, RefreshCw, ChevronLeft, ChevronRight, Loader2, Zap, Trash2, Edit2, RotateCcw } from "lucide-react";
 import { databases, appwriteConfig } from "@/lib/appwrite/client";
-import { Query } from "appwrite";
+import { Query, ID } from "appwrite";
 import { useAuthStore } from "@/store/authStore";
 import { toast } from "sonner";
 
@@ -155,19 +155,45 @@ export default function AvailabilityPage() {
 
     fetchData();
 
-    // Fetch overrides from API & localStorage
+    // Fetch overrides from API & localStorage and merge Appwrite room_availability
     async function loadSavedOverrides() {
       try {
+        let loadedOverrides: Record<string, Record<string, DayOverride>> = {};
+
         const res = await fetch("/api/vendor/availability");
         const json = await res.json();
         if (json.success && json.overrides) {
-          setOverrides(json.overrides);
+          loadedOverrides = json.overrides;
         } else if (user?.$id) {
           const savedOverrides = localStorage.getItem(`racoonn_availability_overrides_${user.$id}`);
           if (savedOverrides) {
-            setOverrides(JSON.parse(savedOverrides));
+            loadedOverrides = JSON.parse(savedOverrides);
           }
         }
+
+        // Also merge any overrides found in room_availability in Appwrite
+        try {
+          const raRes = await databases.listDocuments(
+            appwriteConfig.databaseId,
+            appwriteConfig.roomAvailabilityCollectionId || "room_availability",
+            [Query.limit(5000)]
+          );
+          if (raRes.documents.length > 0) {
+            for (const doc of raRes.documents) {
+              if (doc.roomId && doc.date) {
+                if (!loadedOverrides[doc.roomId]) loadedOverrides[doc.roomId] = {};
+                loadedOverrides[doc.roomId][doc.date] = {
+                  price: doc.price > 0 ? Number(doc.price) : loadedOverrides[doc.roomId][doc.date]?.price,
+                  available: doc.availableCount !== undefined ? Number(doc.availableCount) : loadedOverrides[doc.roomId][doc.date]?.available,
+                };
+              }
+            }
+          }
+        } catch (dbErr) {
+          console.warn("Could not load from room_availability:", dbErr);
+        }
+
+        setOverrides(loadedOverrides);
 
         if (user?.$id) {
           const savedOffers = localStorage.getItem(`racoonn_special_offers_${user.$id}`);
@@ -196,26 +222,29 @@ export default function AvailabilityPage() {
       });
 
       // Channel Manager Sync
-      if (selectedRoom?.$id && user?.$id) {
-        const roomUpdates = Object.entries(updated)
-          .filter(([key]) => key.startsWith(selectedRoom.$id))
-          .map(([key, val]: [string, any]) => ({
-             date: key.split('_')[1],
-             price: val.price || selectedRoom.price,
-             availableCount: val.available,
-             isBlocked: val.blocked || false
+      if (user?.$id) {
+        const roomToSync = selectedRoomId === "all" ? rooms : rooms.filter(r => r.$id === selectedRoomId);
+        for (const targetRoom of roomToSync) {
+          const roomDateOverrides = updated[targetRoom.$id] || {};
+          const baseP = targetRoom.discountPrice && targetRoom.discountPrice > 0 ? targetRoom.discountPrice : targetRoom.price;
+          const roomUpdates = Object.entries(roomDateOverrides).map(([dKey, val]: [string, any]) => ({
+            date: dKey,
+            price: val.price !== undefined ? val.price : baseP,
+            availableCount: val.available,
+            isBlocked: false
           }));
 
-        if (roomUpdates.length > 0) {
-           fetch("/api/channel-manager/sync", {
-             method: "POST",
-             headers: { "Content-Type": "application/json" },
-             body: JSON.stringify({
-               vendorId: user.$id,
-               roomId: selectedRoom.$id,
-               updates: roomUpdates
-             })
-           }).catch(console.error); // Fire and forget
+          if (roomUpdates.length > 0) {
+            fetch("/api/channel-manager/sync", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                vendorId: user.$id,
+                roomId: targetRoom.$id,
+                updates: roomUpdates
+              })
+            }).catch(console.error); // Fire and forget
+          }
         }
       }
 
@@ -363,6 +392,7 @@ export default function AvailabilityPage() {
 
         const curr = new Date(startDate + "T00:00:00");
         const end = new Date(endDate + "T00:00:00");
+        const datesUpdatedForRoom: string[] = [];
 
         while (curr <= end) {
           const dayName = DAY_INDEX_MAP[curr.getDay()];
@@ -377,24 +407,51 @@ export default function AvailabilityPage() {
               price: parsedPrice !== undefined ? parsedPrice : prevOverride.price,
               available: parsedAvail !== undefined ? parsedAvail : prevOverride.available,
             };
+            datesUpdatedForRoom.push(key);
             if (roomId === roomsToUpdate[0]) count++; // count days based on first room to avoid huge numbers
           }
           curr.setDate(curr.getDate() + 1);
         }
 
-        // Also update base room price in Appwrite database if new price is provided
-        if (parsedPrice !== undefined) {
+        // NOTE: Do not overwrite base room.price in Appwrite!
+        // Base room price is the global default across all non-overridden dates (past and future).
+        // Bulk updates only apply date-level overrides between startDate and endDate.
+
+        // Sync date-level overrides to Appwrite room_availability collection
+        for (const dateKey of datesUpdatedForRoom) {
           try {
-            await databases.updateDocument(
+            const existing = await databases.listDocuments(
               appwriteConfig.databaseId,
-              appwriteConfig.roomCollectionId,
-              roomId,
-              { price: parsedPrice }
+              appwriteConfig.roomAvailabilityCollectionId || "room_availability",
+              [Query.equal("roomId", roomId), Query.equal("date", dateKey), Query.limit(1)]
             );
-            // Update local state room object
-            setRooms(prev => prev.map(r => r.$id === roomId ? { ...r, price: parsedPrice } : r));
+            if (existing.documents.length > 0) {
+              await databases.updateDocument(
+                appwriteConfig.databaseId,
+                appwriteConfig.roomAvailabilityCollectionId || "room_availability",
+                existing.documents[0].$id,
+                {
+                  ...(parsedPrice !== undefined ? { price: parsedPrice } : {}),
+                  ...(parsedAvail !== undefined ? { availableCount: parsedAvail } : {})
+                }
+              );
+            } else {
+              const rObj = rooms.find(r => r.$id === roomId);
+              await databases.createDocument(
+                appwriteConfig.databaseId,
+                appwriteConfig.roomAvailabilityCollectionId || "room_availability",
+                ID.unique(),
+                {
+                  roomId,
+                  date: dateKey,
+                  price: parsedPrice !== undefined ? parsedPrice : (rObj?.price || 0),
+                  availableCount: parsedAvail !== undefined ? parsedAvail : (Number(rObj?.totalRooms) || 1),
+                  isBlocked: false
+                }
+              );
+            }
           } catch (dbErr) {
-            console.warn(`Could not update base room price for ${roomId} in Appwrite:`, dbErr);
+            console.warn(`Could not sync date ${dateKey} for ${roomId} to room_availability:`, dbErr);
           }
         }
       }
@@ -437,6 +494,44 @@ export default function AvailabilityPage() {
     };
 
     saveOverridesToStorage(updated);
+
+    // Sync single day edit to room_availability in Appwrite
+    (async () => {
+      try {
+        const existing = await databases.listDocuments(
+          appwriteConfig.databaseId,
+          appwriteConfig.roomAvailabilityCollectionId || "room_availability",
+          [Query.equal("roomId", selectedRoomId), Query.equal("date", editingDate.dateKey), Query.limit(1)]
+        );
+        if (existing.documents.length > 0) {
+          await databases.updateDocument(
+            appwriteConfig.databaseId,
+            appwriteConfig.roomAvailabilityCollectionId || "room_availability",
+            existing.documents[0].$id,
+            {
+              price: parsedPrice,
+              availableCount: parsedAvail
+            }
+          );
+        } else {
+          await databases.createDocument(
+            appwriteConfig.databaseId,
+            appwriteConfig.roomAvailabilityCollectionId || "room_availability",
+            ID.unique(),
+            {
+              roomId: selectedRoomId,
+              date: editingDate.dateKey,
+              price: parsedPrice,
+              availableCount: parsedAvail,
+              isBlocked: false
+            }
+          );
+        }
+      } catch (err) {
+        console.warn("Could not sync single day edit to room_availability:", err);
+      }
+    })();
+
     toast.success(`Updated ${editingDate.dateKey} rate to ₹${parsedPrice} and ${parsedAvail} rooms.`);
     setEditingDate(null);
   };
@@ -451,6 +546,27 @@ export default function AvailabilityPage() {
     }
 
     saveOverridesToStorage(updated);
+
+    // Also delete/clear record from room_availability in Appwrite
+    (async () => {
+      try {
+        const existing = await databases.listDocuments(
+          appwriteConfig.databaseId,
+          appwriteConfig.roomAvailabilityCollectionId || "room_availability",
+          [Query.equal("roomId", selectedRoomId), Query.equal("date", editingDate.dateKey), Query.limit(1)]
+        );
+        if (existing.documents.length > 0) {
+          await databases.deleteDocument(
+            appwriteConfig.databaseId,
+            appwriteConfig.roomAvailabilityCollectionId || "room_availability",
+            existing.documents[0].$id
+          );
+        }
+      } catch (err) {
+        console.warn("Could not delete from room_availability:", err);
+      }
+    })();
+
     toast.info(`Reset override for ${editingDate.dateKey} to base values.`);
     setEditingDate(null);
   };

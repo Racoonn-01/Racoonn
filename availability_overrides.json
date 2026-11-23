@@ -1,14 +1,63 @@
 {
   "6ab77ee400214110a2c6": {
     "2026-10-01": {
-      "available": 2,
-      "blocked": false,
-      "price": 2500
+      "price": 2500,
+      "available": 20
     },
     "2026-12-31": {
-      "available": 5,
-      "blocked": false,
-      "price": 2500
+      "price": 2500,
+      "available": 5
+    },
+    "2026-09-12": {
+      "available": 5
+    },
+    "2026-10-12": {
+      "available": 5
+    },
+    "2026-12-20": {
+      "available": 5
+    }
+  },
+  "6b03d98c00120e168dcd": {
+    "2026-11-23": {
+      "price": 600,
+      "available": 1
+    },
+    "2026-11-24": {
+      "price": 6000,
+      "available": 1
+    },
+    "2026-11-25": {
+      "price": 6000,
+      "available": 1
+    },
+    "2026-11-26": {
+      "price": 6000,
+      "available": 1
+    },
+    "2026-11-27": {
+      "price": 6000,
+      "available": 1
+    },
+    "2026-11-28": {
+      "price": 6000,
+      "available": 1
+    },
+    "2026-11-29": {
+      "price": 6000,
+      "available": 1
+    },
+    "2026-11-30": {
+      "price": 6000,
+      "available": 1
+    }
+  },
+  "TEST_ROOM_001": {
+    "2026-10-15": {
+      "available": 4
+    },
+    "2026-10-01": {
+      "available": 5
     }
   }
 }

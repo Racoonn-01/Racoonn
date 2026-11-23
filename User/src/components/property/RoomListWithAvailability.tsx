@@ -123,25 +123,60 @@ export default function RoomListWithAvailability({
     <div className="flex flex-col gap-6">
       {initialRooms && initialRooms.length > 0 ? (
         initialRooms.map((room, index) => {
-          const roomOverride = overrides[room.$id]?.[dateKey];
           const baseRoomPrice = room.discountPrice && room.discountPrice > 0 ? room.discountPrice : room.price;
-          const effectivePrice = roomOverride?.price !== undefined ? roomOverride.price : baseRoomPrice;
-          const isCustomRateApplied = roomOverride?.price !== undefined && roomOverride.price !== baseRoomPrice;
+          const roomTotalRooms = Number(room.totalRooms) || 1;
+          const roomNameKey = room.name ? room.name.trim() : "";
+          const roomOccupiedCount = occupiedRooms[roomNameKey] || occupiedRooms[room.$id] || 0;
+          const defaultAvailable = Math.max(0, roomTotalRooms - roomOccupiedCount);
+
+          let effectivePrice = baseRoomPrice;
+          let availableRooms = defaultAvailable;
+          let isCustomRateApplied = false;
+
+          if (checkIn && checkOut && checkIn !== checkOut) {
+            const startD = new Date(checkIn + "T00:00:00");
+            const endD = new Date(checkOut + "T00:00:00");
+            const stayNights = Math.max(1, Math.round((endD.getTime() - startD.getTime()) / (1000 * 60 * 60 * 24)));
+            let totalStayPrice = 0;
+            let minAvail = defaultAvailable;
+
+            const currD = new Date(startD);
+            for (let n = 0; n < stayNights; n++) {
+              const y = currD.getFullYear();
+              const m = String(currD.getMonth() + 1).padStart(2, '0');
+              const d = String(currD.getDate()).padStart(2, '0');
+              const nightKey = `${y}-${m}-${d}`;
+
+              const nightOverride = overrides[room.$id]?.[nightKey];
+              const nightPrice = nightOverride?.price !== undefined ? nightOverride.price : baseRoomPrice;
+              if (nightOverride?.price !== undefined && nightOverride.price !== baseRoomPrice) {
+                isCustomRateApplied = true;
+              }
+              totalStayPrice += nightPrice;
+
+              if (nightOverride && nightOverride.available !== undefined) {
+                const avail = nightOverride.blocked ? 0 : nightOverride.available;
+                if (avail < minAvail) minAvail = avail;
+              }
+
+              currD.setDate(currD.getDate() + 1);
+            }
+
+            effectivePrice = Math.round(totalStayPrice / stayNights);
+            availableRooms = minAvail;
+          } else {
+            const roomOverride = overrides[room.$id]?.[dateKey];
+            effectivePrice = roomOverride?.price !== undefined ? roomOverride.price : baseRoomPrice;
+            isCustomRateApplied = roomOverride?.price !== undefined && roomOverride.price !== baseRoomPrice;
+            if (roomOverride && roomOverride.available !== undefined) {
+              availableRooms = roomOverride.blocked ? 0 : roomOverride.available;
+            }
+          }
           
           const stdCap = room.standardCapacity || room.occupancy || 2;
           const maxCap = room.maximumCapacity || 4;
           const epc = room.extraPersonCharge || 0;
           const eba = room.extraBedAvailable || false;
-          
-          const roomNameKey = room.name ? room.name.trim() : "";
-          const roomOccupiedCount = occupiedRooms[roomNameKey] || occupiedRooms[room.$id] || 0;
-          const roomTotalRooms = Number(room.totalRooms) || 1;
-          
-          let availableRooms = Math.max(0, roomTotalRooms - roomOccupiedCount);
-          if (roomOverride && roomOverride.available !== undefined) {
-            availableRooms = roomOverride.available;
-            if (roomOverride.blocked) availableRooms = 0;
-          }
           
           const autoRooms = Math.ceil(totalGuests / (maxCap as number));
           const requiredRooms = Math.max(rooms, autoRooms);

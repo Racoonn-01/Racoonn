@@ -191,6 +191,32 @@ export async function getRooms(propertyId: string): Promise<any[]> {
   }
 }
 
+export async function getRoomAvailabilityOverrides(roomIds: string[]): Promise<Record<string, Record<string, { price?: number; available?: number; isBlocked?: boolean }>>> {
+  try {
+    if (!roomIds || roomIds.length === 0) return {};
+    const response = await databases.listDocuments(
+      appwriteConfig.databaseId,
+      (appwriteConfig as any).roomAvailabilityCollectionId || 'room_availability',
+      [Query.equal('roomId', roomIds), Query.limit(5000)]
+    );
+    const overrides: Record<string, Record<string, { price?: number; available?: number; isBlocked?: boolean }>> = {};
+    for (const doc of response.documents) {
+      if (doc.roomId && doc.date) {
+        if (!overrides[doc.roomId]) overrides[doc.roomId] = {};
+        overrides[doc.roomId][doc.date] = {
+          price: Number(doc.price) || undefined,
+          available: doc.availableCount !== undefined ? Number(doc.availableCount) : undefined,
+          isBlocked: Boolean(doc.isBlocked)
+        };
+      }
+    }
+    return overrides;
+  } catch (error) {
+    console.warn('Error fetching room availability overrides from Appwrite:', error);
+    return {};
+  }
+}
+
 export async function getOccupiedRooms(hotelId: string, checkIn: string | Date, checkOut: string | Date): Promise<Record<string, number>> {
   try {
     const response = await databases.listDocuments(

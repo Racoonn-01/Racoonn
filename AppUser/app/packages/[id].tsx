@@ -45,7 +45,7 @@ import {
   Sparkles,
 } from 'lucide-react-native';
 import Colors from '@/constants/Colors';
-import { REAL_PACKAGE_IMAGE, REAL_PACKAGE_IMAGES, REAL_STAY_IMAGE, REAL_STAY_IMAGES, REAL_ACTIVITY_IMAGE } from '@/constants/RealImages';
+import { REAL_PACKAGE_IMAGE, REAL_PACKAGE_IMAGES, REAL_STAY_IMAGE, REAL_ACTIVITY_IMAGE } from '@/constants/RealImages';
 import { useAuthStore } from '../../store/authStore';
 import AuthBottomSheet from '../../components/shared/AuthBottomSheet';
 import CustomCalendarModal from '../../components/shared/CustomCalendarModal';
@@ -92,40 +92,6 @@ const MOCK_ITINERARY = [
       { title: 'Return Drop-Off', description: 'Drop at Dehradun Airport or Railway Station.' },
     ]
   }
-];
-
-const MOCK_HOTEL_OPTIONS = [
-  {
-    id: 'h-1',
-    title: 'The Himalayan Cloud Retreat & Spa',
-    description: '4-Star luxury resort with mountain view balcony, infinity pool, and buffet breakfast.',
-    image: REAL_STAY_IMAGE,
-    tags: ['4-Star Resort', 'Free Breakfast', 'AC Rooms'],
-    pricePerNight: 4500,
-    isDefault: true,
-    priceLabel: 'Included in Package',
-  },
-  {
-    id: 'h-2',
-    title: 'Azure Bay Luxury Heritage Villa',
-    description: 'Ultra-luxury 5-Star boutique villa featuring private dip pool and butler service.',
-    image: REAL_STAY_IMAGES[1],
-    tags: ['5-Star Luxury', 'Private Pool', 'Butler Service'],
-    pricePerNight: 7500,
-    isDefault: false,
-    priceLabel: '+ ₹3,000 / night',
-  },
-];
-
-const MOCK_ACTIVITY_OPTIONS = [
-  {
-    id: 1,
-    title: 'Adventure Sports & Zipline Pass',
-    description: 'Get an adrenaline rush with mountain zip-lining, valley crossing, rope climbing, and rappelling.',
-    image: REAL_ACTIVITY_IMAGE,
-    pricePerPerson: 2500,
-    priceLabel: '+ ₹2,500 / person',
-  },
 ];
 
 export default function PackageDetailScreen() {
@@ -401,14 +367,20 @@ export default function PackageDetailScreen() {
 
   const effectiveHotels = useMemo(() => {
     if (Array.isArray(pkgData?.hotelOptions) && pkgData.hotelOptions.length > 0) {
-      const basePrice = Number(pkgData.hotelOptions[0]?.pricePerNight || pkgData.hotelOptions[0]?.price || 4500);
-      return pkgData.hotelOptions.map((h: any, idx: number) => {
-        const hPrice = Number(h.pricePerNight || h.price || 4500);
+      const legacyHotelIds = ['h1', 'h2', 'h-1', 'h-2'];
+      const validHotels = pkgData.hotelOptions.filter(
+        (h: any) => h && !legacyHotelIds.includes(String(h.id || h.$id))
+      );
+      if (validHotels.length === 0) return [];
+
+      const basePrice = Number(validHotels[0]?.pricePerNight || validHotels[0]?.price || 0);
+      return validHotels.map((h: any, idx: number) => {
+        const hPrice = Number(h.pricePerNight || h.price || 0);
         return {
           id: String(h.id || h.$id || `h-${idx}`),
           title: h.title || h.name || 'Resort Stay',
           description: h.description || 'Comfortable stay with modern amenities',
-          image: h.image || REAL_STAY_IMAGE,
+          image: h.image || (Array.isArray(h.images) && h.images[0]) || REAL_STAY_IMAGE,
           tags: Array.isArray(h.tags) && h.tags.length > 0 ? h.tags : ['Resort', 'Free Breakfast'],
           pricePerNight: hPrice,
           isDefault: idx === 0,
@@ -416,21 +388,27 @@ export default function PackageDetailScreen() {
         };
       });
     }
-    return MOCK_HOTEL_OPTIONS;
+    return [];
   }, [pkgData?.hotelOptions]);
 
   const effectiveActivities = useMemo(() => {
     if (Array.isArray(pkgData?.activityOptions) && pkgData.activityOptions.length > 0) {
-      return pkgData.activityOptions.map((act: any, idx: number) => ({
-        id: act.id || idx,
+      const legacyDummyIds = ['act-1', 'act-2', 'act-3', 'act-4', 'act-5', 'a1', 'a2', '1'];
+      const validActivities = pkgData.activityOptions.filter(
+        (act: any) => act && !legacyDummyIds.includes(String(act.id || act.$id))
+      );
+      if (validActivities.length === 0) return [];
+
+      return validActivities.map((act: any, idx: number) => ({
+        id: String(act.id || act.$id || idx),
         title: act.title || act.name || 'Outdoor Experience',
         description: act.description || 'Exciting adventure activity',
-        image: act.image || REAL_ACTIVITY_IMAGE,
+        image: act.image || (Array.isArray(act.images) && act.images[0]) || REAL_ACTIVITY_IMAGE,
         pricePerPerson: Number(act.pricePerPerson || act.price || 0),
         priceLabel: idx === 0 ? 'Included in Package' : `+ ₹${Number(act.pricePerPerson || 0).toLocaleString('en-IN')} / person`,
       }));
     }
-    return MOCK_ACTIVITY_OPTIONS;
+    return [];
   }, [pkgData?.activityOptions]);
 
   // Find the absolute maximum allowed travelers across slabs (matching User portal)
@@ -817,25 +795,29 @@ export default function PackageDetailScreen() {
               </Text>
             </TouchableOpacity>
 
-            <TouchableOpacity
-              onPress={() => scrollToSection('stays')}
-              style={[styles.tabChip, activeTab === 'stays' && styles.tabChipActive]}
-            >
-              <Hotel color={activeTab === 'stays' ? Colors.brand.coral : '#64748B'} size={16} />
-              <Text style={[styles.tabChipText, activeTab === 'stays' && styles.tabChipTextActive]}>
-                Stays
-              </Text>
-            </TouchableOpacity>
+            {effectiveHotels.length > 0 && (
+              <TouchableOpacity
+                onPress={() => scrollToSection('stays')}
+                style={[styles.tabChip, activeTab === 'stays' && styles.tabChipActive]}
+              >
+                <Hotel color={activeTab === 'stays' ? Colors.brand.coral : '#64748B'} size={16} />
+                <Text style={[styles.tabChipText, activeTab === 'stays' && styles.tabChipTextActive]}>
+                  Stays
+                </Text>
+              </TouchableOpacity>
+            )}
 
-            <TouchableOpacity
-              onPress={() => scrollToSection('activities')}
-              style={[styles.tabChip, activeTab === 'activities' && styles.tabChipActive]}
-            >
-              <Compass color={activeTab === 'activities' ? Colors.brand.coral : '#64748B'} size={16} />
-              <Text style={[styles.tabChipText, activeTab === 'activities' && styles.tabChipTextActive]}>
-                Activities
-              </Text>
-            </TouchableOpacity>
+            {effectiveActivities.length > 0 && (
+              <TouchableOpacity
+                onPress={() => scrollToSection('activities')}
+                style={[styles.tabChip, activeTab === 'activities' && styles.tabChipActive]}
+              >
+                <Compass color={activeTab === 'activities' ? Colors.brand.coral : '#64748B'} size={16} />
+                <Text style={[styles.tabChipText, activeTab === 'activities' && styles.tabChipTextActive]}>
+                  Activities
+                </Text>
+              </TouchableOpacity>
+            )}
 
             <TouchableOpacity
               onPress={() => scrollToSection('reviews')}
@@ -935,143 +917,151 @@ export default function PackageDetailScreen() {
           <View style={styles.divider} />
 
           {/* Section 2: Stays / Accommodations */}
-          <View
-            onLayout={(e: any) => (sectionPositions.current['stays'] = e.nativeEvent.layout.y)}
-            style={styles.sectionBox}
-          >
-            <Text style={styles.sectionTitle}>Available Accommodations</Text>
-            <Text style={styles.sectionSubtitle}>Select resort option to customize your tour package</Text>
+          {effectiveHotels.length > 0 && (
+            <>
+              <View
+                onLayout={(e: any) => (sectionPositions.current['stays'] = e.nativeEvent.layout.y)}
+                style={styles.sectionBox}
+              >
+                <Text style={styles.sectionTitle}>Available Accommodations</Text>
+                <Text style={styles.sectionSubtitle}>Select resort option to customize your tour package</Text>
 
-            <View style={styles.optionsList}>
-              {effectiveHotels.map((hotel: any, idx: number) => {
-                const isSelected = selectedHotelIndex === idx;
-                return (
-                  <TouchableOpacity
-                    key={hotel.id}
-                    style={[styles.optionCard, isSelected && styles.optionCardSelected]}
-                    activeOpacity={0.9}
-                    onPress={() => setSelectedHotelIndex(idx)}
-                  >
-                    {/* Hotel Image & Overlay Badges */}
-                    <View style={styles.optionImageContainer}>
-                      <Image source={{ uri: hotel.image }} style={styles.optionImage} resizeMode="cover" />
+                <View style={styles.optionsList}>
+                  {effectiveHotels.map((hotel: any, idx: number) => {
+                    const isSelected = selectedHotelIndex === idx;
+                    return (
+                      <TouchableOpacity
+                        key={hotel.id}
+                        style={[styles.optionCard, isSelected && styles.optionCardSelected]}
+                        activeOpacity={0.9}
+                        onPress={() => setSelectedHotelIndex(idx)}
+                      >
+                        {/* Hotel Image & Overlay Badges */}
+                        <View style={styles.optionImageContainer}>
+                          <Image source={{ uri: hotel.image }} style={styles.optionImage} resizeMode="cover" />
 
-                      {/* Top Selection Status Badge */}
-                      <View style={[styles.selectBadge, isSelected ? styles.selectBadgeActive : styles.selectBadgeInactive]}>
-                        <CheckCircle2 color={isSelected ? '#FFFFFF' : '#94A3B8'} size={18} />
-                      </View>
+                          {/* Top Selection Status Badge */}
+                          <View style={[styles.selectBadge, isSelected ? styles.selectBadgeActive : styles.selectBadgeInactive]}>
+                            <CheckCircle2 color={isSelected ? '#FFFFFF' : '#94A3B8'} size={18} />
+                          </View>
 
-                      {/* Star Rating Overlay */}
-                      {hotel.tags && hotel.tags[0] && (
-                        <View style={styles.hotelTagOverlay}>
-                          <Star color="#F59E0B" fill="#F59E0B" size={11} />
-                          <Text style={styles.hotelTagOverlayText}>{hotel.tags[0]}</Text>
-                        </View>
-                      )}
-                    </View>
-
-                    {/* Content Section */}
-                    <View style={styles.optionContent}>
-                      <Text style={styles.optionTitle}>{hotel.title}</Text>
-                      <Text style={styles.optionDesc}>{hotel.description}</Text>
-
-                      {/* Feature Tags */}
-                      {Array.isArray(hotel.tags) && hotel.tags.length > 1 && (
-                        <View style={styles.tagRow}>
-                          {hotel.tags.slice(1).map((t: string, ti: number) => (
-                            <View key={ti} style={styles.tagChip}>
-                              <Text style={styles.tagChipText}>{t}</Text>
+                          {/* Star Rating Overlay */}
+                          {hotel.tags && hotel.tags[0] && (
+                            <View style={styles.hotelTagOverlay}>
+                              <Star color="#F59E0B" fill="#F59E0B" size={11} />
+                              <Text style={styles.hotelTagOverlayText}>{hotel.tags[0]}</Text>
                             </View>
-                          ))}
-                        </View>
-                      )}
-
-                      {/* Divider */}
-                      <View style={styles.optionDivider} />
-
-                      {/* Pricing & Selection Footer */}
-                      <View style={styles.optionFooterRow}>
-                        <View style={styles.priceContainer}>
-                          <Text style={styles.priceSubLabel}>PACKAGE RATE</Text>
-                          <Text style={[styles.optionPriceLabel, isSelected && styles.optionPriceLabelActive]}>
-                            {hotel.priceLabel}
-                          </Text>
+                          )}
                         </View>
 
-                        <View style={[styles.selectActionBtn, isSelected && styles.selectActionBtnActive]}>
-                          <Text style={[styles.selectActionText, isSelected && styles.selectActionTextActive]}>
-                            {isSelected ? 'Selected' : 'Select'}
-                          </Text>
-                        </View>
-                      </View>
-                    </View>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-          </View>
+                        {/* Content Section */}
+                        <View style={styles.optionContent}>
+                          <Text style={styles.optionTitle}>{hotel.title}</Text>
+                          <Text style={styles.optionDesc}>{hotel.description}</Text>
 
-          <View style={styles.divider} />
+                          {/* Feature Tags */}
+                          {Array.isArray(hotel.tags) && hotel.tags.length > 1 && (
+                            <View style={styles.tagRow}>
+                              {hotel.tags.slice(1).map((t: string, ti: number) => (
+                                <View key={ti} style={styles.tagChip}>
+                                  <Text style={styles.tagChipText}>{t}</Text>
+                                </View>
+                              ))}
+                            </View>
+                          )}
+
+                          {/* Divider */}
+                          <View style={styles.optionDivider} />
+
+                          {/* Pricing & Selection Footer */}
+                          <View style={styles.optionFooterRow}>
+                            <View style={styles.priceContainer}>
+                              <Text style={styles.priceSubLabel}>PACKAGE RATE</Text>
+                              <Text style={[styles.optionPriceLabel, isSelected && styles.optionPriceLabelActive]}>
+                                {hotel.priceLabel}
+                              </Text>
+                            </View>
+
+                            <View style={[styles.selectActionBtn, isSelected && styles.selectActionBtnActive]}>
+                              <Text style={[styles.selectActionText, isSelected && styles.selectActionTextActive]}>
+                                {isSelected ? 'Selected' : 'Select'}
+                              </Text>
+                            </View>
+                          </View>
+                        </View>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              </View>
+
+              <View style={styles.divider} />
+            </>
+          )}
 
           {/* Section 3: Activities */}
-          <View
-            onLayout={(e: any) => (sectionPositions.current['activities'] = e.nativeEvent.layout.y)}
-            style={styles.sectionBox}
-          >
-            <Text style={styles.sectionTitle}>Included & Optional Activities</Text>
-            <Text style={styles.sectionSubtitle}>Tap to add optional adventure activities</Text>
+          {effectiveActivities.length > 0 && (
+            <>
+              <View
+                onLayout={(e: any) => (sectionPositions.current['activities'] = e.nativeEvent.layout.y)}
+                style={styles.sectionBox}
+              >
+                <Text style={styles.sectionTitle}>Included & Optional Activities</Text>
+                <Text style={styles.sectionSubtitle}>Tap to add optional adventure activities</Text>
 
-            <View style={styles.optionsList}>
-              {effectiveActivities.map((act: any, idx: number) => {
-                const isSelected = selectedActivities.includes(idx);
-                return (
-                  <TouchableOpacity
-                    key={act.id}
-                    style={[styles.activityCard, isSelected && styles.activityCardSelected]}
-                    activeOpacity={0.9}
-                    onPress={() => toggleActivity(idx)}
-                  >
-                    {/* Activity Image Header */}
-                    <View style={styles.activityImageContainer}>
-                      <Image source={{ uri: act.image }} style={styles.activityImage} resizeMode="cover" />
+                <View style={styles.optionsList}>
+                  {effectiveActivities.map((act: any, idx: number) => {
+                    const isSelected = selectedActivities.includes(idx);
+                    return (
+                      <TouchableOpacity
+                        key={act.id}
+                        style={[styles.activityCard, isSelected && styles.activityCardSelected]}
+                        activeOpacity={0.9}
+                        onPress={() => toggleActivity(idx)}
+                      >
+                        {/* Activity Image Header */}
+                        <View style={styles.activityImageContainer}>
+                          <Image source={{ uri: act.image }} style={styles.activityImage} resizeMode="cover" />
 
-                      {/* Top Selection Status Badge */}
-                      <View style={[styles.selectBadge, isSelected ? styles.selectBadgeActive : styles.selectBadgeInactive]}>
-                        <CheckCircle2 color={isSelected ? '#FFFFFF' : '#94A3B8'} size={18} />
-                      </View>
-                    </View>
-
-                    {/* Content Section */}
-                    <View style={styles.activityContent}>
-                      <Text style={styles.activityTitle}>{act.title}</Text>
-                      <Text style={styles.activityDesc}>{act.description}</Text>
-
-                      {/* Divider */}
-                      <View style={styles.optionDivider} />
-
-                      {/* Pricing & Selection Footer */}
-                      <View style={styles.optionFooterRow}>
-                        <View style={styles.priceContainer}>
-                          <Text style={styles.priceSubLabel}>ACTIVITY COST</Text>
-                          <Text style={[styles.activityPriceLabel, isSelected && styles.activityPriceLabelActive]}>
-                            {act.priceLabel}
-                          </Text>
+                          {/* Top Selection Status Badge */}
+                          <View style={[styles.selectBadge, isSelected ? styles.selectBadgeActive : styles.selectBadgeInactive]}>
+                            <CheckCircle2 color={isSelected ? '#FFFFFF' : '#94A3B8'} size={18} />
+                          </View>
                         </View>
 
-                        <View style={[styles.selectActionBtn, isSelected && styles.selectActionBtnActive]}>
-                          <Text style={[styles.selectActionText, isSelected && styles.selectActionTextActive]}>
-                            {isSelected ? 'Added' : 'Add Activity'}
-                          </Text>
-                        </View>
-                      </View>
-                    </View>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-          </View>
+                        {/* Content Section */}
+                        <View style={styles.activityContent}>
+                          <Text style={styles.activityTitle}>{act.title}</Text>
+                          <Text style={styles.activityDesc}>{act.description}</Text>
 
-          <View style={styles.divider} />
+                          {/* Divider */}
+                          <View style={styles.optionDivider} />
+
+                          {/* Pricing & Selection Footer */}
+                          <View style={styles.optionFooterRow}>
+                            <View style={styles.priceContainer}>
+                              <Text style={styles.priceSubLabel}>ACTIVITY COST</Text>
+                              <Text style={[styles.activityPriceLabel, isSelected && styles.activityPriceLabelActive]}>
+                                {act.priceLabel}
+                              </Text>
+                            </View>
+
+                            <View style={[styles.selectActionBtn, isSelected && styles.selectActionBtnActive]}>
+                              <Text style={[styles.selectActionText, isSelected && styles.selectActionTextActive]}>
+                                {isSelected ? 'Added' : 'Add Activity'}
+                              </Text>
+                            </View>
+                          </View>
+                        </View>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              </View>
+
+              <View style={styles.divider} />
+            </>
+          )}
 
           {/* Section 4: Reviews */}
           <View

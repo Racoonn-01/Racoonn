@@ -69,7 +69,7 @@ import RoomSelectionModal from '../../components/rooms/RoomSelectionModal';
 import CustomCalendarModal from '../../components/shared/CustomCalendarModal';
 import { usePropertyFilterStore } from '../../store/propertyFilterStore';
 import { parseFlexibleDate, formatDisplayDate } from '../../utils/dateUtils';
-import { getProperty, getRooms, getOccupiedRooms, getReviews, createReview, getImageUrl } from '../../lib/appwrite/api';
+import { getProperty, getRooms, getRoomAvailabilityOverrides, getOccupiedRooms, getReviews, createReview, getImageUrl } from '../../lib/appwrite/api';
 import { isActiveProperty } from '../../utils/isActiveProperty';
 
 import { WebView } from 'react-native-webview';
@@ -349,6 +349,7 @@ export default function PropertyDetailScreen() {
   const [hotel, setHotel] = useState<any>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [roomsList, setRoomsList] = useState<any[]>([]);
+  const [roomOverrides, setRoomOverrides] = useState<Record<string, Record<string, { price?: number; available?: number; isBlocked?: boolean }>>>({});
   const [occupiedRooms, setOccupiedRooms] = useState<Record<string, number>>({});
   const [activeTab, setActiveTab] = useState<'rooms' | 'amenities' | 'about' | 'location' | 'reviews'>('rooms');
   const [isPhotoGalleryOpen, setIsPhotoGalleryOpen] = useState(false);
@@ -563,6 +564,11 @@ export default function PropertyDetailScreen() {
 
           // Fetch real rooms from Appwrite rooms collection
           const realRooms = await getRooms(hotelId);
+          if (realRooms && realRooms.length > 0) {
+            getRoomAvailabilityOverrides(realRooms.map((r: any) => r.$id))
+              .then((ovs) => setRoomOverrides(ovs))
+              .catch((err) => console.warn('Could not load overrides:', err));
+          }
           let minRoomPrice = Infinity;
           let mappedRooms: any[] = [];
 
@@ -1031,12 +1037,50 @@ export default function PropertyDetailScreen() {
                   const guestsPerRoom = Math.ceil(totalGuests / requiredRooms);
 
                   const isCapacityExceeded = guestsPerRoom > maxCap;
-                  const isNotEnoughRooms = requiredRooms > availableRooms;
+
+                  // Calculate night-by-night effective rate and inventory across stay dates
+                  const baseRoomPrice = Number(room.price || 0);
+                  let effectiveNightlyPrice = baseRoomPrice;
+                  let effectiveAvailableRooms = availableRooms;
+
+                  const dIn = parseFlexibleDate(checkInDate);
+                  const dOut = parseFlexibleDate(checkOutDate);
+                  const diffMs = dOut.getTime() - dIn.getTime();
+                  const totalNights = Math.max(1, Math.round(diffMs / (1000 * 60 * 60 * 24)));
+
+                  if (dIn && dOut && totalNights > 0) {
+                    let totalStayPrice = 0;
+                    let minStayAvail = availableRooms;
+                    const curr = new Date(dIn);
+
+                    for (let n = 0; n < totalNights; n++) {
+                      const y = curr.getFullYear();
+                      const m = String(curr.getMonth() + 1).padStart(2, '0');
+                      const d = String(curr.getDate()).padStart(2, '0');
+                      const nightKey = `${y}-${m}-${d}`;
+
+                      const ov = roomOverrides[room.id]?.[nightKey];
+                      const nightRate = ov?.price !== undefined && ov.price > 0 ? ov.price : baseRoomPrice;
+                      totalStayPrice += nightRate;
+
+                      if (ov && ov.available !== undefined) {
+                        const a = ov.isBlocked ? 0 : ov.available;
+                        if (a < minStayAvail) minStayAvail = a;
+                      }
+
+                      curr.setDate(curr.getDate() + 1);
+                    }
+
+                    effectiveNightlyPrice = Math.round(totalStayPrice / totalNights);
+                    effectiveAvailableRooms = minStayAvail;
+                  }
+
+                  const isNotEnoughRooms = requiredRooms > effectiveAvailableRooms;
                   const isUnavailable = isCapacityExceeded || isNotEnoughRooms;
 
                   let unavailableReason = '';
                   if (isNotEnoughRooms) {
-                    unavailableReason = `Only ${availableRooms} room(s) available`;
+                    unavailableReason = `Only ${effectiveAvailableRooms} room(s) available`;
                   } else if (isCapacityExceeded) {
                     unavailableReason = 'Exceeds max room capacity';
                   }
@@ -1044,7 +1088,7 @@ export default function PropertyDetailScreen() {
                   const safeGuestsPerRoom = isCapacityExceeded ? maxCap : guestsPerRoom;
 
                   const pricing = calculateRoomPricing({
-                    basePrice: room.price,
+                    basePrice: effectiveNightlyPrice,
                     standardCapacity: stdCap,
                     maximumCapacity: maxCap,
                     extraPersonCharge: epc,

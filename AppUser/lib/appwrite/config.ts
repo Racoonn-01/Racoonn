@@ -21,6 +21,7 @@ export const appwriteConfig = {
   vendorCollectionId: process.env.EXPO_PUBLIC_APPWRITE_VENDOR_COLLECTION_ID || '6a3e0fd9da7df0d38588',
   propertyCollectionId: process.env.EXPO_PUBLIC_APPWRITE_PROPERTY_COLLECTION_ID || 'properties',
   roomCollectionId: process.env.EXPO_PUBLIC_APPWRITE_ROOM_COLLECTION_ID || 'rooms',
+  roomAvailabilityCollectionId: process.env.EXPO_PUBLIC_APPWRITE_ROOM_AVAILABILITY_COLLECTION_ID || 'room_availability',
   bookingCollectionId: process.env.EXPO_PUBLIC_APPWRITE_BOOKING_COLLECTION_ID || 'bookings',
   reviewCollectionId: process.env.EXPO_PUBLIC_APPWRITE_REVIEW_COLLECTION_ID || '6a59c6f526bfcf71ddbf',
   ticketsCollectionId: process.env.EXPO_PUBLIC_APPWRITE_TICKETS_COLLECTION_ID || 'support_tickets',

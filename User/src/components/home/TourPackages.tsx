@@ -1,14 +1,12 @@
 'use client';
 
-import { useRef, useState } from 'react';
-import Image from 'next/image';
+import { useRef, useState, useEffect } from 'react';
+import { PackageCardSkeleton } from '@/components/skeletons/PageSkeletons';
+import { motion, AnimatePresence } from 'framer-motion';
+import Link from 'next/link';
 import { 
   ChevronRight, 
   ChevronLeft, 
-  MapPin, 
-  Heart, 
-  Clock, 
-  Utensils, 
   LayoutGrid, 
   Mountain, 
   Tent, 
@@ -16,134 +14,7 @@ import {
   Globe,
   ArrowRight
 } from 'lucide-react';
-import { Swiper, SwiperSlide } from 'swiper/react';
-import { Navigation, Pagination } from 'swiper/modules';
-import 'swiper/css';
-import 'swiper/css/navigation';
-import 'swiper/css/pagination';
-
-const packages = [
-  { 
-    id: 1, 
-    title: 'Char Dham Yatra', 
-    location: 'Uttarakhand', 
-    duration: '6 Days / 5 Nights', 
-    features: 'Meals | Stay | Transfer', 
-    price: '₹18,999', 
-    badge: 'Bestseller',
-    badgeColor: 'text-brand-coral',
-    images: [
-      'https://images.unsplash.com/photo-1626621341517-bbf3d9990a23?q=80&w=800&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1596422846543-74c6fc1e4b11?q=80&w=800&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1593693397690-362cb9666fc2?q=80&w=800&auto=format&fit=crop'
-    ]
-  },
-  { 
-    id: 2, 
-    title: 'Nainital & Jim Corbett', 
-    location: 'Uttarakhand', 
-    duration: '4 Days / 3 Nights', 
-    features: 'Meals | Stay | Safari', 
-    price: '₹12,499', 
-    badge: 'Popular',
-    badgeColor: 'text-blue-500',
-    images: [
-      'https://images.unsplash.com/photo-1613395877344-13d4a8e0d49e?q=80&w=800&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1626622416171-cb86c6d0edcb?q=80&w=800&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1625449281218-cbb6183f0aec?q=80&w=800&auto=format&fit=crop'
-    ]
-  },
-  { 
-    id: 3, 
-    title: 'Auli Skiing Adventure', 
-    location: 'Uttarakhand', 
-    duration: '5 Days / 4 Nights', 
-    features: 'Meals | Stay | Activities', 
-    price: '₹16,999', 
-    badge: 'New',
-    badgeColor: 'text-green-500',
-    images: [
-      'https://images.unsplash.com/photo-1551698618-1dfe5d97d256?q=80&w=800&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1498863640032-15f1fbc73fc1?q=80&w=800&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1544498520-21ba246c0d8d?q=80&w=800&auto=format&fit=crop'
-    ]
-  },
-  { 
-    id: 4, 
-    title: 'Maldives Escape', 
-    location: 'International', 
-    duration: '5 Days / 4 Nights', 
-    features: 'Meals | Stay | Transfer', 
-    price: '₹49,999', 
-    badge: 'Trending',
-    badgeColor: 'text-orange-500',
-    images: [
-      'https://images.unsplash.com/photo-1514282401047-d79a71a590e8?q=80&w=800&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1439066615861-d1af74d74000?q=80&w=800&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1499793983690-e29da59ef1c2?q=80&w=800&auto=format&fit=crop'
-    ]
-  },
-  { 
-    id: 5, 
-    title: 'Kashmir Valley Tour', 
-    location: 'Jammu & Kashmir', 
-    duration: '6 Days / 5 Nights', 
-    features: 'Meals | Stay | Shikara Ride', 
-    price: '₹22,499', 
-    badge: 'Popular',
-    badgeColor: 'text-blue-500',
-    images: [
-      'https://images.unsplash.com/photo-1623194689269-e70a6d0df2fa?q=80&w=800&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1595815771614-ade9d652a65d?q=80&w=800&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1574581297576-9d62d2919d36?q=80&w=800&auto=format&fit=crop'
-    ]
-  },
-  { 
-    id: 6, 
-    title: 'Goa Beach Holiday', 
-    location: 'Goa', 
-    duration: '4 Days / 3 Nights', 
-    features: 'Meals | Stay | Water Sports', 
-    price: '₹14,999', 
-    badge: 'Trending',
-    badgeColor: 'text-orange-500',
-    images: [
-      'https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?q=80&w=800&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1526761122248-c31c93f8b2b9?q=80&w=800&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1587922546307-776227941871?q=80&w=800&auto=format&fit=crop'
-    ]
-  },
-  { 
-    id: 7, 
-    title: 'Manali Snow Trek', 
-    location: 'Himachal', 
-    duration: '5 Days / 4 Nights', 
-    features: 'Meals | Stay | Trekking', 
-    price: '₹11,999', 
-    badge: 'New',
-    badgeColor: 'text-green-500',
-    images: [
-      'https://images.unsplash.com/photo-1623910350785-520e5dbb0918?q=80&w=800&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1593693397690-362cb9666fc2?q=80&w=800&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1605649487212-4d43be61795f?q=80&w=800&auto=format&fit=crop'
-    ]
-  },
-  { 
-    id: 8, 
-    title: 'Dubai City Tour', 
-    location: 'International', 
-    duration: '5 Days / 4 Nights', 
-    features: 'Meals | Stay | Desert Safari', 
-    price: '₹39,999', 
-    badge: 'Bestseller',
-    badgeColor: 'text-brand-coral',
-    images: [
-      'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?q=80&w=800&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1526495124232-a04e1849168c?q=80&w=800&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1582672060624-cb814c4033b0?q=80&w=800&auto=format&fit=crop'
-    ]
-  },
-];
+import TourCard from '@/components/packages/TourCard';
 
 const filters = [
   { id: 'all', label: 'All Packages', icon: LayoutGrid },
@@ -153,85 +24,100 @@ const filters = [
   { id: 'international', label: 'International', icon: Globe },
 ];
 
-function TourCard({ pkg }: { pkg: typeof packages[0] }) {
-  return (
-    <div 
-      className="w-[85vw] md:w-[calc(50%-12px)] lg:w-[calc(25%-18px)] flex-shrink-0 snap-start bg-white rounded-2xl shadow-[0_4px_20px_rgb(0,0,0,0.06)] border border-gray-100 overflow-hidden group/card hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] transition-shadow duration-300 flex flex-col transform-gpu"
-    >
-      {/* Image Section */}
-      <div className="relative h-48 w-full overflow-hidden group/image">
-        <Swiper
-          modules={[Navigation, Pagination]}
-          navigation
-          pagination={{ clickable: true }}
-          className="h-full w-full [&_.swiper-button-next]:text-white [&_.swiper-button-prev]:text-white [&_.swiper-button-next]:scale-50 [&_.swiper-button-prev]:scale-50 [&_.swiper-button-next]:opacity-0 [&_.swiper-button-prev]:opacity-0 group-hover/image:[&_.swiper-button-next]:opacity-100 group-hover/image:[&_.swiper-button-prev]:opacity-100 [&_.swiper-button-next]:transition-opacity [&_.swiper-button-prev]:transition-opacity [&_.swiper-pagination-bullet]:bg-white [&_.swiper-pagination-bullet-active]:bg-white"
-        >
-          {pkg.images.map((img, i) => (
-            <SwiperSlide key={i}>
-              <Image
-                src={img}
-                alt={`${pkg.title} ${i + 1}`}
-                fill
-                sizes="(max-width: 768px) 85vw, (max-width: 1024px) 50vw, 25vw"
-                className="object-cover group-hover/card:scale-110 transition-transform duration-700 ease-in-out"
-              />
-            </SwiperSlide>
-          ))}
-        </Swiper>
-        
-        {/* Top Left Badge */}
-        <div className="absolute top-3 left-3 bg-white px-3 py-1 rounded-full text-[11px] font-bold tracking-wide shadow-sm z-10 pointer-events-none">
-          <span className={pkg.badgeColor}>{pkg.badge}</span>
-        </div>
-        
-        {/* Top Right Heart */}
-        <button className="absolute top-3 right-3 w-8 h-8 bg-white rounded-full flex items-center justify-center text-brand-coral shadow-sm hover:scale-110 transition-transform transform-gpu z-10">
-          <Heart size={16} />
-        </button>
-      </div>
-
-      {/* Content Section */}
-      <div className="p-5 flex flex-col flex-grow">
-        <h3 className="font-bold text-brand-navy text-[17px] mb-1.5">{pkg.title}</h3>
-        
-        <div className="flex items-center gap-1 text-gray-500 mb-4">
-          <MapPin size={14} className="text-brand-coral" />
-          <span className="text-xs font-medium">{pkg.location}</span>
-        </div>
-
-        <div className="flex flex-col gap-2 mb-4">
-          <div className="flex items-center gap-2 text-gray-600">
-            <Clock size={14} />
-            <span className="text-xs font-medium">{pkg.duration}</span>
-          </div>
-          <div className="flex items-center gap-2 text-gray-600">
-            <Utensils size={14} />
-            <span className="text-xs font-medium">{pkg.features}</span>
-          </div>
-        </div>
-
-        {/* Divider */}
-        <div className="h-[1px] w-full bg-gray-100 my-4" />
-
-        {/* Bottom Row */}
-        <div className="flex items-end justify-between mt-auto">
-          <div>
-            <p className="text-[10px] text-gray-500 font-medium mb-0.5">Starting from</p>
-            <p className="font-bold text-brand-coral text-lg">{pkg.price}</p>
-          </div>
-          <button className="bg-brand-coral hover:bg-brand-coral/90 text-white px-4 py-2 rounded-lg text-xs font-bold transition-colors flex items-center gap-1">
-            View Details <ArrowRight size={14} />
-          </button>
-        </div>
-      </div>
-      
-    </div>
-  );
+interface MappedPackage {
+  id: string | number;
+  title: string;
+  location: string;
+  duration: string;
+  features: string;
+  price: string;
+  badge: string;
+  badgeColor: string;
+  images: string[];
 }
 
 export default function TourPackages() {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [activeFilter, setActiveFilter] = useState('all');
+  const [packageList, setPackageList] = useState<MappedPackage[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchCMSPackages = async () => {
+    try {
+      setLoading(true);
+      const res = await fetch("/api/cms/packages", { cache: 'no-store' });
+      const json = await res.json();
+      console.log('CMS Packages API response:', json);
+      if (json.success && Array.isArray(json.packages)) {
+        console.log('[DEBUG] Fetched packages:', json.packages.length, json.packages.map((p: any) => p.title));
+        const publishedOnly = json.packages.filter((p: Record<string, unknown>) => {
+          if (p.status !== 'published') return false;
+          const title = String(p.title || p.metaTitle || '').toLowerCase();
+          if (title.startsWith('cms ')) return false;
+          return true;
+        });
+        console.log('[DEBUG] Published packages:', publishedOnly.length, publishedOnly.map((p: any) => p.title));
+        const mapped: MappedPackage[] = publishedOnly.map((cmsPkg: Record<string, unknown>) => {
+          const pricing = Array.isArray(cmsPkg.pricing) ? cmsPkg.pricing : [];
+          const itinerary = Array.isArray(cmsPkg.itinerary) ? cmsPkg.itinerary : [];
+          const images = Array.isArray(cmsPkg.images) ? cmsPkg.images : [];
+          const minPrice = pricing[0] && typeof pricing[0] === 'object' && 'pricePerPerson' in pricing[0] 
+            ? Number(pricing[0].pricePerPerson) 
+            : 0;
+            
+          return {
+            id: String(cmsPkg.id || ''),
+            title: String(cmsPkg.title || ''),
+            location: String(cmsPkg.location || cmsPkg.metaTitle || 'Uttarakhand'),
+            duration: String(cmsPkg.duration || (itinerary.length > 0 
+              ? `${itinerary.length + 1} Days / ${itinerary.length} Nights` 
+              : '5 Days / 4 Nights')),
+            features: String(cmsPkg.features || 'Meals | Stay | Transfer'),
+            price: `₹${minPrice.toLocaleString('en-IN')}`,
+            badge: String(cmsPkg.badge || 'Featured'),
+            badgeColor: 'text-brand-coral',
+            images: images.length > 0 
+              ? images.map(String) 
+              : ["https://images.unsplash.com/photo-1595815771614-ade9d652a65d?w=800&q=80"]
+          };
+        });
+        console.log('[DEBUG] Mapped packages:', mapped);
+        setPackageList(mapped);
+      } else {
+        console.error('[DEBUG] Failed condition:', json);
+        setPackageList([]);
+      }
+    } catch (err) {
+      console.error("Error fetching live CMS packages:", err);
+      setPackageList([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    Promise.resolve().then(() => fetchCMSPackages());
+
+    const handleUpdate = () => fetchCMSPackages();
+    window.addEventListener("cms_packages_updated", handleUpdate);
+
+    let bc: BroadcastChannel | null = null;
+    if (typeof window !== "undefined" && "BroadcastChannel" in window) {
+      bc = new BroadcastChannel("racoonn_cms_channel");
+      bc.onmessage = (event) => {
+        if (event.data && event.data.type === "PACKAGES_UPDATED") {
+          fetchCMSPackages();
+        }
+      };
+    }
+
+    return () => {
+      window.removeEventListener("cms_packages_updated", handleUpdate);
+      if (bc) bc.close();
+    };
+  }, []);
+
+  const isInteractingRef = useRef(false);
 
   const scroll = (direction: 'left' | 'right') => {
     if (scrollContainerRef.current) {
@@ -242,26 +128,26 @@ export default function TourPackages() {
   };
 
   return (
-    <section className="container mx-auto px-4 pt-10 pb-16 relative">
+    <section className="container mx-auto px-4 pt-6 md:pt-10 pb-10 md:pb-16 relative">
       
       {/* Section Header */}
-      <div className="flex flex-col items-center text-center mb-10">
-        <div className="flex items-center gap-2 text-brand-coral font-bold text-sm tracking-widest uppercase mb-4">
+      <div className="flex flex-col items-center text-center mb-6 md:mb-10">
+        <div className="flex items-center gap-2 text-brand-coral font-bold text-xs md:text-sm tracking-widest uppercase mb-2 md:mb-4">
           <span>CURATED FOR YOU</span>
         </div>
-        <h2 className="text-4xl md:text-5xl font-extrabold text-brand-navy font-heading mb-4">
+        <h2 className="text-[24px] sm:text-[28px] leading-tight md:text-4xl lg:text-5xl font-extrabold text-brand-navy font-heading mb-2 md:mb-4">
           Best <span className="text-brand-coral">Tour Packages</span>
         </h2>
-        <p className="text-brand-charcoal/70 text-lg max-w-2xl">
+        <p className="text-brand-charcoal/70 text-sm sm:text-base md:text-lg max-w-2xl px-2">
           Discover handpicked tour packages that promise an unforgettable journey through the mountains.
         </p>
       </div>
 
       {/* Filter & Navigation Bar */}
-      <div className="flex flex-col md:flex-row items-center justify-between mb-8 gap-4">
+      <div className="flex flex-col md:flex-row items-center justify-between mb-6 md:mb-8 gap-4">
         
         {/* Filters */}
-        <div className="flex items-center gap-3 overflow-x-auto hide-scrollbar w-full md:w-auto pb-2 md:pb-0">
+        <div className="flex items-center gap-2 sm:gap-3 overflow-x-auto hide-scrollbar w-full md:w-auto pb-2 md:pb-0">
           {filters.map((filter) => {
             const Icon = filter.icon;
             const isActive = activeFilter === filter.id;
@@ -269,7 +155,7 @@ export default function TourPackages() {
               <button
                 key={filter.id}
                 onClick={() => setActiveFilter(filter.id)}
-                className={`flex items-center gap-2 px-5 py-2.5 rounded-full whitespace-nowrap font-medium text-sm transition-all ${
+                className={`flex items-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full whitespace-nowrap font-medium text-xs sm:text-sm transition-all ${
                   isActive 
                     ? 'bg-brand-coral text-white shadow-md' 
                     : 'bg-white text-brand-navy border border-gray-200 hover:border-brand-coral hover:text-brand-coral'
@@ -303,19 +189,80 @@ export default function TourPackages() {
       <div className="relative group/carousel">
         <div 
           ref={scrollContainerRef}
-          className="flex overflow-x-auto hide-scrollbar gap-6 snap-x snap-mandatory pb-8 -mx-4 px-4 md:mx-0 md:px-0"
+          className="flex overflow-x-auto hide-scrollbar gap-4 md:gap-6 snap-x snap-mandatory pb-6 md:pb-8 overscroll-x-contain"
+          style={{ scrollbarWidth: "none", msOverflowStyle: "none", WebkitOverflowScrolling: "touch" }}
         >
-          {packages.map((pkg) => (
-            <TourCard key={pkg.id} pkg={pkg} />
-          ))}
+          {loading ? (
+            <>
+              {[1, 2, 3, 4].map((i) => (
+                <div key={`skeleton-${i}`} className="w-[85vw] sm:w-[320px] md:min-w-0 md:w-[calc(50%-12px)] lg:w-[calc(25%-18px)] shrink-0 snap-center md:snap-start">
+                  <PackageCardSkeleton />
+                </div>
+              ))}
+            </>
+          ) : packageList.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 w-full text-center border border-dashed border-gray-200 rounded-3xl bg-slate-50/50">
+              <p className="text-gray-500 font-medium text-sm">No published tour packages available right now.</p>
+            </div>
+          ) : (
+            <AnimatePresence mode="popLayout">
+              {packageList.filter(pkg => {
+                if (activeFilter === 'all') return true;
+                const searchStr = `${pkg.title} ${pkg.location}`.toLowerCase();
+                
+                if (activeFilter === 'uttarakhand') {
+                  return searchStr.includes('uttarakhand') || 
+                         searchStr.includes('char dham') || 
+                         searchStr.includes('kedarnath') || 
+                         searchStr.includes('badrinath') || 
+                         searchStr.includes('rishikesh') || 
+                         searchStr.includes('nainital') ||
+                         searchStr.includes('mussoorie');
+                }
+                if (activeFilter === 'himachal') {
+                  return searchStr.includes('himachal') || 
+                         searchStr.includes('manali') || 
+                         searchStr.includes('shimla') || 
+                         searchStr.includes('kasol') || 
+                         searchStr.includes('spiti') || 
+                         searchStr.includes('dharamshala');
+                }
+                if (activeFilter === 'international') {
+                  return searchStr.includes('international') || 
+                         searchStr.includes('dubai') || 
+                         searchStr.includes('bali') || 
+                         searchStr.includes('maldives') || 
+                         searchStr.includes('thailand');
+                }
+                if (activeFilter === 'weekend') {
+                  return pkg.duration.includes('3 Nights') || 
+                         pkg.duration.includes('2 Nights') || 
+                         searchStr.includes('weekend');
+                }
+                return true;
+              }).map((pkg) => (
+                <motion.div 
+                  layout
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.9 }}
+                  transition={{ duration: 0.3 }}
+                  key={pkg.id} 
+                  className="w-[85vw] sm:w-[320px] md:min-w-0 md:w-[calc(50%-12px)] lg:w-[calc(25%-18px)] shrink-0 snap-center md:snap-start"
+                >
+                  <TourCard pkg={pkg} />
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          )}
         </div>
       </div>
       
       {/* View All Button */}
       <div className="mt-6 flex justify-center">
-        <button className="bg-white border-2 border-brand-coral text-brand-coral hover:bg-brand-coral hover:text-white px-8 py-3 rounded-full font-bold transition-colors shadow-sm flex items-center gap-2">
+        <Link href="/packages" className="bg-white border-2 border-brand-coral text-brand-coral hover:bg-brand-coral hover:text-white px-8 py-3 rounded-full font-bold transition-colors shadow-sm flex items-center gap-2">
           View all packages <ArrowRight size={18} />
-        </button>
+        </Link>
       </div>
       
     </section>

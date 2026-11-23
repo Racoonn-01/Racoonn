@@ -1,0 +1,73 @@
+{
+  "expo": {
+    "name": "Racoonn",
+    "slug": "AppUser",
+    "version": "1.0.0",
+    "scheme": ["racoonn", "appwrite-callback-6a3bce6900381359c3ce"],
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.racoonn.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "backgroundColor": "#FFFFFF"
+      },
+      "package": "com.racoonn.app",
+      "versionCode": 4,
+      "googleServicesFile": "./google-services.json",
+      "permissions": [
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.POST_NOTIFICATIONS"
+      ]
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "static"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/images/splash-icon.png",
+          "resizeMode": "contain",
+          "backgroundColor": "#FFFFFF"
+        }
+      ],
+      "expo-font",
+      "expo-secure-store",
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow Racoonn to use your location to find nearby hotels and stays."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/icon.png",
+          "color": "#FF5A5F"
+        }
+      ],
+      "expo-sharing"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "75c1f1ca-7ffe-4abf-b78a-04af4931876c"
+      },
+      "mapboxAccessToken": "pk.eyJ1IjoiaGltYW5zaHUwNjY2IiwiYSI6ImNtcnc0ankydzAzb2ozMHNlb29ueWtsbTQifQ.mR3wqM4d-EnIXpp1S-l6pQ",
+      "appwriteEndpoint": "https://sgp.cloud.appwrite.io/v1",
+      "appwriteProjectId": "6a3bce6900381359c3ce",
+      "appwriteDatabaseId": "6a3cec630035d63ea963"
+    },
+    "owner": "racoonn"
+  }
+}

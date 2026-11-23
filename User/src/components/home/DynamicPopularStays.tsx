@@ -1,0 +1,342 @@
+"use client";
+import { generatePropertySlug } from "@/lib/utils";
+import { optimizeAppwriteImage } from "@/lib/optimizeImage";
+
+import React, { useState, useEffect } from "react";
+import Link from "next/link";
+import Image from "next/image";
+import { Heart, ChevronRight } from "lucide-react";
+import { motion } from "framer-motion";
+import { PopularStaySection } from "@/lib/cms/popularStaysStore";
+import { getProperties } from "@/lib/appwrite/api";
+import { isActiveProperty } from "@/lib/utils";
+import { PropertyCardSkeleton } from "@/components/skeletons/PageSkeletons";
+import { Models } from "appwrite";
+
+interface Property {
+  id: string;
+  title: string;
+  subtitle: string;
+  details: string;
+  location: string;
+  city: string;
+  rating: number;
+  reviews: number;
+  price: number;
+  image: string;
+  status?: string;
+}
+
+function DynamicStaySection({
+  sec,
+  displayProperties,
+  targetLocation,
+  secIndex,
+}: {
+  sec: PopularStaySection;
+  displayProperties: Property[];
+  targetLocation: string;
+  secIndex: number;
+}) {
+  const scrollRef = React.useRef<HTMLDivElement>(null);
+
+  return (
+    <motion.section 
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, delay: secIndex * 0.1, ease: "easeOut" }}
+      className="container mx-auto px-4 py-4 md:py-6 relative group"
+    >
+      {/* Section Header */}
+      <div className="flex justify-between items-end sm:items-center mb-4 sm:mb-6 gap-4">
+        <div className="flex-1">
+          <h2 className="text-[20px] sm:text-2xl font-bold text-gray-900 tracking-tight font-heading">
+            {sec.title}
+          </h2>
+          {sec.subtitle && (
+            <p className="text-gray-500 text-[13px] sm:text-sm mt-1 line-clamp-1 sm:line-clamp-none">{sec.subtitle}</p>
+          )}
+        </div>
+        <Link
+          href={targetLocation ? `/search?location=${encodeURIComponent(targetLocation)}` : "/search"}
+          className="text-rose-600 font-semibold flex items-center hover:underline text-xs sm:text-sm whitespace-nowrap shrink-0 group/link"
+        >
+          View all <ChevronRight size={16} className="ml-0.5 sm:ml-1 group-hover/link:translate-x-1 transition-transform" />
+        </Link>
+      </div>
+
+      {/* Property Cards Slider */}
+      <div 
+        ref={scrollRef}
+        className="flex md:grid md:grid-cols-2 lg:grid-cols-4 overflow-x-auto md:overflow-visible hide-scrollbar gap-4 md:gap-6 pb-4 md:pb-0 snap-x snap-mandatory overscroll-x-contain"
+        style={{ scrollbarWidth: "none", msOverflowStyle: "none", WebkitOverflowScrolling: "touch" }}
+      >
+        {displayProperties.map((stay) => (
+          <div
+            key={stay.id}
+            className="w-[85vw] sm:w-[320px] md:w-auto shrink-0 snap-center md:snap-align-none"
+          >
+            <Link
+              href={`/property/${generatePropertySlug(stay.id, stay.title || "")}`}
+              className="w-full bg-white rounded-2xl p-2.5 sm:p-3 border border-gray-100 shadow-xs hover:shadow-md group/card cursor-pointer flex flex-col h-full transition-all duration-300"
+            >
+              {/* Image Card */}
+              <div className="relative w-full aspect-4/3 shrink-0 rounded-xl overflow-hidden mb-3 bg-gray-100">
+                <Image
+                  src={optimizeAppwriteImage(stay.image)}
+                  alt={stay.title}
+                  fill
+                  onError={(e) => {
+                    e.currentTarget.src = "https://images.unsplash.com/photo-1542314831-c6a4d14d837e?q=80&w=800&auto=format&fit=crop";
+                  }}
+                  sizes="(max-width: 768px) 85vw, (max-width: 1200px) 50vw, 25vw"
+                  className="object-cover group-hover/card:scale-105 transition-transform duration-500"
+                />
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                  }}
+                  className="absolute top-2.5 right-2.5 w-8 h-8 rounded-full bg-white/80 backdrop-blur-xs flex items-center justify-center text-gray-700 hover:text-rose-500 hover:scale-110 active:scale-95 transition-all z-10 shadow-xs"
+                >
+                  <Heart size={16} strokeWidth={2} />
+                </button>
+              </div>
+
+              {/* Info Block */}
+              <div className="flex flex-col flex-1 min-w-0 px-1 pb-1">
+                <h3 className="font-bold text-[15px] sm:text-[16px] text-gray-900 line-clamp-1 group-hover/card:text-rose-600 transition-colors" title={stay.title}>
+                  {stay.title}
+                </h3>
+                <p className="text-[13px] text-gray-500 truncate mt-1 w-full" title={stay.location}>{stay.location}</p>
+                {Boolean(stay.subtitle || stay.details) && (
+                  <p className="text-[12px] text-gray-400 line-clamp-1 mt-0.5 w-full">{stay.subtitle || stay.details}</p>
+                )}
+                <div className="mt-3 pt-2 border-t border-gray-50 flex items-baseline gap-1.5 text-gray-900 font-bold text-[15px]">
+                  <span>₹{stay.price.toLocaleString("en-IN")}</span>
+                  <span className="font-normal text-xs text-gray-500">per night</span>
+                </div>
+              </div>
+            </Link>
+          </div>
+        ))}
+      </div>
+    </motion.section>
+  );
+}
+
+export default function DynamicPopularStays() {
+  const [sections, setSections] = useState<PopularStaySection[]>([]);
+  const [allProperties, setAllProperties] = useState<Property[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Fetch sections live from server API / Appwrite DB
+    const loadCMSSections = async () => {
+      try {
+        const res = await fetch("/api/cms/popular-stays");
+        const json = await res.json();
+        if (json.success && Array.isArray(json.sections)) {
+          setSections(json.sections);
+        }
+      } catch (err) {
+        console.error("Failed to load CMS popular stays:", err);
+      }
+    };
+
+    loadCMSSections();
+
+    // 1. Local window event listener
+    window.addEventListener("cms_popular_stays_updated", loadCMSSections);
+
+    // 2. BroadcastChannel listener across windows/ports
+    let bc: BroadcastChannel | null = null;
+    if (typeof window !== "undefined" && "BroadcastChannel" in window) {
+      bc = new BroadcastChannel("racoonn_cms_channel");
+      bc.onmessage = (event) => {
+        if (event.data && event.data.type === "POPULAR_STAYS_UPDATED") {
+          if (Array.isArray(event.data.data)) {
+            setSections(event.data.data);
+          } else {
+            loadCMSSections();
+          }
+        }
+      };
+    }
+
+    async function loadData() {
+      setLoading(true);
+      
+      try {
+        // 1. Fetch properties
+        const docs = await getProperties();
+        
+        // 2. Fetch all rooms to determine the real starting price per property
+        const propertyPriceMap: Record<string, number> = {};
+        const propertyRoomPhotosMap: Record<string, string[]> = {};
+        if (typeof window !== "undefined") {
+          await fetch("/api/properties/rooms").catch(() => null);
+          try {
+            const { databases, appwriteConfig } = await import("@/lib/appwrite/config");
+            const { Query } = await import("appwrite");
+            const roomsRes = await databases.listDocuments(
+              appwriteConfig.databaseId, 
+              appwriteConfig.roomCollectionId, 
+              [Query.limit(1000)]
+            );
+            
+            roomsRes.documents.forEach(room => {
+              const propId = room.propertyId;
+              if (propId) {
+                const p = room.discountPrice && room.discountPrice > 0 ? room.discountPrice : room.price;
+                if (p) {
+                  if (!propertyPriceMap[propId] || p < propertyPriceMap[propId]) {
+                    propertyPriceMap[propId] = p;
+                  }
+                }
+                if (Array.isArray(room.photos) && room.photos.length > 0) {
+                  if (!propertyRoomPhotosMap[propId]) {
+                    propertyRoomPhotosMap[propId] = room.photos as string[];
+                  } else {
+                    propertyRoomPhotosMap[propId] = [...propertyRoomPhotosMap[propId], ...(room.photos as string[])];
+                  }
+                }
+              }
+            });
+          } catch (e) {
+            console.error("Failed to fetch rooms for prices", e);
+          }
+        }
+
+        if (docs) {
+          const mapped: Property[] = docs.map((d: Models.Document) => {
+            const doc = d as unknown as Record<string, unknown>;
+            const priceRawStr = String(doc.price || doc.startingPrice || doc.minPrice || doc.basePrice || doc.pricePerNight || "");
+            let rawPrice = priceRawStr ? Number(priceRawStr.replace(/[^\d.]/g, '')) : 0;
+            
+            // Override with actual min room price if available
+            if (propertyPriceMap[doc.$id as string] && propertyPriceMap[doc.$id as string] > 0) {
+              rawPrice = propertyPriceMap[doc.$id as string];
+            }
+            
+            const propertyPhotos = Array.isArray(doc.photos) && doc.photos.filter(p => typeof p === 'string' && p.trim().length > 0).length > 0 
+              ? doc.photos.filter(p => typeof p === 'string' && p.trim().length > 0) 
+              : null;
+            const roomPhotos = typeof doc.$id === 'string' && propertyRoomPhotosMap[doc.$id] && propertyRoomPhotosMap[doc.$id].filter(p => typeof p === 'string' && p.trim().length > 0).length > 0 
+              ? propertyRoomPhotosMap[doc.$id].filter(p => typeof p === 'string' && p.trim().length > 0) 
+              : null;
+            const finalPhotos = propertyPhotos || roomPhotos || ["https://images.unsplash.com/photo-1542718610-a1d656d1884c?q=80&w=800&auto=format&fit=crop"];
+
+            return {
+              id: String(doc.$id || ""),
+              title: String(doc.propertyName || doc.title || "Luxury Stay"),
+              subtitle: String(doc.description || ""),
+              details: String(doc.description || "Beautiful view · Heritage stay"),
+              location: [doc.location, doc.city].filter(Boolean).map(String).join(", ") || String(doc.city || "Uttarakhand"),
+              city: String(doc.city || ""),
+              rating: Number(doc.rating || 4.8),
+              reviews: Number(doc.reviewsCount || 120),
+              price: rawPrice > 0 ? rawPrice : 3500,
+              image: String(finalPhotos[0]),
+              status: typeof doc.status === "string" ? doc.status.toLowerCase() : undefined,
+            };
+          });
+          setAllProperties(mapped.filter(isActiveProperty));
+        }
+      } catch (err) {
+        console.error("Error loading properties:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadData();
+
+    return () => {
+      window.removeEventListener("cms_popular_stays_updated", loadCMSSections);
+      if (bc) bc.close();
+    };
+  }, []);
+
+  // Filter sections that are marked active by CMS Admin
+  const activeSections = sections.filter((s) => s.isActive);
+
+  if (loading) {
+    return (
+      <div className="space-y-12">
+        <section className="container mx-auto px-4 lg:px-8 max-w-7xl">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-8 gap-4">
+            <div>
+              <div className="h-8 w-64 bg-gray-200 rounded-md animate-pulse mb-3"></div>
+              <div className="h-5 w-96 max-w-full bg-gray-100 rounded-md animate-pulse"></div>
+            </div>
+            <div className="h-10 w-32 bg-gray-100 rounded-full animate-pulse"></div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <PropertyCardSkeleton />
+            <PropertyCardSkeleton />
+            <PropertyCardSkeleton />
+            <PropertyCardSkeleton />
+          </div>
+        </section>
+      </div>
+    );
+  }
+
+  if (activeSections.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="space-y-6 md:space-y-12">
+      {activeSections.map((sec, secIndex) => {
+        let matchedProps: Property[] = [];
+
+        // 1. If Admin selected specific property IDs in CMS modal
+        if (sec.propertyIds && sec.propertyIds.length > 0) {
+          matchedProps = allProperties.filter((p) => sec.propertyIds?.includes(p.id));
+        } else {
+          // 2. Strict location matching (e.g. Haldwani, Nainital, Dehradun)
+          const targetLoc = (sec.location && sec.location.toLowerCase() !== "all")
+            ? sec.location.trim().toLowerCase()
+            : sec.title.toLowerCase().includes(" in ")
+            ? sec.title.split(/ in /i)[1]?.trim().toLowerCase() || ""
+            : "";
+
+          if (targetLoc && targetLoc !== "all") {
+            matchedProps = allProperties.filter(
+              (p) =>
+                p.location.toLowerCase().includes(targetLoc) ||
+                p.city.toLowerCase().includes(targetLoc) ||
+                p.title.toLowerCase().includes(targetLoc)
+            );
+          } else {
+            matchedProps = allProperties;
+          }
+        }
+
+        // Do not render section if no matching properties exist
+        if (matchedProps.length === 0) return null;
+
+        const displayProperties = matchedProps.slice(0, 4);
+
+        const targetLocation = (sec.location && sec.location.toLowerCase() !== "all") 
+          ? sec.location.trim() 
+          : sec.title.toLowerCase().includes(" in ") 
+          ? sec.title.split(/ in /i)[1]?.trim() || "" 
+          : "";
+
+        return (
+          <DynamicStaySection
+            key={sec.id}
+            sec={sec}
+            displayProperties={displayProperties}
+            targetLocation={targetLocation}
+            secIndex={secIndex}
+          />
+        );
+      })}
+    </div>
+  );
+}

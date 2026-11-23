@@ -1,0 +1,75 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useAuthStore } from "@/store/authStore";
+import { useRouter, usePathname } from "next/navigation";
+import { Loader2 } from "lucide-react";
+
+export function AuthGuard({ children }: { children: React.ReactNode }) {
+  const { checkAuth, isAuthenticated, isLoading, profile } = useAuthStore();
+  const router = useRouter();
+  const pathname = usePathname();
+  const [isInitializing, setIsInitializing] = useState(true);
+
+  useEffect(() => {
+    checkAuth().finally(() => setIsInitializing(false));
+  }, [checkAuth]);
+
+  useEffect(() => {
+    if (isLoading || isInitializing) return;
+
+    if (!isAuthenticated) {
+      if (pathname !== "/" && pathname !== "/vendor/reset-password" && pathname !== "/developers" && pathname !== "/terms" && pathname !== "/privacy") {
+        router.push("/");
+      }
+      return;
+    }
+
+    if (isAuthenticated) {
+      if (!profile) {
+        if (pathname === "/") {
+          router.push("/vendor/onboarding");
+        }
+        return;
+      }
+
+       const status = profile.status?.toLowerCase() || "pending";
+       const onboardingCompleted = profile.onboardingStep !== undefined && profile.onboardingStep >= 10;
+
+       if (status === "approved" || status === "active" || status === "published") {
+          if (pathname === "/" || pathname.startsWith("/vendor/onboarding") || pathname === "/vendor/pending-approval" || pathname === "/vendor/rejected") {
+             router.push("/vendor/dashboard");
+          }
+       } else if (status === "pending") {
+          if (!onboardingCompleted) {
+             if (!pathname.startsWith("/vendor/onboarding") && pathname !== "/terms" && pathname !== "/privacy") {
+                router.push("/vendor/onboarding");
+             }
+          } else {
+             if (pathname === "/" || pathname.startsWith("/vendor/onboarding") || pathname === "/vendor/pending-approval" || pathname === "/vendor/rejected") {
+                router.push("/vendor/dashboard");
+             }
+          }
+       } else if (status === "rejected") {
+          if (pathname !== "/vendor/rejected") {
+             router.push("/vendor/rejected");
+          }
+       } else {
+          // Fallback for unknown status
+          if (pathname === "/") {
+            router.push("/vendor/dashboard");
+          }
+       }
+    }
+  }, [isLoading, isInitializing, isAuthenticated, profile, pathname, router]);
+
+  if (isLoading || isInitializing) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-slate-50/50">
+        <Loader2 className="h-8 w-8 animate-spin text-[brand-coral]" />
+      </div>
+    );
+  }
+
+  return <>{children}</>;
+}

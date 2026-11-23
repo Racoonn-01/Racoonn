@@ -1,0 +1,637 @@
+"use client";
+import React from "react";
+import { useSearchParams } from "next/navigation";
+import { useCheckoutStore } from "@/store/checkoutStore";
+import { GuestDetailsForm } from "@/components/checkout/GuestDetailsForm";
+import { TravelersForm } from "@/components/checkout/TravelersForm";
+import { AdditionalRequestsForm } from "@/components/checkout/AdditionalRequestsForm";
+import { AddonSelector, DEFAULT_ADDONS } from "@/components/checkout/AddonSelector";
+import { Loader2, AlertCircle, Gem, Ticket, MapPin, CalendarDays, Check } from "lucide-react";
+import { motion } from "framer-motion";
+import Script from "next/script";
+import { checkAvailability } from "@/lib/appwrite/availability";
+import { useEffect, useState, useRef } from "react";
+import { calculateRoomGst } from "@/lib/gst";
+import { calculateRoomPricing } from "@/lib/pricing";
+
+export function CheckoutFlow() {
+  const currentStep = useCheckoutStore((state) => state.currentStep);
+  const submitBooking = useCheckoutStore((state) => state.submitBooking);
+  const isSubmitting = useCheckoutStore((state) => state.isSubmitting);
+  const bookingError = useCheckoutStore((state) => state.bookingError);
+  const guestDetails = useCheckoutStore((state) => state.guestDetails);
+  const selectedAddons = useCheckoutStore((state) => state.selectedAddons);
+  const appliedCoupon = useCheckoutStore((state) => state.appliedCoupon);
+  const [highlightAddonSection, setHighlightAddonSection] = useState(false);
+
+  
+  const additionalTravelers = useCheckoutStore((state) => state.additionalTravelers);
+  
+  const searchParams = useSearchParams();
+  const price = Number(searchParams.get('price')) || 32000;
+  
+  const msPerDay = 1000 * 60 * 60 * 24;
+  const checkInParam = searchParams.get('checkIn');
+  const checkOutParam = searchParams.get('checkOut');
+  
+  const checkIn = checkInParam || new Date().toISOString().split('T')[0];
+  const checkOut = checkOutParam || new Date(Date.now() + msPerDay).toISOString().split('T')[0];
+  
+  const checkInDate = new Date(checkIn);
+  const checkOutDate = new Date(checkOut);
+  const nights = Math.max(1, Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / msPerDay));
+  
+  const hotelId = searchParams.get('hotelId') || useCheckoutStore.getState().selectedHotelId || 'hotel-123';
+  const hotelName = searchParams.get('hotelName') || useCheckoutStore.getState().hotelName || 'The Oberoi Udaivilas';
+  const hotelLocation = searchParams.get('hotelLocation') || useCheckoutStore.getState().hotelLocation || 'Udaipur, Rajasthan, India';
+  const [localHotelImage, setLocalHotelImage] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const storedImage = localStorage.getItem('racoonn_checkout_image');
+      if (storedImage) {
+        void Promise.resolve().then(() => setLocalHotelImage(storedImage));
+      }
+    }
+  }, []);
+
+  const hotelImage = localHotelImage || searchParams.get('roomImage') || searchParams.get('hotelImage') || useCheckoutStore.getState().hotelImage || 'https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=1600&auto=format&fit=crop';
+  const adults = Number(searchParams.get('guests')) || 2;
+
+
+
+  const fetchPropertyAddons = useCheckoutStore(state => state.fetchPropertyAddons);
+  const propertyAddons = useCheckoutStore(state => state.propertyAddons);
+
+  useEffect(() => {
+    fetchPropertyAddons(hotelId);
+    if (hotelId) {
+      useCheckoutStore.setState({ selectedHotelId: hotelId });
+    }
+  }, [hotelId, fetchPropertyAddons]);
+
+  const rooms = Number(searchParams.get('rooms')) || 1;
+  const roomName = searchParams.get('roomName') || '';
+  const isPackage = roomName.startsWith('Package:') || roomName.toLowerCase().includes('package');
+
+  // Abandoned Checkout Tracking
+  const sessionIdRef = useRef<string>('');
+  useEffect(() => {
+    if (!sessionIdRef.current) {
+      sessionIdRef.current = 'ses_' + Math.random().toString(36).substring(2, 15);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!guestDetails.email.includes('@') || !guestDetails.email.includes('.')) return;
+
+    const timeout = setTimeout(() => {
+      fetch('/api/abandoned-checkout/track', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sessionId: sessionIdRef.current,
+          email: guestDetails.email,
+          name: `${guestDetails.firstName} ${guestDetails.lastName}`.trim(),
+          phone: guestDetails.phone,
+          hotelId,
+          roomId: '',
+          roomName,
+          checkIn,
+          checkOut,
+          guests: `${adults} Adults`,
+          amount: price,
+          checkoutUrl: window.location.href,
+        })
+      }).catch(console.error);
+    }, 2000); // 2 second debounce
+
+    return () => clearTimeout(timeout);
+  }, [
+    guestDetails.email, guestDetails.firstName, guestDetails.lastName, 
+    guestDetails.phone, hotelId, roomName, checkIn, checkOut, adults, price
+  ]);
+
+  let isFormValid = 
+    guestDetails.firstName.trim() !== '' && 
+    guestDetails.lastName.trim() !== '' && 
+    guestDetails.email.trim() !== '' && 
+    guestDetails.phone.trim() !== '' &&
+    guestDetails.country.trim() !== '';
+
+  if (isFormValid && isPackage) {
+    const allTravelersValid = additionalTravelers.every(t => 
+      t.fullName.trim() !== '' && 
+      t.gender.trim() !== '' && 
+      t.dateOfBirth.trim() !== ''
+    );
+    isFormValid = allTravelersValid;
+  }
+  
+  const stdCap = Number(searchParams.get('stdCap')) || useCheckoutStore.getState().standardCapacity || 2;
+  const maxCap = Number(searchParams.get('maxCap')) || useCheckoutStore.getState().maximumCapacity || 4;
+  const epc = Number(searchParams.get('epc')) || useCheckoutStore.getState().extraPersonCharge || 0;
+  
+  let baseRoomAmount = 0;
+  let extraGuestAmount = 0;
+  
+  if (!isPackage) {
+    const guestsPerRoom = Math.ceil(adults / rooms);
+    const pricing = calculateRoomPricing({
+      basePrice: price,
+      standardCapacity: stdCap,
+      maximumCapacity: maxCap,
+      extraPersonCharge: epc,
+      totalGuests: guestsPerRoom,
+      numberOfNights: nights
+    });
+    baseRoomAmount = pricing.baseRoomAmount * rooms;
+    extraGuestAmount = pricing.extraGuestAmount * rooms;
+  }
+  
+  const roomTotal = isPackage ? price : baseRoomAmount + extraGuestAmount;
+  const displayAddons = propertyAddons === null ? [] : propertyAddons;
+
+  const dynamicAddonsTotal = selectedAddons.reduce((sum, addonId) => {
+    const addon = displayAddons.find(a => (a.id === addonId || a.$id === addonId));
+    const basePrice = addon?.price || 0;
+    const isPerPerson = typeof addon?.description === 'string' && addon.description.toLowerCase().includes('per person');
+    const finalPrice = isPerPerson ? basePrice * adults : basePrice;
+    return sum + finalPrice;
+  }, 0);
+  
+  let dynamicDiscount = 0;
+  if (appliedCoupon) {
+    if (appliedCoupon.type === 'fixed') {
+      dynamicDiscount = appliedCoupon.value;
+    } else if (appliedCoupon.type === 'percentage') {
+      dynamicDiscount = Math.floor(roomTotal * (appliedCoupon.value / 100));
+    }
+    if (appliedCoupon.maxDiscountCap && dynamicDiscount > appliedCoupon.maxDiscountCap) {
+      dynamicDiscount = appliedCoupon.maxDiscountCap;
+    }
+    dynamicDiscount = Math.min(dynamicDiscount, roomTotal);
+  }
+
+  const effectivePerNightPrice = roomTotal / (nights * rooms);
+  const gstResult = calculateRoomGst(effectivePerNightPrice, nights, rooms, dynamicAddonsTotal, dynamicDiscount, isPackage);
+  const finalTaxes = gstResult.gstAmount;
+  const finalTotalAmount = roomTotal + finalTaxes + dynamicAddonsTotal - dynamicDiscount;
+
+  const handleCompleteBooking = async (skipPrompt: boolean | React.MouseEvent = false) => {
+    const shouldSkipPrompt = skipPrompt === true;
+
+    // 1. Validate add-ons (if none selected, prompt)
+    if (!isPackage && selectedAddons.length === 0 && !highlightAddonSection && !shouldSkipPrompt && displayAddons.length > 0) {
+      setHighlightAddonSection(true);
+      setTimeout(() => {
+        const addonElement = document.getElementById("addon-section");
+        if (addonElement) {
+          addonElement.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+      }, 50);
+      return;
+    }
+
+    // 2. Validate Availability First
+    useCheckoutStore.setState({ isSubmitting: true, bookingError: null });
+
+    try {
+      const availability = await checkAvailability(hotelId, checkIn, checkOut, rooms, roomName);
+      
+      if (!availability.isAvailable) {
+        useCheckoutStore.setState({ 
+          bookingError: availability.message || "Sorry, these dates just sold out!",
+          isSubmitting: false 
+        });
+        return;
+      }
+    } catch (err) {
+      console.error("Availability error:", err);
+      useCheckoutStore.setState({ 
+        bookingError: "Could not verify room availability. Please try again.",
+        isSubmitting: false 
+      });
+      return;
+    }
+
+    const markCheckoutSuccess = async (bookingId: string) => {
+      try {
+        await fetch('/api/abandoned-checkout/success', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            sessionId: sessionIdRef.current,
+            bookingId: bookingId
+          })
+        });
+      } catch (err) {
+        console.error("Failed to mark checkout success:", err);
+      }
+    };
+
+    // 2. Process Payment / Booking
+    try {
+      const razorpayKey = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
+      const hasRealRazorpayKey = razorpayKey && razorpayKey.startsWith("rzp_") && !razorpayKey.includes("dummy");
+      
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      let hasRazorpayScript = typeof (window as any).Razorpay !== "undefined";
+      if (hasRealRazorpayKey && !hasRazorpayScript) {
+        // Dynamically load script if it was too lazy
+        await new Promise((resolve) => {
+          const script = document.createElement('script');
+          script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+          script.onload = resolve;
+          script.onerror = resolve;
+          document.body.appendChild(script);
+        });
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        hasRazorpayScript = typeof (window as any).Razorpay !== "undefined";
+      }
+
+      const processDirectBooking = async () => {
+        await submitBooking({
+          hotelId, hotelName, hotelLocation, hotelImage, price, nights, rooms, roomName, checkIn, checkOut, adults
+        });
+        await markCheckoutSuccess('');
+      };
+
+      if (!hasRealRazorpayKey || !hasRazorpayScript) {
+        // Direct seamless booking processing when real Razorpay keys are not configured
+        await processDirectBooking();
+        return;
+      }
+
+      const res = await fetch('/api/razorpay/create-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount: finalTotalAmount }),
+      });
+      
+      const contentType = res.headers.get("content-type") || "";
+      if (!res.ok || !contentType.includes("application/json")) {
+        console.warn("API returned non-JSON response, processing booking directly.");
+        await processDirectBooking();
+        return;
+      }
+
+      const order = await res.json();
+      if (!order || !order.id || order.id.startsWith("mock_")) {
+        await processDirectBooking();
+        return;
+      }
+
+      // Initialize Razorpay Modal
+      const options = {
+        key: razorpayKey, 
+        amount: order.amount,
+        currency: order.currency,
+        name: "Racoonn",
+        description: `Booking at ${hotelName}`,
+        order_id: order.id,
+        handler: async function () {
+          try {
+            await submitBooking({
+              hotelId, hotelName, hotelLocation, hotelImage, price, nights, rooms, roomName, checkIn, checkOut, adults
+            });
+            await markCheckoutSuccess('');
+          } catch (error) {
+            console.error("Booking save error:", error);
+            useCheckoutStore.setState({ bookingError: "Payment succeeded but booking save failed. Contact support." });
+          }
+        },
+        prefill: {
+          name: `${guestDetails.firstName} ${guestDetails.lastName}`,
+          email: guestDetails.email,
+          contact: guestDetails.phone
+        },
+        theme: {
+          color: "#E86A70"
+        },
+        modal: {
+          ondismiss: function() {
+            useCheckoutStore.setState({ isSubmitting: false });
+          }
+        }
+      };
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const rzp = new (window as any).Razorpay(options);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      rzp.on('payment.failed', function (response: any) {
+        console.warn("Payment declined by user or gateway:", response.error);
+        useCheckoutStore.setState({ 
+          bookingError: response.error?.description || "Payment failed",
+          isSubmitting: false 
+        });
+      });
+
+      rzp.open();
+    } catch (error: unknown) {
+      console.warn("Razorpay init fallback:", error);
+      await submitBooking({
+        hotelId,
+        hotelName,
+        hotelLocation,
+        hotelImage,
+        price,
+        nights,
+        rooms,
+        roomName,
+        checkIn,
+        checkOut,
+        adults
+      });
+    }
+  };
+
+  const handlePayClick = () => {
+    if (!isFormValid) {
+      if (
+        !guestDetails.firstName.trim() || 
+        !guestDetails.lastName.trim() || 
+        !guestDetails.email.trim() || 
+        !guestDetails.phone.trim() ||
+        !guestDetails.country.trim()
+      ) {
+        const el = document.getElementById('guest-details-section');
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } else if (isPackage) {
+        const el = document.getElementById('travelers-section');
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+      return;
+    }
+    handleCompleteBooking();
+  };
+
+  return (
+    <div className="flex-1 space-y-8 min-w-0">
+      <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
+      {currentStep === 3 && (
+        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+          {bookingError && (
+            <div className="fixed inset-0 z-100 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-300">
+              <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-300 flex flex-col items-center p-6 text-center border border-red-100">
+                <div className="w-12 h-12 bg-red-50 rounded-full flex items-center justify-center mb-4">
+                  <AlertCircle className="w-6 h-6 text-red-500" />
+                </div>
+                <h3 className="text-xl font-bold text-brand-navy mb-2">Booking Error</h3>
+                <p className="text-gray-600 text-sm mb-6">
+                  {bookingError}
+                </p>
+                <button 
+                  onClick={() => useCheckoutStore.setState({ bookingError: null })}
+                  className="w-full py-3 bg-brand-navy hover:bg-brand-navy/90 text-white rounded-xl font-bold transition-transform active:scale-[0.98] shadow-sm"
+                >
+                  Got it
+                </button>
+              </div>
+            </div>
+          )}
+          <div className="space-y-8">
+            <GuestDetailsForm />
+            <TravelersForm />
+            {!isPackage && <AdditionalRequestsForm />}
+            {!isPackage && (
+              propertyAddons === null ? (
+                <div className="bg-white rounded-xl shadow-sm border border-brand-sky p-6 md:p-8 animate-pulse">
+                  <div className="h-8 bg-gray-200 rounded w-1/3 mb-4"></div>
+                  <div className="h-4 bg-gray-200 rounded w-1/2 mb-8"></div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div className="h-32 bg-gray-200 rounded-xl"></div>
+                    <div className="h-32 bg-gray-200 rounded-xl hidden sm:block"></div>
+                    <div className="h-32 bg-gray-200 rounded-xl hidden lg:block"></div>
+                  </div>
+                </div>
+              ) : displayAddons.length > 0 ? (
+                <div id="addon-section" className={`transition-all duration-700 rounded-2xl ${highlightAddonSection ? "ring-2 ring-brand-coral ring-offset-4 shadow-lg shadow-brand-coral/20" : ""}`}>
+                  <div 
+                    className={`grid transition-[grid-template-rows,opacity,margin] duration-500 ease-in-out ${highlightAddonSection ? 'grid-rows-[1fr] opacity-100 mb-6' : 'grid-rows-[0fr] opacity-0 mb-0'}`}
+                  >
+                    <div className="overflow-hidden">
+                      <div className="bg-brand-sky/20 border border-brand-sky/50 text-brand-navy px-4 py-3 rounded-xl flex items-start gap-3">
+                        <Gem className="w-4 h-4 shrink-0 mt-0.5 text-brand-coral" />
+                        <p className="text-xs md:text-sm leading-relaxed">
+                          <strong className="font-semibold block mb-0.5 text-sm">Upgrade Your Experience</strong>
+                          Add premium services below to make your stay truly memorable, or click <strong>Continue without Addons</strong> to proceed with your current selection.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  <AddonSelector addons={displayAddons} guests={adults} />
+                </div>
+              ) : null
+            )}
+          </div>
+          <div className="hidden md:flex flex-col items-end gap-2">
+            {!isFormValid && (
+              <span className="text-sm font-medium text-amber-600">Please fill out all required guest details to continue.</span>
+            )}
+            <button 
+              onClick={handleCompleteBooking}
+              disabled={isSubmitting || !isFormValid}
+              className="bg-brand-coral hover:bg-[#d65f64] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-white font-bold text-lg py-4 px-8 rounded-xl shadow-lg shadow-brand-coral/30 transition-transform active:scale-[0.98]"
+            >
+              {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : (highlightAddonSection ? "Continue without Addons" : "Complete Booking")}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {currentStep === 4 && (
+        <div className="space-y-8 animate-in fade-in zoom-in-95 duration-500">
+          {isPackage ? (
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, ease: "easeOut" }}
+              className="bg-linear-to-br from-brand-navy via-slate-900 to-slate-800 rounded-3xl shadow-2xl border border-white/10 p-8 md:p-16 text-center text-white overflow-hidden relative"
+            >
+              <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
+                <div className="absolute top-[-20%] right-[-10%] w-[50%] h-[50%] bg-brand-coral/20 blur-[100px] rounded-full"></div>
+                <div className="absolute bottom-[-20%] left-[-10%] w-[50%] h-[50%] bg-brand-sky/20 blur-[100px] rounded-full"></div>
+              </div>
+              
+              <div className="relative z-10 flex flex-col items-center">
+                <motion.div 
+                  initial={{ scale: 0, rotate: -180 }}
+                  animate={{ scale: 1, rotate: 0 }}
+                  transition={{ type: "spring", stiffness: 200, damping: 15, delay: 0.2 }}
+                  className="w-24 h-24 bg-linear-to-tr from-emerald-400 to-emerald-600 rounded-full flex items-center justify-center mb-8 shadow-[0_0_40px_rgba(52,211,153,0.4)]"
+                >
+                  <motion.div
+                    initial={{ pathLength: 0 }}
+                    animate={{ pathLength: 1 }}
+                    transition={{ duration: 0.6, delay: 0.6 }}
+                  >
+                    <Check className="w-12 h-12 text-white stroke-3" />
+                  </motion.div>
+                </motion.div>
+                
+                <motion.h2 
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.4 }}
+                  className="text-4xl md:text-5xl font-poppins font-extrabold mb-4 tracking-tight"
+                >
+                  <span className="text-white">Adventure </span><span style={{ color: '#E86A6F' }}>Confirmed!</span>
+                </motion.h2>
+                
+                <motion.p 
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.5, delay: 0.6 }}
+                  className="text-slate-300 mb-10 max-w-lg text-lg leading-relaxed"
+                >
+                  Your ultimate getaway at <strong className="text-white">{hotelName}</strong> is fully booked and ready for you. We&apos;ve emailed you the complete itinerary!
+                </motion.p>
+                
+                <motion.div 
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.5, delay: 0.8 }}
+                  className="w-full max-w-md bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-6 mb-10 space-y-4"
+                >
+                  <div className="flex items-center justify-between pb-4 border-b border-white/10">
+                    <div className="flex items-center gap-3 text-slate-300">
+                      <div className="p-2 bg-white/10 rounded-lg"><Ticket className="w-4 h-4 text-amber-400" /></div>
+                      <span className="text-sm font-medium uppercase tracking-wider">Booking ID</span>
+                    </div>
+                    <span className="font-mono font-bold text-white text-lg">{useCheckoutStore.getState().confirmedBookingId || "PKG-8849-2A"}</span>
+                  </div>
+                  <div className="flex items-center justify-between pb-4 border-b border-white/10">
+                    <div className="flex items-center gap-3 text-slate-300">
+                      <div className="p-2 bg-white/10 rounded-lg"><MapPin className="w-4 h-4 text-emerald-400" /></div>
+                      <span className="text-sm font-medium uppercase tracking-wider">Location</span>
+                    </div>
+                    <span className="font-medium text-white text-right max-w-37.5 truncate">{hotelLocation}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3 text-slate-300">
+                      <div className="p-2 bg-white/10 rounded-lg"><CalendarDays className="w-4 h-4 text-brand-sky" /></div>
+                      <span className="text-sm font-medium uppercase tracking-wider">Status</span>
+                    </div>
+                    <span className="font-bold text-emerald-400 bg-emerald-400/10 px-3 py-1 rounded-full text-xs tracking-wide">PAID IN FULL</span>
+                  </div>
+                </motion.div>
+                
+                <motion.button 
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 1 }}
+                  onClick={() => window.location.href = "/"}
+                  className="bg-white text-brand-navy hover:bg-brand-sky hover:text-brand-navy font-bold py-4 px-10 rounded-xl transition-all shadow-[0_0_20px_rgba(255,255,255,0.1)] hover:shadow-[0_0_30px_rgba(255,255,255,0.2)] hover:scale-105 active:scale-95"
+                >
+                  Explore More Packages
+                </motion.button>
+              </div>
+            </motion.div>
+          ) : (
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, ease: "easeOut" }}
+              className="bg-white rounded-xl shadow-sm border border-brand-sky p-8 md:p-12 text-center"
+            >
+              <motion.div 
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ type: "spring", stiffness: 200, damping: 15, delay: 0.2 }}
+                className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6"
+              >
+                <motion.div
+                  initial={{ pathLength: 0, opacity: 0 }}
+                  animate={{ pathLength: 1, opacity: 1 }}
+                  transition={{ duration: 0.5, delay: 0.5, ease: "easeInOut" }}
+                >
+                  <Check className="w-10 h-10 text-green-500 stroke-3" />
+                </motion.div>
+              </motion.div>
+              <motion.h2 
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.4 }}
+                className="text-3xl font-poppins font-bold text-brand-navy mb-4"
+              >
+                Booking Confirmed!
+              </motion.h2>
+              <motion.p 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.5, delay: 0.6 }}
+                className="text-gray-600 mb-8 max-w-md mx-auto"
+              >
+                Your booking at <strong className="text-brand-navy">{hotelName}</strong> has been successfully confirmed. A confirmation email has been sent to your inbox.
+              </motion.p>
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.5, delay: 0.8 }}
+                className="p-6 bg-brand-sand rounded-xl text-left max-w-md mx-auto mb-8 space-y-3 border border-brand-sky"
+              >
+                <div className="flex justify-between items-center border-b border-brand-sky/60 pb-2">
+                  <span className="text-xs text-gray-500 font-semibold uppercase">Booking Reference</span>
+                  <span className="text-sm font-bold text-brand-navy">{useCheckoutStore.getState().confirmedBookingId || ""}</span>
+                </div>
+                <div className="flex justify-between items-center text-xs text-gray-600">
+                  <span>Payment Status</span>
+                  <span className="font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded">PAID</span>
+                </div>
+                <div className="flex justify-between items-center text-xs text-gray-600">
+                  <span>GST Tax Compliance</span>
+                  <span className="font-bold text-slate-800">GST Invoice Issued</span>
+                </div>
+              </motion.div>
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 1 }}
+              >
+                <button 
+                  onClick={() => window.location.href = "/"}
+                  className="bg-brand-navy hover:bg-brand-navy/90 text-white font-bold py-3 px-8 rounded-xl transition-transform active:scale-[0.98]"
+                >
+                  Back to Home
+                </button>
+              </motion.div>
+            </motion.div>
+          )}
+        </div>
+      )}
+
+      {/* Mobile Sticky Bottom Bar */}
+      {currentStep === 3 && (
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-brand-sky p-3 sm:p-4 lg:hidden z-50 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] pb-[max(12px,env(safe-area-inset-bottom))]">
+          <div className="flex justify-between items-center gap-3 max-w-7xl mx-auto">
+            <div className="shrink-0">
+              <p className="text-[11px] sm:text-xs text-gray-500 mb-0.5 whitespace-nowrap">Total Amount</p>
+              <p className="text-lg sm:text-xl font-poppins font-bold text-brand-coral">₹{finalTotalAmount.toLocaleString('en-IN')}</p>
+            </div>
+            <button 
+              onClick={handlePayClick}
+              disabled={isSubmitting}
+              className={`font-bold px-4 py-2.5 sm:px-6 sm:py-3 rounded-xl transition-all shadow-lg flex items-center justify-center gap-2 text-sm sm:text-base flex-1 max-w-[200px] ${
+                isFormValid 
+                  ? 'bg-brand-coral hover:bg-[#d65f64] text-white shadow-brand-coral/30' 
+                  : 'bg-brand-coral/80 text-white cursor-pointer'
+              }`}
+            >
+              {isSubmitting ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : highlightAddonSection ? (
+                "Skip Addons"
+              ) : isFormValid ? (
+                "Pay Now"
+              ) : (
+                "Complete Info"
+              )}
+            </button>
+          </div>
+        </div>
+      )}
+
+    </div>
+  );
+}

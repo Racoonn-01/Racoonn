@@ -1,0 +1,14 @@
+{
+  "6ab77ee400214110a2c6": {
+    "2026-10-01": {
+      "available": 2,
+      "blocked": false,
+      "price": 2500
+    },
+    "2026-12-31": {
+      "available": 5,
+      "blocked": false,
+      "price": 2500
+    }
+  }
+}

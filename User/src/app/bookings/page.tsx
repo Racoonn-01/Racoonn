@@ -1,3 +1,13 @@
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'My Bookings | Racoonn',
+  robots: {
+    index: false,
+    follow: false,
+  },
+};
+
 export default function Page() {
   return (
     <div className="container mx-auto py-10">

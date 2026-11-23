@@ -1,0 +1,674 @@
+import { create } from 'zustand';
+import { calculateRoomPricing } from '@/lib/pricing';
+import { databases } from '@/lib/appwrite/config';
+import { ID, Query } from 'appwrite';
+import { useAuthStore } from './authStore';
+import { calculateRoomGst } from "@/lib/gst";
+
+const DATABASE_ID = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID || '6a3cec630035d63ea963';
+
+interface GuestDetails {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  country: string;
+  state: string;
+  specialRequests: string;
+}
+
+export interface TravelerDetails {
+  fullName: string;
+  gender: string;
+  dateOfBirth: string;
+}
+
+export interface Coupon {
+  code: string;
+  type: 'fixed' | 'percentage';
+  value: number;
+  maxDiscountCap?: number;
+  issuer?: string;
+}
+
+export interface PropertyAddon {
+  id?: string;
+  $id?: string;
+  name?: string;
+  price?: number;
+  [key: string]: unknown;
+}
+
+export interface VendorOffer {
+  id?: string;
+  code?: string;
+  status?: string;
+  discountType?: string;
+  type?: string;
+  discountValue?: number;
+  discount?: number;
+  bookingStartDate?: string;
+  bookingEndDate?: string;
+  assignedUserEmail?: string;
+  [key: string]: unknown;
+}
+
+export const VALID_COUPONS: Record<string, Coupon> = {
+  'WELCOME500': { code: 'WELCOME500', type: 'fixed', value: 500 },
+  'SUMMER2000': { code: 'SUMMER2000', type: 'fixed', value: 2000 },
+  'SAVE10': { code: 'SAVE10', type: 'percentage', value: 10 },
+};
+
+interface CheckoutState {
+  currentStep: number;
+  guestDetails: GuestDetails;
+  additionalTravelers: TravelerDetails[];
+  isSubmitting: boolean;
+  bookingError: string | null;
+  confirmedBookingId: string | null;
+  selectedHotelId: string | null;
+  selectedRoomName: string | null;
+  selectedPrice: number | null;
+  hotelName: string | null;
+  hotelImage: string | null;
+  hotelLocation: string | null;
+  standardCapacity: number;
+  maximumCapacity: number;
+  extraPersonCharge: number;
+  extraBedAvailable: boolean;
+  selectedAddons: string[];
+  propertyAddons: PropertyAddon[] | null; // null means loading, [] means empty
+  appliedCoupon: Coupon | null;
+  isFirstBooking: boolean;
+  setStep: (step: number) => void;
+  nextStep: () => void;
+  prevStep: () => void;
+  toggleAddon: (id: string) => void;
+  applyCoupon: (code: string, bookingAmount?: number) => Promise<{ success: boolean; message: string }>;
+  removeCoupon: () => void;
+  updateGuestDetails: (details: Partial<GuestDetails>) => void;
+  initTravelers: (count: number) => void;
+  updateTraveler: (index: number, details: Partial<TravelerDetails>) => void;
+  setRoomDetails: (hotelId: string, roomName: string, price: number, hotelName?: string, hotelImage?: string, hotelLocation?: string, stdCap?: number, maxCap?: number, epc?: number, eba?: boolean) => void;
+  fetchPropertyAddons: (hotelId: string) => Promise<void>;
+  submitBooking: (bookingData: { hotelId?: string; hotelName: string; hotelLocation?: string; hotelImage?: string; price: number; nights: number; rooms: number; roomName?: string; checkIn: string; checkOut: string; adults?: number; gstRate?: number; }) => Promise<void>;
+  checkFirstBooking: () => Promise<void>;
+}
+
+export const useCheckoutStore = create<CheckoutState>((set, get) => ({
+  currentStep: 3, // 3: Guest, 4: Confirmation
+  guestDetails: {
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    country: 'India',
+    state: '',
+    specialRequests: ''
+  },
+  additionalTravelers: [],
+  isSubmitting: false,
+  bookingError: null,
+  isFirstBooking: false,
+  confirmedBookingId: null,
+  selectedHotelId: null,
+  selectedRoomName: null,
+  selectedPrice: null,
+  hotelName: null,
+  hotelImage: null,
+  hotelLocation: null,
+  standardCapacity: 2,
+  maximumCapacity: 4,
+  extraPersonCharge: 0,
+  extraBedAvailable: false,
+  selectedAddons: [],
+  propertyAddons: null,
+  appliedCoupon: null,
+  setStep: (step) => set({ currentStep: step }),
+  nextStep: () => set((state) => ({ currentStep: Math.min(5, state.currentStep + 1) })),
+  prevStep: () => set((state) => ({ currentStep: Math.max(3, state.currentStep - 1) })),
+  toggleAddon: (id) => set((state) => ({
+    selectedAddons: state.selectedAddons.includes(id) 
+      ? state.selectedAddons.filter(addonId => addonId !== id)
+      : [...state.selectedAddons, id]
+  })),
+  applyCoupon: async (code, bookingAmount) => {
+    const searchCode = code.trim().toUpperCase();
+    if (!searchCode) {
+      return { success: false, message: 'Please enter a coupon code.' };
+    }
+
+    // Helper to get current hotel & room being booked
+    const currentHotelId = get().selectedHotelId || (typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('hotelId') : null);
+    const currentRoomId = (get() as unknown as { selectedRoomId?: string }).selectedRoomId || (typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('roomId') : null);
+
+    // 1. Check static built-in coupons
+    const staticCoupon = VALID_COUPONS[searchCode];
+    if (staticCoupon) {
+      set({ appliedCoupon: staticCoupon });
+      return { success: true, message: `Coupon ${staticCoupon.code} applied successfully!` };
+    }
+
+    // 2. Check document.cookie for cross-port/cross-origin vendor coupons
+    if (typeof document !== 'undefined') {
+      try {
+        const cookieName = `racoonn_coupon_${searchCode}`;
+        const match = document.cookie.match(new RegExp(`(?:^|; )${cookieName}=([^;]*)`));
+        if (match && match[1]) {
+          const cookieData = JSON.parse(decodeURIComponent(match[1]));
+          if (cookieData.status === 'paused') {
+            return { success: false, message: 'This coupon code is currently paused.' };
+          }
+          if (cookieData.status === 'expired') {
+            return { success: false, message: 'This coupon code has expired.' };
+          }
+          const todayStr = new Date().toISOString().split('T')[0];
+          if (cookieData.bookingEndDate && cookieData.bookingEndDate < todayStr) {
+            return { success: false, message: 'This coupon code has expired.' };
+          }
+
+          // Target property validation
+          if (cookieData.propertyId && cookieData.propertyId !== 'all') {
+            if (!currentHotelId || currentHotelId !== cookieData.propertyId) {
+              return { success: false, message: `This coupon code is valid only for ${cookieData.propertyName || 'the selected property'}.` };
+            }
+          }
+
+          // Target room validation
+          if (cookieData.roomId && cookieData.roomId !== 'all') {
+            if (currentRoomId && currentRoomId !== cookieData.roomId) {
+              return { success: false, message: `This coupon code is valid only for ${cookieData.roomName || 'the selected room'}.` };
+            }
+          }
+
+          const isPercentage = cookieData.discountType === 'percentage' || cookieData.type === 'percentage';
+          const discountVal = Number(cookieData.discountValue || cookieData.discount || 0);
+
+          const couponObj: Coupon = {
+            code: searchCode,
+            type: isPercentage ? 'percentage' : 'fixed',
+            value: discountVal
+          };
+
+          set({ appliedCoupon: couponObj });
+          return { success: true, message: `Coupon ${couponObj.code} applied successfully!` };
+        }
+      } catch (err) {
+        console.warn("Error reading coupon cookie:", err);
+      }
+    }
+
+    // 3. Dynamic lookup from vendor special offers stored in localStorage
+    if (typeof window !== 'undefined') {
+      try {
+        const allOffers: VendorOffer[] = [];
+
+        // Check global vendor coupons cache
+        const globalStr = localStorage.getItem('racoonn_global_vendor_coupons');
+        if (globalStr) {
+          try {
+            const parsed = JSON.parse(globalStr);
+            if (Array.isArray(parsed)) allOffers.push(...parsed);
+          } catch {}
+        }
+
+        // Scan all keys in localStorage for vendor special offers
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && (key.includes('special_offers') || key.includes('vendor_coupons') || key.includes('offers'))) {
+            const itemStr = localStorage.getItem(key);
+            if (itemStr) {
+              try {
+                const parsed = JSON.parse(itemStr);
+                if (Array.isArray(parsed)) {
+                  allOffers.push(...parsed);
+                } else if (parsed && typeof parsed === 'object' && (parsed as VendorOffer).code) {
+                  allOffers.push(parsed as VendorOffer);
+                }
+              } catch {}
+            }
+          }
+        }
+
+        // Find matching offer with promo code
+        const matched = allOffers.find((o: VendorOffer) => 
+          o && o.code && String(o.code).trim().toUpperCase() === searchCode
+        );
+
+        if (matched) {
+          if (matched.status === 'paused') {
+            return { success: false, message: 'This coupon code is currently paused.' };
+          }
+          if (matched.status === 'expired') {
+            return { success: false, message: 'This coupon code has expired.' };
+          }
+          const todayStr = new Date().toISOString().split('T')[0];
+          if (matched.bookingEndDate && matched.bookingEndDate < todayStr) {
+            return { success: false, message: 'This coupon code has expired.' };
+          }
+          if (matched.bookingStartDate && matched.bookingStartDate > todayStr) {
+            return { success: false, message: 'This coupon code is not active yet.' };
+          }
+
+          // Targeted customer validation
+          if (matched.assignedUserEmail) {
+            const currentUserEmail = useAuthStore.getState().profile?.email;
+            if (!currentUserEmail || currentUserEmail.trim().toLowerCase() !== String(matched.assignedUserEmail).trim().toLowerCase()) {
+              return { success: false, message: 'This coupon code is valid only for a specific customer.' };
+            }
+          }
+
+          // Target property validation
+          if (matched.propertyId && matched.propertyId !== 'all') {
+            if (!currentHotelId || currentHotelId !== matched.propertyId) {
+              return { success: false, message: `This coupon code is valid only for ${matched.propertyName || 'the selected property'}.` };
+            }
+          }
+
+          // Target room validation
+          if (matched.roomId && matched.roomId !== 'all') {
+            if (currentRoomId && currentRoomId !== matched.roomId) {
+              return { success: false, message: `This coupon code is valid only for ${matched.roomName || 'the selected room'}.` };
+            }
+          }
+
+          const isPercentage = matched.discountType === 'percentage' || matched.type === 'percentage';
+          const discountVal = Number(matched.discountValue || matched.discount || 0);
+
+          const couponObj: Coupon = {
+            code: String(matched.code).trim().toUpperCase(),
+            type: isPercentage ? 'percentage' : 'fixed',
+            value: discountVal
+          };
+
+          set({ appliedCoupon: couponObj });
+          return { success: true, message: `Coupon ${couponObj.code} applied successfully!` };
+        }
+      } catch (err) {
+        console.error("Error looking up vendor coupon:", err);
+      }
+    }
+
+    // 4. Check global Admin marketing coupons in 'promotions' collection
+    try {
+      const response = await databases.listDocuments(DATABASE_ID, 'promotions', [
+        Query.equal('code', searchCode),
+        Query.equal('status', 'Active'),
+        Query.limit(1)
+      ]);
+      
+      if (response.documents.length > 0) {
+        const promo = response.documents[0] as unknown as Record<string, unknown>;
+        const todayStr = new Date().toISOString().split('T')[0];
+        
+        if (promo.validUntil && String(promo.validUntil) < todayStr) {
+          return { success: false, message: 'This coupon code has expired.' };
+        }
+
+        // Room vs Package applicability check
+        const { selectedHotelId, selectedRoomName } = get();
+        let isPackageCheckout = Boolean(
+          (selectedRoomName || '').startsWith('Package:') ||
+          (selectedRoomName || '').toLowerCase().includes('package') ||
+          (selectedHotelId || '').toLowerCase().startsWith('pkg-') ||
+          (selectedHotelId || '').toLowerCase().includes('pkg')
+        );
+
+        if (!isPackageCheckout && typeof window !== 'undefined') {
+          const params = new URLSearchParams(window.location.search);
+          const paramRoom = params.get('roomName') || '';
+          const paramHotel = params.get('hotelId') || '';
+          if (
+            paramRoom.startsWith('Package:') ||
+            paramRoom.toLowerCase().includes('package') ||
+            paramHotel.toLowerCase().startsWith('pkg-') ||
+            paramHotel.toLowerCase().includes('pkg') ||
+            params.has('packageId') ||
+            params.get('type') === 'package'
+          ) {
+            isPackageCheckout = true;
+          }
+        }
+
+        const isPackageOnlyPromo = promo.applicableTo === 'packages' || promo.applicableTo === 'package';
+        const isRoomOnlyPromo = promo.applicableTo === 'rooms' || promo.applicableTo === 'room';
+
+        if (isPackageCheckout && isRoomOnlyPromo) {
+          return { success: false, message: 'This coupon is valid exclusively on Hotel Room stays, not for Holiday Packages.' };
+        }
+
+        if (!isPackageCheckout && isPackageOnlyPromo) {
+          return { success: false, message: 'This coupon is valid exclusively on Holiday Packages, not for room bookings.' };
+        }
+
+        // Target customer check
+        if (promo.assignedUserEmail) {
+          const userEmail = useAuthStore.getState().user?.email || useAuthStore.getState().profile?.email;
+          if (!userEmail || userEmail.trim().toLowerCase() !== String(promo.assignedUserEmail).trim().toLowerCase()) {
+            return { success: false, message: 'This coupon code is valid only for a specific customer.' };
+          }
+        }
+
+        // First-time guest check
+        if (promo.firstBookingOnly && !get().isFirstBooking) {
+          return { success: false, message: 'This offer is valid only for first-time guests.' };
+        }
+
+        // Minimum order value check
+        let currentPrice = bookingAmount || get().selectedPrice || 0;
+        if (!currentPrice && typeof window !== 'undefined') {
+          const params = new URLSearchParams(window.location.search);
+          const paramPrice = Number(params.get('price')) || 0;
+          if (paramPrice > 0) {
+            currentPrice = paramPrice;
+          }
+        }
+
+        // Initialize selectedPrice in state if currently missing
+        if (!get().selectedPrice && currentPrice > 0) {
+          set({ selectedPrice: currentPrice });
+        }
+
+        const minOrder = Number(promo.minOrderValue) || 0;
+        if (minOrder > 0 && currentPrice > 0 && currentPrice < minOrder) {
+          return { success: false, message: `Minimum booking value of ₹${minOrder} is required to use this coupon.` };
+        }
+        
+        const isPercentage = promo.discountType === 'percentage' || promo.type === 'percentage';
+        const discountVal = Number(promo.discountValue || promo.discount || 0);
+        const maxCap = promo.maxDiscountCap ? Number(promo.maxDiscountCap) : undefined;
+
+        const couponObj: Coupon = {
+          code: searchCode,
+          type: isPercentage ? 'percentage' : 'fixed',
+          value: discountVal,
+          maxDiscountCap: maxCap,
+          issuer: 'racoonn'
+        };
+
+        set({ appliedCoupon: couponObj });
+        return { success: true, message: `Coupon ${couponObj.code} applied successfully!` };
+      }
+    } catch (err) {
+      console.warn("Error looking up global promotions (may not be provisioned yet):", err);
+    }
+
+    return { success: false, message: 'Invalid or expired coupon code.' };
+  },
+  checkFirstBooking: async () => {
+    const user = useAuthStore.getState().user;
+    if (!user) return;
+    try {
+      const response = await databases.listDocuments(DATABASE_ID, 'bookings', [
+        Query.equal('userId', user.$id),
+        Query.limit(1)
+      ]);
+      const isFirst = response.total === 0;
+      set({ isFirstBooking: isFirst });
+      if (isFirst) {
+        const currentCoupon = get().appliedCoupon;
+        if (!currentCoupon) {
+          set({ appliedCoupon: { code: 'WELCOMERACOONN', type: 'percentage', value: 10, issuer: 'racoonn' } });
+        }
+      } else {
+        const currentCoupon = get().appliedCoupon;
+        if (currentCoupon && currentCoupon.code === 'WELCOMERACOONN') {
+          set({ appliedCoupon: null });
+        }
+      }
+    } catch (error) {
+      console.error("Error checking first booking:", error);
+      set({ isFirstBooking: false });
+    }
+  },
+  removeCoupon: () => set({ appliedCoupon: null }),
+  updateGuestDetails: (details) => set((state) => ({ 
+    guestDetails: { ...state.guestDetails, ...details } 
+  })),
+  initTravelers: (count) => set((state) => {
+    if (state.additionalTravelers.length === count) return state;
+    const newTravelers = [...state.additionalTravelers];
+    while (newTravelers.length < count) {
+      newTravelers.push({ fullName: '', gender: '', dateOfBirth: '' });
+    }
+    while (newTravelers.length > count) {
+      newTravelers.pop();
+    }
+    return { additionalTravelers: newTravelers };
+  }),
+  updateTraveler: (index, details) => set((state) => {
+    const newTravelers = [...state.additionalTravelers];
+    if (newTravelers[index]) {
+      newTravelers[index] = { ...newTravelers[index], ...details };
+    }
+    return { additionalTravelers: newTravelers };
+  }),
+  setRoomDetails: (hotelId, roomName, price, hotelName, hotelImage, hotelLocation, stdCap = 2, maxCap = 4, epc = 0, eba = false) => set({ 
+    selectedHotelId: hotelId,
+    selectedRoomName: roomName, 
+    selectedPrice: price,
+    hotelName: hotelName || null,
+    hotelImage: hotelImage || null,
+    hotelLocation: hotelLocation || null,
+    standardCapacity: stdCap,
+    maximumCapacity: maxCap,
+    extraPersonCharge: epc,
+    extraBedAvailable: eba
+  }),
+  fetchPropertyAddons: async (hotelId) => {
+    if (!hotelId || hotelId === 'hotel-123' || hotelId === 'undefined' || hotelId.startsWith('pkg-')) {
+      set({ propertyAddons: [] });
+      return;
+    }
+    try {
+      const prop = await databases.getDocument(DATABASE_ID, process.env.NEXT_PUBLIC_APPWRITE_PROPERTY_COLLECTION_ID || 'properties', hotelId);
+      if (prop && prop.addons) {
+        const parsed = prop.addons.map((a: string) => JSON.parse(a));
+        set({ propertyAddons: parsed });
+      } else {
+        set({ propertyAddons: [] });
+      }
+    } catch (error) {
+      console.error('Error fetching addons:', error);
+      set({ propertyAddons: [] });
+    }
+  },
+  submitBooking: async (bookingData) => {
+    set({ isSubmitting: true, bookingError: null });
+    try {
+      const { guestDetails } = get();
+      const user = useAuthStore.getState().user;
+      
+      if (!user) throw new Error("User not authenticated");
+
+      const bookingId = ID.unique();
+      
+      // Calculate dynamic addons
+      const propAddons = get().propertyAddons || [];
+      const defaultAddons = [
+        { id: "airport", title: "Airport Transfer", price: 1200, description: "Hassle-free pickup and drop-off" },
+        { id: "breakfast", title: "Breakfast Package", price: 800, description: "Daily buffet breakfast per person" },
+        { id: "spa", title: "Spa Access", price: 1500, description: "Unlimited access to wellness center" },
+        { id: "insurance", title: "Travel Insurance", price: 450, description: "Comprehensive trip coverage" }
+      ];
+      
+      const addonsList = get().selectedAddons.map((addonId: string) => {
+        let addon: any = propAddons.find((a: any) => (a.id || a.$id) === addonId);
+        if (!addon) {
+          addon = defaultAddons.find(a => a.id === addonId);
+        }
+        
+        const isPerPerson = typeof addon?.description === 'string' && addon.description.toLowerCase().includes('per person');
+        const addonPrice = (addon?.price || 0) * (isPerPerson ? (bookingData.adults || 1) : 1);
+        return { name: addon?.title || addon?.name || "Add-on", price: addonPrice };
+      });
+      const addons = addonsList.reduce((sum: number, item: { price: number }) => sum + item.price, 0);
+
+      const perNightPrice = bookingData.price || 3500;
+      const nightsCount = bookingData.nights || 1;
+      const roomsCount = bookingData.rooms || 1;
+      const isPackage = (bookingData.roomName || '').startsWith('Package:') || (bookingData.roomName || '').toLowerCase().includes('package') || (bookingData.hotelId || '').startsWith('pkg-');
+
+      const calcNights = isPackage ? 1 : nightsCount;
+      const calcRooms = isPackage ? 1 : roomsCount;
+      
+      const pricingParams = {
+        basePrice: perNightPrice,
+        standardCapacity: isPackage ? 50 : get().standardCapacity,
+        maximumCapacity: isPackage ? 50 : get().maximumCapacity,
+        extraPersonCharge: isPackage ? 0 : get().extraPersonCharge,
+        totalGuests: Math.ceil((bookingData.adults || 2) / roomsCount),
+        numberOfNights: calcNights
+      };
+      
+      const pricing = calculateRoomPricing(pricingParams);
+
+      const totalRoomSubtotal = isPackage ? perNightPrice : (pricing.roomSubtotal * roomsCount);
+      const totalExtraGuestAmount = isPackage ? 0 : (pricing.extraGuestAmount * roomsCount);
+      const totalBaseRoomAmount = isPackage ? perNightPrice : (pricing.baseRoomAmount * roomsCount);
+      const effectivePerNightPrice = isPackage ? perNightPrice : (totalRoomSubtotal / (nightsCount * roomsCount));
+
+      const { appliedCoupon } = get();
+      const initialRoomAmount = effectivePerNightPrice * calcNights * calcRooms;
+      
+      let discount = 0;
+      if (appliedCoupon) {
+        if (appliedCoupon.type === 'fixed') {
+          discount = appliedCoupon.value;
+        } else if (appliedCoupon.type === 'percentage') {
+          discount = Math.floor(initialRoomAmount * (appliedCoupon.value / 100));
+          if (appliedCoupon.maxDiscountCap && appliedCoupon.maxDiscountCap > 0 && discount > appliedCoupon.maxDiscountCap) {
+            discount = appliedCoupon.maxDiscountCap;
+          }
+        }
+      }
+
+      const gstCalc = calculateRoomGst(effectivePerNightPrice, calcNights, calcRooms, addons, discount, isPackage);
+
+      const roomAmount = gstCalc.roomAmount;
+      const gstRate = gstCalc.gstRate;
+      const gstAmount = gstCalc.gstAmount;
+
+      const totalAmount = Math.max(0, gstCalc.totalAmount);
+      const platformCommissionRate = 18;
+      const platformCommissionAmount = Math.round((roomAmount * (platformCommissionRate / 100)) * 100) / 100;
+      const vendorSettlement = Math.round((totalAmount - platformCommissionAmount) * 100) / 100;
+
+      // Format additional travelers and GST metadata info
+      let finalSpecialRequests = guestDetails.specialRequests || '';
+      finalSpecialRequests += `\n[GST Info: Rate=${gstRate}%, Taxable=₹${roomAmount}, GST=₹${gstAmount}, VendorPayout=₹${vendorSettlement}]`;
+
+      const { additionalTravelers } = get();
+      if (additionalTravelers && additionalTravelers.length > 0) {
+        const travelersStr = additionalTravelers
+          .filter(t => t.fullName) // Only include those who filled a name
+          .map((t, i) => `\nGuest ${i+1}: ${t.fullName} (${t.gender}, DOB: ${t.dateOfBirth})`)
+          .join('');
+        
+        if (travelersStr) {
+          finalSpecialRequests += `\n\n--- Additional Travelers ---${travelersStr}`;
+        }
+      }
+
+      // Run Appwrite database creations concurrently for speed
+      await Promise.all([
+        // 1. Create Booking
+        databases.createDocument(DATABASE_ID, 'bookings', bookingId, {
+          userId: user.$id,
+          hotelId: bookingData.hotelId || get().selectedHotelId || 'hotel-123',
+          roomId: bookingData.roomName || 'Unknown Room',
+          rooms: roomsCount,
+          checkIn: bookingData.checkIn,
+          checkOut: bookingData.checkOut,
+          nights: nightsCount,
+          status: 'Confirmed',
+          paymentStatus: 'Paid',
+          hotelName: bookingData.hotelName,
+          hotelImage: (bookingData.hotelImage || get().hotelImage || '').length > 1000 
+            ? 'https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=1600&auto=format&fit=crop'
+            : (bookingData.hotelImage || get().hotelImage || 'https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=1600&auto=format&fit=crop'),
+          hotelLocation: bookingData.hotelLocation || get().hotelLocation || 'Udaipur, Rajasthan, India',
+          adults: bookingData.adults || 2,
+          roomPricePerNight: gstCalc.pricePerNight,
+          gstPercentage: gstCalc.gstRate,
+          gstAmount: gstCalc.gstAmount,
+          gstType: gstCalc.gstStatus,
+          priceBeforeTax: gstCalc.roomAmount,
+          priceAfterTax: gstCalc.totalAmount,
+          taxableAmount: gstCalc.roomAmount + addons,
+          
+          // Dynamic Pricing Fields
+          standardCapacity: pricing.standardCapacity,
+          maximumCapacity: pricing.maximumCapacity,
+          totalGuests: bookingData.adults || 2,
+          extraGuests: pricing.extraGuests * roomsCount,
+          extraPersonCharge: pricing.extraPersonCharge,
+          baseRoomAmount: totalBaseRoomAmount,
+          extraGuestAmount: totalExtraGuestAmount,
+          pricingBreakdown: JSON.stringify(pricing.pricingBreakdown),
+          snapshotRoomConfig: JSON.stringify(pricingParams),
+        }),
+
+        // 2. Create Guest Details
+        databases.createDocument(DATABASE_ID, 'booking_guests', ID.unique(), {
+          bookingId: bookingId,
+          firstName: guestDetails.firstName,
+          lastName: guestDetails.lastName,
+          email: guestDetails.email,
+          phone: guestDetails.phone,
+          country: guestDetails.country,
+          specialRequests: finalSpecialRequests.trim()
+        }),
+
+        // 3. Create Payment Details
+        databases.createDocument(DATABASE_ID, 'booking_payments', ID.unique(), {
+          bookingId: bookingId,
+          roomPrice: roomAmount,
+          taxes: gstAmount,
+          serviceFees: addons,
+          discount: discount,
+          totalAmount: totalAmount
+        })
+      ]);
+
+      // 4. Send Confirmation Email & Generate Invoice (keepalive ensures network completion during page navigation)
+      fetch('/api/email/booking-confirmation', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        keepalive: true,
+        body: JSON.stringify({
+          hotelName: bookingData.hotelName,
+          hotelLocation: bookingData.hotelLocation || get().hotelLocation,
+          price: totalAmount,
+          nights: bookingData.nights,
+          checkIn: bookingData.checkIn,
+          checkOut: bookingData.checkOut,
+          adults: bookingData.adults || 2,
+          email: guestDetails.email,
+          firstName: guestDetails.firstName,
+          lastName: guestDetails.lastName,
+          bookingId: bookingId,
+          displayBookingId: bookingId.substring(0, 8).toUpperCase(),
+          addonsList: addonsList,
+          gstRate: gstRate,
+          gstAmount: gstAmount,
+          hotelId: bookingData.hotelId,
+          isPackage: (bookingData.roomName || '').startsWith('Package:') || (bookingData.roomName || '').toLowerCase().includes('package') || (bookingData.hotelId || '').startsWith('pkg-')
+        })
+      }).catch(err => console.error("Background email task failed:", err));
+
+      // Move to success step immediately
+      set({ 
+        currentStep: 4, 
+        isSubmitting: false, 
+        confirmedBookingId: bookingId.substring(0, 8).toUpperCase()
+      });
+    } catch (error: unknown) {
+      console.error("Booking Error:", error);
+      const errorMessage = error instanceof Error ? error.message : "Failed to process booking.";
+      set({ bookingError: errorMessage, isSubmitting: false });
+    }
+  }
+}));

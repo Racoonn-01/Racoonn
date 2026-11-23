@@ -1,0 +1,223 @@
+"use client";
+import { optimizeAppwriteImage } from "@/lib/optimizeImage";
+import { useState } from "react";
+import { MapPin, Calendar, Users, BedDouble, Tag, X, Loader2 } from "lucide-react";
+import Image from "next/image";
+import { useCheckoutStore } from "@/store/checkoutStore";
+
+export function BookingSummary({ 
+  roomName = "Deluxe Ocean View Suite",
+  pricePerNight = 8000,
+  hotelName = "Grand Ocean Resort",
+  hotelImage = "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=400&q=80",
+  hotelLocation = "Dubai Marina, UAE",
+  nights = 3,
+  rooms = 1,
+  guests = "2",
+  checkIn = "12 Aug 2026",
+  checkOut = "15 Aug 2026",
+  gstRate = 5,
+  taxes = 2400,
+  addons = 1500,
+  discount = 0,
+  roomImage,
+  baseRoomAmount = 0,
+  extraGuestAmount = 0,
+  departureCity
+}: {
+  roomName?: string;
+  pricePerNight?: number;
+  hotelName?: string;
+  hotelImage?: string;
+  hotelLocation?: string;
+  nights?: number;
+  rooms?: number;
+  guests?: string;
+  checkIn?: string;
+  checkOut?: string;
+  gstRate?: number;
+  taxes?: number;
+  addons?: number;
+  discount?: number;
+  roomImage?: string;
+  baseRoomAmount?: number;
+  extraGuestAmount?: number;
+  departureCity?: string;
+}) {
+  const isPackage = roomName.startsWith('Package:') || roomName.toLowerCase().includes('package');
+  const roomPrice = isPackage ? pricePerNight : baseRoomAmount + extraGuestAmount;
+  const computedGst = Math.round((roomPrice * gstRate) / 100);
+  const actualTaxes = taxes > 0 ? taxes : computedGst;
+  const total = roomPrice + actualTaxes + addons - discount;
+  
+  const { appliedCoupon, applyCoupon, removeCoupon } = useCheckoutStore();
+  const [couponInput, setCouponInput] = useState("");
+  const [errorMsg, setErrorMsg] = useState("");
+  const [isApplying, setIsApplying] = useState(false);
+
+  const handleApplyCoupon = async () => {
+    if (!couponInput.trim() || isApplying) return;
+    setIsApplying(true);
+    const res = await applyCoupon(couponInput.trim(), roomPrice);
+    if (!res.success) {
+      setErrorMsg(res.message);
+    } else {
+      setErrorMsg("");
+      setCouponInput("");
+    }
+    setIsApplying(false);
+  };
+
+  return (
+    <div className="bg-white rounded-xl shadow-sm border border-brand-sky overflow-hidden">
+      <div className="p-4 sm:p-6 pb-3 sm:pb-4 border-b border-brand-sky">
+        <h2 className="text-lg sm:text-xl font-poppins font-bold text-brand-navy mb-3 sm:mb-4">Booking Summary</h2>
+        <div className="flex gap-3 sm:gap-4 items-center">
+          <div className="w-18 h-18 sm:w-24 sm:h-24 rounded-lg overflow-hidden relative shrink-0 bg-gray-100 shadow-sm border border-gray-200">
+            <Image 
+              src={optimizeAppwriteImage(roomImage || hotelImage)} 
+              alt={roomName}
+              fill
+              className="object-cover"
+            />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h3 className="font-bold text-brand-navy text-base sm:text-lg leading-tight mb-1 truncate">{roomName}</h3>
+            <div className="flex items-start text-xs sm:text-sm text-gray-500 gap-1.5 truncate">
+              <MapPin className="w-4 h-4 shrink-0 text-brand-coral" />
+              <span className="font-medium truncate">{hotelName}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="p-4 sm:p-6 py-3 sm:py-4 space-y-3 sm:space-y-4 border-b border-brand-sky text-sm">
+        {isPackage ? (
+          <div className="grid grid-cols-1 gap-3 sm:gap-4">
+            <div className="space-y-1">
+              <p className="text-gray-500 flex items-center gap-2 text-xs sm:text-sm"><Calendar className="w-4 h-4 text-brand-coral" /> Start Date</p>
+              <p className="font-medium text-brand-navy text-sm sm:text-base">{checkIn}</p>
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-3 sm:gap-4">
+            <div className="space-y-1">
+              <p className="text-gray-500 flex items-center gap-1.5 text-xs sm:text-sm"><Calendar className="w-4 h-4 text-brand-coral" /> Check-In</p>
+              <p className="font-medium text-brand-navy text-xs sm:text-sm">{checkIn}</p>
+              <p className="text-[11px] sm:text-xs text-gray-500">From 14:00</p>
+            </div>
+            <div className="space-y-1">
+              <p className="text-gray-500 flex items-center gap-1.5 text-xs sm:text-sm"><Calendar className="w-4 h-4 text-brand-coral" /> Check-Out</p>
+              <p className="font-medium text-brand-navy text-xs sm:text-sm">{checkOut}</p>
+              <p className="text-[11px] sm:text-xs text-gray-500">Until 12:00</p>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="p-4 sm:p-6 py-3 sm:py-4 space-y-2.5 sm:space-y-3 text-xs sm:text-sm border-b border-brand-sky">
+        <div className="flex justify-between items-center">
+          <span className="text-gray-500 flex items-center gap-2"><Users className="w-4 h-4 text-brand-coral" /> Guests</span>
+          <span className="font-medium text-brand-navy">{guests}</span>
+        </div>
+        {isPackage && departureCity && (
+          <div className="flex justify-between items-center">
+            <span className="text-gray-500 flex items-center gap-2"><MapPin className="w-4 h-4 text-brand-coral" /> Origin City</span>
+            <span className="font-semibold text-brand-navy bg-brand-coral/10 text-brand-coral px-2.5 py-0.5 rounded-full text-xs">Ex-{departureCity}</span>
+          </div>
+        )}
+        {!isPackage && (
+          <div className="flex justify-between items-center">
+            <span className="text-gray-500 flex items-center gap-2"><BedDouble className="w-4 h-4 text-brand-coral" /> Room</span>
+            <span className="font-medium text-brand-navy text-right truncate max-w-[200px]">{rooms} × {roomName}</span>
+          </div>
+        )}
+      </div>
+
+      {/* Coupon Field */}
+      <div className="p-4 sm:p-6 pb-3 sm:pb-4 bg-brand-sand border-b border-brand-sky/50">
+        {appliedCoupon ? (
+          <div className="flex items-center justify-between bg-green-50 border border-green-200 rounded-xl px-4 py-3">
+            <div className="flex items-center gap-2 text-green-700">
+              <Tag className="w-4 h-4" />
+              <span className="font-bold text-sm">{appliedCoupon.code}</span>
+              <span className="text-xs opacity-80">(Applied)</span>
+            </div>
+            <button 
+              onClick={removeCoupon}
+              className="text-gray-400 hover:text-red-500 transition-colors p-1"
+              title="Remove coupon"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        ) : (
+          <div>
+            <div className="flex gap-2">
+              <input 
+                type="text" 
+                value={couponInput}
+                onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
+                onKeyDown={(e) => e.key === 'Enter' && handleApplyCoupon()}
+                placeholder="Enter coupon code" 
+                className="flex-1 bg-white border border-brand-sky rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-brand-coral focus:ring-1 focus:ring-brand-coral transition-all uppercase"
+              />
+              <button 
+                onClick={handleApplyCoupon}
+                disabled={isApplying}
+                className="bg-brand-navy hover:bg-brand-navy/90 text-white font-bold px-5 py-2.5 rounded-xl text-sm transition-transform active:scale-[0.98] shadow-sm disabled:opacity-70 flex items-center gap-2"
+              >
+                {isApplying ? <Loader2 className="w-4 h-4 animate-spin" /> : "Apply"}
+              </button>
+            </div>
+            {errorMsg && <p className="text-xs text-red-500 mt-2 font-medium ml-1">{errorMsg}</p>}
+          </div>
+        )}
+      </div>
+
+      {/* Price Summary */}
+      <div className="p-4 sm:p-6 py-3.5 sm:py-4 bg-brand-sand">
+        <div className="space-y-2 mb-4 text-sm">
+          <div className="flex justify-between">
+            <span className="text-gray-600">
+              {isPackage ? 'Package Price (Stays + Food + Activities)' : `Room Charge (₹${pricePerNight.toLocaleString('en-IN')} × ${rooms > 1 ? `${rooms} Rooms × ` : ''}${nights} Nights)`}
+            </span>
+            <span className="font-medium text-brand-navy">₹{isPackage ? roomPrice.toLocaleString('en-IN') : baseRoomAmount.toLocaleString('en-IN')}</span>
+          </div>
+          {!isPackage && extraGuestAmount > 0 && (
+            <div className="flex justify-between text-brand-coral">
+              <span className="text-gray-600">Extra Bed Charges</span>
+              <span className="font-medium">₹{extraGuestAmount.toLocaleString('en-IN')}</span>
+            </div>
+          )}
+          {!isPackage && (
+            <div className="flex justify-between">
+              <span className="text-gray-600">Add-On Services</span>
+              <span className="font-medium text-brand-navy">₹{addons.toLocaleString('en-IN')}</span>
+            </div>
+          )}
+            <div className="flex justify-between items-center">
+              <span className="text-gray-600 flex items-center gap-1.5">
+                GST ({gstRate}%)
+                <span className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-1.5 py-0.5 rounded">GST Extra</span>
+              </span>
+              <span className="font-medium text-brand-navy">₹{actualTaxes.toLocaleString('en-IN')}</span>
+            </div>
+            {discount > 0 && (
+              <div className="flex justify-between text-green-600">
+                <span>Coupon Discount</span>
+                <span className="font-medium">-₹{discount.toLocaleString('en-IN')}</span>
+              </div>
+            )}
+          </div>
+
+        <div className="pt-4 border-t border-brand-sky flex justify-between items-end">
+          <div>
+            <p className="text-xs text-gray-500 mb-0.5">Total Amount (Incl. Taxes)</p>
+            <p className="text-2xl font-poppins font-bold text-brand-coral">₹{total.toLocaleString('en-IN')}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

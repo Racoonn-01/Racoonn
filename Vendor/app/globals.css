@@ -1,0 +1,226 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-brand-coral: #E86A70;
+  --color-brand-navy: #1F2E4A;
+  --color-brand-sky: #DCE8F5;
+  --color-brand-sand: #F4F0EA;
+  --color-brand-soft-coral: #F8D6D8;
+  --color-brand-charcoal: #333333;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-inter);
+  --font-heading: var(--font-poppins);
+  
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+}
+
+:root {
+  --background: #ffffff;
+  --foreground: #1F2E4A; /* Midnight Navy */
+  --card: #ffffff;
+  --card-foreground: #1F2E4A;
+  --popover: #ffffff;
+  --popover-foreground: #1F2E4A;
+  
+  /* Coral Pink */
+  --primary: #E86A70; 
+  --primary-foreground: #ffffff;
+  
+  /* Midnight Navy */
+  --secondary: #1F2E4A; 
+  --secondary-foreground: #ffffff;
+  
+  /* Light Blue / Warm Beige accents */
+  --muted: #F4F0EA;
+  --muted-foreground: #64748B;
+  
+  --accent: #F8D6D8;
+  --accent-foreground: #1F2E4A;
+  
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  
+  --border: #e2e8f0;
+  --input: #e2e8f0;
+  --ring: #E86A70;
+  
+  --chart-1: #E86A70;
+  --chart-2: #1F2E4A;
+  --chart-3: #DCE8F5;
+  --chart-4: #F8D6D8;
+  --chart-5: #333333;
+  
+  --radius: 0.75rem;
+  
+  --sidebar: #ffffff;
+  --sidebar-foreground: #1F2E4A;
+  --sidebar-primary: #E86A70;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #f1f5f9;
+  --sidebar-accent-foreground: #1F2E4A;
+  --sidebar-border: #e2e8f0;
+  --sidebar-ring: #E86A70;
+}
+
+.dark {
+  --background: #0f172a;
+  --foreground: #f8fafc;
+  --card: #1e293b;
+  --card-foreground: #f8fafc;
+  --popover: #1e293b;
+  --popover-foreground: #f8fafc;
+  
+  --primary: #E86A70;
+  --primary-foreground: #ffffff;
+  
+  --secondary: #1F2E4A;
+  --secondary-foreground: #ffffff;
+  
+  --muted: #334155;
+  --muted-foreground: #94a3b8;
+  
+  --accent: #1F2E4A;
+  --accent-foreground: #f8fafc;
+  
+  --destructive: #7f1d1d;
+  --destructive-foreground: #f8fafc;
+  
+  --border: #334155;
+  --input: #334155;
+  --ring: #E86A70;
+  
+  --chart-1: #E86A70;
+  --chart-2: #DCE8F5;
+  --chart-3: #1F2E4A;
+  --chart-4: #F8D6D8;
+  --chart-5: #cbd5e1;
+  
+  --sidebar: #1e293b;
+  --sidebar-foreground: #f8fafc;
+  --sidebar-primary: #E86A70;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #334155;
+  --sidebar-accent-foreground: #f8fafc;
+  --sidebar-border: #334155;
+  --sidebar-ring: #E86A70;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+    overflow-y: scroll;
+  }
+  
+  /* Typography overrides */
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-heading tracking-tight;
+  }
+}
+
+/* Print Media Styles for Invoices */
+@media print {
+  html, body {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    height: auto !important;
+    min-height: auto !important;
+    overflow: visible !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Hide background app content completely to prevent empty pages */
+  body > *:not([data-radix-portal]) {
+    display: none !important;
+  }
+
+  /* Ensure the portal takes normal document flow */
+  [data-radix-portal] {
+    display: block !important;
+    position: static !important;
+    height: auto !important;
+  }
+
+  /* Reset fixed positioning for the Dialog overlay and content */
+  .fixed, [role="dialog"], [data-state="open"] {
+    position: static !important;
+    transform: none !important;
+    display: block !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+
+  /* Hide buttons during print */
+  button, .print-hidden {
+    display: none !important;
+  }
+
+  /* Force the invoice to take full width and avoid breaks inside */
+  #printable-invoice {
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    page-break-inside: avoid !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+
+  @page {
+    size: portrait;
+    margin: 10mm;
+  }
+}

@@ -1,7 +1,12 @@
+'use client';
+import { optimizeAppwriteImage } from "@/lib/optimizeImage";
+
 import Link from 'next/link';
 import Image from 'next/image';
-import { Mail, Phone, MapPin, Send } from 'lucide-react';
-import logoImg from '@/assets/Racoonn-Logo-02.png';
+import { usePathname } from 'next/navigation';
+import { Phone, MapPin } from 'lucide-react';
+import logoImg from '@/assets/Racoon-icon-White.png';
+import WhyBookWithUs from './WhyBookWithUs';
 
 const SocialIcon = ({ type, size = 18 }: { type: string; size?: number }) => {
   switch (type) {
@@ -19,133 +24,180 @@ const SocialIcon = ({ type, size = 18 }: { type: string; size?: number }) => {
 };
 
 export default function Footer() {
-  return (
-    <footer className="bg-brand-navy text-white pt-24 pb-12 relative overflow-hidden">
-      {/* Decorative background shapes */}
-      <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-brand-coral/50 to-transparent opacity-50"></div>
-      <div className="absolute top-[-10%] right-[-5%] w-96 h-96 bg-brand-coral/10 rounded-full blur-[100px] pointer-events-none"></div>
-      <div className="absolute bottom-[-10%] left-[-5%] w-96 h-96 bg-blue-500/10 rounded-full blur-[100px] pointer-events-none"></div>
+  const pathname = usePathname();
+  const isAuthPage = ['/signin', '/signup', '/forgot-password', '/search'].includes(pathname);
+  const isCheckoutPage = pathname.startsWith('/checkout');
+  
+  if (isAuthPage || isCheckoutPage) return null;
 
-      <div className="container mx-auto px-4 relative z-10">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 mb-16">
-          
-          {/* Brand & Newsletter (Takes up 5 columns) */}
-          <div className="lg:col-span-5">
-            <Link href="/" className="inline-block mb-8">
-              <Image 
-                src={logoImg} 
-                alt="Racoonn Logo" 
-                height={60}
-                className="h-14 w-auto object-contain"
-                priority
-              />
-            </Link>
-            <p className="text-brand-sky/70 mb-10 leading-relaxed text-lg max-w-md">
-              Find your perfect stay effortlessly. We provide premium hotel bookings for modern travelers seeking seamless experiences around the globe.
-            </p>
+  return (
+    <>
+      {pathname === '/' && <WhyBookWithUs />}
+      
+      {/* App Download Section */}
+      <section className="bg-white pt-12 pb-6 md:pb-10">
+        <div className="container mx-auto px-4 lg:px-8 max-w-6xl">
+          <div className="relative bg-[#F2F4F7] border border-gray-200 rounded-3xl p-6 md:p-10 overflow-hidden flex flex-col md:flex-row items-center justify-between gap-8 md:gap-8 shadow-sm">
             
-            <div className="bg-white/5 rounded-2xl p-6 border border-white/10 backdrop-blur-sm relative overflow-hidden group">
-              <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-              <h4 className="text-white font-medium mb-2 relative z-10">Subscribe to our Newsletter</h4>
-              <p className="text-brand-sky/60 text-sm mb-4 relative z-10">Get the latest updates and exclusive offers directly in your inbox.</p>
-              <form className="flex gap-2 relative z-10">
-                <input 
-                  type="email" 
-                  placeholder="Enter your email" 
-                  className="bg-white/10 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/40 focus:outline-none focus:border-brand-coral focus:bg-white/20 transition-all w-full text-sm"
+            {/* Left Content: Text & Icon */}
+            <div className="relative z-10 flex flex-col sm:flex-row items-center sm:items-start text-center sm:text-left gap-5 sm:gap-6">
+
+              {/* Text */}
+              <div className="pt-1 sm:pt-2">
+                <h2 className="text-[26px] sm:text-3xl md:text-[40px] leading-tight font-bold text-[#2D3748] mb-2 sm:mb-3 tracking-tight">
+                  Download App Now!
+                </h2>
+                <p className="text-gray-600 text-[15px] md:text-[17px] max-w-sm mx-auto sm:mx-0">
+                  Use code <span className="font-bold text-gray-800">WELCOMERACOONN</span> and get <span className="font-bold text-gray-800">FLAT 10% OFF*</span> on your first Hotel booking
+                </p>
+              </div>
+            </div>
+            
+            {/* Right Content: Badges */}
+            <div className="relative z-10 flex flex-row flex-wrap items-center justify-center gap-3 shrink-0 mt-2 md:mt-0">
+              {/* App Store Official Badge */}
+              <Link href="#" className="hover:opacity-80 transition-transform transform hover:-translate-y-1 duration-300">
+                <Image 
+                  src="https://upload.wikimedia.org/wikipedia/commons/3/3c/Download_on_the_App_Store_Badge.svg" 
+                  alt="Download on the App Store" 
+                  width={140}
+                  height={40}
+                  className="h-9.5 w-auto sm:h-12 md:h-14"
                 />
-                <button className="bg-brand-coral hover:bg-[#d95d63] text-white p-3 rounded-xl transition-colors flex-shrink-0 flex items-center justify-center">
-                  <Send size={20} />
-                </button>
-              </form>
+              </Link>
+              
+              {/* Google Play Official Badge */}
+              <Link href="#" className="hover:opacity-80 transition-transform transform hover:-translate-y-1 duration-300">
+                <Image 
+                  src="https://upload.wikimedia.org/wikipedia/commons/7/78/Google_Play_Store_badge_EN.svg" 
+                  alt="Get it on Google Play" 
+                  width={140}
+                  height={40}
+                  className="h-9.5 w-auto sm:h-12 md:h-14"
+                />
+              </Link>
+            </div>
+            
+          </div>
+        </div>
+      </section>
+      <footer className="bg-brand-navy text-white pt-20 pb-10 relative overflow-hidden">
+        {/* Decorative background gradients */}
+        <div className="absolute top-0 inset-x-0 h-px bg-linear-to-r from-transparent via-brand-coral/30 to-transparent"></div>
+        <div className="absolute -top-24 -right-24 w-96 h-96 bg-brand-coral/5 rounded-full blur-[100px] pointer-events-none"></div>
+        <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-blue-500/5 rounded-full blur-[100px] pointer-events-none"></div>
+
+        <div className="container mx-auto px-4 lg:px-8 relative z-10">
+          
+
+
+          {/* Main Links Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-12 lg:gap-8 mb-16">
+            
+            {/* Brand Info (4 cols) */}
+            <div className="lg:col-span-4">
+              <Link href="/" className="inline-block mb-6">
+                <Image 
+                  src={optimizeAppwriteImage(logoImg)} 
+                  alt="Racoonn Logo" 
+                  height={50}
+                  className="h-10 w-auto object-contain mix-blend-screen opacity-90 hover:opacity-100 transition-opacity"
+                  priority
+                />
+              </Link>
+              <p className="text-brand-sky/70 leading-relaxed mb-8 max-w-sm">
+                Your trusted partner for finding the perfect stay. Experience premium hotel bookings with seamless reservations around the globe.
+              </p>
+              
+              <div className="space-y-4">
+                <div className="flex items-center gap-4 group">
+                  <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-brand-coral/20 group-hover:text-brand-coral transition-colors">
+                    <Phone className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-brand-sky/50 mb-0.5">Need help booking?</p>
+                    <p className="font-bold text-white">+91 8954442144</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-4 group">
+                  <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-brand-coral/20 group-hover:text-brand-coral transition-colors">
+                    <MapPin className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-brand-sky/50 mb-0.5">Headquarters</p>
+                    <p className="font-bold text-white text-sm leading-relaxed">
+                      Corp. Off.-205 PSA Plaza 2nd Floor 19 Kalyani View,<br />
+                      <span className="font-normal text-white/80">Nainital Road Rudrapur 263153 U.S. Nagar (UK)</span>
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Empty space for spacing */}
+            <div className="hidden lg:block lg:col-span-2"></div>
+
+            {/* Explore (3 cols) */}
+            <div className="lg:col-span-3">
+              <h4 className="text-lg font-bold mb-6 text-white tracking-wide">Explore</h4>
+              <ul className="space-y-4 text-brand-sky/70">
+                <li><Link href="/search" className="hover:text-brand-coral hover:translate-x-1 inline-block transition-transform">Search Hotels</Link></li>
+                <li><Link href="/offers" className="hover:text-brand-coral hover:translate-x-1 inline-block transition-transform">Special Offers</Link></li>
+                <li><Link href="/packages" className="hover:text-brand-coral hover:translate-x-1 inline-block transition-transform">Tour Packages</Link></li>
+                <li><Link href="/activities" className="hover:text-brand-coral hover:translate-x-1 inline-block transition-transform">Activities</Link></li>
+                <li><Link href="/blog" className="hover:text-brand-coral hover:translate-x-1 inline-block transition-transform">Travel Blog</Link></li>
+              </ul>
+            </div>
+
+            {/* Company (3 cols) */}
+            <div className="lg:col-span-3">
+              <h4 className="text-lg font-bold mb-6 text-white tracking-wide">Company</h4>
+              <ul className="space-y-4 text-brand-sky/70">
+                <li><Link href="/about" className="hover:text-brand-coral hover:translate-x-1 inline-block transition-transform">About Us</Link></li>
+                <li><Link href="/help" className="hover:text-brand-coral hover:translate-x-1 inline-block transition-transform">Help Center / FAQs</Link></li>
+                <li><Link href="/terms" className="hover:text-brand-coral hover:translate-x-1 inline-block transition-transform">Terms of Service</Link></li>
+                <li><Link href="/privacy" className="hover:text-brand-coral hover:translate-x-1 inline-block transition-transform">Privacy Policy</Link></li>
+                <li><Link href="/sitemap" className="hover:text-brand-coral hover:translate-x-1 inline-block transition-transform">Sitemap</Link></li>
+                <li><a href={process.env.NODE_ENV === 'production' ? 'https://partner.racoonn.com/developers' : (process.env.NEXT_PUBLIC_VENDOR_PORTAL_URL ? `${process.env.NEXT_PUBLIC_VENDOR_PORTAL_URL}/developers` : 'http://localhost:3002/developers')} target="_blank" rel="noopener noreferrer" className="hover:text-brand-coral hover:translate-x-1 inline-block transition-transform">API Documentation</a></li>
+              </ul>
+            </div>
+            
+          </div>
+
+
+
+          {/* Bottom Bar */}
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+            <div className="flex flex-col items-center md:items-start gap-1 text-sm text-brand-sky/50 text-center md:text-left">
+              <div className="flex flex-col md:flex-row items-center gap-2">
+                <span>&copy; {new Date().getFullYear()} Racoonn. All rights reserved.</span>
+                <span className="hidden md:inline text-brand-sky/30">•</span>
+                <Link href="/sitemap" className="hover:text-brand-coral transition-colors">Sitemap</Link>
+              </div>
+              <span>Design and Developed By <a href="https://preettech.com" target="_blank" rel="noopener noreferrer" className="hover:text-brand-coral transition-colors font-medium">Preet Tech</a></span>
+            </div>
+            
+            <div className="flex flex-col items-center md:items-end gap-3">
+              <div className="flex items-center gap-3">
+                {[
+                  { type: 'Facebook', url: 'https://www.facebook.com/profile.php?id=61594396886289' },
+                  { type: 'Twitter', url: 'https://x.com/RACOONN06' },
+                  { type: 'Instagram', url: 'https://www.instagram.com/racoonnofficial' },
+                  { type: 'Linkedin', url: '#' }
+                ].map((social, i) => (
+                  <a key={i} href={social.url} target={social.url !== '#' ? "_blank" : undefined} rel={social.url !== '#' ? "noopener noreferrer" : undefined} aria-label={social.type} className="w-10 h-10 rounded-full bg-white/5 hover:bg-brand-coral text-white/70 hover:text-white transition-all flex items-center justify-center shadow-lg">
+                    <SocialIcon type={social.type} />
+                  </a>
+                ))}
+              </div>
+              <span className="text-white/80 font-medium text-sm flex items-center gap-2">
+                <span className="hidden md:inline"></span> Managed by CIELLE TRAVELS PRIVATE LIMITED
+              </span>
             </div>
           </div>
 
-          <div className="hidden lg:block lg:col-span-1"></div>
-
-          {/* Quick Links (Takes up 3 columns) */}
-          <div className="lg:col-span-3">
-            <h4 className="text-xl font-heading font-semibold mb-8 text-white relative inline-block">
-              Explore
-              <span className="absolute -bottom-2 left-0 w-12 h-1 bg-brand-coral rounded-full"></span>
-            </h4>
-            <ul className="space-y-4 mt-2">
-              {[
-                { name: 'About Us', path: '/about' },
-                { name: 'Search Hotels', path: '/search' },
-                { name: 'Special Offers', path: '/offers' },
-                { name: 'Tour Packages', path: '/tours' },
-                { name: 'Destinations', path: '/destinations' },
-              ].map((link, index) => (
-                <li key={index}>
-                  <Link href={link.path} className="text-brand-sky/70 hover:text-brand-coral transition-colors flex items-center gap-3 group">
-                    <span className="w-2 h-2 rounded-full border border-brand-coral/50 group-hover:bg-brand-coral transition-all"></span>
-                    {link.name}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Contact Info (Takes up 3 columns) */}
-          <div className="lg:col-span-3">
-            <h4 className="text-xl font-heading font-semibold mb-8 text-white relative inline-block">
-              Contact Info
-              <span className="absolute -bottom-2 left-0 w-12 h-1 bg-brand-coral rounded-full"></span>
-            </h4>
-            <ul className="space-y-6 mt-2">
-              <li className="flex items-start gap-4 group">
-                <div className="w-11 h-11 rounded-full bg-white/5 border border-white/10 flex items-center justify-center shrink-0 group-hover:bg-brand-coral/20 group-hover:border-brand-coral/30 transition-all">
-                  <MapPin className="text-brand-coral" size={20} />
-                </div>
-                <div>
-                  <h5 className="text-white/90 text-sm font-medium mb-1">Location</h5>
-                  <span className="text-brand-sky/60 text-sm">123 Travel Avenue, Suite 400<br />New York, NY 10012</span>
-                </div>
-              </li>
-              <li className="flex items-start gap-4 group">
-                <div className="w-11 h-11 rounded-full bg-white/5 border border-white/10 flex items-center justify-center shrink-0 group-hover:bg-brand-coral/20 group-hover:border-brand-coral/30 transition-all">
-                  <Phone className="text-brand-coral" size={20} />
-                </div>
-                <div>
-                  <h5 className="text-white/90 text-sm font-medium mb-1">Phone</h5>
-                  <span className="text-brand-sky/60 text-sm">+1 (555) 123-4567</span>
-                </div>
-              </li>
-              <li className="flex items-start gap-4 group">
-                <div className="w-11 h-11 rounded-full bg-white/5 border border-white/10 flex items-center justify-center shrink-0 group-hover:bg-brand-coral/20 group-hover:border-brand-coral/30 transition-all">
-                  <Mail className="text-brand-coral" size={20} />
-                </div>
-                <div>
-                  <h5 className="text-white/90 text-sm font-medium mb-1">Email</h5>
-                  <span className="text-brand-sky/60 text-sm">support@racoonn.com</span>
-                </div>
-              </li>
-            </ul>
-          </div>
         </div>
-
-        {/* Bottom */}
-        <div className="pt-8 border-t border-white/10 flex flex-col md:flex-row items-center justify-between gap-6">
-          <p className="text-brand-sky/50 text-sm">
-            &copy; {new Date().getFullYear()} Racoonn. All rights reserved.
-          </p>
-          
-          <div className="flex gap-4">
-            <Link href="/terms" className="text-brand-sky/50 hover:text-white text-sm transition-colors">Terms & Conditions</Link>
-            <span className="text-white/20">•</span>
-            <Link href="/privacy" className="text-brand-sky/50 hover:text-white text-sm transition-colors">Privacy Policy</Link>
-          </div>
-
-          <div className="flex gap-3">
-            {['Facebook', 'Twitter', 'Instagram', 'Linkedin'].map((social, i) => (
-              <a key={i} href="#" className="w-10 h-10 rounded-full bg-white/5 border border-white/10 hover:bg-brand-coral hover:border-brand-coral hover:text-white transition-all flex items-center justify-center text-white/70">
-                <SocialIcon type={social} />
-              </a>
-            ))}
-          </div>
-        </div>
-      </div>
-    </footer>
+      </footer>
+    </>
   );
 }

@@ -1,0 +1,16 @@
+[
+  {
+    "id": "dest-1787286900719",
+    "city": "Bhimtal",
+    "description": "Bhimtal",
+    "price": "19999",
+    "image": "https://sgp.cloud.appwrite.io/v1/storage/buckets/6a3e398000280b2b3d20/files/6a87d56e0029f14cf3d9/preview?project=6a3bce6900381359c3ce&output=webp"
+  },
+  {
+    "id": "dest-1784982853754",
+    "city": "Haldwani",
+    "description": "Haldwani",
+    "price": "19999",
+    "image": "https://plus.unsplash.com/premium_photo-1719930222322-1821d0de899b?w=900&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxmZWF0dXJlZC1waG90b3MtZmVlZHwyfHx8ZW58MHx8fHx8"
+  }
+]

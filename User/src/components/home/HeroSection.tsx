@@ -1,175 +1,542 @@
 'use client';
+import { optimizeAppwriteImage } from "@/lib/optimizeImage";
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
-import { format } from 'date-fns';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { format, addDays } from 'date-fns';
+import chatbotLogo from '@/assets/Racoonn-Logo-03.png';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Home,
-  Plane,
-  Building2,
   Palmtree,
   Ticket,
-  Bus,
   MapPin,
   CalendarDays,
   Users,
   ChevronDown,
   ArrowRight,
   Plus,
-  Minus
+  Minus,
+  Mic,
+  MicOff,
+  Search,
+  X
 } from 'lucide-react';
 
 const tabs = [
-  { id: 'activities', label: 'Activities', icon: Ticket },
   { id: 'stays', label: 'Stays', icon: Home },
-  { id: 'cab', label: 'Cab', icon: Bus },
   { id: 'packages', label: 'Packages', icon: Palmtree },
+  { id: 'activities', label: 'Activities', icon: Ticket },
 ];
 
+
 export default function HeroSection() {
+  const router = useRouter();
+  const [heroImages, setHeroImages] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState('stays');
   const [checkIn, setCheckIn] = useState<Date>();
   const [checkOut, setCheckOut] = useState<Date>();
   const [adults, setAdults] = useState(0);
   const [children, setChildren] = useState(0);
   const [rooms, setRooms] = useState(0);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [isChatMode, setIsChatMode] = useState(false);
+  const [destination, setDestination] = useState('');
+  const [suggestions, setSuggestions] = useState<{name: string, district: string, state: string}[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
+  const [isCheckInOpen, setIsCheckInOpen] = useState(false);
+  const [isCheckOutOpen, setIsCheckOutOpen] = useState(false);
+  const [chatQuery, setChatQuery] = useState('');
+  const [isRecording, setIsRecording] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const destinationInputRef = useRef<HTMLInputElement>(null);
+
+  const handleAiSearch = (queryStr: string = chatQuery) => {
+    if (!queryStr.trim()) return;
+    setIsAnalyzing(true);
+    setTimeout(() => {
+      router.push(`/search?ai=${encodeURIComponent(queryStr.trim())}`);
+      // Resetting is optional, but helps if they navigate back
+      setTimeout(() => setIsAnalyzing(false), 1000);
+    }, 2500);
+  };
+
+  const handleMicClick = () => {
+    if (isRecording) {
+      setIsRecording(false);
+      // We can't strictly stop it safely here without saving the recognition instance,
+      // but it will stop on its own when the user stops speaking.
+      // A more robust implementation would save the recognition instance to a ref.
+      return;
+    }
+
+    const win = window as unknown as Record<string, unknown>;
+    const SpeechRecognition = (win.SpeechRecognition || win.webkitSpeechRecognition) as {
+      new (): {
+        continuous: boolean;
+        interimResults: boolean;
+        lang: string;
+        onstart: () => void;
+        onresult: (event: { results: { [index: number]: { [index: number]: { transcript: string }, isFinal: boolean } } }) => void;
+        onerror: (event: { error: string }) => void;
+        onend: () => void;
+        start: () => void;
+      };
+    } | undefined;
+
+    if (!SpeechRecognition) {
+      alert("Your browser does not support Speech Recognition. Please use Chrome or Edge.");
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.continuous = false;
+    recognition.interimResults = true;
+    recognition.lang = 'en-US';
+
+    recognition.onstart = () => {
+      setIsRecording(true);
+    };
+
+    recognition.onresult = (event) => {
+      const result = event.results[0];
+      const transcript = result[0].transcript;
+      setChatQuery(transcript);
+      
+      if (result.isFinal) {
+        setTimeout(() => {
+          handleAiSearch(transcript);
+        }, 800);
+      }
+    };
+
+    recognition.onerror = (event) => {
+      console.error("Speech recognition error", event.error);
+      setIsRecording(false);
+    };
+
+    recognition.onend = () => {
+      setIsRecording(false);
+    };
+
+    recognition.start();
+  };
+
+  useEffect(() => {
+    async function loadHeroImages() {
+      try {
+        const res = await fetch(`/api/cms/hero?t=${Date.now()}`);
+        const json = await res.json();
+        if (json.success && Array.isArray(json.images) && json.images.length > 0) {
+          const activeImages = json.images
+            .filter((img: any) => img.isActive)
+            .sort((a: any, b: any) => a.order - b.order)
+            .map((img: any) => img.url);
+          if (activeImages.length > 0) {
+            setHeroImages(activeImages);
+            setCurrentImageIndex(0);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load dynamic hero images", err);
+      }
+    }
+    loadHeroImages();
+  }, []);
+
+  useEffect(() => {
+    if (heroImages.length === 0) return;
+    const timer = setInterval(() => {
+      setCurrentImageIndex((prev) => (prev + 1) % heroImages.length);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, [heroImages.length]);
+
+  useEffect(() => {
+    if (destination.length > 2 && activeTab === 'stays') {
+      const delayDebounceFn = setTimeout(() => {
+        setLoadingSuggestions(true);
+        fetch(`https://api.postalpincode.in/postoffice/${destination}`)
+          .then(res => res.json())
+          .then(data => {
+            if (data && data[0] && data[0].Status === 'Success') {
+              const uniqueLocations = data[0].PostOffice.slice(0, 5).map((po: { Name: string; District: string; State: string }) => ({
+                name: po.Name,
+                district: po.District,
+                state: po.State
+              }));
+              setSuggestions(uniqueLocations);
+            } else {
+              setSuggestions([]);
+            }
+          })
+          .catch(err => {
+            console.error(err);
+            setSuggestions([]);
+          })
+          .finally(() => {
+            setLoadingSuggestions(false);
+          });
+      }, 500);
+
+      return () => clearTimeout(delayDebounceFn);
+    }
+  }, [destination]);
 
   return (
-    <section className="relative w-full -mt-24 pt-32 overflow-hidden rounded-b-[50px]">
+    <section className="relative w-full -mt-24 pt-32 rounded-b-[50px] z-10">
 
-      {/* Background Image */}
-      <Image
-        src="https://images.unsplash.com/photo-1499793983690-e29da59ef1c2?q=100&w=3840&auto=format&fit=crop"
-        alt="Beautiful tropical destination"
-        fill
-        priority
-        className="object-cover z-0"
-      />
+      {/* Background Image Slideshow */}
+      <div className="absolute inset-0 overflow-hidden rounded-b-[50px] z-0 pointer-events-none">
+        {heroImages.map((src, index) => (
+          <Image 
+            key={src}
+            src={optimizeAppwriteImage(src)}
+            alt={`Beautiful tropical destination ${index + 1}`}
+            fill
+           
+            priority={index === 0}
+            className={`object-cover transition-opacity duration-1000 ease-in-out transform-gpu will-change-opacity ${
+              index === currentImageIndex ? 'opacity-100' : 'opacity-0'
+            }`}
+          />
+        ))}
+      </div>
 
 
       {/* Content */}
-
-      {/* Content */}
-      <div className="container mx-auto px-4 relative z-10 pt-2 pb-8">
-
-        {/* Heading */}
-        <h1
-          className="text-center text-2xl md:text-3xl lg:text-4xl font-heading font-extrabold text-white tracking-wider uppercase mb-8"
-          style={{ textShadow: '0 2px 10px rgba(0,0,0,0.5), 0 4px 20px rgba(0,0,0,0.3)' }}
-        >
-          Explore And Create Memories
-        </h1>
+      <div className="container mx-auto px-4 relative z-10 pt-20 pb-8">
 
         {/* Search Card */}
-        <div className="max-w-4xl mx-auto transform-gpu">
-          <div className="bg-white rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.15)] overflow-hidden">
+        <div className="max-w-4xl mx-auto transform-gpu relative z-20">
+          <div className="bg-white rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.15)] relative">
 
-            {/* Tabs */}
-            <div className="flex items-center justify-center gap-1 px-6 pt-5 pb-0 overflow-x-auto hide-scrollbar">
-              {tabs.map((tab) => {
-                const Icon = tab.icon;
-                const isActive = activeTab === tab.id;
-                return (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
-                    className={`flex items-center gap-2 px-4 py-2.5 rounded-t-xl whitespace-nowrap text-sm font-medium transition-all relative ${isActive
-                      ? 'text-brand-coral'
-                      : 'text-brand-charcoal/60 hover:text-brand-navy'
-                      }`}
+            {/* Tabs & Chatbot Container */}
+            {!isChatMode && (
+              <>
+                <div className="flex items-center justify-between px-2 sm:px-6 pt-5 pb-0 overflow-x-auto hide-scrollbar">
+                  
+                  {/* Left Side: Tabs */}
+                  <div className="flex items-center justify-between sm:justify-start w-full sm:w-auto gap-1 transition-all duration-300">
+                    {tabs.map((tab) => {
+                      const Icon = tab.icon;
+                      const isActive = activeTab === tab.id;
+                      return (
+                        <button
+                          key={tab.id}
+                          onClick={() => setActiveTab(tab.id)}
+                          className={`flex-1 sm:flex-none flex items-center justify-center gap-1.5 sm:gap-2 px-2 sm:px-4 py-2.5 rounded-t-xl whitespace-nowrap text-[13px] sm:text-sm font-medium transition-all relative ${isActive
+                            ? 'text-brand-coral'
+                            : 'text-brand-charcoal/60 hover:text-brand-navy'
+                            }`}
+                        >
+                          <Icon size={16} />
+                          {tab.label}
+                          {isActive && (
+                            <motion.div 
+                              layoutId="activeTabIndicator"
+                              className="absolute bottom-0 left-2 right-2 h-0.5 bg-brand-coral rounded-full" 
+                            />
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Right Side: Chatbot Button */}
+                  <button 
+                    onClick={() => setIsChatMode(true)}
+                    className="hidden sm:flex items-center gap-2 px-4 py-1.5 rounded-full bg-brand-coral/10 hover:bg-brand-coral/20 border border-brand-coral/20 transition-all hover:scale-105 active:scale-95 text-brand-navy font-bold text-sm mb-1.5 whitespace-nowrap shadow-sm"
                   >
-                    <Icon size={16} />
-                    {tab.label}
-                    {isActive && (
-                      <div className="absolute bottom-0 left-2 right-2 h-[2px] bg-brand-coral rounded-full" />
-                    )}
+                    <div className="w-6 h-6 relative rounded-full overflow-hidden shrink-0 bg-white">
+                      <Image priority  src={optimizeAppwriteImage(chatbotLogo)} alt="AI Assistant" fill className="object-contain p-0.5" />
+                    </div>
+                    Ask AI
                   </button>
-                );
-              })}
-            </div>
+                </div>
 
-            <div className="h-[1px] bg-gray-100" />
+                <div className="h-px bg-gray-100" />
+              </>
+            )}
 
-            {/* Search Fields */}
-            <div className="p-6 space-y-4">
+            {/* Search Fields / Chat Mode */}
+            <div className="p-6 space-y-4 min-h-55 relative">
+              <AnimatePresence mode="wait">
+              {isChatMode ? (
+                <motion.div 
+                  key="chat"
+                  initial={{ opacity: 0, y: 15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -15 }}
+                  transition={{ duration: 0.3, ease: 'easeOut' }}
+                  className="flex flex-col gap-4"
+                >
+                  {isAnalyzing ? (
+                    <motion.div 
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="flex flex-col items-center justify-center py-8 gap-6 min-h-55"
+                    >
+                      <div className="relative w-20 h-20">
+                        {/* Outer pulsing ring */}
+                        <motion.div 
+                          animate={{ scale: [1, 1.3, 1], opacity: [0.3, 0, 0.3] }}
+                          transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
+                          className="absolute inset-0 rounded-full bg-brand-coral border-2 border-brand-coral"
+                        />
+                        {/* Inner pulsing ring */}
+                        <motion.div 
+                          animate={{ scale: [1, 1.6, 1], opacity: [0.5, 0, 0.5] }}
+                          transition={{ repeat: Infinity, duration: 2, delay: 0.5, ease: "easeInOut" }}
+                          className="absolute inset-0 rounded-full bg-brand-coral"
+                        />
+                        <div className="absolute inset-0 bg-white rounded-full shadow-lg z-10 flex items-center justify-center overflow-hidden">
+                          <Image priority  src={optimizeAppwriteImage(chatbotLogo)} alt="Analyzing" fill className="object-contain p-3 animate-pulse" />
+                        </div>
+                      </div>
+                      <motion.div 
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: 0.3 }}
+                        className="text-center space-y-1.5"
+                      >
+                        <h3 className="font-bold text-brand-navy text-lg">Racoonn AI is analyzing...</h3>
+                        <p className="text-[14px] text-gray-500 font-medium">Finding the perfect properties for your prompt</p>
+                      </motion.div>
+                    </motion.div>
+                  ) : (
+                    <>
+                      <div className="flex items-start gap-4 border border-brand-coral/30 rounded-2xl p-5 bg-brand-coral/5 transition-colors focus-within:border-brand-coral/60 focus-within:bg-white shadow-inner relative">
+                        <div className="w-8 h-8 relative rounded-full overflow-hidden shrink-0 bg-white shadow-sm mt-0.5 border border-gray-100">
+                          <Image priority  src={optimizeAppwriteImage(chatbotLogo)} alt="AI Assistant" fill className="object-contain p-1" />
+                        </div>
+                        <textarea 
+                          placeholder="e.g. Find me a beachfront villa in Bali for 2 adults next weekend with a private pool..."
+                          className="w-full min-h-62.5 md:min-h-34 outline-none text-brand-navy text-[16px] placeholder:text-brand-charcoal/40 bg-transparent resize-none leading-relaxed pb-8"
+                          autoFocus
+                          value={chatQuery}
+                          onChange={(e) => setChatQuery(e.target.value)}
+                        />
+                        <button 
+                          onClick={handleMicClick}
+                          className={`absolute right-4 bottom-4 p-2 rounded-full transition-colors ${
+                            isRecording 
+                              ? 'bg-red-100 text-red-500 hover:bg-red-200 animate-pulse' 
+                              : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                          }`}
+                          title={isRecording ? "Stop recording" : "Use voice input"}
+                        >
+                          {isRecording ? <MicOff size={20} /> : <Mic size={20} />}
+                        </button>
+                      </div>
+                      <div className="flex flex-row items-stretch sm:items-center justify-center gap-3 sm:gap-4">
+                        <button 
+                          onClick={() => setIsChatMode(false)}
+                          className="flex items-center justify-center gap-2 px-4 sm:px-5 py-3.5 rounded-full bg-brand-coral/10 hover:bg-brand-coral/20 border border-brand-coral/20 transition-all text-brand-navy font-bold text-[14px] shadow-sm flex-1 sm:flex-none whitespace-nowrap"
+                        >
+                          Classic Search
+                        </button>
+
+                        <button 
+                          onClick={() => handleAiSearch()}
+                          className="bg-linear-to-r from-brand-coral to-[#e84f57] hover:shadow-[0_8px_20px_rgba(232,106,112,0.3)] text-white pl-4 pr-3 sm:pl-7 sm:pr-5 py-3.5 rounded-full font-bold flex items-center justify-center gap-2 sm:gap-3 transition-all hover:-translate-y-0.5 text-[14px] sm:text-[15px] flex-1 sm:flex-none sm:w-55"
+                        >
+                          Ask AI
+                          <div className="w-7 h-7 sm:w-8 sm:h-8 bg-white/20 rounded-full flex items-center justify-center shrink-0">
+                            <ArrowRight size={16} />
+                          </div>
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </motion.div>
+              ) : (
+                <motion.div 
+                  key="classic"
+                  initial={{ opacity: 0, y: 15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -15 }}
+                  transition={{ duration: 0.3, ease: 'easeOut' }}
+                  className="space-y-4"
+                >
 
               {/* Destination Row */}
-              <div className="flex items-center gap-4 border border-gray-200 rounded-2xl px-5 py-4 hover:border-brand-coral/40 transition-colors cursor-pointer group">
-                <MapPin size={22} className="text-brand-charcoal/40 group-hover:text-brand-coral transition-colors shrink-0" />
-                <div>
-                  <h4 className="font-semibold text-brand-navy text-[15px]">Where are you going?</h4>
-                  <p className="text-sm text-brand-charcoal/50">Search destination or property</p>
+              <div 
+                className="flex items-center gap-4 border border-gray-200 rounded-2xl px-5 py-4 hover:border-brand-coral/40 transition-colors cursor-text group"
+                onClick={() => destinationInputRef.current?.focus()}
+              >
+                {activeTab !== 'stays' ? (
+                  <Search size={22} className="text-brand-charcoal/40 group-hover:text-brand-coral transition-colors shrink-0" />
+                ) : (
+                  <MapPin size={22} className="text-brand-charcoal/40 group-hover:text-brand-coral transition-colors shrink-0" />
+                )}
+                <div className="w-full relative">
+                  <h4 className="font-semibold text-brand-navy text-[15px]">
+                    {activeTab === 'activities' ? 'What do you want to do?' : 'Where are you going?'}
+                  </h4>
+                  <input 
+                    ref={destinationInputRef}
+                    type="text" 
+                    value={destination}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setDestination(val);
+                      setShowSuggestions(true);
+                      if (val.length <= 2) {
+                        setSuggestions([]);
+                      }
+                    }}
+                    onFocus={() => setShowSuggestions(true)}
+                    onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+                    placeholder={
+                      activeTab === 'stays' ? "Search destination or property" :
+                      activeTab === 'packages' ? "Search destination or package name" :
+                      "Search activities, tours, or destinations"
+                    }
+                    className="w-full outline-none text-brand-charcoal/70 text-sm font-medium placeholder:text-brand-charcoal/40 bg-transparent mt-0.5 p-0"
+                  />
+                  {showSuggestions && destination.length > 2 && activeTab === 'stays' && (
+                    <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden z-50">
+                      {loadingSuggestions ? (
+                        <div className="p-4 text-sm text-gray-500">Loading...</div>
+                      ) : suggestions.length > 0 ? (
+                        <ul className="max-h-60 overflow-y-auto">
+                          {suggestions.map((s, i) => (
+                            <li 
+                              key={i} 
+                              className="px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-50 last:border-0"
+                              onClick={() => {
+                                setDestination(s.district);
+                                setShowSuggestions(false);
+                              }}
+                            >
+                              <div className="font-medium text-sm text-brand-navy">{s.name}</div>
+                              <div className="text-xs text-gray-500">{s.district}, {s.state}</div>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <div className="p-4 text-sm text-gray-500">No destinations found</div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
 
               {/* Date + Guests Row */}
-              <div className="flex flex-col sm:flex-row gap-4">
-                {/* Check-in */}
-                <Popover>
-                  <PopoverTrigger className="flex items-center gap-4 border border-gray-200 rounded-2xl px-5 py-4 hover:border-brand-coral/40 transition-colors cursor-pointer group flex-1 text-left focus:outline-none focus:ring-2 focus:ring-brand-coral/30">
-                    <CalendarDays size={22} className="text-brand-charcoal/40 group-hover:text-brand-coral transition-colors shrink-0" />
-                    <div>
-                      <h4 className="font-semibold text-brand-navy text-[15px]">Check-in</h4>
-                      <p className="text-sm text-brand-charcoal/50">
-                        {checkIn ? format(checkIn, "PP") : "Add dates"}
-                      </p>
-                    </div>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={checkIn}
-                      onSelect={setCheckIn}
-                    />
-                  </PopoverContent>
-                </Popover>
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+                
+                {/* Dates Container (Grid on mobile, Flex on desktop) */}
+                <div className="grid grid-cols-2 gap-3 sm:flex sm:gap-4 sm:flex-1">
+                  
+                  {/* Check-in / Start Date */}
+                  <Popover open={isCheckInOpen} onOpenChange={setIsCheckInOpen}>
+                    <PopoverTrigger className="flex items-center gap-2 sm:gap-4 border border-gray-200 rounded-2xl px-3 sm:px-5 py-3 sm:py-4 hover:border-brand-coral/40 transition-colors cursor-pointer group flex-1 text-left focus:outline-none focus:ring-2 focus:ring-brand-coral/30">
+                      <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-red-50 flex items-center justify-center shrink-0">
+                        <CalendarDays size={18} className="text-brand-coral group-hover:scale-110 transition-transform sm:w-5 sm:h-5" />
+                      </div>
+                      <div className="overflow-hidden">
+                        <h4 className="font-semibold text-brand-navy text-[13px] sm:text-[15px] truncate">
+                          {activeTab === 'stays' ? 'Check-in' : activeTab === 'packages' ? 'Start date' : 'Date'}
+                        </h4>
+                        <p className="text-[12px] sm:text-sm text-brand-charcoal/50 truncate">
+                          {checkIn ? format(checkIn, "PP") : "Add dates"}
+                        </p>
+                      </div>
+                    </PopoverTrigger>
+                    <PopoverContent className="hidden md:block w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={checkIn}
+                        onSelect={(date) => {
+                          if (!date) return;
+                          setCheckIn(date);
+                          setIsCheckInOpen(false);
+                          if (!checkOut || date >= checkOut) {
+                            setCheckOut(addDays(date, 1));
+                          }
+                          if (activeTab !== 'activities') {
+                            setTimeout(() => {
+                              setIsCheckOutOpen(true);
+                            }, 150);
+                          }
+                        }}
+                        disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                      />
+                    </PopoverContent>
+                  </Popover>
+
+                  {/* Divider */}
+                  {activeTab !== 'activities' && activeTab !== 'packages' && <div className="hidden sm:block w-px bg-gray-200 self-stretch" />}
+
+                  {/* Check-out / End Date */}
+                  {activeTab !== 'activities' && activeTab !== 'packages' && (
+                    <Popover open={isCheckOutOpen} onOpenChange={setIsCheckOutOpen}>
+                      <PopoverTrigger className="flex items-center gap-2 sm:gap-4 border border-gray-200 rounded-2xl px-3 sm:px-5 py-3 sm:py-4 hover:border-brand-coral/40 transition-colors cursor-pointer group flex-1 text-left focus:outline-none focus:ring-2 focus:ring-brand-coral/30">
+                        <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-red-50 flex items-center justify-center shrink-0">
+                          <CalendarDays size={18} className="text-brand-coral group-hover:scale-110 transition-transform sm:w-5 sm:h-5" />
+                        </div>
+                        <div className="overflow-hidden">
+                          <h4 className="font-semibold text-brand-navy text-[13px] sm:text-[15px] truncate">
+                            {activeTab === 'stays' ? 'Check-out' : 'End date'}
+                          </h4>
+                          <p className="text-[12px] sm:text-sm text-brand-charcoal/50 truncate">
+                            {checkOut ? format(checkOut, "PP") : "Add dates"}
+                          </p>
+                        </div>
+                      </PopoverTrigger>
+                      <PopoverContent className="hidden md:block w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={checkOut}
+                          onSelect={(date) => {
+                            if (!date) return;
+                            setCheckOut(date);
+                            setIsCheckOutOpen(false);
+                          }}
+                          disabled={(date) => {
+                            if (checkIn) {
+                              return date <= checkIn;
+                            }
+                            return date < new Date(new Date().setHours(0, 0, 0, 0));
+                          }}
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  )}
+                </div>
 
                 {/* Divider */}
-                <div className="hidden sm:block w-[1px] bg-gray-200 self-stretch" />
+                <div className="hidden sm:block w-px bg-gray-200 self-stretch" />
 
-                {/* Check-out */}
+                {/* Guests / Participants */}
                 <Popover>
-                  <PopoverTrigger className="flex items-center gap-4 border border-gray-200 rounded-2xl px-5 py-4 hover:border-brand-coral/40 transition-colors cursor-pointer group flex-1 text-left focus:outline-none focus:ring-2 focus:ring-brand-coral/30">
-                    <CalendarDays size={22} className="text-brand-charcoal/40 group-hover:text-brand-coral transition-colors shrink-0" />
-                    <div>
-                      <h4 className="font-semibold text-brand-navy text-[15px]">Check-out</h4>
-                      <p className="text-sm text-brand-charcoal/50">
-                        {checkOut ? format(checkOut, "PP") : "Add dates"}
+                  <PopoverTrigger className="flex items-center gap-3 sm:gap-4 border border-gray-200 rounded-2xl px-4 sm:px-5 py-3 sm:py-4 hover:border-brand-coral/40 transition-colors cursor-pointer group flex-1 sm:flex-none text-left focus:outline-none focus:ring-2 focus:ring-brand-coral/30">
+                    <Users size={20} className="text-brand-charcoal/40 group-hover:text-brand-coral transition-colors shrink-0 sm:w-[22px] sm:h-[22px]" />
+                    <div className="flex-1 overflow-hidden">
+                      <h4 className="font-semibold text-brand-navy text-[14px] sm:text-[15px] truncate">
+                        {activeTab === 'activities' ? 'Participants' : 'Guests'}
+                      </h4>
+                      <p className="text-[13px] sm:text-sm text-brand-charcoal/50 truncate">
+                        {adults + children === 0 && rooms === 0 
+                          ? (activeTab === 'activities' ? "Add participants" : "Add guests") 
+                          : `${adults + children} ${activeTab === 'activities' ? 'participant' : 'guest'}${adults + children !== 1 ? 's' : ''}` + (activeTab !== 'activities' ? ` · ${rooms} room${rooms !== 1 ? 's' : ''}` : '')
+                        }
                       </p>
                     </div>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={checkOut}
-                      onSelect={setCheckOut}
-                    />
-                  </PopoverContent>
-                </Popover>
-
-                {/* Divider */}
-                <div className="hidden sm:block w-[1px] bg-gray-200 self-stretch" />
-
-                {/* Guests */}
-                <Popover>
-                  <PopoverTrigger className="flex items-center gap-4 border border-gray-200 rounded-2xl px-5 py-4 hover:border-brand-coral/40 transition-colors cursor-pointer group flex-1 text-left focus:outline-none focus:ring-2 focus:ring-brand-coral/30">
-                    <Users size={22} className="text-brand-charcoal/40 group-hover:text-brand-coral transition-colors shrink-0" />
-                    <div className="flex-1">
-                      <h4 className="font-semibold text-brand-navy text-[15px]">Guests</h4>
-                      <p className="text-sm text-brand-charcoal/50">
-                        {adults + children === 0 && rooms === 0 ? "Add guests" : `${adults + children} guest${adults + children !== 1 ? 's' : ''} · ${rooms} room${rooms !== 1 ? 's' : ''}`}
-                      </p>
-                    </div>
-                    <ChevronDown size={18} className="text-brand-charcoal/40" />
+                    <ChevronDown size={18} className="text-brand-charcoal/40 shrink-0" />
                   </PopoverTrigger>
                   <PopoverContent className="w-80 p-4" align="end">
                     <div className="space-y-4">
                       {/* Adults */}
                       <div className="flex items-center justify-between">
                         <div>
-                          <p className="font-semibold text-brand-navy">Adults</p>
+                          <p className="font-semibold text-brand-navy">{activeTab === 'activities' ? 'Adults' : 'Adults'}</p>
                           <p className="text-sm text-brand-charcoal/60">Ages 13 or above</p>
                         </div>
                         <div className="flex items-center gap-3">
@@ -218,52 +585,135 @@ export default function HeroSection() {
                         </div>
                       </div>
 
-                      {/* Rooms */}
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="font-semibold text-brand-navy">Rooms</p>
+                      {/* Rooms (Hidden for Activities) */}
+                      {activeTab !== 'activities' && (
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="font-semibold text-brand-navy">Rooms</p>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <button
+                              type="button"
+                              onClick={() => setRooms(Math.max(0, rooms - 1))}
+                              className="w-8 h-8 rounded-full border border-gray-200 flex items-center justify-center text-brand-charcoal hover:border-brand-coral hover:text-brand-coral transition-colors disabled:opacity-50 disabled:hover:border-gray-200 disabled:hover:text-brand-charcoal"
+                              disabled={rooms <= 0}
+                            >
+                              <Minus size={14} />
+                            </button>
+                            <span className="w-4 text-center font-medium">{rooms}</span>
+                            <button
+                              type="button"
+                              onClick={() => setRooms(rooms + 1)}
+                              className="w-8 h-8 rounded-full border border-gray-200 flex items-center justify-center text-brand-charcoal hover:border-brand-coral hover:text-brand-coral transition-colors"
+                            >
+                              <Plus size={14} />
+                            </button>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-3">
-                          <button
-                            type="button"
-                            onClick={() => setRooms(Math.max(0, rooms - 1))}
-                            className="w-8 h-8 rounded-full border border-gray-200 flex items-center justify-center text-brand-charcoal hover:border-brand-coral hover:text-brand-coral transition-colors disabled:opacity-50 disabled:hover:border-gray-200 disabled:hover:text-brand-charcoal"
-                            disabled={rooms <= 0}
-                          >
-                            <Minus size={14} />
-                          </button>
-                          <span className="w-4 text-center font-medium">{rooms}</span>
-                          <button
-                            type="button"
-                            onClick={() => setRooms(rooms + 1)}
-                            className="w-8 h-8 rounded-full border border-gray-200 flex items-center justify-center text-brand-charcoal hover:border-brand-coral hover:text-brand-coral transition-colors"
-                          >
-                            <Plus size={14} />
-                          </button>
-                        </div>
-                      </div>
+                      )}
                     </div>
                   </PopoverContent>
                 </Popover>
               </div>
 
               {/* Bottom Actions */}
-              <div className="flex flex-col sm:flex-row items-end sm:items-center justify-end gap-4 pt-2">
+              <div className="flex flex-row items-stretch sm:items-center justify-center gap-3 sm:gap-4 pt-2">
+                
+                {/* Mobile Ask AI Button */}
+                <button 
+                  onClick={() => setIsChatMode(!isChatMode)}
+                  className="sm:hidden flex items-center justify-center gap-2 px-2 py-3.5 rounded-full bg-brand-coral/10 hover:bg-brand-coral/20 border border-brand-coral/20 transition-all text-brand-navy font-bold text-[14px] shadow-sm flex-1 whitespace-nowrap"
+                >
+                  <div className="w-5 h-5 relative rounded-full overflow-hidden shrink-0 bg-white">
+                    <Image priority src={optimizeAppwriteImage(chatbotLogo)} alt="AI Assistant" fill className="object-contain p-0.5" />
+                  </div>
+                  {isChatMode ? 'Classic' : 'Ask AI'}
+                </button>
 
-                <button className="bg-brand-coral hover:bg-brand-coral/90 text-white pl-7 pr-5 py-3.5 rounded-full font-bold flex items-center gap-3 transition-all shadow-[0_8px_25px_rgba(232,106,112,0.4)] hover:shadow-[0_12px_35px_rgba(232,106,112,0.5)] hover:-translate-y-0.5 text-[15px]">
+                <Link 
+                  href={
+                    activeTab === 'packages' ? `/packages?search=${encodeURIComponent(destination)}` : 
+                    activeTab === 'activities' ? `/activities?search=${encodeURIComponent(destination)}` : 
+                    `/search?location=${encodeURIComponent(destination)}&checkIn=${checkIn?.toISOString() || ''}&checkOut=${checkOut?.toISOString() || ''}&adults=${adults}&children=${children}&rooms=${rooms}`
+                  } 
+                  className="bg-brand-coral hover:bg-brand-coral/90 text-white pl-4 pr-3 sm:pl-7 sm:pr-5 py-3.5 rounded-full font-bold flex items-center justify-center gap-2 sm:gap-3 transition-all hover:-translate-y-0.5 text-[14px] sm:text-[15px] flex-1 sm:flex-none sm:w-auto sm:min-w-50"
+                >
                   Search
-                  <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
+                  <div className="w-7 h-7 sm:w-8 sm:h-8 bg-white/20 rounded-full flex items-center justify-center shrink-0">
                     <ArrowRight size={16} />
                   </div>
-                </button>
+                </Link>
               </div>
-
+              </motion.div>
+              )}
+              </AnimatePresence>
             </div>
           </div>
         </div>
 
       </div>
 
+      {/* Mobile Center Popups for Dates */}
+      <AnimatePresence>
+        {(isCheckInOpen || isCheckOutOpen) && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] bg-black/40 flex items-center justify-center p-4 md:hidden"
+            onClick={() => { setIsCheckInOpen(false); setIsCheckOutOpen(false); }}
+            onPointerDown={() => { setIsCheckInOpen(false); setIsCheckOutOpen(false); }}
+          >
+            <motion.div 
+              initial={{ scale: 0.95, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 20 }}
+              className="bg-white rounded-3xl shadow-2xl p-2 relative w-full max-w-sm mx-auto"
+              onClick={e => e.stopPropagation()}
+              onPointerDown={e => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between px-4 pt-3 pb-2 border-b border-gray-100 mb-2">
+                <h3 className="font-bold text-gray-900">{isCheckInOpen ? 'Select Check-in Date' : 'Select Check-out Date'}</h3>
+                <button 
+                  onClick={() => { setIsCheckInOpen(false); setIsCheckOutOpen(false); }}
+                  className="p-1.5 bg-gray-100 rounded-full text-gray-500 hover:text-gray-900 transition-colors"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+              <div className="flex justify-center px-2 pb-2">
+                <Calendar
+                  mode="single"
+                  selected={isCheckInOpen ? checkIn : checkOut}
+                  onSelect={(date) => {
+                    if (!date) return;
+                    if (isCheckInOpen) {
+                      setCheckIn(date);
+                      setIsCheckInOpen(false);
+                      if (!checkOut || date >= checkOut) {
+                        setCheckOut(addDays(date, 1));
+                      }
+                      if (activeTab !== 'activities') {
+                        setTimeout(() => { setIsCheckOutOpen(true); }, 150);
+                      }
+                    } else {
+                      setCheckOut(date);
+                      setIsCheckOutOpen(false);
+                    }
+                  }}
+                  disabled={(date) => {
+                    if (isCheckOutOpen && checkIn) {
+                      return date <= checkIn;
+                    }
+                    return date < new Date(new Date().setHours(0, 0, 0, 0));
+                  }}
+                  className="w-full"
+                />
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
     </section>
   );

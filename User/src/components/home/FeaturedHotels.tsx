@@ -1,3 +1,4 @@
+import { optimizeAppwriteImage } from "@/lib/optimizeImage";
 import Image from 'next/image';
 import { Star, MapPin } from 'lucide-react';
 import Link from 'next/link';
@@ -47,9 +48,9 @@ export default function FeaturedHotels() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {hotels.map((hotel) => (
             <div key={hotel.id} className="bg-white border border-brand-sky/50 rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 group">
-              <div className="relative aspect-[4/3] overflow-hidden">
+              <div className="relative aspect-4/3 overflow-hidden">
                 <Image
-                  src={hotel.image}
+                  src={optimizeAppwriteImage(hotel.image)}
                   alt={hotel.name}
                   fill
                   className="object-cover group-hover:scale-105 transition-transform duration-500"
@@ -57,7 +58,7 @@ export default function FeaturedHotels() {
                 />
                 <div className="absolute top-4 left-4 flex gap-2">
                   {hotel.tags.map(tag => (
-                    <span key={tag} className="bg-white/90 backdrop-blur-sm text-brand-navy text-xs font-semibold px-3 py-1 rounded-full">
+                    <span key={tag} className="bg-white/95 shadow-sm text-brand-navy text-xs font-semibold px-3 py-1 rounded-full">
                       {tag}
                     </span>
                   ))}

@@ -4,3 +4,40 @@ import { twMerge } from "tailwind-merge"
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
+
+export function isActiveProperty(property: { status?: string; name?: string; title?: string; propertyName?: string }) {
+  const name = String(property.name || property.title || property.propertyName || '').toLowerCase();
+  if (name.startsWith('cms ')) {
+    return false;
+  }
+
+  // If no status is explicitly set, default to showing it to maintain backwards compatibility
+  if (!property.status) return true;
+  const status = property.status.toLowerCase();
+  return status === 'active' || status === 'published' || status === 'approved';
+}
+
+export function parseLocationGeo(rawLocation?: string): { cleanLocation: string; lat?: number; lng?: number } {
+  if (!rawLocation) return { cleanLocation: '' };
+  const geoMatch = rawLocation.match(/\[GEO:\s*(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)\]/i);
+  if (geoMatch) {
+    const lat = parseFloat(geoMatch[1]);
+    const lng = parseFloat(geoMatch[2]);
+    const cleanLocation = rawLocation.replace(/\[GEO:\s*-?\d+(?:\.\d+)?,\s*-?\d+(?:\.\d+)?\]/gi, '').trim();
+    return { cleanLocation, lat: isNaN(lat) ? undefined : lat, lng: isNaN(lng) ? undefined : lng };
+  }
+  return { cleanLocation: rawLocation.trim() };
+}
+
+export function generatePropertySlug(id: string, name: string): string {
+  if (!name) return id;
+  const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+  return `${slug}-${id}`;
+}
+
+export function extractIdFromSlug(slug: string): string {
+  if (!slug) return '';
+  if (!slug.includes('-')) return slug;
+  const parts = slug.split('-');
+  return parts[parts.length - 1];
+}

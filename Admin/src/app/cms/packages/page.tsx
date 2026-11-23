@@ -1,0 +1,1652 @@
+"use client"
+
+import { useState, useEffect } from "react"
+import { 
+  Plus, Trash2, Image as ImageIcon, ArrowLeft, Pencil, 
+  IndianRupee, ChevronLeft, ChevronRight, X, Check,
+  Building, Loader2, Search, Compass, MapPin
+} from "lucide-react"
+import { storage } from "@/lib/appwrite/client";
+import { ID } from "appwrite";
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import { Switch } from "@/components/ui/switch"
+import Image from "next/image"
+import { DeleteConfirmModal } from "@/components/ui/delete-confirm-modal"
+
+type PricingSlab = {
+  id: string;
+  minPersons: number;
+  maxPersons: number;
+  pricePerPerson: number;
+}
+
+type DepartureCity = {
+  id: string;
+  cityName: string;
+  pricePerPerson: number;
+  isDefault: boolean;
+  pricing?: PricingSlab[];
+}
+
+type ItineraryPoint = {
+  title: string;
+  description: string;
+  hasHotelActions?: boolean;
+  hasActivityActions?: boolean;
+  selectedHotelId?: string;
+  selectedActivityId?: string;
+}
+
+type ItineraryDay = {
+  id: string;
+  dayNumber: number;
+  title: string;
+  activities: string;
+  points: ItineraryPoint[];
+}
+
+type HotelOption = {
+  id: string;
+  title: string;
+  description: string;
+  image: string;
+  tags: string[];
+  pricePerNight: number;
+  isDefault: boolean;
+}
+
+type ActivityOption = {
+  id: string;
+  title: string;
+  description: string;
+  image: string;
+  pricePerPerson: number;
+  priceLabel: string;
+}
+
+type Package = {
+  id: string;
+  title: string;
+  location: string;
+  duration: string;
+  features: string;
+  badge: string;
+  images: string[];
+  pricing: PricingSlab[];
+  departureCities?: DepartureCity[];
+  hotelOptions: HotelOption[];
+  activityOptions: ActivityOption[];
+  metaTitle: string;
+  metaDescription: string;
+  metaKeywords: string[];
+  itinerary: ItineraryDay[];
+  status: 'draft' | 'published';
+  videoTestimonials?: string[];
+}
+
+const emptyForm: Package = {
+  id: "",
+  title: "",
+  location: "Uttarakhand",
+  duration: "6 Days / 5 Nights",
+  features: "Meals | Stay | Transfer",
+  badge: "Bestseller",
+  images: [],
+  pricing: [{ id: Date.now().toString(), minPersons: 1, maxPersons: 2, pricePerPerson: 18999 }],
+  departureCities: [
+    { 
+      id: "c1", 
+      cityName: "Delhi", 
+      pricePerPerson: 18999, 
+      isDefault: true,
+      pricing: [
+        { id: "c1-s1", minPersons: 1, maxPersons: 2, pricePerPerson: 18999 },
+        { id: "c1-s2", minPersons: 3, maxPersons: 4, pricePerPerson: 16999 }
+      ]
+    },
+    { 
+      id: "c2", 
+      cityName: "Mumbai", 
+      pricePerPerson: 22499, 
+      isDefault: false,
+      pricing: [
+        { id: "c2-s1", minPersons: 1, maxPersons: 2, pricePerPerson: 22499 },
+        { id: "c2-s2", minPersons: 3, maxPersons: 4, pricePerPerson: 19999 }
+      ]
+    },
+    { 
+      id: "c3", 
+      cityName: "Dehradun", 
+      pricePerPerson: 15999, 
+      isDefault: false,
+      pricing: [
+        { id: "c3-s1", minPersons: 1, maxPersons: 2, pricePerPerson: 15999 },
+        { id: "c3-s2", minPersons: 3, maxPersons: 4, pricePerPerson: 13999 }
+      ]
+    }
+  ],
+  hotelOptions: [
+    {
+      id: "h1",
+      title: "Premium Hotel Stay",
+      description: "Experience maximum comfort in our handpicked 3 or 4-star properties.",
+      image: "https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=600&auto=format&fit=crop",
+      tags: ["AC Rooms", "Breakfast Included"],
+      pricePerNight: 3500,
+      isDefault: true
+    },
+    {
+      id: "h2",
+      title: "Experiential Swiss Camps",
+      description: "For applicable locations, enjoy a night under the stars in our luxury swiss tents.",
+      image: "https://images.unsplash.com/photo-1523987355523-c7b5b0dd90a7?q=80&w=600&auto=format&fit=crop",
+      tags: ["Luxury Tents", "All Meals"],
+      pricePerNight: 4200,
+      isDefault: false
+    }
+  ],
+  activityOptions: [
+    {
+      id: "a1",
+      title: "Guided Local Sightseeing",
+      description: "Explore the best landmarks and hidden gems with our expert local guides.",
+      image: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=600&auto=format&fit=crop",
+      pricePerPerson: 0,
+      priceLabel: "Included in Package"
+    },
+    {
+      id: "a2",
+      title: "Adventure Sports Pass",
+      description: "Get an adrenaline rush with our adventure sports pass.",
+      image: "https://images.unsplash.com/photo-1593693397690-362cb9666fc2?q=80&w=600&auto=format&fit=crop",
+      pricePerPerson: 2500,
+      priceLabel: "+ ₹2,500 / person"
+    }
+  ],
+  metaTitle: "",
+  metaDescription: "",
+  metaKeywords: [],
+  itinerary: [{ id: Date.now().toString(), dayNumber: 1, title: "Arrival & Welcome", activities: "Check-in and local sightseeing", points: [] }],
+  status: 'draft',
+  videoTestimonials: []
+}
+
+export default function PackagesPage() {
+  const [packages, setPackages] = useState<Package[]>([])
+  const [loading, setLoading] = useState(true)
+  const [isFormOpen, setIsFormOpen] = useState(false)
+  const [formStep, setFormStep] = useState(1)
+  const [formData, setFormData] = useState<Package>(emptyForm)
+  const [availableProperties, setAvailableProperties] = useState<{ id: string; title: string; location?: string; city?: string; image?: string; price?: number }[]>([])
+  const [isLoadingProperties, setIsLoadingProperties] = useState(false)
+  const [availableActivities, setAvailableActivities] = useState<{ id: string; title: string; description?: string; image?: string; pricePerPerson?: number; priceLabel?: string }[]>([])
+  const [isLoadingActivities, setIsLoadingActivities] = useState(false)
+  const [propertySearch, setPropertySearch] = useState('')
+  const [activitySearch, setActivitySearch] = useState('')
+  const [toast, setToast] = useState<{title: string, type: 'success' | 'error'} | null>(null)
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
+  const [statusConfirm, setStatusConfirm] = useState<{ id: string, nextStatus: 'draft' | 'published' } | null>(null)
+
+  const showToast = (title: string, type: 'success' | 'error' = 'success') => {
+    setToast({ title, type })
+    setTimeout(() => setToast(null), 4000)
+  }
+
+  const fetchAvailableProperties = async () => {
+    try {
+      setIsLoadingProperties(true);
+      const res = await fetch("/api/cms/properties");
+      const json = await res.json();
+      if (json.success && Array.isArray(json.properties)) {
+        setAvailableProperties(json.properties);
+      }
+    } catch (err) {
+      console.error("Error fetching properties for packages:", err);
+    } finally {
+      setIsLoadingProperties(false);
+    }
+  };
+
+  const fetchAvailableActivities = async () => {
+    try {
+      setIsLoadingActivities(true);
+      const res = await fetch("/api/cms/activities");
+      const json = await res.json();
+      if (json.success && Array.isArray(json.activities)) {
+        setAvailableActivities(json.activities);
+      }
+    } catch (err) {
+      console.error("Error fetching activities for packages:", err);
+    } finally {
+      setIsLoadingActivities(false);
+    }
+  };
+
+  useEffect(() => {
+    setTimeout(() => {
+      fetchAvailableProperties();
+      fetchAvailableActivities();
+    }, 0);
+  }, []);
+
+  const toggleSelectProperty = (prop: { id: string; title: string; location?: string; city?: string; image?: string; price?: number }) => {
+    setFormData(prev => {
+      const currentList = prev.hotelOptions || [];
+      const exists = currentList.some(h => h.id === prop.id);
+      if (exists) {
+        return {
+          ...prev,
+          hotelOptions: currentList.filter(h => h.id !== prop.id)
+        };
+      } else {
+        return {
+          ...prev,
+          hotelOptions: [
+            ...currentList,
+            {
+              id: prop.id,
+              title: prop.title,
+              description: `Stay at ${prop.title} situated in ${prop.location || prop.city || 'prime location'}.`,
+              image: prop.image || "https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=600&auto=format&fit=crop",
+              tags: ["AC Rooms", "Breakfast Included"],
+              pricePerNight: prop.price || 3500,
+              isDefault: currentList.length === 0
+            }
+          ]
+        };
+      }
+    });
+  };
+
+  const toggleSelectActivity = (act: { id: string; title: string; description?: string; image?: string; pricePerPerson?: number; priceLabel?: string }) => {
+    setFormData(prev => {
+      const currentList = prev.activityOptions || [];
+      const exists = currentList.some(a => a.id === act.id);
+      if (exists) {
+        return {
+          ...prev,
+          activityOptions: currentList.filter(a => a.id !== act.id)
+        };
+      } else {
+        return {
+          ...prev,
+          activityOptions: [
+            ...currentList,
+            {
+              id: act.id,
+              title: act.title,
+              description: act.description || "",
+              image: act.image || "https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=600&auto=format&fit=crop",
+              pricePerPerson: act.pricePerPerson || 0,
+              priceLabel: act.priceLabel || `+ ₹${act.pricePerPerson || 0} / person`
+            }
+          ]
+        };
+      }
+    });
+  };
+
+  const fetchPackages = async () => {
+    try {
+      setLoading(true);
+      const res = await fetch(`/api/cms/packages?t=${Date.now()}`, { cache: 'no-store' });
+      const json = await res.json();
+      if (json.success && Array.isArray(json.packages)) {
+        setPackages(json.packages);
+      }
+    } catch (err) {
+      console.error("Error fetching packages:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    setTimeout(() => {
+      fetchPackages();
+    }, 0);
+
+    const handleLocalUpdate = () => fetchPackages();
+    window.addEventListener("cms_packages_updated", handleLocalUpdate);
+
+    let bc: BroadcastChannel | null = null;
+    if (typeof window !== "undefined" && "BroadcastChannel" in window) {
+      bc = new BroadcastChannel("racoonn_cms_channel");
+      bc.onmessage = (event) => {
+        if (event.data && event.data.type === "PACKAGES_UPDATED") {
+          if (Array.isArray(event.data.data)) {
+            setPackages(event.data.data);
+          } else {
+            fetchPackages();
+          }
+        }
+      };
+    }
+
+    return () => {
+      window.removeEventListener("cms_packages_updated", handleLocalUpdate);
+      if (bc) bc.close();
+    };
+  }, []);
+
+  const savePackagesToServer = async (newList: Package[]): Promise<boolean> => {
+    try {
+      const res = await fetch("/api/cms/packages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ packages: newList }),
+      });
+      
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "Failed to save to database");
+      }
+
+      setPackages(newList);
+      window.dispatchEvent(new Event("cms_packages_updated"));
+      if (typeof window !== "undefined" && "BroadcastChannel" in window) {
+        const bc = new BroadcastChannel("racoonn_cms_channel");
+        bc.postMessage({ type: "PACKAGES_UPDATED", data: newList });
+        bc.close();
+      }
+      return true;
+    } catch (err: unknown) {
+      const error = err as Error;
+      console.error("Error saving packages:", error);
+      showToast("Package could not be saved. " + (error.message || "Unknown error"), 'error');
+      return false;
+    }
+  };
+
+  const handleOpenForm = (pkg?: Package) => {
+    if (pkg) {
+      setFormData({
+        ...pkg,
+        images: pkg.images || [],
+        pricing: pkg.pricing || [],
+        departureCities: (pkg.departureCities && Array.isArray(pkg.departureCities)) ? pkg.departureCities : [],
+        hotelOptions: pkg.hotelOptions || [],
+        activityOptions: pkg.activityOptions || [],
+        metaKeywords: pkg.metaKeywords || [],
+        videoTestimonials: pkg.videoTestimonials || [],
+        itinerary: pkg.itinerary || []
+      })
+    } else {
+      setFormData({ ...emptyForm, id: Date.now().toString() })
+    }
+    setFormStep(1)
+    setIsFormOpen(true)
+  }
+
+  const handleCloseForm = () => {
+    setIsFormOpen(false)
+    setFormData(emptyForm)
+  }
+
+  const handleDelete = (id: string) => {
+    setDeleteConfirmId(id)
+  }
+
+  const confirmDelete = async () => {
+    if (deleteConfirmId) {
+      const updated = packages.filter(p => p.id !== deleteConfirmId);
+      const success = await savePackagesToServer(updated);
+      if (success) {
+        fetchPackages();
+        showToast("Package deleted successfully");
+      }
+      setDeleteConfirmId(null);
+    }
+  }
+
+  const confirmToggleStatus = async () => {
+    if (!statusConfirm) return;
+    const { id, nextStatus } = statusConfirm;
+    const updated = packages.map(p => 
+      p.id === id ? { ...p, status: nextStatus } : p
+    );
+    const success = await savePackagesToServer(updated);
+    if (success) {
+      fetchPackages();
+      showToast(`Package status changed to ${nextStatus}`, 'success');
+    }
+    setStatusConfirm(null);
+  };
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    // Validation
+    if (!formData.title) return showToast("Title is required", 'error')
+    if (formData.images.length < 4 || formData.images.length > 6) {
+      return showToast(`Please upload between 4 and 6 images. Currently you have ${formData.images.length}.`, 'error')
+    }
+    if (!formData.departureCities || formData.departureCities.length === 0) {
+      return showToast("At least one departure city with pricing is required", 'error')
+    }
+    
+    // Sync fresh activity and hotel data before saving
+    const syncedFormData = { ...formData };
+    
+    // Auto-sync default city slabs to package base pricing for backwards compatibility
+    const cities = syncedFormData.departureCities || [];
+    const defaultCity = cities.find(c => c.isDefault) || cities[0];
+    syncedFormData.pricing = (defaultCity?.pricing && defaultCity.pricing.length > 0)
+      ? defaultCity.pricing
+      : [{ id: 's1', minPersons: 1, maxPersons: 2, pricePerPerson: defaultCity?.pricePerPerson || 0 }];
+    
+    if (syncedFormData.activityOptions) {
+      syncedFormData.activityOptions = syncedFormData.activityOptions.map(a => {
+        const freshAct = availableActivities.find(avail => avail.id === a.id);
+        return freshAct ? { ...a, ...freshAct } : a;
+      });
+    }
+
+    if (syncedFormData.hotelOptions) {
+      syncedFormData.hotelOptions = syncedFormData.hotelOptions.map(h => {
+        const freshProp = availableProperties.find(prop => prop.id === h.id);
+        return freshProp ? { ...h, ...freshProp } : h;
+      });
+    }
+
+    const existingIndex = packages.findIndex(p => p.id === formData.id)
+    let updated: Package[] = []
+    if (existingIndex >= 0) {
+      updated = [...packages]
+      updated[existingIndex] = syncedFormData
+    } else {
+      updated = [syncedFormData, ...packages]
+    }
+    
+    setLoading(true);
+    const success = await savePackagesToServer(updated);
+    setLoading(false);
+    
+    if (success) {
+      showToast("Package saved successfully", 'success');
+      handleCloseForm();
+      fetchPackages();
+    }
+  }
+
+  // Departure Cities Handlers
+  const addDepartureCity = (name = "Delhi", price = 18999) => {
+    setFormData(prev => {
+      const cities = prev.departureCities || [];
+      const isFirst = cities.length === 0;
+      const newCityId = Date.now().toString() + Math.random().toString(36).substring(2, 6);
+      return {
+        ...prev,
+        departureCities: [
+          ...cities,
+          {
+            id: newCityId,
+            cityName: name,
+            pricePerPerson: price,
+            isDefault: isFirst,
+            pricing: [
+              { id: newCityId + '-s1', minPersons: 1, maxPersons: 2, pricePerPerson: price }
+            ]
+          }
+        ]
+      };
+    });
+  };
+
+  const updateDepartureCity = (id: string, field: keyof DepartureCity, value: any) => {
+    setFormData(prev => {
+      let cities = [...(prev.departureCities || [])];
+      if (field === 'isDefault' && value === true) {
+        cities = cities.map(c => ({ ...c, isDefault: c.id === id }));
+      } else {
+        cities = cities.map(c => {
+          if (c.id === id) {
+            const updated = { ...c, [field]: value };
+            if (field === 'pricePerPerson' && updated.pricing && updated.pricing.length === 1) {
+              updated.pricing[0].pricePerPerson = Number(value) || 0;
+            }
+            return updated;
+          }
+          return c;
+        });
+      }
+      return { ...prev, departureCities: cities };
+    });
+  };
+
+  const removeDepartureCity = (id: string) => {
+    setFormData(prev => {
+      const filtered = (prev.departureCities || []).filter(c => c.id !== id);
+      if (filtered.length > 0 && !filtered.some(c => c.isDefault)) {
+        filtered[0].isDefault = true;
+      }
+      return { ...prev, departureCities: filtered };
+    });
+  };
+
+  // Per-City Slab Handlers
+  const addCityPricingSlab = (cityId: string) => {
+    setFormData(prev => ({
+      ...prev,
+      departureCities: (prev.departureCities || []).map(city => {
+        if (city.id !== cityId) return city;
+        const slabs = city.pricing || [];
+        const lastSlab = slabs[slabs.length - 1];
+        const nextMin = lastSlab ? (lastSlab.maxPersons || lastSlab.minPersons) + 1 : 1;
+        const nextMax = nextMin + 1;
+        const defaultRate = lastSlab ? Math.max(0, lastSlab.pricePerPerson - 1500) : city.pricePerPerson || 0;
+        return {
+          ...city,
+          pricing: [
+            ...slabs,
+            { id: Date.now().toString() + Math.random().toString(36).substring(2, 6), minPersons: nextMin, maxPersons: nextMax, pricePerPerson: defaultRate }
+          ]
+        };
+      })
+    }));
+  };
+
+  const updateCityPricingSlab = (cityId: string, slabId: string, field: keyof PricingSlab, value: number) => {
+    setFormData(prev => ({
+      ...prev,
+      departureCities: (prev.departureCities || []).map(city => {
+        if (city.id !== cityId) return city;
+        const updatedSlabs = (city.pricing || []).map(slab => 
+          slab.id === slabId ? { ...slab, [field]: value } : slab
+        );
+        return {
+          ...city,
+          pricing: updatedSlabs,
+          pricePerPerson: updatedSlabs[0] ? updatedSlabs[0].pricePerPerson : city.pricePerPerson
+        };
+      })
+    }));
+  };
+
+  const removeCityPricingSlab = (cityId: string, slabId: string) => {
+    setFormData(prev => ({
+      ...prev,
+      departureCities: (prev.departureCities || []).map(city => {
+        if (city.id !== cityId) return city;
+        return {
+          ...city,
+          pricing: (city.pricing || []).filter(slab => slab.id !== slabId)
+        };
+      })
+    }));
+  };
+
+  // Image Handlers
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || [])
+    if (files.length === 0) return
+
+    if (formData.images.length + files.length > 6) {
+      return alert("You can only have up to 6 images total.")
+    }
+
+    const BUCKET_ID = "6a3e398000280b2b3d20";
+    const PROJECT_ID = "6a3bce6900381359c3ce";
+
+    for (const file of files) {
+      try {
+        const uploadedFile = await storage.createFile(BUCKET_ID, ID.unique(), file);
+        const url = `https://sgp.cloud.appwrite.io/v1/storage/buckets/${BUCKET_ID}/files/${uploadedFile.$id}/preview?project=${PROJECT_ID}&output=webp`;
+        setFormData(prev => ({
+          ...prev,
+          images: [...prev.images, url]
+        }))
+      } catch (error) {
+        console.error("Image upload failed", error);
+        showToast("Failed to upload image. Please try again.", 'error');
+      }
+    }
+  }
+
+  const removeImage = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      images: prev.images.filter((_, i) => i !== index)
+    }))
+  }
+
+  const moveImage = (index: number, direction: 'left' | 'right') => {
+    if (direction === 'left' && index === 0) return
+    if (direction === 'right' && index === formData.images.length - 1) return
+
+    const newImages = [...formData.images]
+    const targetIndex = direction === 'left' ? index - 1 : index + 1
+    const temp = newImages[index]
+    newImages[index] = newImages[targetIndex]
+    newImages[targetIndex] = temp
+
+    setFormData(prev => ({ ...prev, images: newImages }))
+  }
+
+  const addKeyword = (value: string) => {
+    const trimmed = value.trim().replace(/,$/, "")
+    if (trimmed && !(formData.metaKeywords || []).includes(trimmed)) {
+      setFormData(prev => ({ ...prev, metaKeywords: [...(prev.metaKeywords || []), trimmed] }))
+    }
+  }
+
+  const removeKeyword = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      metaKeywords: prev.metaKeywords.filter((_, i) => i !== index)
+    }))
+  }
+
+  const handleKeywordKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' || e.key === ',') {
+      e.preventDefault()
+      addKeyword(e.currentTarget.value)
+      e.currentTarget.value = ''
+    }
+  }
+
+  const handleKeywordBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    addKeyword(e.target.value)
+    e.target.value = ''
+  }
+
+  // Video Testimonial Handlers
+  const addVideoTestimonial = () => {
+    setFormData(prev => ({ ...prev, videoTestimonials: [...(prev.videoTestimonials || []), ""] }))
+  }
+
+  const updateVideoTestimonial = (index: number, value: string) => {
+    setFormData(prev => {
+      const arr = [...(prev.videoTestimonials || [])]
+      arr[index] = value
+      return { ...prev, videoTestimonials: arr }
+    })
+  }
+
+  const removeVideoTestimonial = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      videoTestimonials: (prev.videoTestimonials || []).filter((_, i) => i !== index)
+    }))
+  }
+
+  // Itinerary Handlers
+  const addItineraryDay = () => {
+    setFormData(prev => ({
+      ...prev,
+      itinerary: [...prev.itinerary, { 
+        id: Date.now().toString(), 
+        dayNumber: prev.itinerary.length + 1, 
+        title: "", 
+        activities: "",
+        points: []
+      }]
+    }))
+  }
+
+  const updateItineraryDay = (id: string, field: keyof ItineraryDay, value: string | number) => {
+    setFormData(prev => ({
+      ...prev,
+      itinerary: prev.itinerary.map(day => day.id === id ? { ...day, [field]: value } : day)
+    }))
+  }
+
+  const removeItineraryDay = (id: string) => {
+    setFormData(prev => {
+      const filtered = prev.itinerary.filter(day => day.id !== id);
+      const renumbered = filtered.map((day, idx) => ({ ...day, dayNumber: idx + 1 }));
+      return { ...prev, itinerary: renumbered };
+    })
+  }
+
+  const updateItineraryPoint = (dayId: string, pointIndex: number, field: keyof ItineraryPoint, value: string | boolean) => {
+    setFormData(prev => ({
+      ...prev,
+      itinerary: prev.itinerary.map(day => 
+        day.id === dayId 
+          ? { ...day, points: (day.points || []).map((pt, i) => i === pointIndex ? { ...pt, [field]: value } : pt) } 
+          : day
+      )
+    }))
+  }
+
+  const addItineraryPoint = (dayId: string) => {
+    setFormData(prev => ({
+      ...prev,
+      itinerary: prev.itinerary.map(day => 
+        day.id === dayId 
+          ? { ...day, points: [...(day.points || []), { title: "", description: "", hasHotelActions: false }] } 
+          : day
+      )
+    }))
+  }
+
+  const removeItineraryPoint = (dayId: string, pointIndex: number) => {
+    setFormData(prev => ({
+      ...prev,
+      itinerary: prev.itinerary.map(day => 
+        day.id === dayId 
+          ? { ...day, points: (day.points || []).filter((_, i) => i !== pointIndex) } 
+          : day
+      )
+    }))
+  }
+
+
+
+  // Views
+  if (isFormOpen) {
+    return (
+      <div className="space-y-6 max-w-5xl mx-auto pb-20">
+        <div className="flex items-center gap-4 border-b pb-6">
+          <Button variant="ghost" size="icon" onClick={formStep === 2 ? () => setFormStep(1) : handleCloseForm} className="rounded-full">
+            <ArrowLeft className="w-5 h-5" />
+          </Button>
+          <div>
+            <h2 className="text-2xl font-bold tracking-tight">
+              {packages.some(p => p.id === formData.id) ? 'Edit Package' : 'Create New Package'}
+            </h2>
+            <p className="text-muted-foreground text-sm mt-1">
+              {formStep === 1 ? 'Step 1: Fill in package details, accommodations & activities.' : 'Step 2: Package Itinerary & Builder'}
+            </p>
+          </div>
+          <div className="ml-auto flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <Label htmlFor="status" className="text-sm font-medium">Status: {formData.status === 'published' ? 'Published' : 'Draft'}</Label>
+              <Switch 
+                id="status" 
+                checked={formData.status === 'published'}
+                onCheckedChange={(checked) => setFormData(prev => ({ ...prev, status: checked ? 'published' : 'draft'}))}
+              />
+            </div>
+            {formStep === 2 && (
+              <Button onClick={handleSave} className="rounded-full px-8 bg-[#1F2E4A] hover:bg-[#2a3c5e]">Save Package</Button>
+            )}
+            {formStep === 1 && (
+              <Button type="button" onClick={() => setFormStep(2)} className="rounded-full px-8 bg-[#E86A70] hover:bg-[#d65b61] text-white">Next Step</Button>
+            )}
+          </div>
+        </div>
+
+        <form onSubmit={formStep === 2 ? handleSave : (e) => { e.preventDefault(); setFormStep(2); }} className="space-y-10">
+          {formStep === 1 && (
+            <>
+              {/* Section 1: Basic Info */}
+              <section className="bg-white p-8 rounded-2xl shadow-sm border border-slate-100 space-y-6">
+                <h3 className="text-lg font-bold text-[#1F2E4A]">1. Package Information</h3>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="grid gap-2 sm:col-span-2">
+                    <Label htmlFor="title" className="font-semibold text-slate-700">Package Title <span className="text-red-500">*</span></Label>
+                    <Input 
+                      id="title" 
+                      placeholder="e.g. Kashmir Tour Package – 5 Days & 4 Nights" 
+                      value={formData.title}
+                      onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+                      className="h-12 rounded-xl border-slate-200"
+                      required
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="location" className="font-semibold text-slate-700">Location / Destination</Label>
+                    <Input 
+                      id="location" 
+                      placeholder="e.g. Uttarakhand, Himachal, Goa" 
+                      value={formData.location || ''}
+                      onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
+                      className="h-11 rounded-xl border-slate-200"
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="duration" className="font-semibold text-slate-700">Duration</Label>
+                    <Input 
+                      id="duration" 
+                      placeholder="e.g. 6 Days / 5 Nights" 
+                      value={formData.duration || ''}
+                      onChange={(e) => setFormData(prev => ({ ...prev, duration: e.target.value }))}
+                      className="h-11 rounded-xl border-slate-200"
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="features" className="font-semibold text-slate-700">Features Line</Label>
+                    <Input 
+                      id="features" 
+                      placeholder="e.g. Meals | Stay | Transfer | Sightseeing" 
+                      value={formData.features || ''}
+                      onChange={(e) => setFormData(prev => ({ ...prev, features: e.target.value }))}
+                      className="h-11 rounded-xl border-slate-200"
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="badge" className="font-semibold text-slate-700">Badge Tag</Label>
+                    <Input 
+                      id="badge" 
+                      placeholder="e.g. Bestseller, Popular, New, Trending" 
+                      value={formData.badge || ''}
+                      onChange={(e) => setFormData(prev => ({ ...prev, badge: e.target.value }))}
+                      className="h-11 rounded-xl border-slate-200"
+                    />
+                  </div>
+                </div>
+              </section>
+
+          {/* Section 2: Image Gallery */}
+          <section className="bg-white p-8 rounded-2xl shadow-sm border border-slate-100">
+            <div className="flex justify-between items-center mb-6">
+              <div>
+                <h3 className="text-lg font-bold text-[#1F2E4A]">2. Image Gallery</h3>
+                <p className="text-sm text-muted-foreground mt-1">Upload 4 to 6 images. Drag or use arrows to reorder.</p>
+              </div>
+              <div>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  className="rounded-full gap-2 border-slate-200"
+                  onClick={() => document.getElementById('gallery-upload')?.click()}
+                  disabled={formData.images.length >= 6}
+                >
+                  <ImageIcon className="w-4 h-4" /> Add Photos
+                </Button>
+                <Input 
+                  id="gallery-upload" 
+                  type="file" 
+                  multiple 
+                  accept="image/png, image/jpeg, image/jpg, image/webp" 
+                  className="hidden" 
+                  onChange={handleImageUpload}
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-4 overflow-x-auto pb-4 pt-2 snap-x">
+              {formData.images.length === 0 ? (
+                <div className="w-full h-48 border-2 border-dashed border-slate-200 rounded-2xl flex flex-col items-center justify-center text-slate-500 bg-slate-50">
+                  <ImageIcon className="w-8 h-8 mb-2 opacity-50" />
+                  <p>No images uploaded yet.</p>
+                  <p className="text-xs mt-1">Requires 4 to 6 images.</p>
+                </div>
+              ) : (
+                formData.images.map((img, idx) => (
+                  <div key={idx} className="relative w-64 h-48 rounded-2xl overflow-hidden shrink-0 border shadow-sm group snap-center">
+                    <Image src={img} alt={`Gallery image ${idx + 1}`} fill className="object-cover" />
+                    
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 backdrop-blur-sm">
+                      <Button type="button" size="icon" variant="secondary" className="h-8 w-8 rounded-full" onClick={() => moveImage(idx, 'left')} disabled={idx === 0}>
+                        <ChevronLeft className="w-4 h-4" />
+                      </Button>
+                      <Button type="button" size="icon" variant="secondary" className="h-8 w-8 rounded-full" onClick={() => moveImage(idx, 'right')} disabled={idx === formData.images.length - 1}>
+                        <ChevronRight className="w-4 h-4" />
+                      </Button>
+                    </div>
+                    {idx === 0 && <span className="absolute top-3 left-3 bg-white/90 text-[#1F2E4A] text-xs font-bold px-3 py-1.5 rounded-lg shadow-sm">Cover Image</span>}
+                    <button
+                      type="button"
+                      onClick={() => removeImage(idx)}
+                      className="absolute top-3 right-3 bg-white text-red-500 hover:bg-red-500 hover:text-white w-8 h-8 rounded-full flex items-center justify-center shadow-md transition-all z-10"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+            <div className="flex justify-end mt-2">
+              <span className={`text-sm font-medium ${formData.images.length >= 4 && formData.images.length <= 6 ? 'text-green-600' : 'text-red-500'}`}>
+                {formData.images.length} / 6 images uploaded
+              </span>
+            </div>
+          </section>
+
+          {/* Section 3: Departure Cities & Traveler Slabs */}
+          <section className="bg-white p-8 rounded-2xl shadow-sm border border-slate-100">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-lg font-bold text-[#1F2E4A]">3. Departure Cities &amp; Traveler Slabs</h3>
+                  <span className="text-xs bg-emerald-50 text-emerald-700 font-semibold px-2.5 py-0.5 rounded-full border border-emerald-200">
+                    Live Dropdown
+                  </span>
+                </div>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Define origin departure cities and their person pricing slabs. Customers select their departure city on the website and see real-time group rates.
+                </p>
+              </div>
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => addDepartureCity("New City", 18999)} 
+                className="rounded-full gap-2 border-slate-200 hover:bg-slate-50 text-sm font-medium"
+              >
+                <Plus className="w-4 h-4" /> Add City
+              </Button>
+            </div>
+
+            {/* Cities List */}
+            <div className="space-y-3">
+              {(formData.departureCities || []).length === 0 ? (
+                <div className="p-8 text-center border border-dashed border-slate-200 rounded-2xl bg-slate-50/50">
+                  <p className="text-sm text-slate-600 font-semibold">No departure cities configured yet</p>
+                  <p className="text-xs text-slate-400 mt-1 max-w-md mx-auto">
+                    Click &quot;Add City&quot; above to configure origin cities like Delhi, Mumbai, etc., along with their specific package rates.
+                  </p>
+                </div>
+              ) : (
+                (formData.departureCities || []).map((city, idx) => (
+                  <div 
+                    key={city.id} 
+                    className={`p-5 rounded-2xl border transition-all space-y-4 ${
+                      city.isDefault 
+                        ? 'bg-amber-50/30 border-amber-200 shadow-xs' 
+                        : 'bg-slate-50/70 border-slate-200/80 hover:border-slate-300'
+                    }`}
+                  >
+                    {/* Top Row: City info */}
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                      <div className="flex items-center gap-1.5 text-slate-500 font-mono text-xs shrink-0">
+                        <MapPin className="w-4 h-4 text-brand-coral" />
+                        <span className="font-bold">#{idx + 1}</span>
+                      </div>
+
+                      <div className="flex-1 w-full sm:w-auto">
+                        <Label className="text-xs text-slate-500 font-medium mb-1 block">Departure City Name</Label>
+                        <Input 
+                          type="text" 
+                          placeholder="e.g. Delhi, Mumbai, Kolkata"
+                          value={city.cityName} 
+                          onChange={(e) => updateDepartureCity(city.id, 'cityName', e.target.value)}
+                          className="bg-white border-slate-200 h-10 font-semibold text-slate-800"
+                        />
+                      </div>
+
+                      <div className="w-full sm:w-48">
+                        <Label className="text-xs text-slate-500 font-medium mb-1 block">Default Base Rate / Person (₹)</Label>
+                        <div className="relative">
+                          <IndianRupee className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                          <Input 
+                            type="number" 
+                            min={0}
+                            placeholder="Rate"
+                            value={city.pricePerPerson || ''} 
+                            onChange={(e) => updateDepartureCity(city.id, 'pricePerPerson', parseInt(e.target.value) || 0)}
+                            className="bg-white border-slate-200 pl-8 h-10 font-semibold text-slate-800"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between sm:justify-start gap-4 w-full sm:w-auto pt-1 sm:pt-5">
+                        <label className="flex items-center gap-2 cursor-pointer text-xs font-medium text-slate-600 select-none">
+                          <input 
+                            type="radio"
+                            name="defaultDepartureCity"
+                            checked={city.isDefault}
+                            onChange={() => updateDepartureCity(city.id, 'isDefault', true)}
+                            className="w-4 h-4 text-emerald-600 focus:ring-emerald-500 border-slate-300 accent-emerald-600 cursor-pointer"
+                          />
+                          <span className={city.isDefault ? 'font-semibold text-emerald-700' : 'text-slate-500'}>
+                            {city.isDefault ? 'Default City' : 'Set as Default'}
+                          </span>
+                        </label>
+
+                        <Button 
+                          type="button" 
+                          variant="ghost" 
+                          size="icon" 
+                          onClick={() => removeDepartureCity(city.id)}
+                          className="h-9 w-9 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg ml-auto sm:ml-0"
+                          title="Remove city"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* Nested: Traveler Slabs for this City */}
+                    <div className="bg-white p-4 rounded-xl border border-slate-200/70 space-y-3">
+                      <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                        <div>
+                          <p className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                            <span>Traveler Pricing Slabs for {city.cityName || 'this City'}</span>
+                            <span className="text-[11px] font-semibold text-slate-400 lowercase">({(city.pricing || []).length} slabs)</span>
+                          </p>
+                          <p className="text-[11px] text-slate-400 mt-0.5">
+                            Rates apply according to number of travelers selecting this departure city.
+                          </p>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => addCityPricingSlab(city.id)}
+                          className="h-8 rounded-full text-xs gap-1 border-slate-200 hover:bg-slate-50 font-medium"
+                        >
+                          <Plus className="w-3.5 h-3.5" /> Add Slab
+                        </Button>
+                      </div>
+
+                      {(city.pricing || []).length === 0 ? (
+                        <div className="py-2 text-center text-xs text-slate-400">
+                          Using single rate of ₹{(city.pricePerPerson || 0).toLocaleString('en-IN')}/person. Click &quot;Add Slab&quot; to configure group size discounts.
+                        </div>
+                      ) : (
+                        <div className="space-y-2 pt-1">
+                          {(city.pricing || []).map((slab, sIdx) => (
+                            <div key={slab.id} className="flex flex-col sm:flex-row items-end sm:items-center gap-3 p-3 bg-slate-50/80 rounded-lg border border-slate-100">
+                              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider w-14 shrink-0">
+                                Slab #{sIdx + 1}
+                              </span>
+
+                              <div className="grid gap-1 flex-1 w-full sm:w-auto">
+                                <Label className="text-[11px] text-slate-500 font-medium">Min Persons</Label>
+                                <Input 
+                                  type="number" 
+                                  min={1}
+                                  value={slab.minPersons || ''} 
+                                  onChange={(e) => updateCityPricingSlab(city.id, slab.id, 'minPersons', parseInt(e.target.value) || 0)}
+                                  className="bg-white border-slate-200 h-9 text-xs font-semibold"
+                                />
+                              </div>
+
+                              <div className="grid gap-1 flex-1 w-full sm:w-auto">
+                                <Label className="text-[11px] text-slate-500 font-medium">Max Persons</Label>
+                                <Input 
+                                  type="number" 
+                                  min={1}
+                                  value={slab.maxPersons || ''} 
+                                  onChange={(e) => updateCityPricingSlab(city.id, slab.id, 'maxPersons', parseInt(e.target.value) || 0)}
+                                  className="bg-white border-slate-200 h-9 text-xs font-semibold"
+                                />
+                              </div>
+
+                              <div className="grid gap-1 flex-1 w-full sm:w-auto">
+                                <Label className="text-[11px] text-slate-500 font-medium">Rate / Person (₹)</Label>
+                                <div className="relative">
+                                  <IndianRupee className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                                  <Input 
+                                    type="number" 
+                                    min={0}
+                                    value={slab.pricePerPerson || ''} 
+                                    onChange={(e) => updateCityPricingSlab(city.id, slab.id, 'pricePerPerson', parseInt(e.target.value) || 0)}
+                                    className="bg-white border-slate-200 pl-7 h-9 text-xs font-semibold text-slate-900"
+                                  />
+                                </div>
+                              </div>
+
+                              <Button 
+                                type="button" 
+                                variant="ghost" 
+                                size="icon" 
+                                onClick={() => removeCityPricingSlab(city.id, slab.id)}
+                                className="h-9 w-9 shrink-0 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg"
+                                disabled={(city.pricing || []).length === 1}
+                                title="Remove slab"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </section>
+
+          {/* Section 4: Accommodations Options (Stays Tab) */}
+          <section className="bg-white p-8 rounded-2xl shadow-sm border border-slate-100 space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+              <div>
+                <h3 className="text-lg font-bold text-[#1F2E4A]">4. Accommodations Options (Stays Tab)</h3>
+                <p className="text-sm text-muted-foreground mt-1">Select multiple properties from database for package accommodations.</p>
+              </div>
+            </div>
+
+            {/* Property Selector Grid */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between gap-4">
+                <Label className="text-xs uppercase tracking-wider text-slate-500 font-bold">Select Stays / Properties ({formData.hotelOptions?.length || 0} Selected)</Label>
+                <div className="relative w-64">
+                  <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <Input 
+                    placeholder="Search properties..." 
+                    value={propertySearch}
+                    onChange={(e) => setPropertySearch(e.target.value)}
+                    className="pl-8 h-8 rounded-xl text-xs border-slate-200"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 max-h-64 overflow-y-auto p-2 bg-slate-50 border border-slate-200 rounded-2xl">
+                {isLoadingProperties ? (
+                  <div className="col-span-full py-8 text-center text-xs text-slate-500 flex items-center justify-center gap-2">
+                    <Loader2 className="w-4 h-4 animate-spin text-brand-coral" /> Loading database properties...
+                  </div>
+                ) : availableProperties.length === 0 ? (
+                  <p className="col-span-full py-8 text-center text-xs text-slate-500">No properties available in database.</p>
+                ) : (
+                  availableProperties
+                    .filter(p => p.title?.toLowerCase().includes(propertySearch.toLowerCase()) || p.location?.toLowerCase().includes(propertySearch.toLowerCase()))
+                    .map((prop) => {
+                      const isSelected = (formData.hotelOptions || []).some(h => h.id === prop.id);
+                      return (
+                        <div 
+                          key={prop.id}
+                          onClick={() => toggleSelectProperty(prop)}
+                          className={`flex items-center gap-3 p-2.5 rounded-xl cursor-pointer transition-all border ${
+                            isSelected 
+                              ? "border-emerald-500 bg-emerald-50/70 shadow-xs" 
+                              : "border-slate-200 bg-white hover:border-slate-300"
+                          }`}
+                        >
+                          <div className="relative w-10 h-10 rounded-lg overflow-hidden shrink-0 bg-slate-200">
+                            <Image src={prop.image || '/placeholder.png'} alt={prop.title} fill className="object-cover" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h4 className="text-xs font-bold text-slate-900 truncate">{prop.title}</h4>
+                            <p className="text-[10px] text-slate-500 truncate">{prop.location || 'Uttarakhand'}</p>
+                          </div>
+                          <div className={`w-5 h-5 rounded-full border flex items-center justify-center transition-colors ${
+                            isSelected ? "bg-emerald-600 border-emerald-600 text-white" : "border-slate-300 bg-white"
+                          }`}>
+                            {isSelected && <Check size={12} />}
+                          </div>
+                        </div>
+                      );
+                    })
+                )}
+              </div>
+            </div>
+          </section>
+
+          {/* Section 5: Activities Options (Activities Tab) */}
+          <section className="bg-white p-8 rounded-2xl shadow-sm border border-slate-100 space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+              <div>
+                <h3 className="text-lg font-bold text-[#1F2E4A]">5. Activities Options (Activities Tab)</h3>
+                <p className="text-sm text-muted-foreground mt-1">Select multiple activity options for package activities.</p>
+              </div>
+            </div>
+
+            {/* Activity Preset Selector Grid */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between gap-4">
+                <Label className="text-xs uppercase tracking-wider text-slate-500 font-bold">Select Activities ({formData.activityOptions?.length || 0} Selected)</Label>
+                <div className="relative w-64">
+                  <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <Input 
+                    placeholder="Search activities..." 
+                    value={activitySearch}
+                    onChange={(e) => setActivitySearch(e.target.value)}
+                    className="pl-8 h-8 rounded-xl text-xs border-slate-200"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 max-h-64 overflow-y-auto p-2 bg-slate-50 border border-slate-200 rounded-2xl">
+                {isLoadingActivities ? (
+                  <div className="col-span-full py-12 flex flex-col items-center justify-center text-slate-400">
+                    <Loader2 className="w-8 h-8 animate-spin mb-3" />
+                    <p className="text-sm font-medium">Loading activities...</p>
+                  </div>
+                ) : availableActivities.length === 0 ? (
+                  <div className="col-span-full py-12 flex flex-col items-center justify-center text-slate-400">
+                    <p className="text-sm font-medium">No activities found.</p>
+                  </div>
+                ) : (() => {
+                  const mergedActivities = [...availableActivities];
+                  (formData.activityOptions || []).forEach(selectedAct => {
+                    if (!mergedActivities.some(a => a.id === selectedAct.id)) {
+                      mergedActivities.push(selectedAct);
+                    }
+                  });
+                  return mergedActivities
+                    .filter(a => a.title.toLowerCase().includes(activitySearch.toLowerCase()) || (a.description || "").toLowerCase().includes(activitySearch.toLowerCase()))
+                    .map((act) => {
+                      const isSelected = (formData.activityOptions || []).some(a => a.id === act.id);
+                      return (
+                      <div 
+                        key={act.id}
+                        onClick={() => toggleSelectActivity(act)}
+                        className={`flex items-center gap-3 p-2.5 rounded-xl cursor-pointer transition-all border ${
+                          isSelected 
+                            ? "border-blue-500 bg-blue-50/70 shadow-xs" 
+                            : "border-slate-200 bg-white hover:border-slate-300"
+                        }`}
+                      >
+                        <div className="relative w-10 h-10 rounded-lg overflow-hidden shrink-0 bg-slate-200">
+                          <Image src={act.image || "https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=600&auto=format&fit=crop"} alt={act.title} fill className="object-cover" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h4 className="text-xs font-bold text-slate-900 truncate">{act.title}</h4>
+                          <p className="text-[10px] text-slate-500 truncate">{act.pricePerPerson === 0 ? 'Included' : `+ ₹${act.pricePerPerson} / person`}</p>
+                        </div>
+                        <div className={`w-5 h-5 rounded-full border flex items-center justify-center transition-colors ${
+                          isSelected ? "bg-blue-600 border-blue-600 text-white" : "border-slate-300 bg-white"
+                        }`}>
+                          {isSelected && <Check size={12} />}
+                        </div>
+                      </div>
+                    );
+                  });
+                })()}
+              </div>
+            </div>
+          </section>
+
+          {/* Section 6: SEO Data */}
+          <section className="bg-white p-8 rounded-2xl shadow-sm border border-slate-100">
+            <h3 className="text-lg font-bold mb-6 text-[#1F2E4A]">6. SEO Metadata</h3>
+            <div className="grid gap-6">
+              <div className="grid gap-2">
+                <Label htmlFor="metaTitle" className="font-semibold text-slate-700">Meta Title</Label>
+                <Input 
+                  id="metaTitle" 
+                  placeholder="e.g. Best Kashmir Tour Package 2026" 
+                  value={formData.metaTitle}
+                  onChange={(e) => setFormData(prev => ({ ...prev, metaTitle: e.target.value }))}
+                  className="h-11 rounded-xl border-slate-200"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="metaDesc" className="font-semibold text-slate-700">Meta Description</Label>
+                <Textarea 
+                  id="metaDesc" 
+                  placeholder="Brief description for search engines..." 
+                  value={formData.metaDescription}
+                  onChange={(e) => setFormData(prev => ({ ...prev, metaDescription: e.target.value }))}
+                  className="min-h-24 rounded-xl border-slate-200 resize-y"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="metaKeywords" className="font-semibold text-slate-700">Meta Keywords</Label>
+                <div className="flex flex-wrap gap-2 p-2 border border-slate-200 rounded-xl bg-slate-50 min-h-11 focus-within:ring-2 focus-within:ring-slate-400 focus-within:border-transparent transition-all">
+                  {(Array.isArray(formData.metaKeywords) ? formData.metaKeywords : []).map((keyword, idx) => (
+                    <span key={idx} className="flex items-center gap-1.5 bg-white border border-slate-200 px-3 py-1 rounded-full text-sm font-medium shadow-sm text-slate-700">
+                      {keyword}
+                      <button type="button" onClick={() => removeKeyword(idx)} className="text-slate-400 hover:text-[#E86A70] transition-colors rounded-full focus:outline-none">
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </span>
+                  ))}
+                  <input 
+                    type="text" 
+                    id="metaKeywords"
+                    placeholder={(formData.metaKeywords || []).length === 0 ? "e.g. kashmir, tour (Press Enter or Comma)" : "Add keyword..."} 
+                    className="flex-1 bg-transparent min-w-37.5 outline-none text-sm px-2 text-slate-700 placeholder:text-slate-400"
+                    onKeyDown={handleKeywordKeyDown}
+                    onBlur={handleKeywordBlur}
+                  />
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Section 7: Video Testimonials */}
+          <section className="bg-white p-8 rounded-2xl shadow-sm border border-slate-100">
+            <div className="flex justify-between items-center mb-6">
+              <div>
+                <h3 className="text-lg font-bold text-[#1F2E4A]">7. Video Testimonials</h3>
+                <p className="text-sm text-muted-foreground mt-1">Add YouTube links to showcase customer reviews.</p>
+              </div>
+              <Button type="button" variant="outline" onClick={addVideoTestimonial} className="rounded-full gap-2 border-slate-200">
+                <Plus className="w-4 h-4" /> Add Testimonial
+              </Button>
+            </div>
+            
+            <div className="space-y-4">
+              {(!formData.videoTestimonials || formData.videoTestimonials.length === 0) ? (
+                <div className="text-center py-6 bg-slate-50 border border-slate-100 rounded-xl">
+                  <p className="text-slate-500 text-sm">No video testimonials added yet.</p>
+                </div>
+              ) : (
+                formData.videoTestimonials.map((link, idx) => (
+                  <div key={idx} className="flex items-center gap-4">
+                    <div className="flex-1 grid gap-2">
+                      <Label className="text-xs uppercase tracking-wider text-slate-500 font-bold">YouTube Link {idx + 1}</Label>
+                      <Input 
+                        placeholder="e.g. https://www.youtube.com/watch?v=..." 
+                        value={link}
+                        onChange={(e) => updateVideoTestimonial(idx, e.target.value)}
+                        className="bg-white border-slate-200 h-11"
+                      />
+                    </div>
+                    <Button 
+                      type="button" 
+                      variant="ghost" 
+                      size="icon" 
+                      onClick={() => removeVideoTestimonial(idx)}
+                      className="h-11 w-11 mt-6 shrink-0 text-red-500 hover:text-red-600 hover:bg-red-50"
+                    >
+                      <Trash2 className="w-5 h-5" />
+                    </Button>
+                  </div>
+                ))
+              )}
+            </div>
+          </section>
+            
+            <div className="flex justify-end pt-4">
+              <Button type="button" onClick={() => setFormStep(2)} className="rounded-full px-8 h-12 bg-[#E86A70] hover:bg-[#d65b61] text-white text-lg">Next: Build Itinerary <ChevronRight className="ml-2 w-5 h-5" /></Button>
+            </div>
+          </>
+          )}
+
+          {formStep === 2 && (
+            <div className="space-y-6">
+              <section className="bg-white p-8 rounded-2xl shadow-sm border border-slate-100 min-h-100">
+                <div className="flex justify-between items-center mb-8">
+                  <div>
+                    <h3 className="text-xl font-bold text-[#1F2E4A]">Build Your Itinerary</h3>
+                    <p className="text-sm text-muted-foreground mt-1">Plan the day-by-day schedule for this package.</p>
+                  </div>
+                  <Button type="button" variant="outline" onClick={addItineraryDay} className="rounded-full gap-2 border-slate-200">
+                    <Plus className="w-4 h-4" /> Add Day
+                  </Button>
+                </div>
+
+                <div className="space-y-6">
+                  {(formData.itinerary || []).map((day) => (
+                    <div key={day.id} className="p-6 bg-slate-50 border border-slate-100 rounded-2xl relative shadow-sm transition-all hover:shadow-md">
+                      <div className="absolute top-6 right-6">
+                        <Button 
+                          type="button" 
+                          variant="ghost" 
+                          size="icon" 
+                          onClick={() => removeItineraryDay(day.id)}
+                          className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50 rounded-full"
+                          disabled={formData.itinerary.length === 1}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                      
+                      <div className="flex items-center gap-3 mb-6">
+                        <div className="bg-[#E86A70] text-white font-bold w-10 h-10 rounded-full flex items-center justify-center shrink-0 shadow-sm">
+                          {day.dayNumber}
+                        </div>
+                        <h4 className="text-lg font-bold text-[#1F2E4A]">Day {day.dayNumber}</h4>
+                      </div>
+
+                      <div className="grid gap-5">
+                        <div className="grid gap-2">
+                          <Label className="font-semibold text-slate-700">Day Title</Label>
+                          <Input 
+                            placeholder="e.g. Arrival in Srinagar" 
+                            value={day.title}
+                            onChange={(e) => updateItineraryDay(day.id, 'title', e.target.value)}
+                            className="bg-white border-slate-200 h-11 rounded-xl"
+                          />
+                        </div>
+
+                        <div className="grid gap-3 pt-4 border-t border-slate-100">
+                          <Label className="font-semibold text-slate-700 flex justify-between items-center">
+                            Timeline Events / Points
+                            <Button type="button" variant="ghost" size="sm" onClick={() => addItineraryPoint(day.id)} className="h-8 text-[#E86A70] hover:text-[#d65b61] hover:bg-red-50">
+                              <Plus className="w-4 h-4 mr-1" /> Add Event
+                            </Button>
+                          </Label>
+                          <div className="space-y-4 pl-8 border-l border-[#E86A70]/30 ml-2 py-2 mt-2">
+                            {(day.points || []).map((pt, pIdx) => (
+                              <div key={pIdx} className="relative flex flex-col gap-3 p-4 bg-white border border-slate-200 rounded-xl shadow-sm">
+                                <div className="absolute -left-10.25 top-4 w-3 h-3 rounded-full bg-[#E86A70] ring-4 ring-slate-50" />
+                                
+                                <div className="flex items-start justify-between gap-4">
+                                  <div className="w-full grid gap-3">
+                                    <Input 
+                                      value={pt.title} 
+                                      onChange={(e) => updateItineraryPoint(day.id, pIdx, 'title', e.target.value)} 
+                                      placeholder="Event Title (e.g. Pickup from Airport)" 
+                                      className="font-bold text-[#1F2E4A]"
+                                    />
+                                    <Textarea
+                                      value={pt.description} 
+                                      onChange={(e) => updateItineraryPoint(day.id, pIdx, 'description', e.target.value)} 
+                                      placeholder="Description (e.g. Our representative will greet you...)" 
+                                      className="h-20 resize-none text-slate-600"
+                                    />
+                                    <div className="flex flex-col gap-3 mt-3 border-t pt-3 border-slate-100">
+                                      <div>
+                                        <div className="flex items-center gap-2 mb-2">
+                                          <Switch 
+                                            id={`hotel-actions-${day.id}-${pIdx}`}
+                                            checked={pt.hasHotelActions || false}
+                                            onCheckedChange={(checked) => updateItineraryPoint(day.id, pIdx, 'hasHotelActions', checked)}
+                                          />
+                                          <Label htmlFor={`hotel-actions-${day.id}-${pIdx}`} className="text-sm font-medium text-slate-600 cursor-pointer">
+                                            Include Hotel Actions (View/Change Hotel buttons)
+                                          </Label>
+                                        </div>
+                                        {pt.hasHotelActions && (
+                                          <div className="pl-11">
+                                            <select 
+                                              value={pt.selectedHotelId || ''} 
+                                              onChange={(e) => updateItineraryPoint(day.id, pIdx, 'selectedHotelId', e.target.value)}
+                                              className="w-full max-w-md p-2 text-sm border border-gray-200 rounded-md bg-slate-50 text-gray-700 outline-none focus:border-[#E86A70] focus:ring-1 focus:ring-[#E86A70]"
+                                            >
+                                              <option value="">Select a hotel...</option>
+                                              {(formData.hotelOptions || []).map(h => {
+                                                const freshProp = availableProperties.find(p => p.id === h.id);
+                                                return <option key={h.id} value={h.id}>{freshProp ? freshProp.title : h.title}</option>;
+                                              })}
+                                            </select>
+                                          </div>
+                                        )}
+                                      </div>
+                                      
+                                      <div>
+                                        <div className="flex items-center gap-2 mb-2">
+                                          <Switch 
+                                            id={`activity-actions-${day.id}-${pIdx}`}
+                                            checked={pt.hasActivityActions || false}
+                                            onCheckedChange={(checked) => updateItineraryPoint(day.id, pIdx, 'hasActivityActions', checked)}
+                                          />
+                                          <Label htmlFor={`activity-actions-${day.id}-${pIdx}`} className="text-sm font-medium text-slate-600 cursor-pointer">
+                                            Include Activity Actions (View Activities button)
+                                          </Label>
+                                        </div>
+                                        {pt.hasActivityActions && (
+                                          <div className="pl-11">
+                                            <select 
+                                              value={pt.selectedActivityId || ''} 
+                                              onChange={(e) => updateItineraryPoint(day.id, pIdx, 'selectedActivityId', e.target.value)}
+                                              className="w-full max-w-md p-2 text-sm border border-gray-200 rounded-md bg-slate-50 text-gray-700 outline-none focus:border-[#E86A70] focus:ring-1 focus:ring-[#E86A70]"
+                                            >
+                                              <option value="">Select an activity...</option>
+                                              {(formData.activityOptions || []).map(a => {
+                                                const freshAct = availableActivities.find(avail => avail.id === a.id);
+                                                return <option key={a.id} value={a.id}>{freshAct ? freshAct.title : a.title}</option>;
+                                              })}
+                                            </select>
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <Button type="button" variant="ghost" size="icon" onClick={() => removeItineraryPoint(day.id, pIdx)} className="h-9 w-9 text-slate-400 hover:text-red-500 shrink-0">
+                                    <Trash2 className="w-4 h-4" />
+                                  </Button>
+                                </div>
+                                
+                                {pt.hasHotelActions && (
+                                  <div className="flex gap-3 mt-1">
+                                    <div className="flex items-center justify-center gap-2 px-3 py-1.5 border border-[#E86A70] text-[#E86A70] rounded-lg text-[13px] font-semibold bg-white cursor-not-allowed opacity-70">
+                                      <Building size={14} /> View Hotel
+                                    </div>
+                                    <div className="flex items-center justify-center gap-2 px-3 py-1.5 border border-slate-300 text-slate-600 rounded-lg text-[13px] font-semibold bg-white cursor-not-allowed opacity-70">
+                                      <Pencil size={14} /> Change Hotel
+                                    </div>
+                                  </div>
+                                )}
+                                {pt.hasActivityActions && (
+                                  <div className="flex gap-3 mt-1">
+                                    <div className="flex items-center justify-center gap-2 px-3 py-1.5 border border-slate-300 text-slate-600 rounded-lg text-[13px] font-semibold bg-white cursor-not-allowed opacity-70">
+                                      <Compass size={14} /> View Activities
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                            {(day.points || []).length === 0 && (
+                              <p className="text-sm text-slate-400 italic py-2">No timeline events added yet.</p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+
+              <div className="flex justify-between pt-4">
+                <Button type="button" variant="outline" onClick={() => setFormStep(1)} className="rounded-full px-8 h-12 border-slate-200 text-lg font-medium text-slate-600" disabled={loading}>
+                  <ChevronLeft className="mr-2 w-5 h-5" /> Back to Details
+                </Button>
+                <Button onClick={handleSave} disabled={loading} className="rounded-full px-10 h-12 bg-[#1F2E4A] hover:bg-[#2a3c5e] text-white text-lg font-medium shadow-md transition-transform hover:scale-105 active:scale-95 disabled:opacity-70 disabled:hover:scale-100 disabled:active:scale-100">
+                  {loading ? (
+                    <>Saving... <Loader2 className="ml-2 w-5 h-5 animate-spin" /></>
+                  ) : (
+                    <>Save Final Package <Check className="ml-2 w-5 h-5" /></>
+                  )}
+                </Button>
+              </div>
+            </div>
+          )}
+        </form>
+      </div>
+    )
+  }
+
+  // List View
+  return (
+    <div className="space-y-8">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight">Create Packages</h2>
+          <p className="text-muted-foreground mt-1">Manage and create travel packages displayed on the frontend.</p>
+        </div>
+        <Button className="gap-2 rounded-full px-6 bg-[#E86A70] hover:bg-[#d65b61] text-white" onClick={() => handleOpenForm()}>
+          <Plus className="h-4 w-4" />
+          Create New Package
+        </Button>
+      </div>
+
+      {loading ? (
+        <div className="flex flex-col justify-center items-center h-64 border border-dashed rounded-3xl bg-slate-50">
+          <Loader2 className="w-8 h-8 text-brand-coral animate-spin mb-2" />
+          <p className="text-muted-foreground font-medium text-sm">Loading real-time packages...</p>
+        </div>
+      ) : packages.length === 0 ? (
+        <div className="flex flex-col justify-center items-center h-64 border-2 border-dashed rounded-3xl bg-slate-50">
+          <p className="text-muted-foreground font-medium mb-4">No packages created yet.</p>
+          <Button variant="outline" onClick={() => handleOpenForm()} className="rounded-full">
+            Create your first package
+          </Button>
+        </div>
+      ) : (
+        <div className="grid gap-6">
+          {packages.map(pkg => (
+            <div key={pkg.id} className="flex flex-col sm:flex-row gap-6 bg-white p-4 rounded-3xl border shadow-sm items-center">
+              <div className="relative w-full sm:w-48 h-32 rounded-2xl overflow-hidden shrink-0 bg-slate-100">
+                {pkg.images && pkg.images.length > 0 ? (
+                  <Image src={pkg.images[0]} alt={pkg.title} fill className="object-cover" />
+                ) : (
+                  <div className="flex items-center justify-center w-full h-full text-slate-400">
+                    <ImageIcon className="w-8 h-8 opacity-50" />
+                  </div>
+                )}
+              </div>
+              <div className="flex-1 w-full">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h3 className="font-bold text-xl text-[#1F2E4A] line-clamp-1">{pkg.title}</h3>
+                    <div className="flex items-center gap-3 mt-2">
+                      <div 
+                        className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
+                        onClick={() => setStatusConfirm({ id: pkg.id, nextStatus: pkg.status === 'published' ? 'draft' : 'published' })}
+                      >
+                        <Switch 
+                          checked={pkg.status === 'published'}
+                          onCheckedChange={() => {}}
+                          className="pointer-events-none"
+                        />
+                        <span className={`px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${pkg.status === 'published' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
+                          {pkg.status}
+                        </span>
+                      </div>
+                      {(pkg.departureCities || []).length > 0 ? (
+                        <span className="text-sm text-emerald-600 font-medium flex items-center gap-1">
+                          <MapPin className="w-3.5 h-3.5" />
+                          {(pkg.departureCities || []).length} Departure Cities (Ex-{(pkg.departureCities || []).find(c => c.isDefault)?.cityName || (pkg.departureCities || [])[0]?.cityName})
+                        </span>
+                      ) : (
+                        <span className="text-sm text-slate-500 font-medium">No departure cities configured</span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="icon" onClick={() => handleOpenForm(pkg)} className="rounded-full h-10 w-10 text-[#1F2E4A]">
+                      <Pencil className="w-4 h-4" />
+                    </Button>
+                    <Button variant="outline" size="icon" onClick={() => handleDelete(pkg.id)} className="rounded-full h-10 w-10 text-red-500 hover:text-red-600 hover:bg-red-50">
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+                <div className="mt-4 pt-4 border-t border-slate-100 flex gap-6 text-sm text-slate-600">
+                  <div className="truncate flex-1">
+                    <span className="font-bold text-slate-900">SEO:</span> {pkg.metaTitle || 'No title set'}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Toast Notification */}
+      {toast && (
+        <div className={`fixed bottom-4 right-4 z-50 px-4 py-3 rounded-lg shadow-lg text-white flex items-center gap-3 animate-in fade-in slide-in-from-bottom-5 duration-300 ${toast.type === 'success' ? 'bg-green-600' : 'bg-red-600'}`}>
+          {toast.type === 'success' ? <Check className="w-5 h-5" /> : <X className="w-5 h-5" />}
+          <p className="font-medium text-sm">{toast.title}</p>
+          <button onClick={() => setToast(null)} className="ml-2 p-1 opacity-70 hover:opacity-100 transition-opacity">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
+      {/* Custom Delete Confirmation Modal */}
+      <DeleteConfirmModal
+        isOpen={!!deleteConfirmId}
+        onClose={() => setDeleteConfirmId(null)}
+        onConfirm={confirmDelete}
+        title="Delete Package"
+        description="Are you sure you want to delete this package? This action cannot be undone."
+      />
+
+      {/* Custom Status Confirm Modal */}
+      {statusConfirm && (
+        <div className="fixed inset-0 z-100 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="p-6 text-center">
+              <h3 className="text-lg font-semibold text-slate-900 mb-2">Change Status</h3>
+              <p className="text-slate-500 text-sm">
+                Are you sure you want to change the status to <span className="font-bold">{statusConfirm.nextStatus}</span>?
+              </p>
+            </div>
+            <div className="bg-slate-50 p-4 flex justify-end gap-3 border-t border-slate-100">
+              <Button variant="outline" onClick={() => setStatusConfirm(null)} className="rounded-full">
+                Cancel
+              </Button>
+              <Button onClick={() => confirmToggleStatus()} className="rounded-full bg-[#1F2E4A] hover:bg-[#2a3c5e] text-white">
+                Confirm
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}

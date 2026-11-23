@@ -1,0 +1,37 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "dependencies": {
+    "@types/pdfkit": "^0.17.6",
+    "cors": "^2.8.6",
+    "dotenv": "^16.6.1",
+    "express": "^5.2.1",
+    "firebase-admin": "^14.1.0",
+    "node-appwrite": "^14.2.0",
+    "node-fetch-native-with-agent": "^1.7.2",
+    "nodemailer": "^9.0.1",
+    "pdfkit": "^0.20.2",
+    "razorpay": "^2.9.6",
+    "typescript": "^5.9.3",
+    "undici-types": "^6.21.0"
+  },
+  "scripts": {
+    "dev": "ts-node-dev --respawn --transpile-only index.ts",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/nodemailer": "^8.0.1",
+    "ts-node-dev": "^2.0.0"
+  }
+}

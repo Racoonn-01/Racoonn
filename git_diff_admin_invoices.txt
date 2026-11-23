@@ -1,0 +1,83 @@
+commit 1c0a86f044e084184b8642445008ae4f2643bad5
+Author: PreetTechOPC <mail.preettech@gmail.com>
+Date:   Fri Oct 9 16:45:35 2026 +0530
+
+    feat: resolve invoice automation, vendor documents, and layout bugs
+
+diff --git a/Admin/src/app/admin/invoices/page.tsx b/Admin/src/app/admin/invoices/page.tsx
+index f6af787..717ae2d 100644
+--- a/Admin/src/app/admin/invoices/page.tsx
++++ b/Admin/src/app/admin/invoices/page.tsx
+@@ -537,7 +537,7 @@ export default function AdminWithdrawalManagementPage() {
+ 
+     if (realB) {
+       const grossNum = parseInt(String(realB.amount || "").replace(/[^0-9]/g, ""), 10) || 0;
+-      const slab = inv.platformFeeRate || 25;
++      const slab = inv.platformFeeRate || 18;
+       const feeNum = Math.round((grossNum * slab) / 100);
+       const earningsNum = grossNum - feeNum;
+ 
+@@ -562,7 +562,7 @@ export default function AdminWithdrawalManagementPage() {
+     // Fallback directly from invoice items
+     const matchingItem = inv.items.find((item) => item.bookingId === bId || item.id.includes(bId));
+     const grossNum = matchingItem ? Math.abs(matchingItem.amount) : (inv.grossAmount || inv.subtotal);
+-    const slab = inv.platformFeeRate || 25;
++    const slab = inv.platformFeeRate || 18;
+     const feeNum = Math.round((grossNum * slab) / 100);
+     const earningsNum = grossNum - feeNum;
+ 
+@@ -942,7 +942,7 @@ export default function AdminWithdrawalManagementPage() {
+                   </div>
+                   <div className="flex items-center gap-2 bg-white p-2 rounded-xl border border-emerald-100">
+                     <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
+-                    <span>Commission Slab ({selectedInvoice.platformFeeRate || 25}%) verified</span>
++                    <span>Commission Slab ({selectedInvoice.platformFeeRate || 18}%) verified</span>
+                   </div>
+                   <div className="flex items-center gap-2 bg-white p-2 rounded-xl border border-emerald-100">
+                     <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
+@@ -983,7 +983,7 @@ export default function AdminWithdrawalManagementPage() {
+                   </span>
+                 </div>
+                 <div>
+-                  <span className="text-rose-600 uppercase font-bold block text-[10px]">Platform Fee ({selectedInvoice.platformFeeRate || 25}%)</span>
++                  <span className="text-rose-600 uppercase font-bold block text-[10px]">Platform Fee ({selectedInvoice.platformFeeRate || 18}%)</span>
+                   <span className="font-bold text-rose-600 text-base">
+                     -₹{(selectedInvoice.platformFeeAmount || 0).toLocaleString("en-IN")}
+                   </span>
+@@ -1352,7 +1352,7 @@ export default function AdminWithdrawalManagementPage() {
+               <div className="flex justify-between items-start border-b pb-6">
+                 <div>
+                   <div className="relative w-44 h-16 mb-2">
+-                    <Image src="/Racoonn-Logo-02.png" alt="Racoonn Logo" fill className="object-contain object-left" unoptimized />
++                    <Image src="/Racoonn-Logo-02.png" alt="Racoonn Logo" fill className="object-contain object-left" />
+                   </div>
+                   <p className="text-xs text-gray-500 font-medium">Racoonn Hospitality Technologies Private Limited</p>
+                   <p className="text-xs text-gray-500">Devbhoomi Uttarakhand, India</p>
+
+commit d30660b77ec78f7c5c9cc67e59599e913a78731c
+Author: SecretDeveloper0612 <starkirondigital@gmail.com>
+Date:   Mon Aug 17 13:03:11 2026 +0530
+
+    Updates for Room and all
+
+diff --git a/Admin/src/app/admin/invoices/page.tsx b/Admin/src/app/admin/invoices/page.tsx
+index d9ea00b..f6af787 100644
+--- a/Admin/src/app/admin/invoices/page.tsx
++++ b/Admin/src/app/admin/invoices/page.tsx
+@@ -273,6 +273,8 @@ export default function AdminWithdrawalManagementPage() {
+     doc.setFontSize(10);
+     doc.setTextColor(100, 100, 100);
+     doc.text("Withdrawal Request Invoice", 14, 30);
++    doc.setFontSize(9);
++    doc.text("HSN Code for Hotel rent: 9963", 14, 36);
+     
+     doc.setFontSize(12);
+     doc.setTextColor(0, 0, 0);
+@@ -1355,6 +1357,7 @@ export default function AdminWithdrawalManagementPage() {
+                   <p className="text-xs text-gray-500 font-medium">Racoonn Hospitality Technologies Private Limited</p>
+                   <p className="text-xs text-gray-500">Devbhoomi Uttarakhand, India</p>
+                   <p className="text-xs text-gray-500">GSTIN: 05AAACR9999P1Z8 · support@racoonn.com</p>
++                  <p className="text-xs font-bold text-gray-700 mt-0.5">HSN Code for Hotel rent: 9963</p>
+                 </div>
+ 
+                 <div className="text-right">

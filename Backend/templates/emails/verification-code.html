@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify Your Email</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: #F7F8F9;
+            margin: 0;
+            padding: 20px;
+            -webkit-font-smoothing: antialiased;
+        }
+        .wrapper {
+            max-width: 500px;
+            margin: 0 auto;
+        }
+        .logo-container {
+            text-align: center;
+            padding: 20px 0;
+        }
+        .logo-text {
+            font-size: 28px;
+            font-weight: 900;
+            color: #172434;
+            text-decoration: none;
+            letter-spacing: -0.5px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .logo-text img {
+            width: 32px;
+            height: 32px;
+        }
+        .card {
+            background-color: #ffffff;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            margin-bottom: 20px;
+            border: 1px solid #eaeaea;
+        }
+        .card-header {
+            background-color: #D65A5A;
+            height: 60px;
+            text-align: center;
+        }
+        .card-body {
+            padding: 0 40px 40px;
+            text-align: center;
+        }
+        .icon-container {
+            width: 60px;
+            height: 60px;
+            background-color: #FCEAEA;
+            border-radius: 50%;
+            display: inline-block;
+            margin-top: -30px;
+            position: relative;
+            z-index: 2;
+            border: 4px solid #ffffff;
+        }
+        .icon-container img {
+            width: 24px;
+            height: 24px;
+            margin-top: 18px;
+        }
+        .title {
+            margin: 15px 0 10px;
+            font-size: 24px;
+            font-weight: 800;
+            color: #172434;
+        }
+        .subtitle {
+            font-size: 14px;
+            line-height: 1.5;
+            color: #64748B;
+            margin: 0 0 25px;
+        }
+        .code-box {
+            background-color: #FCF4F4;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+        .code-box-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: #172434;
+            margin: 0 0 15px;
+        }
+        .code-dashed {
+            border: 1px dashed #F2AFAF;
+            border-radius: 8px;
+            padding: 15px;
+            background-color: transparent;
+        }
+        .code-number {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 32px;
+            font-weight: 800;
+            letter-spacing: 12px;
+            color: #D65A5A;
+            margin: 0;
+            margin-left: 12px; /* compensate for letter spacing */
+        }
+        .expiry {
+            font-size: 13px;
+            color: #64748B;
+            margin: 0 0 25px;
+        }
+        .expiry-time {
+            color: #D65A5A;
+            font-weight: 600;
+        }
+        .btn {
+            display: inline-block;
+            background-color: #D65A5A !important;
+            color: #ffffff !important;
+            font-weight: 600;
+            font-size: 15px;
+            text-decoration: none !important;
+            padding: 14px 40px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            border: none !important;
+            outline: none !important;
+        }
+        .warning-box {
+            background-color: #F8FAFC;
+            border-radius: 8px;
+            padding: 15px 20px;
+            text-align: left;
+        }
+        .warning-box table {
+            width: 100%;
+        }
+        .warning-box td {
+            vertical-align: middle;
+        }
+        .warning-box img {
+            width: 24px;
+            height: 24px;
+        }
+        .warning-box p {
+            margin: 0;
+            font-size: 12px;
+            color: #64748B;
+            line-height: 1.5;
+            padding-left: 12px;
+        }
+        .footer {
+            background-color: #1A222C;
+            border-radius: 12px;
+            padding: 30px;
+            text-align: center;
+        }
+        .socials {
+            margin-bottom: 25px;
+            text-align: center;
+        }
+        .social-icon {
+            display: inline-block;
+            width: 32px;
+            height: 32px;
+            background-color: #D65A5A;
+            border-radius: 50%;
+            margin: 0 5px;
+            line-height: 32px;
+            text-align: center;
+        }
+        .social-icon img {
+            width: 16px;
+            height: 16px;
+            vertical-align: middle;
+        }
+        .footer-divider {
+            height: 1px;
+            background-color: rgba(255, 255, 255, 0.1);
+            margin-bottom: 20px;
+        }
+        .footer p {
+            margin: 0 0 10px;
+            font-size: 12px;
+            color: #94A3B8;
+        }
+        .footer a {
+            color: #D65A5A;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="wrapper">
+        <div class="logo-container">
+            <!-- Using an emoji/text hybrid as a placeholder icon since attachments are not wanted -->
+            <a href="#" class="logo-text">
+                <span style="font-size: 32px;"></span> 
+            </a>
+        </div>
+        
+        <div class="card">
+            <!-- Removed the border-radius curve which causes rendering bugs in email clients, 
+                 using a solid color header and overlapping the icon using proper margins -->
+            <div class="card-header"></div>
+            
+            <div class="card-body">
+                <div class="icon-container">
+                    <img src="https://img.icons8.com/ios-filled/50/D65A5A/lock.png" alt="Lock" />
+                </div>
+                
+                <h1 class="title">Verify Your Email</h1>
+                <p class="subtitle">
+                    Thanks for choosing Racoonn! To continue, please use<br>the verification code below.
+                </p>
+                
+                <div class="code-box">
+                    <p class="code-box-title">Your Verification Code</p>
+                    <div class="code-dashed">
+                        <p class="code-number">731924</p>
+                    </div>
+                </div>
+                
+                <p class="expiry">
+                    This code will expire in <span class="expiry-time">01 minutes.</span>
+                </p>
+                
+                <a href="#" class="btn" style="color: #ffffff !important; text-decoration: none !important;">Verify Email</a>
+                
+                <div class="warning-box">
+                    <table border="0" cellpadding="0" cellspacing="0">
+                        <tr>
+                            <td width="24"><img src="https://img.icons8.com/ios/50/D65A5A/shield.png" alt="Shield" /></td>
+                            <td>
+                                <p>If you didn't request this code, you can safely ignore this email.</p>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <div class="socials">
+                <a href="#" class="social-icon">
+                    <img src="https://img.icons8.com/ios-filled/50/ffffff/facebook-new.png" alt="Facebook" />
+                </a>
+                <a href="#" class="social-icon">
+                    <img src="https://img.icons8.com/ios-filled/50/ffffff/instagram-new.png" alt="Instagram" />
+                </a>
+                <a href="#" class="social-icon">
+                    <img src="https://img.icons8.com/ios-filled/50/ffffff/twitter.png" alt="Twitter" />
+                </a>
+                <a href="#" class="social-icon">
+                    <img src="https://img.icons8.com/ios-filled/50/ffffff/linkedin.png" alt="LinkedIn" />
+                </a>
+            </div>
+            
+            <div class="footer-divider"></div>
+            
+            <p>Need help? Contact our support team at <a href="mailto:support@racoonn.com">support@racoonn.com</a></p>
+            <p>&copy; 2026 Racoonn. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>

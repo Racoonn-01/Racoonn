@@ -1,0 +1,122 @@
+import { databases, appwriteConfig } from './config';
+import { Query, ID } from 'appwrite';
+
+const DATABASE_ID = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID || '6a3cec630035d63ea963';
+const PROPERTY_COLLECTION_ID = process.env.NEXT_PUBLIC_APPWRITE_PROPERTY_COLLECTION_ID || 'properties';
+
+export async function getProperties() {
+  try {
+    const response = await databases.listDocuments(
+      DATABASE_ID,
+      PROPERTY_COLLECTION_ID,
+      [Query.orderDesc('$createdAt'), Query.limit(100)]
+    );
+    // Only show approved or active properties in the User Portal
+    return response.documents.filter((p: Record<string, unknown>) => {
+      const status = typeof p.status === 'string' ? p.status.toLowerCase() : '';
+      return status === 'approved' || status === 'active';
+    });
+  } catch (error) {
+    console.error('Error fetching properties from Appwrite:', error);
+    return [];
+  }
+}
+
+export async function getProperty(id: string) {
+  try {
+    const response = await databases.getDocument(
+      DATABASE_ID,
+      PROPERTY_COLLECTION_ID,
+      id
+    );
+    return response;
+  } catch (error) {
+    console.error('Error fetching property from Appwrite:', error);
+    return null;
+  }
+}
+
+export async function getReviews(propertyId: string) {
+  try {
+    const response = await databases.listDocuments(
+      DATABASE_ID,
+      appwriteConfig.reviewCollectionId,
+      [Query.equal('propertyId', propertyId), Query.orderDesc('$createdAt'), Query.limit(100)]
+    );
+    return response.documents;
+  } catch (error) {
+    console.error('Error fetching reviews:', error);
+    return [];
+  }
+}
+
+export async function createReview(data: { propertyId: string, vendorId: string, userName: string, rating: number, text: string, category?: string }) {
+  try {
+    const response = await databases.createDocument(
+      DATABASE_ID,
+      appwriteConfig.reviewCollectionId,
+      ID.unique(),
+      data
+    );
+    
+    // Recalculate average rating for the property
+    try {
+      const allReviews = await getReviews(data.propertyId);
+      const reviewsCount = allReviews.length;
+      let newRating = 0;
+      if (reviewsCount > 0) {
+        const total = allReviews.reduce((sum, r) => sum + (r.rating || 0), 0);
+        newRating = Math.round((total / reviewsCount) * 10) / 10;
+      }
+      
+      // Update property document
+      await databases.updateDocument(
+        DATABASE_ID,
+        PROPERTY_COLLECTION_ID,
+        data.propertyId,
+        {
+          rating: newRating,
+          reviewsCount: reviewsCount
+        }
+      );
+    } catch (updateError) {
+      console.error('Failed to update property rating after review creation:', updateError);
+    }
+
+    return response;
+  } catch (error) {
+    console.error('Error creating review:', error);
+    throw error;
+  }
+}
+
+export async function getUserBookings(userId: string) {
+  try {
+    const response = await databases.listDocuments(
+      DATABASE_ID,
+      'bookings',
+      [Query.equal('userId', userId), Query.orderDesc('$createdAt'), Query.limit(100)]
+    );
+    return response.documents;
+  } catch (error) {
+    console.error('Error fetching user bookings:', error);
+    return [];
+  }
+}
+
+export async function getBookingPayments(bookingIds: string[]) {
+  if (!bookingIds.length) return [];
+  try {
+    // Because Appwrite doesn't support equal with arrays of >100 in old versions, or we can just fetch all or use multiple queries.
+    // Assuming < 100 bookings for a user
+    const response = await databases.listDocuments(
+      DATABASE_ID,
+      'booking_payments',
+      [Query.equal('bookingId', bookingIds), Query.limit(100)]
+    );
+    return response.documents;
+  } catch (error) {
+    console.error('Error fetching booking payments:', error);
+    return [];
+  }
+}

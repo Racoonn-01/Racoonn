@@ -62,7 +62,16 @@ export async function GET() {
     // Ignore in serverless / production
   }
 
-  return NextResponse.json({ success: true, overrides });
+  return NextResponse.json(
+    { success: true, overrides },
+    {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
+    }
+  );
 }
 
 // 2. POST: save directly to Appwrite database room_availability collection

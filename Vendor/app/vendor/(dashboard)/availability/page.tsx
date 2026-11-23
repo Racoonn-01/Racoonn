@@ -160,7 +160,7 @@ export default function AvailabilityPage() {
       try {
         let loadedOverrides: Record<string, Record<string, DayOverride>> = {};
 
-        const res = await fetch("/api/vendor/availability");
+        const res = await fetch(`/api/vendor/availability?_t=${Date.now()}`, { cache: "no-store" });
         const json = await res.json();
         if (json.success && json.overrides) {
           loadedOverrides = json.overrides;
@@ -456,7 +456,7 @@ export default function AvailabilityPage() {
         }
       }
 
-      saveOverridesToStorage(updated);
+      await saveOverridesToStorage(updated);
 
       toast.success(`Successfully applied updates for ${count} date(s)!`, {
         description: `Updated rates & availability for ${roomsToUpdate.length} room(s).`
@@ -479,7 +479,7 @@ export default function AvailabilityPage() {
   };
 
   // Save single day edit
-  const handleSaveDayEdit = () => {
+  const handleSaveDayEdit = async () => {
     if (!editingDate || !selectedRoomId) return;
 
     const parsedPrice = parseFloat(editPriceInput) || 0;
@@ -493,7 +493,7 @@ export default function AvailabilityPage() {
       available: parsedAvail
     };
 
-    saveOverridesToStorage(updated);
+    await saveOverridesToStorage(updated);
 
     // Sync single day edit to room_availability in Appwrite
     (async () => {
@@ -537,7 +537,7 @@ export default function AvailabilityPage() {
   };
 
   // Clear single day override
-  const handleClearDayOverride = () => {
+  const handleClearDayOverride = async () => {
     if (!editingDate || !selectedRoomId) return;
 
     const updated = { ...overrides };
@@ -545,7 +545,7 @@ export default function AvailabilityPage() {
       delete updated[selectedRoomId][editingDate.dateKey];
     }
 
-    saveOverridesToStorage(updated);
+    await saveOverridesToStorage(updated);
 
     // Also delete/clear record from room_availability in Appwrite
     (async () => {

@@ -11,6 +11,7 @@ export const appwriteConfig = {
     reviewCollectionId: process.env.NEXT_PUBLIC_APPWRITE_REVIEW_COLLECTION_ID || "6a59c6f526bfcf71ddbf",
     activitiesCollectionId: process.env.NEXT_PUBLIC_APPWRITE_ACTIVITIES_COLLECTION_ID || "activities",
     promotionsCollectionId: process.env.NEXT_PUBLIC_APPWRITE_PROMOTIONS_COLLECTION_ID || "promotions",
+    roomAvailabilityCollectionId: process.env.NEXT_PUBLIC_APPWRITE_ROOM_AVAILABILITY_COLLECTION_ID || "room_availability",
 };
 
 export const account = new Account(client);

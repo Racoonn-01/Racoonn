@@ -150,10 +150,38 @@ export default function RoomSelectionModal({
           ) : rooms && rooms.length > 0 ? (
             <div className="flex flex-col gap-4">
               {rooms.map((room) => {
-                const roomOverride = overrides[room.$id]?.[dateKey];
                 const baseRoomPrice = room.discountPrice && room.discountPrice > 0 ? room.discountPrice : room.price;
-                const effectivePrice = roomOverride?.price !== undefined ? roomOverride.price : baseRoomPrice;
-                const isCustomRateApplied = roomOverride?.price !== undefined && roomOverride.price !== baseRoomPrice;
+                let effectivePrice = baseRoomPrice;
+                let isCustomRateApplied = false;
+
+                if (checkIn && checkOut && checkIn !== checkOut) {
+                  const startD = new Date(checkIn + "T00:00:00");
+                  const endD = new Date(checkOut + "T00:00:00");
+                  const stayNights = Math.max(1, Math.round((endD.getTime() - startD.getTime()) / (1000 * 60 * 60 * 24)));
+                  let totalStayPrice = 0;
+
+                  const currD = new Date(startD);
+                  for (let n = 0; n < stayNights; n++) {
+                    const y = currD.getFullYear();
+                    const m = String(currD.getMonth() + 1).padStart(2, '0');
+                    const d = String(currD.getDate()).padStart(2, '0');
+                    const nightKey = `${y}-${m}-${d}`;
+
+                    const nightOverride = overrides[room.$id]?.[nightKey];
+                    const nightPrice = nightOverride?.price !== undefined ? nightOverride.price : baseRoomPrice;
+                    if (nightOverride?.price !== undefined && nightOverride.price !== baseRoomPrice) {
+                      isCustomRateApplied = true;
+                    }
+                    totalStayPrice += nightPrice;
+                    currD.setDate(currD.getDate() + 1);
+                  }
+
+                  effectivePrice = Math.round(totalStayPrice / stayNights);
+                } else {
+                  const roomOverride = overrides[room.$id]?.[dateKey];
+                  effectivePrice = roomOverride?.price !== undefined ? roomOverride.price : baseRoomPrice;
+                  isCustomRateApplied = roomOverride?.price !== undefined && roomOverride.price !== baseRoomPrice;
+                }
 
                 return (
                   <div key={room.$id} className="bg-white border border-gray-200 rounded-xl p-5 hover:border-[#E86A6F]/50 transition-colors shadow-sm flex flex-col sm:flex-row gap-4 sm:items-center justify-between group">

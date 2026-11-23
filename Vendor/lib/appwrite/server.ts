@@ -4,7 +4,7 @@ export function createAdminClient() {
   const endpoint =
     process.env.APPWRITE_ENDPOINT ||
     process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT ||
-    "https://cloud.appwrite.io/v1";
+    "https://sgp.cloud.appwrite.io/v1";
   const projectId =
     process.env.APPWRITE_PROJECT_ID ||
     process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID ||

@@ -38,13 +38,21 @@ export default function ContactPage() {
               <a href="tel:+918954442144" className="text-brand-coral font-semibold hover:underline">+91 8954442144</a>
             </div>
             
-            <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100 flex flex-col items-center text-center hover:shadow-md transition-shadow">
-              <div className="w-14 h-14 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center mb-6">
+            <a 
+              href="https://maps.app.goo.gl/p8YwaXppQ9YDYFR39" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100 flex flex-col items-center text-center hover:shadow-md transition-shadow group cursor-pointer block"
+            >
+              <div className="w-14 h-14 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center mb-6 group-hover:bg-emerald-100 transition-colors">
                 <MapPin size={28} />
               </div>
-              <h3 className="text-xl font-bold text-brand-navy mb-2">Office</h3>
-              <p className="text-gray-500 text-sm">Uttarakhand, India</p>
-            </div>
+              <h3 className="text-xl font-bold text-brand-navy mb-2 group-hover:text-brand-coral transition-colors">Office</h3>
+              <p className="text-gray-500 text-sm leading-relaxed">
+                Corp. Off.-205 PSA Plaza 2nd Floor 19 Kalyani View,<br />
+                Nainital Road Rudrapur 263153 U.S. Nagar (UK)
+              </p>
+            </a>
           </div>
 
           {/* Contact Form */}

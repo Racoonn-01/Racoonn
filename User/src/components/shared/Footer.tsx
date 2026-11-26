@@ -119,18 +119,23 @@ export default function Footer() {
                     <p className="font-bold text-white">+91 8954442144</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-4 group">
-                  <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-brand-coral/20 group-hover:text-brand-coral transition-colors">
+                <a 
+                  href="https://maps.app.goo.gl/p8YwaXppQ9YDYFR39" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-4 group cursor-pointer"
+                >
+                  <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-brand-coral/20 group-hover:text-brand-coral transition-colors shrink-0">
                     <MapPin className="w-5 h-5" />
                   </div>
                   <div>
                     <p className="text-xs text-brand-sky/50 mb-0.5">Headquarters</p>
-                    <p className="font-bold text-white text-sm leading-relaxed">
+                    <p className="font-bold text-white text-sm leading-relaxed group-hover:text-brand-coral transition-colors">
                       Corp. Off.-205 PSA Plaza 2nd Floor 19 Kalyani View,<br />
-                      <span className="font-normal text-white/80">Nainital Road Rudrapur 263153 U.S. Nagar (UK)</span>
+                      <span className="font-normal text-white/80 group-hover:text-white transition-colors">Nainital Road Rudrapur 263153 U.S. Nagar (UK)</span>
                     </p>
                   </div>
-                </div>
+                </a>
               </div>
             </div>
 
